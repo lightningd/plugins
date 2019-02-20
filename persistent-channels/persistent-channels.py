@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-from lightning import Plugin
+from lightning import Plugin, RpcError
 from threading import Timer
 import os
 import json
@@ -27,13 +27,29 @@ def save_state(path, state):
     os.rename(tmppath, path)
 
 
+def is_connectable(rpc, node_id):
+    nodes = rpc.listnodes(node_id)
+
+    if len(nodes) == 0:
+        return False
+
+    print(nodes)
+
+
 def maybe_open_channel(desired, rpc):
     peers = rpc.listpeers(desired['node_id'])['peers']
 
     if peers == []:
         # Need to connect first, and then open a channel
-        rpc.connect(desired['node_id'])
-        peer = None
+        #if not is_connectable(rpc, desired['node_id']):
+        #    print("No address known for {}, cannot connect.".format(desired['node_id']))
+
+        try:
+            rpc.connect(desired['node_id'])
+        except RpcError as re:
+            print("Could not connect to peer: ".format(re.error))
+            return
+        peer = rpc.listpeers(desired['node_id'])['peers'][0]
     else:
         peer = peers[0]
 
@@ -63,7 +79,7 @@ def check_channels(plugin):
         try:
             maybe_open_channel(c, plugin.rpc)
         except Exception:
-            plugin.log(f'Error attempting to open a channel with {c["id"]}.')
+            plugin.log(f'Error attempting to open a channel with {c["node_id"]}.')
             traceback.print_exc()
     Timer(30, check_channels, args=[plugin]).start()
 
@@ -89,7 +105,7 @@ def add_persistent_channel(node_id, satoshi, plugin, feerate='normal',
     maybe_open_channel(state['channels'][node_id], plugin.rpc)
 
 
-@plugin.method("init")
+@plugin.init()
 def init(options, configuration, plugin):
     # This is the file in which we'll store all of our state (mostly
     # desired channels for now)

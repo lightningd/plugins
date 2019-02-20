@@ -67,10 +67,16 @@ class Probe(Base):
     payment_hash = Column(String)
     started_at = Column(DateTime)
     finished_at = Column(DateTime)
-    
+
+
+def start_probe(plugin):
+    t = threading.Thread(target=probe, args=[plugin])
+    t.daemon = True
+    t.start()
+
 
 @plugin.method('probe')
-def start_probe(plugin):
+def probe(plugin):
     nodes = plugin.rpc.listnodes()['nodes']
     dst = choice(nodes)
 
@@ -115,11 +121,11 @@ def start_probe(plugin):
         )
         expiry = time() + plugin.probe_exclusion_duration
         temporary_exclusions[exclusion] = expiry
-        
+
     p.finished_at = datetime.now()
     s.commit()
     s.close()
-    
+
 
 def clear_temporary_exclusion(plugin):
     timed_out = [k for k, v in temporary_exclusions.items() if v < time()]
@@ -149,7 +155,7 @@ def schedule(plugin):
 
         # Schedule the next run
         heapq.heappush(next_runs, (time() + n[2], n[1], n[2]))
-    
+
 
 @plugin.init()
 def init(configuration, options, plugin):
