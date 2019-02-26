@@ -54,6 +54,7 @@ def summary(plugin):
 
     avail_out = Millisatoshi(0)
     avail_in = Millisatoshi(0)
+    chans = []
     reply['num_channels'] = 0
     reply['num_connected'] = 0
     reply['num_gossipers'] = info['num_peers']
@@ -65,12 +66,21 @@ def summary(plugin):
                 reply['num_connected'] += 1
                 reply['num_gossipers'] -= 1
             if c['our_reserve_msat'] < c['to_us_msat']:
-                avail_out += c['to_us_msat'] - c['our_reserve_msat']
+                to_us = c['to_us_msat'] - c['our_reserve_msat']
+            else:
+                to_us = Millisatoshi(0)
+            avail_out += to_us
+
             # We have to derive amount to them
-            to_them_msat = c['total_msat'] - c['to_us_msat']
-            if c['their_reserve_msat'] < to_them_msat:
-                avail_in += to_them_msat - c['their_reserve_msat']
+            to_them = c['total_msat'] - c['to_us_msat']
+            if c['their_reserve_msat'] < to_them:
+                to_them = to_them - c['their_reserve_msat']
+            else:
+                to_them = Millisatoshi(0)
+            avail_in += to_them
             reply['num_channels'] += 1
+            chans.append((c['total_msat'], to_us, to_them, p['id'], c['private']))
+
     reply['avail_out'] = avail_out.to_btc_str()
     reply['avail_in'] = avail_in.to_btc_str()
 
@@ -78,6 +88,24 @@ def summary(plugin):
         reply['utxo_amount'] += ' = ' + to_fiatstr(utxo_amount)
         reply['avail_out'] += ' = ' + to_fiatstr(avail_out)
         reply['avail_in'] += ' = ' + to_fiatstr(avail_in)
+
+    if chans != []:
+        reply['channels'] = []
+        biggest = max(int(c[0]) for c in chans)
+        for c in chans:
+            # Create simple line graph
+            s = ('-' * int((int(c[1]) / biggest * 46))
+                 + '/' + '-' * int((int(c[2]) / biggest * 46)))
+            # Center it
+            s = "{:^47}".format(s)
+            node = plugin.rpc.listnodes(c[3])['nodes']
+            if len(node) != 0:
+                s += ':' + node[0]['alias']
+            else:
+                s += ':' + c[3][0:32]
+            if c[4]:
+                s += ' (priv)'
+            reply['channels'].append(s)
 
     return reply
 
