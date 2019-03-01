@@ -1,11 +1,29 @@
 #!/usr/bin/env python3
 from lightning import Plugin, Millisatoshi
+from packaging import version
+from collections import namedtuple
+import lightning
 import json
 import requests
 import threading
 import time
 
 plugin = Plugin(autopatch=True)
+
+have_utf8 = False
+
+# __version__ was introduced in 0.0.7.1, with utf8 passthrough support.
+try:
+    if version.parse(lightning.__version__) >= version.parse("0.0.7.1"):
+        have_utf8 = True
+except Exception:
+    pass
+
+Charset = namedtuple('Charset', ['double_left', 'left', 'bar', 'mid', 'right', 'double_right', 'empty'])
+if have_utf8:
+    draw = Charset('╟', '├', '─', '┼', '┤', '╢', '║')
+else:
+    draw = Charset('#', '[', '-', '/', ']', '#', '|')
 
 
 class PriceThread(threading.Thread):
@@ -94,13 +112,32 @@ def summary(plugin):
 
     if chans != []:
         reply['channels'] = []
-        biggest = max(int(c[0]) for c in chans)
+        biggest = max(max(int(c[1]), int(c[2])) for c in chans)
         for c in chans:
-            # Create simple line graph
-            s = ('-' * int((int(c[1]) / biggest * 46))
-                 + '/' + '-' * int((int(c[2]) / biggest * 46)))
-            # Center it
-            s = "{:^47}".format(s)
+            # Create simple line graph, 47 chars wide.
+            our_len = int((int(c[1]) / biggest * 23))
+            their_len = int((int(c[2]) / biggest * 23))
+            divided = False
+
+            # We put midpoint in the middle.
+            mid = draw.mid
+            if our_len == 0:
+                left = "{:>23}".format('')
+                mid = draw.double_left
+            else:
+                left = "{:>23}".format(draw.left + draw.bar * (our_len - 1))
+
+            if their_len == 0:
+                right = "{:23}".format('')
+                # Both 0 is a special case.
+                if our_len == 0:
+                    mid = draw.empty
+                else:
+                    mid = draw.double_right
+            else:
+                right = "{:23}".format(draw.bar * (their_len - 1) + draw.right)
+
+            s = left + mid + right
             node = plugin.rpc.listnodes(c[3])['nodes']
             if len(node) != 0:
                 s += ':' + node[0]['alias']
