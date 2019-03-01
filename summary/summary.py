@@ -9,6 +9,11 @@ plugin = Plugin(autopatch=True)
 
 
 class PriceThread(threading.Thread):
+    def __init__(self):
+        super().__init__()
+        self.daemon = True
+        self.start()
+
     def run(self):
         try:
             r = requests.get('https://apiv2.bitcoinaverage.com/convert/global'
@@ -43,13 +48,11 @@ def summary(plugin):
     else:
         reply['my_address'] = plugin.my_address
 
-    utxo_amount = Millisatoshi(0)
-    reply['num_utxos'] = 0
-    for f in funds['outputs']:
-        if f['status'] != 'confirmed':
-            continue
-        utxo_amount += f['amount_msat']
-        reply['num_utxos'] += 1
+    
+    utxos = [int(f['amount_msat']) for f in funds['outputs']
+             if f['status'] == 'confirmed']
+    reply['num_utxos'] = len(utxos)
+    utxo_amount = Millisatoshi(sum(utxos))
     reply['utxo_amount'] = utxo_amount.to_btc_str()
 
     avail_out = Millisatoshi(0)
@@ -85,9 +88,9 @@ def summary(plugin):
     reply['avail_in'] = avail_in.to_btc_str()
 
     if plugin.fiat_per_btc:
-        reply['utxo_amount'] += ' = ' + to_fiatstr(utxo_amount)
-        reply['avail_out'] += ' = ' + to_fiatstr(avail_out)
-        reply['avail_in'] += ' = ' + to_fiatstr(avail_in)
+        reply['utxo_amount'] += ' = {}'.format(to_fiatstr(utxo_amount))
+        reply['avail_out'] += ' = {}'.format(to_fiatstr(avail_out))
+        reply['avail_in'] += ' = '.format(to_fiatstr(avail_in))
 
     if chans != []:
         reply['channels'] = []
@@ -117,7 +120,7 @@ def init(options, configuration, plugin):
     info = plugin.rpc.getinfo()
 
     # Try to grab conversion price
-    PriceThread().start()
+    PriceThread()
 
     # Prefer IPv4, otherwise take any to give out address.
     best_address = None
@@ -131,6 +134,8 @@ def init(options, configuration, plugin):
         plugin.my_address = info['id'] + '@' + best_address['address']
         if best_address['port'] != 9735:
             plugin.my_address += ':' + str(best_address['port'])
+    else:
+        plugin.my_address = None
 
     plugin.log("Plugin summary.py initialized")
 
