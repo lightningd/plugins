@@ -100,17 +100,18 @@ def summary(plugin):
                 to_them = Millisatoshi(0)
             avail_in += to_them
             reply['num_channels'] += 1
-            chans.append((c['total_msat'], to_us, to_them, p['id'], c['private']))
+            chans.append((c['total_msat'], to_us, to_them, p['id'], c['private'], p['connected']))
 
     reply['avail_out'] = avail_out.to_btc_str()
     reply['avail_in'] = avail_in.to_btc_str()
 
     if plugin.fiat_per_btc:
-        reply['utxo_amount'] += ' = {}'.format(to_fiatstr(utxo_amount))
-        reply['avail_out'] += ' = {}'.format(to_fiatstr(avail_out))
-        reply['avail_in'] += ' = '.format(to_fiatstr(avail_in))
+        reply['utxo_amount'] += ' ({})'.format(to_fiatstr(utxo_amount))
+        reply['avail_out'] += ' ({})'.format(to_fiatstr(avail_out))
+        reply['avail_in'] += ' ({})'.format(to_fiatstr(avail_in))
 
     if chans != []:
+        reply['channels_key'] = 'P=private O=offline'
         reply['channels'] = []
         biggest = max(max(int(c[1]), int(c[2])) for c in chans)
         for c in chans:
@@ -138,13 +139,20 @@ def summary(plugin):
                 right = "{:23}".format(draw.bar * (their_len - 1) + draw.right)
 
             s = left + mid + right
+
+            extra = ''
+            if c[4]:
+                extra += 'P'
+            if not c[5]:
+                extra += 'O'
+            if extra != '':
+                s += '({})'.format(extra)
+
             node = plugin.rpc.listnodes(c[3])['nodes']
             if len(node) != 0:
                 s += ':' + node[0]['alias']
             else:
                 s += ':' + c[3][0:32]
-            if c[4]:
-                s += ' (priv)'
             reply['channels'].append(s)
 
     return reply
