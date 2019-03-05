@@ -78,14 +78,15 @@ def summary(plugin):
     chans = []
     reply['num_channels'] = 0
     reply['num_connected'] = 0
-    reply['num_gossipers'] = info['num_peers']
+    reply['num_gossipers'] = 0
     for p in peers['peers']:
+        active_channel = False
         for c in p['channels']:
             if c['state'] != 'CHANNELD_NORMAL':
                 continue
+            active_channel = True
             if p['connected']:
                 reply['num_connected'] += 1
-                reply['num_gossipers'] -= 1
             if c['our_reserve_msat'] < c['to_us_msat']:
                 to_us = c['to_us_msat'] - c['our_reserve_msat']
             else:
@@ -101,6 +102,9 @@ def summary(plugin):
             avail_in += to_them
             reply['num_channels'] += 1
             chans.append((c['total_msat'], to_us, to_them, p['id'], c['private'], p['connected']))
+
+        if not active_channel and p['connected']:
+            reply['num_gossipers'] += 1
 
     reply['avail_out'] = avail_out.to_btc_str()
     reply['avail_in'] = avail_in.to_btc_str()

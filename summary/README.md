@@ -22,7 +22,7 @@ num_utxos=5
 utxo_amount=1.20119332000btc (USD $4473.84)
 num_channels=29
 num_connected=2
-num_gossipers=29
+num_gossipers=1
 avail_out=0.27095103btc (USD $1009.16)
 avail_in=2.05851379btc (USD $7666.93)
 channels_key=P=private O=offline
