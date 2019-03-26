@@ -18,7 +18,7 @@ class NodeCollector(BaseLnCollector):
         info = self.rpc.getinfo()
         info_labels = {k: v for k, v in info.items() if isinstance(v, str)}
         node_info_fam = InfoMetricFamily(
-            'node',
+            'lightning_node',
             'Static node information',
             labels=info_labels.keys(),
         )
@@ -39,17 +39,17 @@ class FundsCollector(BaseLnCollector):
         total = output_funds + channel_funds
 
         yield GaugeMetricFamily(
-            'total_funds',
+            'lightning_funds_total',
             "Total satoshis we own on this node.",
             value=total,
         )
         yield GaugeMetricFamily(
-            'output_funds',
+            'lightning_funds_output',
             "On-chain satoshis at our disposal",
             value=output_funds,
         )
         yield GaugeMetricFamily(
-            'channel_funds',
+            'lightning_funds_channel',
             "Satoshis in channels.",
             value=channel_funds,
         )
@@ -60,12 +60,12 @@ class PeerCollector(BaseLnCollector):
         peers = self.rpc.listpeers()['peers']
 
         connected = GaugeMetricFamily(
-            'connected',
+            'lightning_peer_connected',
             'Is the peer currently connected?',
             labels=['id'],
         )
         count = GaugeMetricFamily(
-            'num_channels',
+            'lightning_peer_channels',
             "The number of channels with the peer",
             labels=['id'],
         )
@@ -81,22 +81,22 @@ class PeerCollector(BaseLnCollector):
 class ChannelsCollector(BaseLnCollector):
     def collect(self):
         balance_gauge = GaugeMetricFamily(
-            'channel_balance',
+            'lightning_channel_balance',
             'How many funds are at our disposal?',
             labels=['id', 'scid'],
         )
         spendable_gauge = GaugeMetricFamily(
-            'channel_spendable',
+            'lightning_channel_spendable',
             'How much can we currently send over this channel?',
             labels=['id', 'scid']
         )
         total_gauge = GaugeMetricFamily(
-            'channel_total',
+            'lightning_channel_capacity',
             'How many funds are in this channel in total?',
             labels=['id', 'scid'],
         )
         htlc_gauge = GaugeMetricFamily(
-            'channel_htlcs',
+            'lightning_channel_htlcs',
             'How many HTLCs are currently active on this channel?',
             labels=['id', 'scid'],
         )
