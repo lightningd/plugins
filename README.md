@@ -6,6 +6,7 @@ Community curated plugins for c-lightning.
 
 | Name                              | Short description                                            |
 |-----------------------------------|--------------------------------------------------------------|
+| [donations][donations]            | A simple donations page to accept donations from the web     |
 | [persistent-channels][pers-chans] | Maintains a number of channels to peers                      |
 | [probe][probe]                    | Regularly probes the network for stability                   |
 | [prometheus][prometheus]          | Lightning node exporter for the prometheus timeseries server |
@@ -15,3 +16,4 @@ Community curated plugins for c-lightning.
 [probe]: https://github.com/lightningd/plugins/tree/master/probe
 [prometheus]: https://github.com/lightningd/plugins/tree/master/prometheus
 [summary]: https://github.com/lightningd/plugins/tree/master/summary
+[donations]: https://github.com/lightningd/plugins/tree/master/donations
