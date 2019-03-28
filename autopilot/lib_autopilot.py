@@ -75,7 +75,7 @@ class Strategy:
 
 class Autopilot():
 
-    def __init__(self,G):
+    def __init__(self, G):
         self.__add_logger()        
         self.G = G
 
