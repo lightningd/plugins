@@ -1,0 +1,3 @@
+[submodule "sitzprobe"]
+	path = sitzprobe
+	url = https://github.com/niftynei/sitzprobe
