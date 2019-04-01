@@ -10,6 +10,7 @@ Community curated plugins for c-lightning.
 | [persistent-channels][pers-chans] | Maintains a number of channels to peers                      |
 | [probe][probe]                    | Regularly probes the network for stability                   |
 | [prometheus][prometheus]          | Lightning node exporter for the prometheus timeseries server |
+| [sitzprobe][sitzprobe]            | A Lightning Network payment rehearsal utility                |
 | [summary][summary]                | Print a nice summary of the node status                      |
 
 
@@ -34,3 +35,4 @@ Community curated plugins for c-lightning.
 [python-api]: https://github.com/ElementsProject/lightning/tree/master/contrib/pylightning
 [python-api-pypi]: https://pypi.org/project/pylightning/
 [go-api]: https://github.com/niftynei/glightning
+[sitzprobe]: https://github.com/lightningd/plugins/tree/master/sitzprobe
