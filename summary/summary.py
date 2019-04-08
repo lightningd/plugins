@@ -36,7 +36,7 @@ class PriceThread(threading.Thread):
         try:
             r = requests.get('https://apiv2.bitcoinaverage.com/convert/global'
                              '?from=BTC&to={}&amount=1'.format(plugin.currency))
-            plugin.fiat_per_btc = json.loads(r.content)['price']
+            plugin.fiat_per_btc = json.loads(r.content.decode())['price']
         except Exception:
             pass
         # Six hours is more than often enough for polling
