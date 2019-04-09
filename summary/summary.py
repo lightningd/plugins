@@ -153,7 +153,7 @@ def summary(plugin):
                 s += '({})'.format(extra)
 
             node = plugin.rpc.listnodes(c[3])['nodes']
-            if len(node) != 0:
+            if len(node) != 0 and 'alias' in node[0]:
                 s += ':' + node[0]['alias']
             else:
                 s += ':' + c[3][0:32]
