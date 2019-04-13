@@ -116,12 +116,12 @@ def summary(plugin):
 
     if chans != []:
         reply['channels_key'] = 'P=private O=offline'
-        reply['channels'] = []
+        reply['channels'] = ["\n"]
         biggest = max(max(int(c[1]), int(c[2])) for c in chans)
         for c in chans:
             # Create simple line graph, 47 chars wide.
-            our_len = int((int(c[1]) / biggest * 23))
-            their_len = int((int(c[2]) / biggest * 23))
+            our_len = int(round(int(c[1]) / biggest * 23))
+            their_len = int(round(int(c[2]) / biggest * 23))
             divided = False
 
             # We put midpoint in the middle.
