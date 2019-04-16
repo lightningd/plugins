@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-from lightning import Plugin, RpcError
+from lightning import Plugin, Millisatoshi, RpcError
 import time
 import uuid
 
@@ -9,13 +9,12 @@ plugin = Plugin()
 def setup_routing_fees(plugin, route, msatoshi):
     delay = int(plugin.get_option('cltv-final'))
     for r in reversed(route):
-        r['msatoshi'] = msatoshi
-        r['amount_msat'] = str(msatoshi) + "msat"
+        r['msatoshi'] = r['amount_msat'] = msatoshi
         r['delay'] = delay
         channels = plugin.rpc.listchannels(r['channel'])
         for ch in channels.get('channels'):
             if ch['destination'] == r['id']:
-                fee = ch['base_fee_millisatoshi']
+                fee = Millisatoshi(ch['base_fee_millisatoshi'])
                 fee += msatoshi * ch['fee_per_millionth'] // 1000000
                 msatoshi += fee
                 delay += ch['delay']
@@ -56,8 +55,8 @@ def rebalance_fail(plugin, label, payload, success_msg, error=None):
 
 
 @plugin.method("rebalance")
-def rebalance(plugin, outgoing_channel_id, incoming_channel_id, msatoshi, maxfeepercent="0.5",
-              retry_for="60", exemptfee="5000"):
+def rebalance(plugin, outgoing_channel_id, incoming_channel_id, msatoshi: Millisatoshi,
+              maxfeepercent="0.5", retry_for="60", exemptfee: Millisatoshi=Millisatoshi(5000)):
     """Rebalancing channel liquidity with circular payments.
 
     This tool helps to move some msatoshis between your channels.
@@ -95,16 +94,16 @@ def rebalance(plugin, outgoing_channel_id, incoming_channel_id, msatoshi, maxfee
             route = [route_out] + route_mid + [route_in]
             setup_routing_fees(plugin, route, msatoshi)
             fees = route[0]['msatoshi'] - route[-1]['msatoshi']
-            if fees > int(exemptfee) and fees > msatoshi * float(maxfeepercent) / 100:
+            if fees > exemptfee and fees > msatoshi * float(maxfeepercent) / 100:
                 worst_channel_id = find_worst_channel(route)
                 if worst_channel_id is None:
                     raise RpcError("rebalance", payload, {'message': 'Insufficient fee'})
                 excludes += [worst_channel_id + '/0', worst_channel_id + '/1']
                 continue
             try:
-                plugin.log("Sending %dmsat over %d hops to rebalance %dmsat" % (msatoshi + fees, len(route), msatoshi))
+                plugin.log("Sending %s over %d hops to rebalance %s" % (msatoshi + fees, len(route), msatoshi))
                 for r in route:
-                    plugin.log("Node: %s, channel: %13s, %d msat" % (r['id'], r['channel'], r['msatoshi']))
+                    plugin.log("Node: %s, channel: %13s, %s" % (r['id'], r['channel'], r['msatoshi']))
                 success_msg = "%d msat sent over %d hops to rebalance %d msat" % (msatoshi + fees, len(route), msatoshi)
                 plugin.rpc.sendpay(route, payment_hash)
                 plugin.rpc.waitsendpay(payment_hash, int(retry_for) + start_ts - int(time.time()))
