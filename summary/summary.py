@@ -101,7 +101,7 @@ def summary(plugin):
                 to_them = Millisatoshi(0)
             avail_in += to_them
             reply['num_channels'] += 1
-            chans.append((c['total_msat'], to_us, to_them, p['id'], c['private'], p['connected']))
+            chans.append((c['total_msat'], to_us, to_them, p['id'], c['private'], p['connected'], c['short_channel_id']))
 
         if not active_channel and p['connected']:
             reply['num_gossipers'] += 1
@@ -115,7 +115,7 @@ def summary(plugin):
         reply['avail_in'] += ' ({})'.format(to_fiatstr(avail_in))
 
     if chans != []:
-        reply['channels_key'] = 'P=private O=offline'
+        reply['channels_flags'] = 'P:private O:offline'
         reply['channels'] = ["\n"]
         biggest = max(max(int(c[1]), int(c[2])) for c in chans)
         for c in chans:
@@ -144,19 +144,25 @@ def summary(plugin):
 
             s = left + mid + right
 
+            # output short channel id, so things can be copyNpasted easily
+            s += " {:14} ".format(c[6])
+
             extra = ''
             if c[4]:
                 extra += 'P'
+            else:
+                extra += '_'
             if not c[5]:
                 extra += 'O'
-            if extra != '':
-                s += '({})'.format(extra)
+            else:
+                extra += '_'
+            s += '[{}] '.format(extra)
 
             node = plugin.rpc.listnodes(c[3])['nodes']
             if len(node) != 0 and 'alias' in node[0]:
-                s += ':' + node[0]['alias']
+                s += node[0]['alias']
             else:
-                s += ':' + c[3][0:32]
+                s += c[3][0:32]
             reply['channels'].append(s)
 
     return reply
