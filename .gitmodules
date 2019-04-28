@@ -2,5 +2,5 @@
 	path = sitzprobe
 	url = https://github.com/niftynei/sitzprobe
 [submodule "graphql"]
-	path = c-lightning-graphql
+	path = graphql
 	url = https://github.com/nettijoe96/c-lightning-graphql.git
