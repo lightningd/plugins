@@ -20,12 +20,12 @@ def setup_routing_fees(plugin, route, msatoshi):
                 delay += ch['delay']
 
 
-def peer2channel(plugin, channel_id, my_node_id, payload):
-    channels = plugin.rpc.listchannels(channel_id).get('channels')
+def peer_from_scid(plugin, short_channel_id, my_node_id, payload):
+    channels = plugin.rpc.listchannels(short_channel_id).get('channels')
     for ch in channels:
         if ch['source'] == my_node_id:
             return ch['destination']
-    raise RpcError("rebalance", payload, {'message': 'Cannot find peer for channel: ' + channel_id})
+    raise RpcError("rebalance", payload, {'message': 'Cannot find peer for channel: ' + short_channel_id})
 
 
 def find_worst_channel(route):
@@ -71,8 +71,8 @@ def rebalance(plugin, outgoing_channel_id, incoming_channel_id, msatoshi: Millis
         "exemptfee": exemptfee
     }
     my_node_id = plugin.rpc.getinfo().get('id')
-    outgoing_node_id = peer2channel(plugin, outgoing_channel_id, my_node_id, payload)
-    incoming_node_id = peer2channel(plugin, incoming_channel_id, my_node_id, payload)
+    outgoing_node_id = peer_from_scid(plugin, outgoing_channel_id, my_node_id, payload)
+    incoming_node_id = peer_from_scid(plugin, incoming_channel_id, my_node_id, payload)
     plugin.log("Outgoing node: %s, channel: %s" % (outgoing_node_id, outgoing_channel_id))
     plugin.log("Incoming node: %s, channel: %s" % (incoming_node_id, incoming_channel_id))
 
