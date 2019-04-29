@@ -154,7 +154,8 @@ def rebalance(plugin, outgoing_scid, incoming_scid, msatoshi: Millisatoshi=None,
             route = [route_out] + route_mid + [route_in]
             setup_routing_fees(plugin, route, msatoshi)
             fees = route[0]['msatoshi'] - route[-1]['msatoshi']
-            if fees > exemptfee and fees > msatoshi * float(maxfeepercent) / 100:
+            # NOTE: the int(msat) casts are just a workaround for outdated pylightning versions
+            if fees > exemptfee and int(fees) > int(msatoshi) * float(maxfeepercent) / 100:
                 worst_channel_id = find_worst_channel(route)
                 if worst_channel_id is None:
                     raise RpcError("rebalance", payload, {'message': 'Insufficient fee'})
