@@ -55,7 +55,7 @@ def rebalance_fail(plugin, label, payload, success_msg, error=None):
 
 
 @plugin.method("rebalance")
-def rebalance(plugin, outgoing_channel_id, incoming_channel_id, msatoshi: Millisatoshi,
+def rebalance(plugin, outgoing_scid, incoming_scid, msatoshi: Millisatoshi,
               maxfeepercent="0.5", retry_for="60", exemptfee: Millisatoshi=Millisatoshi(5000)):
     """Rebalancing channel liquidity with circular payments.
 
@@ -63,30 +63,30 @@ def rebalance(plugin, outgoing_channel_id, incoming_channel_id, msatoshi: Millis
 
     """
     payload = {
-        "outgoing_channel_id": outgoing_channel_id,
-        "incoming_channel_id": incoming_channel_id,
+        "outgoing_scid": outgoing_scid,
+        "incoming_scid": incoming_scid,
         "msatoshi": msatoshi,
         "maxfeepercent": maxfeepercent,
         "retry_for": retry_for,
         "exemptfee": exemptfee
     }
     my_node_id = plugin.rpc.getinfo().get('id')
-    outgoing_node_id = peer_from_scid(plugin, outgoing_channel_id, my_node_id, payload)
-    incoming_node_id = peer_from_scid(plugin, incoming_channel_id, my_node_id, payload)
-    plugin.log("Outgoing node: %s, channel: %s" % (outgoing_node_id, outgoing_channel_id))
-    plugin.log("Incoming node: %s, channel: %s" % (incoming_node_id, incoming_channel_id))
+    outgoing_node_id = peer_from_scid(plugin, outgoing_scid, my_node_id, payload)
+    incoming_node_id = peer_from_scid(plugin, incoming_scid, my_node_id, payload)
+    plugin.log("Outgoing node: %s, channel: %s" % (outgoing_node_id, outgoing_scid))
+    plugin.log("Incoming node: %s, channel: %s" % (incoming_node_id, incoming_scid))
 
-    route_out = {'id': outgoing_node_id, 'channel': outgoing_channel_id}
-    route_in = {'id': my_node_id, 'channel': incoming_channel_id}
+    route_out = {'id': outgoing_node_id, 'channel': outgoing_scid}
+    route_in = {'id': my_node_id, 'channel': incoming_scid}
     start_ts = int(time.time())
     label = "Rebalance-" + str(uuid.uuid4())
-    description = "%s to %s" % (outgoing_channel_id, incoming_channel_id)
+    description = "%s to %s" % (outgoing_scid, incoming_scid)
     invoice = plugin.rpc.invoice(msatoshi, label, description, int(retry_for) + 60)
     payment_hash = invoice['payment_hash']
     plugin.log("Invoice payment_hash: %s" % payment_hash)
     success_msg = ""
     try:
-        excludes = [outgoing_channel_id + "/0", incoming_channel_id + "/0"]
+        excludes = [outgoing_scid + "/0", incoming_scid + "/0"]
         while int(time.time()) - start_ts < int(retry_for):
             r = plugin.rpc.getroute(incoming_node_id, msatoshi, riskfactor=1, cltv=9, fromid=outgoing_node_id,
                                     exclude=excludes)
@@ -111,9 +111,9 @@ def rebalance(plugin, outgoing_channel_id, incoming_channel_id, msatoshi: Millis
             except RpcError as e:
                 plugin.log("RpcError: " + str(e))
                 erring_channel = e.error.get('data', {}).get('erring_channel')
-                if erring_channel == incoming_channel_id:
+                if erring_channel == incoming_scid:
                     raise RpcError("rebalance", payload, {'message': 'Error with incoming channel'})
-                if erring_channel == outgoing_channel_id:
+                if erring_channel == outgoing_scid:
                     raise RpcError("rebalance", payload, {'message': 'Error with outgoing channel'})
                 erring_direction = e.error.get('data', {}).get('erring_direction')
                 if erring_channel is not None and erring_direction is not None:
