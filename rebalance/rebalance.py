@@ -20,6 +20,13 @@ def setup_routing_fees(plugin, route, msatoshi):
                 delay += ch['delay']
 
 
+def amounts_from_scid(plugin, scid):
+    channels = plugin.rpc.listfunds().get('channels')
+    channel = next(c for c in channels if c['short_channel_id'] == scid)
+    our_msat = Millisatoshi(channel['our_amount_msat'])
+    total_msat = Millisatoshi(channel['amount_msat'])
+    return our_msat, total_msat
+
 def peer_from_scid(plugin, short_channel_id, my_node_id, payload):
     channels = plugin.rpc.listchannels(short_channel_id).get('channels')
     for ch in channels:
@@ -54,8 +61,54 @@ def rebalance_fail(plugin, label, payload, success_msg, error=None):
     raise error
 
 
+# This function calculates the optimal rebalance amount
+# based on the selected channels capacity and state.
+# It will return a value that brings at least one of the channels to balance.
+# It will raise an error, when this isnt possible.
+#
+# EXAMPLE
+#             |------------------- out_total -------------|
+# OUT   -v => |-------- out_ours -------||-- out_theirs --| => +v
+#
+# IN                +v <= |-- in_ours --||---------- in_theirs ---------| <= -v
+#                         |--------- in_total --------------------------|
+#
+# CHEAP SOLUTION: take v_min from 50/50 values
+# O*   vo = out_ours - (out_total/2)
+# I*   vi = (in_total/2) - in_ours
+# return min(vo, vi)
+#
+# ... and cover edge cases with exceeding in/out capacity or negative values.
+# TODO: their_reserve_msat our_reserve_msat spendable_msat
+def calc_optimal_amount(out_ours, out_total, in_ours, in_total, payload):
+    out_ours, out_total = int(out_ours), int(out_total)
+    in_ours, in_total = int(in_ours), int(in_total)
+
+    in_theirs = in_total - in_ours
+    vo = out_ours - (out_total/2)
+    vi = (in_total/2) - in_ours
+
+    # cases where one option can be eliminated because it exceeds other capacity
+    if vo > in_theirs and vi > 0 and vi < out_ours:
+        return Millisatoshi(vi)
+    if vi > out_ours and vo > 0 and vo < in_theirs:
+        return Millisatoshi(vo)
+
+    # cases where one channel is still capable to bring other to balance
+    if vo < 0 and vi > 0 and vi < out_ours:
+        return Millisatoshi(vi)
+    if vi < 0 and vo > 0 and vo < in_theirs:
+        return Millisatoshi(vo)
+
+    # when both options are possible take the one with least effort
+    if vo > 0 and vo < in_theirs and vi > 0 and vi < out_ours:
+        return Millisatoshi(min(vi, vo))
+
+    raise RpcError("rebalance", payload, {'message': 'rebalancing these channels will make things worse'})
+
+
 @plugin.method("rebalance")
-def rebalance(plugin, outgoing_scid, incoming_scid, msatoshi: Millisatoshi,
+def rebalance(plugin, outgoing_scid, incoming_scid, msatoshi: Millisatoshi=None,
               maxfeepercent="0.5", retry_for="60", exemptfee: Millisatoshi=Millisatoshi(5000)):
     """Rebalancing channel liquidity with circular payments.
 
@@ -75,6 +128,13 @@ def rebalance(plugin, outgoing_scid, incoming_scid, msatoshi: Millisatoshi,
     incoming_node_id = peer_from_scid(plugin, incoming_scid, my_node_id, payload)
     plugin.log("Outgoing node: %s, channel: %s" % (outgoing_node_id, outgoing_scid))
     plugin.log("Incoming node: %s, channel: %s" % (incoming_node_id, incoming_scid))
+
+    # If amount was not given, calculate a suitable 50/50 rebalance amount
+    if msatoshi is None:
+        out_ours, out_total = amounts_from_scid(plugin, outgoing_scid)
+        in_ours, in_total = amounts_from_scid(plugin, incoming_scid)
+        msatoshi = calc_optimal_amount(out_ours, out_total, in_ours, in_total, payload)
+        plugin.log("Estimating optimal amount %s" % msatoshi)
 
     route_out = {'id': outgoing_node_id, 'channel': outgoing_scid}
     route_in = {'id': my_node_id, 'channel': incoming_scid}
