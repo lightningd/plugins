@@ -4,14 +4,17 @@ Community curated plugins for c-lightning.
 
 ## Available plugins
 
-| Name                              | Short description                                            |
-|-----------------------------------|--------------------------------------------------------------|
-| [donations][donations]            | A simple donations page to accept donations from the web     |
-| [persistent-channels][pers-chans] | Maintains a number of channels to peers                      |
-| [probe][probe]                    | Regularly probes the network for stability                   |
-| [prometheus][prometheus]          | Lightning node exporter for the prometheus timeseries server |
-| [sitzprobe][sitzprobe]            | A Lightning Network payment rehearsal utility                |
-| [summary][summary]                | Print a nice summary of the node status                      |
+| Name                              | Short description                                              |
+|-----------------------------------|----------------------------------------------------------------|
+| [autopilot][autopilot]            | An autopilot that suggests channels that should be established |
+| [donations][donations]            | A simple donations page to accept donations from the web       |
+| [graphql][graphql]                | Exposes the c-lightning API over [graphql][graphql-spec]       |
+| [persistent-channels][pers-chans] | Maintains a number of channels to peers                        |
+| [probe][probe]                    | Regularly probes the network for stability                     |
+| [prometheus][prometheus]          | Lightning node exporter for the prometheus timeseries server   |
+| [rebalance][rebalance]            | Keeps your channels balanced                                   |
+| [sitzprobe][sitzprobe]            | A Lightning Network payment rehearsal utility                  |
+| [summary][summary]                | Print a nice summary of the node status                        |
 
 
 ## More Plugins from the Community
@@ -35,4 +38,8 @@ Community curated plugins for c-lightning.
 [python-api]: https://github.com/ElementsProject/lightning/tree/master/contrib/pylightning
 [python-api-pypi]: https://pypi.org/project/pylightning/
 [go-api]: https://github.com/niftynei/glightning
-[sitzprobe]: https://github.com/lightningd/plugins/tree/master/sitzprobe
+[sitzprobe]: https://github.com/niftynei/sitzprobe
+[autopilot]: https://github.com/lightningd/plugins/tree/master/autopilot
+[rebalance]: https://github.com/lightningd/plugins/tree/master/rebalance
+[graphql]: https://github.com/nettijoe96/c-lightning-graphql
+[graphql-spec]: https://graphql.org/
