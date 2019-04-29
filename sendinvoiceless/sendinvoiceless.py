@@ -82,7 +82,9 @@ def sendinvoiceless(plugin, nodeid, msatoshi: Millisatoshi, maxfeepercent="0.5",
             route = forth['route'] + back['route']
             setup_routing_fees(plugin, route, change, payload)
             fees = route[0]['msatoshi'] - route[-1]['msatoshi'] - msatoshi
-            if fees > exemptfee and fees > msatoshi * float(maxfeepercent) / 100:
+            # Next line would be correct, but must be fixed to work around #2601 - cleanup when merged
+            # if fees > exemptfee and fees > msatoshi * float(maxfeepercent) / 100:
+            if fees > exemptfee and int(fees) > int(msatoshi) * float(maxfeepercent) / 100:
                 worst_channel = find_worst_channel(route, nodeid)
                 if worst_channel is None:
                     raise RpcError("sendinvoiceless", payload, {'message': 'Insufficient fee'})
