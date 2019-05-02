@@ -21,3 +21,9 @@ allows the maxfeepercent check to be skipped on fees that are smaller than exemp
 
 The command will keep finding routes and retrying the payment until it succeeds, or the given `retry_for` seconds
 pass. retry_for defaults to 60 seconds and can only be an integer.
+
+## Known weaknesses
+This is kind of hack with some downsides:
+- The route is twice as long because of the circular payment. This may increase fees and failure probability.
+- The payee receives the money as a routing fee: hard to associate with anything, distinguish from the usual fees.
+- If the payment is going on a circular route A-B-C-D-A to pay C, and the same malicious entity controls B and D, the money can be stolen by skipping C.

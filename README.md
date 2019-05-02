@@ -13,6 +13,7 @@ Community curated plugins for c-lightning.
 | [probe][probe]                    | Regularly probes the network for stability                     |
 | [prometheus][prometheus]          | Lightning node exporter for the prometheus timeseries server   |
 | [rebalance][rebalance]            | Keeps your channels balanced                                   |
+| [sendinvoiceless][sendinvoiceless]| Sends some money without an invoice from the receiving node.   |
 | [sitzprobe][sitzprobe]            | A Lightning Network payment rehearsal utility                  |
 | [summary][summary]                | Print a nice summary of the node status                        |
 
@@ -41,5 +42,6 @@ Community curated plugins for c-lightning.
 [sitzprobe]: https://github.com/niftynei/sitzprobe
 [autopilot]: https://github.com/lightningd/plugins/tree/master/autopilot
 [rebalance]: https://github.com/lightningd/plugins/tree/master/rebalance
+[sendinvoiceless]: https://github.com/lightningd/plugins/tree/master/sendinvoiceless
 [graphql]: https://github.com/nettijoe96/c-lightning-graphql
 [graphql-spec]: https://graphql.org/
