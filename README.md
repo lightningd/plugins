@@ -2,6 +2,14 @@
 
 Community curated plugins for c-lightning.
 
+To install and activate a plugin you need to stop your lightningd and restart it with the `plugin` argument like this:
+
+```
+lightningd --plugin=/path/to/plugin/directory/plugin_file_name.py
+```
+
+where the `plugin_file_name.py` should be an executable (`chmod a+x plugin_file_name.py`) file and can be written in any programming language.
+
 ## Available plugins
 
 | Name                              | Short description                                              |
@@ -21,12 +29,13 @@ Community curated plugins for c-lightning.
 ## More Plugins from the Community
 
  - https://github.com/conscott/c-lightning-plugins
+ - https://github.com/renepickhardt/c-lightning-plugin-collection
 
 ## Plugin Builder Resources
 
  - [Description of the plugin API][plugin-docs]
  - [C Plugin API][c-api] by @rustyrussell
- - [Python Plugin API & RPC Client][python-api] ([PyPI][python-api-pypi]) by @cdecker
+ - [Python Plugin API & RPC Client][python-api] ([PyPI][python-api-pypi]) by @cdecker and [a video tutorial](https://www.youtube.com/watch?v=FYs1I-pCJIg) by @renepickhardt
  - [Go Plugin API & RPC Client][go-api] by @niftynei
 
 [pers-chans]: https://github.com/lightningd/plugins/tree/master/persistent-channels
