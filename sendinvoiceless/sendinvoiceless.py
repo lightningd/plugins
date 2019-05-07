@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 from lightning import Plugin, Millisatoshi, RpcError
+from datetime import datetime
 import time
 import uuid
 
@@ -111,11 +112,70 @@ def sendinvoiceless(plugin, nodeid, msatoshi: Millisatoshi, maxfeepercent="0.5",
     return sendinvoiceless_fail(plugin, label, payload, success_msg)
 
 
+@plugin.method("receivedinvoiceless")
+def receivedinvoiceless(plugin, min_amount: Millisatoshi=Millisatoshi(10000)):
+    """
+    List payments received via sendinvoiceless from other nodes.
+    """
+
+    mynodeid = plugin.rpc.getinfo()['id']
+    mychannels = plugin.rpc.listchannels(source=mynodeid)['channels']
+    forwards = plugin.rpc.listforwards()['forwards']
+    default_fees = {
+        'base' : int(plugin.get_option('fee-base')),
+        'ppm' : int(plugin.get_option('fee-per-satoshi'))}
+
+    # build a mapping of mychannel fees
+    # <scid -> {base, ppm}>
+    myfees = {}
+    for channel in mychannels:
+        scid = channel['short_channel_id']
+        myfees[scid] = {
+            'base' : channel['base_fee_millisatoshi'],
+            'ppm'  : channel['fee_per_millionth']}
+
+    # loop through settled forwards and check for overpaid routings
+    result = []
+    for forward in forwards:
+        if forward['status'] != "settled":
+            continue
+
+        # for old channel, we dont know fees anymore, use defaults
+        scid = forward['out_channel']
+        fees = myfees.get(scid, default_fees)
+        fee_paid = forward['fee']
+        fee_required = int(forward['out_msatoshi'] * fees['ppm'] * 10**-6 + fees['base'])
+
+        if fee_paid > fee_required:
+            amount = Millisatoshi(fee_paid - fee_required)
+
+            # fess can sometimes not be exact when channel fees changed in the past, filter those
+            if amount < min_amount:
+                continue
+
+            entry = {'amount_msat' : amount, 'amount_btc' : amount.to_btc_str()}
+
+            # old lightningd versions may not support received_time yet
+            if 'resolved_time' in forward:
+                time_secs = int(forward['resolved_time'])
+                time_str = datetime.utcfromtimestamp(time_secs).strftime('%Y-%m-%d %H:%M:%S (UTC)')
+                entry['resolved_time'] = forward['resolved_time']
+                entry['timestamp'] = time_str
+
+            result.append(entry)
+
+    return result
+
+
 @plugin.init()
 def init(options, configuration, plugin):
     plugin.options['cltv-final']['value'] = plugin.rpc.listconfigs().get('cltv-final')
+    plugin.options['fee-base']['value'] = plugin.rpc.listconfigs().get('fee-base')
+    plugin.options['fee-per-satoshi']['value'] = plugin.rpc.listconfigs().get('fee-per-satoshi')
     plugin.log("Plugin sendinvoiceless.py initialized")
 
 
 plugin.add_option('cltv-final', 10, 'Number of blocks for final CheckLockTimeVerify expiry')
+plugin.add_option('fee-base', None, 'The routing base fee in msat. Will be derived automatically via rpc.listconfigs()')
+plugin.add_option('fee-per-satoshi', None, 'The routing fee ppm. Will be derived automatically via rpc.listconfigs()')
 plugin.run()
