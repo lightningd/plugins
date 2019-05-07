@@ -17,10 +17,7 @@ def setup_routing_fees(plugin, route, msatoshi, payload):
                 fee = Millisatoshi(ch['base_fee_millisatoshi'])
                 fee += msatoshi * ch['fee_per_millionth'] // 1000000
                 if ch['source'] == payload['nodeid']:
-                    if fee <= payload['msatoshi']:
-                        fee = payload['msatoshi']
-                    else:
-                        raise RpcError("sendinvoiceless", payload, {'message': 'Insufficient sending amount'})
+                    fee += payload['msatoshi']
                 msatoshi += fee
                 delay += ch['delay']
                 r['direction'] = int(ch['channel_flags']) % 2
