@@ -146,7 +146,10 @@ def rebalance(plugin, outgoing_scid, incoming_scid, msatoshi: Millisatoshi=None,
     plugin.log("Invoice payment_hash: %s" % payment_hash)
     success_msg = ""
     try:
-        excludes = [outgoing_scid + "/0", incoming_scid + "/0"]
+        excludes = []
+        mychannels = plugin.rpc.listchannels(source=my_node_id)['channels']
+        for channel in mychannels:
+            excludes += [channel['short_channel_id'] + '/0', channel['short_channel_id'] + '/1']
         while int(time.time()) - start_ts < int(retry_for):
             r = plugin.rpc.getroute(incoming_node_id, msatoshi, riskfactor=1, cltv=9, fromid=outgoing_node_id,
                                     exclude=excludes)
