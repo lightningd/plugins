@@ -68,6 +68,16 @@ class Probe(Base):
     started_at = Column(DateTime)
     finished_at = Column(DateTime)
 
+    def jsdict(self):
+        return {
+            'id': self.id,
+            'destination': self.destination,
+            'route': self.route,
+            'erring_channel': self.erring_channel,
+            'failcode': self.failcode,
+            'started_at': str(self.started_at),
+            'finished_at': str(self.finished_at),
+        }
 
 def start_probe(plugin):
     t = threading.Thread(target=probe, args=[plugin])
@@ -77,6 +87,7 @@ def start_probe(plugin):
 
 @plugin.method('probe')
 def probe(plugin):
+    res = None
     nodes = plugin.rpc.listnodes()['nodes']
     dst = choice(nodes)
 
@@ -94,8 +105,9 @@ def probe(plugin):
         p.payment_hash = ''.join(choice(string.hexdigits) for _ in range(64))
     except RpcError:
         p.failcode = -1
+        res = p.jsdict()
         s.commit()
-        return
+        return res
     s.commit()
 
     try:
@@ -123,8 +135,10 @@ def probe(plugin):
         temporary_exclusions[exclusion] = expiry
 
     p.finished_at = datetime.now()
+    res = p.jsdict()
     s.commit()
     s.close()
+    return res
 
 
 def clear_temporary_exclusion(plugin):
