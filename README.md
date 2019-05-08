@@ -12,18 +12,19 @@ where the `plugin_file_name.py` should be an executable (`chmod a+x plugin_file_
 
 ## Available plugins
 
-| Name                              | Short description                                              |
-|-----------------------------------|----------------------------------------------------------------|
-| [autopilot][autopilot]            | An autopilot that suggests channels that should be established |
-| [donations][donations]            | A simple donations page to accept donations from the web       |
-| [graphql][graphql]                | Exposes the c-lightning API over [graphql][graphql-spec]       |
-| [persistent-channels][pers-chans] | Maintains a number of channels to peers                        |
-| [probe][probe]                    | Regularly probes the network for stability                     |
-| [prometheus][prometheus]          | Lightning node exporter for the prometheus timeseries server   |
-| [rebalance][rebalance]            | Keeps your channels balanced                                   |
-| [sendinvoiceless][sendinvoiceless]| Sends some money without an invoice from the receiving node.   |
-| [sitzprobe][sitzprobe]            | A Lightning Network payment rehearsal utility                  |
-| [summary][summary]                | Print a nice summary of the node status                        |
+| Name                               | Short description                                                          |
+|------------------------------------|----------------------------------------------------------------------------|
+| [autopilot][autopilot]             | An autopilot that suggests channels that should be established             |
+| [autoreload][autoreload]           | A developer plugin that reloads a plugin under development when it changes |
+| [donations][donations]             | A simple donations page to accept donations from the web                   |
+| [graphql][graphql]                 | Exposes the c-lightning API over [graphql][graphql-spec]                   |
+| [persistent-channels][pers-chans]  | Maintains a number of channels to peers                                    |
+| [probe][probe]                     | Regularly probes the network for stability                                 |
+| [prometheus][prometheus]           | Lightning node exporter for the prometheus timeseries server               |
+| [rebalance][rebalance]             | Keeps your channels balanced                                               |
+| [sendinvoiceless][sendinvoiceless] | Sends some money without an invoice from the receiving node.               |
+| [sitzprobe][sitzprobe]             | A Lightning Network payment rehearsal utility                              |
+| [summary][summary]                 | Print a nice summary of the node status                                    |
 
 
 ## More Plugins from the Community
@@ -54,3 +55,4 @@ where the `plugin_file_name.py` should be an executable (`chmod a+x plugin_file_
 [sendinvoiceless]: https://github.com/lightningd/plugins/tree/master/sendinvoiceless
 [graphql]: https://github.com/nettijoe96/c-lightning-graphql
 [graphql-spec]: https://graphql.org/
+[autoreload]: https://github.com/lightningd/plugins/tree/master/autoreload
