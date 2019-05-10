@@ -109,7 +109,7 @@ def summary(plugin):
     reply['avail_out'] = avail_out.to_btc_str()
     reply['avail_in'] = avail_in.to_btc_str()
 
-    if plugin.fiat_per_btc:
+    if plugin.fiat_per_btc > 0:
         reply['utxo_amount'] += ' ({})'.format(to_fiatstr(utxo_amount))
         reply['avail_out'] += ' ({})'.format(to_fiatstr(avail_out))
         reply['avail_in'] += ' ({})'.format(to_fiatstr(avail_in))
@@ -172,6 +172,7 @@ def summary(plugin):
 def init(options, configuration, plugin):
     plugin.currency = options['summary-currency']
     plugin.currency_prefix = options['summary-currency-prefix']
+    plugin.fiat_per_btc = 0
     info = plugin.rpc.getinfo()
 
     # Try to grab conversion price
