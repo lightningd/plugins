@@ -22,7 +22,7 @@ def setup_routing_fees(plugin, route, msatoshi):
 
 def amounts_from_scid(plugin, scid):
     channels = plugin.rpc.listfunds().get('channels')
-    channel = next(c for c in channels if c['short_channel_id'] == scid)
+    channel = next(c for c in channels if 'short_channel_id' in c and c['short_channel_id'] == scid)
     our_msat = Millisatoshi(channel['our_amount_msat'])
     total_msat = Millisatoshi(channel['amount_msat'])
     return our_msat, total_msat
