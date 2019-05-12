@@ -4,6 +4,7 @@ from packaging import version
 from collections import namedtuple
 import lightning
 import json
+from math import floor, log10
 import requests
 import threading
 import time
@@ -46,6 +47,32 @@ class PriceThread(threading.Thread):
 def to_fiatstr(msat: Millisatoshi):
     return "{}{:.2f}".format(plugin.currency_prefix,
                               int(msat) / 10**11 * plugin.fiat_per_btc)
+
+# this is included here for backwards compatibility to old pylightning version
+def msat_to_short_str(msat, digits: int = 3):
+    """
+    Returns the shortmost string using common units representation.
+    Rounds to significant `digits`. Default: 3
+    """
+    # first round everything down 3 effective digits
+    round_to_n = lambda x, n: round(x, -int(floor(log10(x))) + (n - 1))
+    amount_eff = round_to_n(msat, digits)
+
+    # try different units and take shortest resulting normalized string
+    amounts = [
+        "%gbtc"  % (amount_eff / 1000 / 10**8),
+        "%gmbtc" % (amount_eff / 1000 / 10**5),
+        "%gµbtc" % (amount_eff / 1000 / 10**2),
+        "%gsat"  % (amount_eff / 1000),
+        "%gmsat"  % (amount_eff),
+    ]
+    return min(amounts, key=len)
+
+# appends an output table header that explains fields and capacity
+def append_header(table, max_msat):
+    short_str = msat_to_short_str(max_msat)
+    table.append("%c%-13sOUT/OURS %c IN/THEIRS%12s%c SCID           FLAG ALIAS"
+            % (draw.left, short_str, draw.mid, short_str, draw.right))
 
 
 @plugin.method("summary")
@@ -118,6 +145,7 @@ def summary(plugin):
         reply['channels_flags'] = 'P:private O:offline'
         reply['channels'] = ["\n"]
         biggest = max(max(int(c[1]), int(c[2])) for c in chans)
+        append_header(reply['channels'], biggest)
         for c in chans:
             # Create simple line graph, 47 chars wide.
             our_len = int(round(int(c[1]) / biggest * 23))
