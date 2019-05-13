@@ -2,13 +2,6 @@
 
 Community curated plugins for c-lightning.
 
-To install and activate a plugin you need to stop your lightningd and restart it with the `plugin` argument like this:
-
-```
-lightningd --plugin=/path/to/plugin/directory/plugin_file_name.py
-```
-
-where the `plugin_file_name.py` should be an executable (`chmod a+x plugin_file_name.py`) file and can be written in any programming language.
 
 ## Available plugins
 
@@ -25,6 +18,54 @@ where the `plugin_file_name.py` should be an executable (`chmod a+x plugin_file_
 | [sendinvoiceless][sendinvoiceless] | Sends some money without an invoice from the receiving node.               |
 | [sitzprobe][sitzprobe]             | A Lightning Network payment rehearsal utility                              |
 | [summary][summary]                 | Print a nice summary of the node status                                    |
+
+
+## Installation
+
+To install and activate a plugin you need to stop your lightningd and restart it
+with the `plugin` argument like this:
+
+```
+lightningd --plugin=/path/to/plugin/directory/plugin_file_name.py
+```
+
+Notes:
+ - The `plugin_file_name.py` must have executable permissions:
+   `chmod a+x plugin_file_name.py`
+ - A plugin can be written in any programming language, as it interacts with
+   `lightningd` purely using stdin/stdout pipes.
+
+Alternatively, especially when you use multiple plugins, you can copy or symlink
+all plugins into your `lightningd` installation's `./plugins` directory.
+In this case `lightningd` will start all executables it finds in this directory
+as a plugin on startup. In this case you don't need to manage all the
+`--plugin=...` parameters. Note: The `pay` plugin also resides here.
+
+
+### Pylightning
+
+All python plugins depend on the `pylightning` library. It can be given in
+several ways:
+
+ - Using `pip` tools: `pip3 install pylightning`
+ - Using the `PYTHONPATH` environment variable to include your clightning's
+   shipped `pylightning` library:
+
+```bash
+PYTHONPATH=/path/to/lightnind/contrib/pylightning lightningd
+```
+
+### Additional dependencies
+
+Additionally, some Python plugins come with a `requirements.txt` which can be
+used to install the plugin's dependencies using the `pip` tools:
+
+```bash
+pip3 install -r requirements.txt
+```
+
+Note: You might need to also specify the `--user` command line flag depending on
+your environment.
 
 
 ## More Plugins from the Community
