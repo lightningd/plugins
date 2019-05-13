@@ -1,24 +1,24 @@
 # Rebalance plugin
 
-This plugin moves liquidity between your channels using circular payments.
+This plugin moves liquidity between your channels using circular payments:
 
-The plugin can be started with `lightningd` by adding the following `--plugin`
-option. As with any `lightningd` plugin, the file has to be executable. As
-with any lightning python plugin, `pylightning` must be installed or in your
-`PYTHONPATH` environment variable.
 
-```
-lightningd --plugin=/path/to/plugins/rebalance.py
-```
+## Installation
 
-Once the plugin is active you can rebalance your channels liquidity by running:
+For general plugin installation instructions see the repos main
+[README.md](https://github.com/lightningd/plugins/blob/master/README.md#Installation)
+
+
+## Usage
+
+Once the plugin is installed and active, you can use the `lightning-cli` to
+rebalance channels like this:
 
 ```
 lightning-cli rebalance outgoing_scid incoming_scid [msatoshi] [maxfeepercent] [retry_for] [exemptfee]
 ```
 
-
-## Parameters
+### Parameters
 
  - The `outgoing_scid` is the short_channel_id of the sending channel,
  - The `incoming_scid` is the short_channel_id of the receiving channel.

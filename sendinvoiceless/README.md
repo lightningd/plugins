@@ -4,14 +4,14 @@ This plugin sends some msatoshis without needing to have an invoice from the
 receiving node. It uses circular payment: takes the money to the receiving node,
 pays in the form of routing fee, and brings some change back to close the circle.
 
-The plugin can be started with `lightningd` by adding the following `--plugin`
-option (adjusting the path to wherever the plugins are actually stored):
 
-```
-lightningd --plugin=/path/to/plugin/sendinvoiceless.py
-```
+## Installation
 
-## Send money
+For general plugin installation instructions see the repos main
+[README.md](https://github.com/lightningd/plugins/blob/master/README.md#Installation)
+
+
+## Usage
 Once the plugin is active you can send payment by running:
 
 ```
@@ -33,6 +33,7 @@ only be an integer.
 For a detailed explanation of the optional parameters, see also the manpage
 of the `pay` plugin: `lightning-pay(7)`
 
+
 ## List payments
 If you want to check if you got paid by using this method, you can call this:
 
@@ -47,6 +48,7 @@ The results will contain the `amount_msat` and `timestamp` of the payments.
 NOTE: The plugin currently does not use a database, so it can only assume fees
 have not changed in the past. It will also apply default fees for already
 forgotten channels. In both cases result can be slightly off by the changed fee.
+
 
 ## Weaknesses
 This is kind of hack with some downsides:
