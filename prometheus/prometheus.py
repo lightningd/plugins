@@ -25,6 +25,13 @@ class NodeCollector(BaseLnCollector):
         node_info_fam.add_metric(info_labels, info_labels)
         yield node_info_fam
 
+        blockheight = info['blockheight']
+        yield GaugeMetricFamily(
+            'lightning_node_blockheight',
+            "Current Bitcoin blockheight on this node.",
+            value=blockheight,
+        )
+
 
 class FundsCollector(BaseLnCollector):
     def collect(self):
