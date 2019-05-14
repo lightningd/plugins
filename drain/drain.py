@@ -394,7 +394,8 @@ def drain(plugin, scid: str, percentage: float=100, chunks: int=0, maxfeepercent
         retry_for: int=60, exemptfee: Millisatoshi=Millisatoshi(5000)):
     """Draining channel liquidity with circular payments.
 
-    Percentage defaults to 100. Chunks defaults to 0 (auto-detect).
+    Percentage defaults to 100, resulting in empty channel. Chunks defaults to 0 (auto-detect).
+    Use 'drain 50' to balance a channel that is above 50% capacity.
     """
     return execute('drain', scid, percentage, chunks, maxfeepercent, retry_for, exemptfee)
 
@@ -404,7 +405,8 @@ def fill(plugin, scid: str, percentage: float=100, chunks: int=0, maxfeepercent:
         retry_for: int=60, exemptfee: Millisatoshi=Millisatoshi(5000)):
     """Filling channel liquidity with circular payments.
 
-    Percentage defaults to 100. Chunks defaults to 0 (auto-detect).
+    Percentage defaults to 100, resulting in full channel. Chunks defaults to 0 (auto-detect).
+    Use 'fill 50' to balance a channel that is below 50% capacity.
     """
     return execute('fill', scid, percentage, chunks, maxfeepercent, retry_for, exemptfee)
 
