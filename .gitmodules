@@ -7,3 +7,6 @@
 [submodule "jwt-factory"]
 	path = jwt-factory
 	url = https://github.com/nettijoe96/jwt-factory.git
+[submodule "lightning-qt"]
+	path = lightning-qt
+	url = https://github.com/darosior/pylightning-qt
