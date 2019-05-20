@@ -85,8 +85,8 @@ def calc_optimal_amount(out_ours, out_total, in_ours, in_total, payload):
     in_ours, in_total = int(in_ours), int(in_total)
 
     in_theirs = in_total - in_ours
-    vo = out_ours - (out_total/2)
-    vi = (in_total/2) - in_ours
+    vo = int(out_ours - (out_total/2))
+    vi = int((in_total/2) - in_ours)
 
     # cases where one option can be eliminated because it exceeds other capacity
     if vo > in_theirs and vi > 0 and vi < out_ours:
