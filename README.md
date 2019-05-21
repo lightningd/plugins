@@ -36,12 +36,12 @@ Notes:
  - A plugin can be written in any programming language, as it interacts with
    `lightningd` purely using stdin/stdout pipes.
 
-Alternatively, especially when you use multiple plugins, you can copy or symlink
-all plugins into your `lightningd` installation's `./plugins` directory.
-In this case `lightningd` will start all executables it finds in this directory
-as a plugin on startup. In this case you don't need to manage all the
-`--plugin=...` parameters. Note: The `pay` plugin also resides here.
+### Automatic plugin initialization
 
+Alternatively, especially when you use multiple plugins, you can copy or symlink
+all plugin directories into your `~/.lightning/plugins` directory. The daemon
+will load each executeable it finds in sub-directories as a plugin. In this case
+you don't need to manage all the `--plugin=...` parameters.
 
 ### Pylightning
 
