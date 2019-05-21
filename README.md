@@ -73,6 +73,7 @@ your environment.
 
  - https://github.com/conscott/c-lightning-plugins
  - https://github.com/renepickhardt/c-lightning-plugin-collection
+ - https://github.com/fiatjaf/lightningd-gjson-rpc/tree/master/cmd
 
 ## Plugin Builder Resources
 
