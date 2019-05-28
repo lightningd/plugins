@@ -1,0 +1,3 @@
+networkx>=2.3
+numpy>=1.16
+pylightning>=0.0.7
