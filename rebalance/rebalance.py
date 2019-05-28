@@ -23,8 +23,11 @@ def setup_routing_fees(plugin, route, msatoshi):
 def get_channel(plugin, payload, peer_id, scid, check_state: bool=False):
     peer = plugin.rpc.listpeers(peer_id).get('peers')[0]
     channel = next(c for c in peer['channels'] if 'short_channel_id' in c and c['short_channel_id'] == scid)
-    if check_state and channel['state'] != "CHANNELD_NORMAL":
-        raise RpcError("drain", payload, {'message': 'Channel not in state CHANNELD_NORMAL, but: %s' % channel['state']})
+    if check_state:
+        if channel['state'] != "CHANNELD_NORMAL":
+            raise RpcError('rebalance', payload, {'message': 'Channel %s not in state CHANNELD_NORMAL, but: %s' % (scid, channel['state']) })
+        if not peer['connected']:
+            raise RpcError('rebalance', payload, {'message': 'Channel %s peer is not connected.' % scid})
     return channel
 
 
