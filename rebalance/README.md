@@ -18,22 +18,29 @@ rebalance channels like this:
 lightning-cli rebalance outgoing_scid incoming_scid [msatoshi] [maxfeepercent] [retry_for] [exemptfee]
 ```
 
+If you want to skip/default certain optional parameters but use others, you can
+use always the `lightning-cli -k` (key=value) syntax like this:
+
+```bash
+lightning-cli rebalance -k outgoing_scid=1514942x51x0 incoming_scid=1515133x10x0 maxfeepercent=1
+```
+
 ### Parameters
 
- - The `outgoing_scid` is the short_channel_id of the sending channel,
- - The `incoming_scid` is the short_channel_id of the receiving channel.
- - OPTIONAL: The `msatoshi` parameter sets the amount in milli-satoshis to be
-   transferred. If the parameter is left out, the plugin will calucate an amount
-   that will balance the channels 50%/50%. The parameter can also be given in
-   other denominations by appending i.e. '10000sat' or '0.01btc'.
- - OPTIONAL: `maxfeepercent` is a perecentage limit of the money to be paid in
-   fees and defaults to 0.5.
- - OPTIONAL: `retry_for` defines the number of seconds the plugin will retry to
-   find a suitable route. Default: 60 seconds.
- - OPTIONAL: The `exemptfee` option can be used for tiny payments which would be
-   dominated by the fee leveraged by forwarding nodes. Setting `exemptfee`
-   allows the `maxfeepercent` check to be skipped on fees that are smaller than
-   exemptfee (default: 5000 millisatoshi).
+- The `outgoing_scid` is the short_channel_id of the sending channel,
+- The `incoming_scid` is the short_channel_id of the receiving channel.
+- OPTIONAL: The `msatoshi` parameter sets the amount in milli-satoshis to be
+  transferred. If the parameter is left out, the plugin will calucate an amount
+  that will balance the channels 50%/50%. The parameter can also be given in
+  other denominations by appending i.e. '1000000sat', '0.01btc' or '10mbtc'.
+- OPTIONAL: `maxfeepercent` is a perecentage limit of the money to be paid in
+  fees and defaults to 0.5.
+- OPTIONAL: `retry_for` defines the number of seconds the plugin will retry to
+  find a suitable route. Default: 60 seconds.
+- OPTIONAL: The `exemptfee` option can be used for tiny payments which would be
+  dominated by the fee leveraged by forwarding nodes. Setting `exemptfee`
+  allows the `maxfeepercent` check to be skipped on fees that are smaller than
+  exemptfee (default: 5000 millisatoshi).
 
 
 ## Tips and Tricks

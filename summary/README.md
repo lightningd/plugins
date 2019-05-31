@@ -4,6 +4,11 @@ This plugin is a little hack to show a summary of your node, including
 fiat amounts.  If you have pylightning 0.0.7.1 or above, you get nice linegraphs,
 otherwise normal ASCII.
 
+## Installation
+
+For general plugin installation instructions see the repos main
+[README.md](https://github.com/lightningd/plugins/blob/master/README.md#Installation)
+
 ## Options:
 
 * --summary-currency: Currency ticker to look up on bitaverage (default: `USD`)
