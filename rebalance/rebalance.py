@@ -125,7 +125,8 @@ def rebalance(plugin, outgoing_scid, incoming_scid, msatoshi: Millisatoshi=None,
 
     This tool helps to move some msatoshis between your channels.
     """
-    msatoshi = Millisatoshi(msatoshi)
+    if msatoshi:
+        msatoshi = Millisatoshi(msatoshi)
     maxfeepercent = float(maxfeepercent)
     retry_for = int(retry_for)
     exemptfee = Millisatoshi(exemptfee)
