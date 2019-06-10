@@ -157,8 +157,8 @@ def rebalance(plugin, outgoing_scid, incoming_scid, msatoshi: Millisatoshi=None,
     if msatoshi > out_ours or msatoshi > in_total - in_ours:
         raise RpcError("rebalance", payload, {'message': 'Channel capacities too low'})
 
-    route_out = {'id': outgoing_node_id, 'channel': outgoing_scid}
-    route_in = {'id': my_node_id, 'channel': incoming_scid}
+    route_out = {'id': outgoing_node_id, 'channel': outgoing_scid, 'direction': int(not my_node_id < outgoing_node_id)}
+    route_in = {'id': my_node_id, 'channel': incoming_scid, 'direction': int(not incoming_node_id < my_node_id)}
     start_ts = int(time.time())
     label = "Rebalance-" + str(uuid.uuid4())
     description = "%s to %s" % (outgoing_scid, incoming_scid)
