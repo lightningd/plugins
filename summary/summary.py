@@ -207,6 +207,8 @@ def summary(plugin):
                 s += c[3][0:32]
             reply['channels'].append(s)
 
+    # Make modern lightning-cli format this human-readble by default!
+    reply['format-hint'] = 'simple'
     return reply
 
 
