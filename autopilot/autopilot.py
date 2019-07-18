@@ -2,11 +2,12 @@
 
 from bech32 import bech32_decode, CHARSET, convertbits
 from lib_autopilot import Autopilot, Strategy
-from lightning import LightningRpc, Plugin
-
+from lightning import LightningRpc, Plugin, RpcError
+import random
 import math
 import networkx as nx
-
+import dns.resolver
+import time
 
 class CLightning_autopilot(Autopilot):
 
@@ -39,14 +40,17 @@ class CLightning_autopilot(Autopilot):
         This is necessary in case the node operating the autopilot has never
         been connected to the lightning network.
         """
-        try:
-            for nodeid in random.shuffle(self.__get_seed_keys()):
+        seed_keys = self.__get_seed_keys()
+        random.shuffle(seed_keys) 
+        for nodeid in seed_keys:
+            try:
                 print("peering with node: {}".format(nodeid))
                 self.__rpc_interface.connect(nodeid)
                 # FIXME: better strategy than sleep(2) for building up
                 time.sleep(2)
-        except:
-            pass
+            except RpcError as e:
+                print("Unable to connect to node: {}".format(nodeid))
+                print(e)
 
     def __download_graph(self):
         """
