@@ -10,3 +10,6 @@
 [submodule "lightning-qt"]
 	path = lightning-qt
 	url = https://github.com/darosior/pylightning-qt
+[submodule "csvexportpays"]
+	path = csvexportpays
+	url = git@github.com:0xB10C/c-lightning-plugin-csvexportpays.git
