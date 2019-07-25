@@ -83,6 +83,7 @@ your environment.
  - [Python Plugin API & RPC Client][python-api] ([PyPI][python-api-pypi]) by @cdecker and [a video tutorial](https://www.youtube.com/watch?v=FYs1I-pCJIg) by @renepickhardt
  - [Go Plugin API & RPC Client][go-api] by @niftynei
  - [C++ Plugin API & RPC Client][cpp-api] by @darosior
+ - [Javascript Plugin API & RPC Client][js-api] by @darosior
 
 [pers-chans]: https://github.com/lightningd/plugins/tree/master/persistent-channels
 [probe]: https://github.com/lightningd/plugins/tree/master/probe
@@ -103,3 +104,4 @@ your environment.
 [autoreload]: https://github.com/lightningd/plugins/tree/master/autoreload
 [lightning-qt]: https://github.com/darosior/pylightning-qt
 [cpp-api]: https://github.com/darosior/lightningcpp
+[js-api]: https://github.com/darosior/clightningjs
