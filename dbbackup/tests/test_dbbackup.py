@@ -25,20 +25,21 @@ def test_dbbackup_init(node_factory, executor):
     with pytest.raises(ConnectionResetError):
         l1.start()
     # wait_for_log only works on running daemon and ours is exiting with rpc.stop()
-    l1.daemon.is_in_log(r'\*\*BROKEN\*\* plugin-dbbackup.py No db-backup-file specified', start=l1.daemon.logsearch_start)
+    time.sleep(3)
+    assert l1.daemon.is_in_log(r'\*\*BROKEN\*\* plugin-dbbackup.py No db-backup-file specified', start=l1.daemon.logsearch_start)
 
     # Now with an invalid file path (a directory), should error and shutdown
     l1.daemon.opts['db-backup-file'] = node_factory.directory
     with pytest.raises(ConnectionResetError):
         l1.start()
-    l1.daemon.is_in_log(r'\*\*BROKEN\*\* plugin-dbbackup.py Could not create db-backup-file', start=l1.daemon.logsearch_start)
+    assert l1.daemon.is_in_log(r'\*\*BROKEN\*\* plugin-dbbackup.py Could not create db-backup-file', start=l1.daemon.logsearch_start)
 
     # Create proper backup
     backup = os.path.join(node_factory.directory, "lightningd.sqlite3-backup")
     l1.daemon.opts['db-backup-file'] = backup
     l1.start()
-    l1.daemon.is_in_log('plugin-dbbackup.py Creating new db-backup-file: {}'.format(backup), start=l1.daemon.logsearch_start)
-    l1.daemon.is_in_log(r'plugin-dbbackup.py Initialized', start=l1.daemon.logsearch_start)
+    assert l1.daemon.is_in_log('plugin-dbbackup.py Creating new db-backup-file: {}'.format(backup), start=l1.daemon.logsearch_start)
+    assert l1.daemon.is_in_log(r'plugin-dbbackup.py Initialized', start=l1.daemon.logsearch_start)
 
     # Disable the plugin, restart and trigger db change so it will differ from the backup
     l1.stop()
@@ -55,9 +56,10 @@ def test_dbbackup_init(node_factory, executor):
 
     needle = l1.daemon.logsearch_start
     db = os.path.join(l1.daemon.lightning_dir, "lightningd.sqlite3")
-    l1.daemon.is_in_log(r'Found existing db-backup-file: {} comparing...'.format(backup, db), start=needle)
-    l1.daemon.is_in_log(r'\*\*BROKEN\*\* plugin-dbbackup.py Existing db-backup-file differs from original database', start=needle)
-    l1.daemon.is_in_log(r'UNUSUAL lightningd(.*): JSON-RPC shutdown', start=needle)
+    time.sleep(2)
+    assert l1.daemon.is_in_log(r'Found existing db-backup-file: {} comparing...'.format(backup, db), start=needle)
+    assert l1.daemon.is_in_log(r'\*\*BROKEN\*\* plugin-dbbackup.py Existing db-backup-file differs from original database', start=needle)
+    assert l1.daemon.is_in_log(r'UNUSUAL lightningd(.*): JSON-RPC shutdown', start=needle)
 
 
 @unittest.skipIf(not DEVELOPER, "needs DEVELOPER=1")
@@ -116,7 +118,7 @@ def test_dbbackup_write_fail(node_factory, executor):
     with pytest.raises(RpcError):
         l1.rpc.newaddr()        # Trigger a (post-init) database change
     # cannot use wait_for_log because daemon is dying
-    l1.daemon.is_in_log(r'\*\*BROKEN\*\* plugin-dbbackup.py Failed to write to backup:', start=l1.daemon.logsearch_start)
+    assert l1.daemon.is_in_log(r'\*\*BROKEN\*\* plugin-dbbackup.py Failed to write to backup:', start=l1.daemon.logsearch_start)
 
     # un-rename backup file and restart, also tests that failed write
     # was not committed-to in original database
@@ -157,5 +159,5 @@ def test_dbbackup_plugin_kill(node_factory, executor):
     assert logline is not None
     pid = int(re.search(r'plugin-manager started\((\d+)\).*dbbackup.py', logline).group(1))
     os.kill(pid, signal.SIGTERM)
-    time.sleep(1)
-    assert l1.daemon.is_in_log(r'\*\*BROKEN\*\*')
+    time.sleep(2)
+    assert l1.daemon.is_in_log(r'\*\*BROKEN\*\* .*')
