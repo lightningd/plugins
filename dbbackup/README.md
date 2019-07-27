@@ -17,7 +17,7 @@ For general plugin installation instructions see the repos main
 
 ## Usage
 
-If the given [`db-backup-file`] doesn't exist yet, it will be created from a
+If the given `db-backup-file` doesn't exist yet, it will be created from a
 copy of CL's database.
 
 During startup, any existing backup file is checked to match CL's current

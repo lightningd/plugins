@@ -5,7 +5,6 @@ import shutil
 import sqlite3
 from stat import S_IRUSR, S_IWUSR
 
-
 plugin = Plugin()
 plugin.sqlite_pre_init_cmds = []
 plugin.initted = False
@@ -24,6 +23,13 @@ def new_backup_file(db, backup):
         plugin.log('Creating new db-backup-file: {}'.format(backup))
     except Exception as e:
         raise NewBackupFileError(backup, e)
+
+
+def compare_dbs(db1, db2):
+    for a, b in zip(db1.iterdump(), db2.iterdump()):
+        if a != b:
+            return False
+    return True
 
 
 @plugin.init()
@@ -47,7 +53,7 @@ def init(configuration, options, plugin):
                 db1.execute(c)
 
             # If it then matches orignal db, replace backup with copy ... else abort
-            dbs_match = [x for x in db1.iterdump()] == [x for x in db2.iterdump()]
+            dbs_match = compare_dbs(db1, db2)
             db1.close()
             db2.close()
             if dbs_match:
@@ -79,14 +85,14 @@ def db_write(plugin, writes):
     if not plugin.initted:
         plugin.sqlite_pre_init_cmds += writes
     else:
-        try:
-            for c in writes:
+        for c in writes:
+            try:
                 plugin.conn.execute(c)
-        except Exception as e:
-            plugin.log('Failed to write to backup: {}'.format(e), 'error')
-            # This will `FATAL SIGNAL 6` crash lightningd, but it ensures the failed write
-            # (here) to backup is also not committed-to in the original database
-            return False
+            except Exception as e:
+                plugin.log('Failed to write to backup: {}, SQL-statement: {}'.format(e, c), 'error')
+                # This will `FATAL SIGNAL 6` crash lightningd, but it ensures the failed write
+                # (here) to backup is also not committed-to in the original database
+                return False
 
     return True
 
