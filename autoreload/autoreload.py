@@ -7,7 +7,11 @@ import threading
 import time
 import os
 
-plugin = Plugin()
+try:
+    # C-lightning v0.7.2
+    plugin = Plugin(dynamic=False)
+except:
+    plugin = Plugin()
 
 
 class ChildPlugin(object):
