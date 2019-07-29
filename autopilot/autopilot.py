@@ -113,7 +113,11 @@ class CLightning_autopilot(Autopilot):
                 print("Could not open a channel to {} with capacity of {}. Error: {}".format(nodeid, satoshis, str(e)))
 
 
-plugin = Plugin()
+try:
+    # C-lightning v0.7.2
+    plugin = Plugin(dynamic=False)
+except:
+    plugin = Plugin()
 
 
 @plugin.init()
