@@ -1,6 +1,7 @@
 #! /usr/bin/env python3
 from lightning import Plugin, Millisatoshi, RpcError
 from collections import defaultdict
+from functools import wraps
 from os import path
 import random
 import threading
@@ -896,7 +897,16 @@ Rusty Russell,
 Senior Code Monkey."""
 
 
+# Format hint `simple` makes lightning-cli print it as (-H) human readable
+def format_simple(fn):
+    @wraps(fn)
+    def wrapped(*args, **kwargs):
+        return {'text': fn(*args, **kwargs), 'format-hint': 'simple'}
+    return wrapped
+
+
 @plugin.method("helpme")
+@format_simple
 def helpme(plugin, command=None, *args):
     """Gives helpful hints about running this node."""
 
