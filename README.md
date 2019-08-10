@@ -17,6 +17,7 @@ Community curated plugins for c-lightning.
 | [probe][probe]                     | Regularly probes the network for stability                                 |
 | [prometheus][prometheus]           | Lightning node exporter for the prometheus timeseries server               |
 | [rebalance][rebalance]             | Keeps your channels balanced                                               |
+| [reckless][reckless]               | An **experimental** plugin manager (search/install plugins)                |
 | [sendinvoiceless][sendinvoiceless] | Sends some money without an invoice from the receiving node.               |
 | [sitzprobe][sitzprobe]             | A Lightning Network payment rehearsal utility                              |
 | [summary][summary]                 | Print a nice summary of the node status                                    |
@@ -107,3 +108,4 @@ your environment.
 [cpp-api]: https://github.com/darosior/lightningcpp
 [js-api]: https://github.com/darosior/clightningjs
 [monitor]: https://github.com/renepickhardt/plugins/tree/master/monitor
+[reckless]: https://github.com/darosior/reckless
