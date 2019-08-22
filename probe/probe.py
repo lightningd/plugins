@@ -121,6 +121,15 @@ def probe(request, plugin, node_id=None, **kwargs):
     })
 
 
+@plugin.method('probe-stats')
+def stats(plugin):
+    return {
+        'pending_probes': len(plugin.pending_probes),
+        'exclusions': len(exclusions),
+        'temporary_exclusions': len(temporary_exclusions),
+    }
+
+
 def complete_probe(plugin, request, probe_id, payment_hash):
     s = plugin.Session()
     p = s.query(Probe).get(probe_id)
