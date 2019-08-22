@@ -121,6 +121,51 @@ def probe(request, plugin, node_id=None, **kwargs):
     })
 
 
+@plugin.method('traceroute')
+def traceroute(plugin, node_id, **kwargs):
+    traceroute = {
+        'destination': node_id,
+        'started_at': str(datetime.now()),
+        'probes': [],
+    }
+    try:
+        traceroute['route'] = plugin.rpc.getroute(
+            traceroute['destination'],
+            msatoshi=10000,
+            riskfactor=1,
+        )['route']
+        traceroute['payment_hash'] = ''.join(random.choice(string.hexdigits) for _ in range(64))
+    except RpcError:
+        traceroute['failcode'] = -1
+        return traceroute
+
+    # For each prefix length, shorten the route and attempt the payment
+    for l in range(1, len(traceroute['route'])+1):
+        probe = {
+            'route': traceroute['route'][:l],
+            'payment_hash': ''.join(random.choice(string.hexdigits) for _ in range(64)),
+            'started_at': str(datetime.now()),
+        }
+        probe['destination'] = probe['route'][-1]['id']
+        plugin.rpc.sendpay(probe['route'], probe['payment_hash'])
+
+        try:
+            plugin.rpc.waitsendpay(probe['payment_hash'], timeout=30)
+            raise ValueError("The recipient guessed the preimage? Cryptography is broken!!!")
+        except RpcError as e:
+            probe['finished_at'] = str(datetime.now())
+            if e.error['code'] == 200:
+                probe['error'] = "Timeout"
+                break
+            else:
+                probe['error'] = e.error['data']
+                probe['failcode'] = e.error['data']['failcode']
+
+        traceroute['probes'].append(probe)
+
+    return traceroute
+
+
 @plugin.method('probe-stats')
 def stats(plugin):
     return {
