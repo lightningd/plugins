@@ -86,17 +86,18 @@ def start_probe(plugin):
 
 
 @plugin.method('probe')
-def probe(plugin):
+def probe(request, plugin, node_id=None):
     res = None
-    nodes = plugin.rpc.listnodes()['nodes']
-    dst = choice(nodes)
+    if node_id is None:
+        nodes = plugin.rpc.listnodes()['nodes']
+        node_id = choice(nodes)['nodeid']
 
     s = plugin.Session()
-    p = Probe(destination=dst['nodeid'], started_at=datetime.now())
+    p = Probe(destination=node_id, started_at=datetime.now())
     s.add(p)
     try:
         route = plugin.rpc.getroute(
-            dst['nodeid'],
+            node_id,
             msatoshi=10000,
             riskfactor=1,
             exclude=exclusions + list(temporary_exclusions.keys())
@@ -126,7 +127,7 @@ def probe(plugin):
         )
         exclusions.append(exclusion)
 
-    if p.failcode == 4103:
+    if p.failcode in [21, 4103]:
         exclusion = "{erring_channel}/{erring_direction}".format(**error)
         print('Adding temporary exclusion for channel {} ({} total))'.format(
             exclusion, len(temporary_exclusions))
