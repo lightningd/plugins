@@ -85,8 +85,8 @@ def start_probe(plugin):
     t.start()
 
 
-@plugin.method('probe')
-def probe(request, plugin, node_id=None):
+@plugin.async_method('probe')
+def probe(request, plugin, node_id=None, **kwargs):
     res = None
     if node_id is None:
         nodes = plugin.rpc.listnodes()['nodes']
@@ -108,11 +108,17 @@ def probe(request, plugin, node_id=None):
         p.failcode = -1
         res = p.jsdict()
         s.commit()
-        return res
-    s.commit()
+        return request.set_result(res)
 
+    s.commit()
+    plugin.rpc.sendpay(route, p.payment_hash)
+    complete_probe(plugin, request, p.id)
+
+
+def complete_probe(plugin, request, probe_id):
+    s = plugin.Session()
+    p = s.query(Probe).get(probe_id)
     try:
-        plugin.rpc.sendpay(route, p.payment_hash)
         plugin.rpc.waitsendpay(p.payment_hash)
     except RpcError as e:
         error = e.error['data']
@@ -139,7 +145,7 @@ def probe(request, plugin, node_id=None):
     res = p.jsdict()
     s.commit()
     s.close()
-    return res
+    request.set_result(res)
 
 
 def clear_temporary_exclusion(plugin):
