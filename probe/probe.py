@@ -86,7 +86,7 @@ def start_probe(plugin):
 
 
 @plugin.async_method('probe')
-def probe(request, plugin, node_id=None, **kwargs):
+def probe(plugin, request, node_id=None, **kwargs):
     res = None
     if node_id is None:
         nodes = plugin.rpc.listnodes()['nodes']
