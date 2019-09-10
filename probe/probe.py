@@ -212,7 +212,7 @@ def poll_payments(plugin):
     """Iterate through all probes and complete the finalized ones.
     """
     for probe in plugin.pending_probes:
-        p = plugin.rpc.listpayments(None, payment_hash=probe['payment_hash'])
+        p = plugin.rpc.listsendpays(None, payment_hash=probe['payment_hash'])
         if p['payments'][0]['status'] == 'pending':
             continue
 
