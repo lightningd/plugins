@@ -73,10 +73,10 @@ your environment.
 
 ## More Plugins from the Community
 
- - https://github.com/conscott/c-lightning-plugins
- - https://github.com/renepickhardt/c-lightning-plugin-collection
- - https://github.com/fiatjaf/lightningd-gjson-rpc/tree/master/cmd
- - https://github.com/rsbondi/clightning-go-plugin/tree/master/remoteRPC
+ - [@conscott's plugins](https://github.com/conscott/c-lightning-plugins)
+ - [@renepickhardt's plugins](https://github.com/renepickhardt/c-lightning-plugin-collection)
+ - [@fiatjaf's plugins](https://github.com/fiatjaf/lightningd-gjson-rpc/tree/master/cmd)
+ - [@rsbondi's plugins](https://github.com/rsbondi/clightning-go-plugin)
 
 ## Plugin Builder Resources
 
