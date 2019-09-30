@@ -16,7 +16,7 @@ def setup_routing_fees(plugin, route, msatoshi, payload):
         ch = next(c for c in channels.get('channels') if c['destination'] == r['id'])
         fee = Millisatoshi(ch['base_fee_millisatoshi'])
         # BOLT #7 requires fee >= fee_base_msat + ( amount_to_forward * fee_proportional_millionths / 1000000 )
-        fee += (msatoshi * ch['fee_per_millionth'] + 999_999) // 1_000_000     # integer math trick to round up
+        fee += (msatoshi * ch['fee_per_millionth'] + 10**6 - 1) // 10**6       # integer math trick to round up
         if ch['source'] == payload['nodeid']:
             fee += payload['msatoshi']
         msatoshi += fee
