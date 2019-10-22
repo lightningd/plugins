@@ -80,7 +80,7 @@ class Probe(Base):
         }
 
 def start_probe(plugin):
-    t = threading.Thread(target=probe, args=[plugin])
+    t = threading.Thread(target=probe, args=[plugin, None])
     t.daemon = True
     t.start()
 
@@ -108,7 +108,7 @@ def probe(plugin, request, node_id=None, **kwargs):
         p.failcode = -1
         res = p.jsdict()
         s.commit()
-        return request.set_result(res)
+        return request.set_result(res) if request else None
 
     s.commit()
     plugin.rpc.sendpay(route, p.payment_hash)
