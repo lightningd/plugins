@@ -4,13 +4,6 @@ import re
 import time
 import uuid
 
-# TODOs:
-#  - fix: try increasing chunks on route errors
-#  - fix: sometimes, if we ran in error, not all chunk results are returned, i.e. [2/4, error] but not 1/4.
-#  - fix: occasionally strange route errors
-#  - feat: set HTLC_FEE MIN/MAX/STP by feerate
-#  - feat: convert a 'drain 0%' to a 'fill 100%' and vice versa instead of throwing error
-#  - chore: reconsider use of listchannels
 plugin = Plugin()
 
 
@@ -394,8 +387,9 @@ def drain(plugin, scid: str, percentage: float=100, chunks: int=0, maxfeepercent
         retry_for: int=60, exemptfee: Millisatoshi=Millisatoshi(5000)):
     """Draining channel liquidity with circular payments.
 
-    Percentage defaults to 100, resulting in empty channel. Chunks defaults to 0 (auto-detect).
-    Use 'drain 50' to balance a channel that is above 50% capacity.
+    Percentage defaults to 100, resulting in an empty channel.
+    Chunks defaults to 0 (auto-detect).
+    Use 'drain 10' to decrease a channels total balance by 10%.
     """
     return execute('drain', scid, percentage, chunks, maxfeepercent, retry_for, exemptfee)
 
@@ -405,8 +399,9 @@ def fill(plugin, scid: str, percentage: float=100, chunks: int=0, maxfeepercent:
         retry_for: int=60, exemptfee: Millisatoshi=Millisatoshi(5000)):
     """Filling channel liquidity with circular payments.
 
-    Percentage defaults to 100, resulting in full channel. Chunks defaults to 0 (auto-detect).
-    Use 'fill 50' to balance a channel that is below 50% capacity.
+    Percentage defaults to 100, resulting in a full channel.
+    Chunks defaults to 0 (auto-detect).
+    Use 'fill 10' to incease a channels total balance by 10%.
     """
     return execute('fill', scid, percentage, chunks, maxfeepercent, retry_for, exemptfee)
 
