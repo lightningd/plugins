@@ -33,7 +33,7 @@ Failcode -1 and 16399 are special:
    `payment_hash` at random :-)
 
 """
-from datetime import datetime
+from datetime import datetime, timedelta
 from lightning import Plugin, RpcError
 from random import choice
 from sqlalchemy import Column, Integer, String, DateTime
@@ -47,13 +47,22 @@ import os
 import random
 import string
 import threading
-
+from copy import copy
 
 Base = declarative_base()
 plugin = Plugin()
 
 exclusions = []
 temporary_exclusions = {}
+
+
+class LightningJSONEncoder(json.JSONEncoder):
+    def default(self, o):
+        try:
+            return o.to_json()
+        except NameError:
+            pass
+        return json.JSONEncoder.default(self, o)
 
 
 class Probe(Base):
@@ -67,6 +76,20 @@ class Probe(Base):
     payment_hash = Column(String)
     started_at = Column(DateTime)
     finished_at = Column(DateTime)
+    timeout_at = Column(DateTime)
+
+    def __init__(self, destination, callback=None, timeout=30, extra=None):
+        self.started_at = datetime.now()
+        self.timeout_at = self.started_at + timedelta(seconds=timeout)
+        self.payment_hash = ''.join(choice(string.hexdigits) for _ in range(64))
+        self.route = None
+        self.error = None
+        self.erring_channel = None
+        self.callback = callback
+        self.destination = destination
+
+        # Extra data to be passed to the callback upon completion
+        self.extra = extra
 
     def jsdict(self):
         return {
@@ -79,6 +102,7 @@ class Probe(Base):
             'finished_at': str(self.finished_at),
         }
 
+
 def start_probe(plugin):
     t = threading.Thread(target=probe, args=[plugin, None])
     t.daemon = True
@@ -86,26 +110,39 @@ def start_probe(plugin):
 
 
 @plugin.async_method('probe')
+<<<<<<< HEAD
 def probe(plugin, request, node_id=None, **kwargs):
     res = None
+=======
+def probe(request, plugin, node_id=None, amount=10000, excludes=None, **kwargs):
+    """Attempt to reach the `node_id` node with a small payment once.
+    """
+
+    # If we are not told which node to probe, just select a random one.
+>>>>>>> probe: General cleanup and parallel probing
     if node_id is None:
         nodes = plugin.rpc.listnodes()['nodes']
         node_id = choice(nodes)['nodeid']
 
+    # If we are not told which channels to exclude use the global ones.
+    if excludes is None:
+        excludes = exclusions + list(temporary_exclusions.keys())
+
     s = plugin.Session()
-    p = Probe(destination=node_id, started_at=datetime.now())
+    p = Probe(destination=node_id)
     s.add(p)
     try:
         route = plugin.rpc.getroute(
             node_id,
-            msatoshi=10000,
+            msatoshi=amount,
             riskfactor=1,
-            exclude=exclusions + list(temporary_exclusions.keys())
+            exclude=excludes,
         )['route']
         p.route = ','.join([r['channel'] for r in route])
-        p.payment_hash = ''.join(choice(string.hexdigits) for _ in range(64))
+        print("Found a route to {}: {}".format(node_id, route))
     except RpcError:
         p.failcode = -1
+        p.finished_at = datetime.now()
         res = p.jsdict()
         s.commit()
         return request.set_result(res) if request else None
@@ -114,11 +151,70 @@ def probe(plugin, request, node_id=None, **kwargs):
     plugin.rpc.sendpay(route, p.payment_hash)
     plugin.pending_probes.append({
         'request': request,
-        'probe_id': p.id,
-        'payment_hash': p.payment_hash,
+        'probe_id': copy(p.id),
+        'payment_hash': copy(p.payment_hash),
         'callback': complete_probe,
         'plugin': plugin,
+        'timeout_at': p.timeout_at
     })
+
+
+@plugin.method('probe-stats')
+def stats(plugin):
+    return {
+        'pending_probes': len(plugin.pending_probes),
+        'exclusions': len(exclusions),
+        'temporary_exclusions': len(temporary_exclusions),
+    }
+
+
+def complete_probe(plugin, request, probe_id, payment_hash, timeout_at, timeout=False):
+    print("Probe {} is complete".format(probe_id))
+    s = plugin.Session()
+    p = s.query(Probe).get(probe_id)
+
+    payments = plugin.rpc.listsendpays(payment_hash=p.payment_hash)['payments']
+    if len(payments) != 1:
+        raise ValueError("Callback for probe {} called, but no matching sendpay?".format(probe_id))
+    status = payments[0]['status']
+
+    is_timeout = status == 'pending'
+
+    if not is_timeout:
+        # If this is not a timeout, we can fetch more information, but only
+        # using waitsendpay
+        try:
+            plugin.rpc.waitsendpay(payment_hash)
+        except RpcError as e:
+            error = e.error['data']
+            p.erring_channel = e.error['data']['erring_channel']
+            p.failcode = e.error['data']['failcode']
+            p.error = json.dumps(error, cls=LightningJSONEncoder)
+    else:
+        p.erring_channel = None
+        p.failcode = -2
+        p.error = None
+
+    if p.failcode in [16392, 16394]:
+        exclusion = "{erring_channel}/{erring_direction}".format(**error)
+        print('Adding exclusion for channel {} ({} total))'.format(
+            exclusion, len(exclusions))
+        )
+        exclusions.append(exclusion)
+
+    if p.failcode in [21, 4103, 4108]:
+        exclusion = "{erring_channel}/{erring_direction}".format(**error)
+        print('Adding temporary exclusion for channel {} ({} total))'.format(
+            exclusion, len(temporary_exclusions))
+        )
+        expiry = time() + plugin.probe_exclusion_duration
+        temporary_exclusions[exclusion] = expiry
+
+    p.finished_at = datetime.now()
+    res = p.jsdict()
+    s.commit()
+    s.close()
+    request.set_result(res)
 
 
 @plugin.method('traceroute')
@@ -166,60 +262,25 @@ def traceroute(plugin, node_id, **kwargs):
     return traceroute
 
 
-@plugin.method('probe-stats')
-def stats(plugin):
-    return {
-        'pending_probes': len(plugin.pending_probes),
-        'exclusions': len(exclusions),
-        'temporary_exclusions': len(temporary_exclusions),
-    }
-
-
-def complete_probe(plugin, request, probe_id, payment_hash):
-    s = plugin.Session()
-    p = s.query(Probe).get(probe_id)
-    try:
-        plugin.rpc.waitsendpay(p.payment_hash)
-    except RpcError as e:
-        error = e.error['data']
-        p.erring_channel = e.error['data']['erring_channel']
-        p.failcode = e.error['data']['failcode']
-        p.error = json.dumps(error)
-
-    if p.failcode in [16392, 16394]:
-        exclusion = "{erring_channel}/{erring_direction}".format(**error)
-        print('Adding exclusion for channel {} ({} total))'.format(
-            exclusion, len(exclusions))
-        )
-        exclusions.append(exclusion)
-
-    if p.failcode in [21, 4103]:
-        exclusion = "{erring_channel}/{erring_direction}".format(**error)
-        print('Adding temporary exclusion for channel {} ({} total))'.format(
-            exclusion, len(temporary_exclusions))
-        )
-        expiry = time() + plugin.probe_exclusion_duration
-        temporary_exclusions[exclusion] = expiry
-
-    p.finished_at = datetime.now()
-    res = p.jsdict()
-    s.commit()
-    s.close()
-    request.set_result(res)
-
-
 def poll_payments(plugin):
     """Iterate through all probes and complete the finalized ones.
     """
     for probe in plugin.pending_probes:
         p = plugin.rpc.listsendpays(None, payment_hash=probe['payment_hash'])
-        if p['payments'][0]['status'] == 'pending':
+        timeout = False
+        print("Polling {} timeout={}, now={}".format(probe['probe_id'], probe['timeout_at'], datetime.now()))
+        if probe['timeout_at'] < datetime.now():
+            print("Probe {} timed out.".format(probe['payment_hash']))
+            # Fall through to the callback
+            timeout = True
+        elif p['payments'][0]['status'] == 'pending':
             continue
 
         plugin.pending_probes.remove(probe)
         cb = probe['callback']
         del probe['callback']
-        cb(**probe)
+        cb(timeout=timeout, **probe)
+
 
 def clear_temporary_exclusion(plugin):
     timed_out = [k for k, v in temporary_exclusions.items() if v < time()]
@@ -234,7 +295,7 @@ def clear_temporary_exclusion(plugin):
 def schedule(plugin):
     # List of scheduled calls with next runtime, function and interval
     next_runs = [
-        (time() + 300, clear_temporary_exclusion, 300),
+        (time() + 30, clear_temporary_exclusion, 30),
         (time() + plugin.probe_interval, start_probe, plugin.probe_interval),
         (time() + 1, poll_payments, 1),
     ]
@@ -262,7 +323,7 @@ def init(configuration, options, plugin):
         'probes.db'
     )
 
-    engine = create_engine(db_filename, echo=True)
+    engine = create_engine(db_filename, echo=False, connect_args={'check_same_thread': False})
     Base.metadata.create_all(engine)
     plugin.Session = sessionmaker()
     plugin.Session.configure(bind=engine)
