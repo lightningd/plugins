@@ -34,7 +34,7 @@ Failcode -1 and 16399 are special:
 
 """
 from datetime import datetime, timedelta
-from lightning import Plugin, RpcError
+from pyln.client import Plugin, RpcError
 from random import choice
 from sqlalchemy import Column, Integer, String, DateTime
 from sqlalchemy import create_engine
@@ -110,16 +110,11 @@ def start_probe(plugin):
 
 
 @plugin.async_method('probe')
-<<<<<<< HEAD
-def probe(plugin, request, node_id=None, **kwargs):
-    res = None
-=======
 def probe(request, plugin, node_id=None, amount=10000, excludes=None, **kwargs):
     """Attempt to reach the `node_id` node with a small payment once.
     """
 
     # If we are not told which node to probe, just select a random one.
->>>>>>> probe: General cleanup and parallel probing
     if node_id is None:
         nodes = plugin.rpc.listnodes()['nodes']
         node_id = choice(nodes)['nodeid']
