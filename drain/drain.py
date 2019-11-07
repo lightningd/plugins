@@ -17,10 +17,10 @@ HTLC_FEE_MAX = Millisatoshi('100000sat')
 HTLC_FEE_PAT = re.compile("^.* HTLC fee: ([0-9]+sat).*$")
 
 
-def setup_routing_fees(plugin, payload, route, substractfees: bool=False):
+def setup_routing_fees(plugin, payload, route, amount, substractfees: bool=False):
     delay = int(plugin.get_option('cltv-final'))
 
-    amount_iter = payload['amount']
+    amount_iter = amount
     for r in reversed(route):
         r['msatoshi'] = amount_iter.millisatoshis
         r['amount_msat'] = amount_iter
@@ -36,7 +36,7 @@ def setup_routing_fees(plugin, payload, route, substractfees: bool=False):
     # amounts have to be calculated the other way when being fee substracted
     # we took the upper loop as well for the delay parameter
     if substractfees:
-        amount_iter = payload['amount']
+        amount_iter = amount
         first = True
         for r in route:
             channels = plugin.rpc.listchannels(r['channel'])
@@ -46,7 +46,7 @@ def setup_routing_fees(plugin, payload, route, substractfees: bool=False):
                 # BOLT #7 requires fee >= fee_base_msat + ( amount_to_forward * fee_proportional_millionths / 1000000 )
                 fee += (amount_iter * ch['fee_per_millionth'] + 10**6 - 1) // 10**6    # integer math trick to round up
                 if fee > amount_iter:
-                    raise RpcError(payload['command'], payload, {'message': 'cannot cover fees to %s %s' % (payload['command'], payload['amount'])})
+                    raise RpcError(payload['command'], payload, {'message': 'cannot cover fees to %s %s' % (payload['command'], amount)})
                 amount_iter -= fee
             first = False
             r['msatoshi'] = amount_iter.millisatoshis
@@ -64,7 +64,10 @@ def get_channel(plugin, payload, peer_id, scid):
     return channel
 
 
-def spendable_from_scid(plugin, payload, scid):
+def spendable_from_scid(plugin, payload, scid=None):
+    if scid is None:
+        scid = payload['scid']
+
     # only fetch funds once to reduce RPC load
     if not "funds" in payload:
         payload['funds'] = plugin.rpc.listfunds().get('channels')
@@ -123,18 +126,15 @@ def find_worst_channel(route):
 def test_or_set_chunks(plugin, payload, my_id):
     scid = payload['scid']
     cmd = payload['command']
-    spendable, receivable = spendable_from_scid(plugin, payload, scid)
+    spendable, receivable = spendable_from_scid(plugin, payload)
     total = spendable + receivable
-    target = total * (0.01 * (100 - payload['percentage']))
+    amount = total * 0.01 * payload['percentage']
 
-    if cmd == "drain":
-        if target >= spendable:
-            raise RpcError(payload['command'], payload, {'message': 'channel already below target value'})
-        amount = spendable - target
-    if cmd == "fill":
-        if target >= receivable:
-            raise RpcError(payload['command'], payload, {'message': 'channel already above target value'})
-        amount = receivable - target
+    # if capacity exceeds, limit amount to full or empty channel
+    if cmd == "drain" and amount > spendable:
+        amount = spendable
+    if cmd == "fill" and amount > receivable:
+        amount = receivable
 
     # get all spendable/receivables for our channels
     channels = {}
@@ -206,11 +206,11 @@ def cleanup(plugin, payload, error=None):
         payload['success_msg'] += ['Partially completed %d/%d chunks. Error: %s' % (successful_chunks, payload['chunks'], str(error))]
         return payload['success_msg']
     if error is None:
-        error = RpcError(payload['command'], payload, {'message': 'command failed'})
+        error = RpcError(payload['command'], payload, {'message': 'Command failed, no chunk succeeded.'})
     raise error
 
 
-def try_for_htlc_fee(plugin, payload, my_id, peer_id, chunk, spendable_before):
+def try_for_htlc_fee(plugin, payload, my_id, peer_id, amount, chunk, spendable_before):
     start_ts = int(time.time())
     label = payload['command'] + "-" + str(uuid.uuid4())
     payload['labels'] += [label]
@@ -228,37 +228,37 @@ def try_for_htlc_fee(plugin, payload, my_id, peer_id, chunk, spendable_before):
         if channel['short_channel_id'] == payload['scid']:
             continue  # already added few lines above
         spend, recv = spendable_from_scid(plugin, payload, channel['short_channel_id'])
-        if payload['command'] == 'drain' and recv < payload['amount']:
+        if payload['command'] == 'drain' and recv < amount:
             excludes += [channel['short_channel_id']+'/0', channel['short_channel_id']+'/1']
-        if payload['command'] == 'fill' and spend < payload['amount']:
+        if payload['command'] == 'fill' and spend < amount:
             excludes += [channel['short_channel_id']+'/0', channel['short_channel_id']+'/1']
 
     while int(time.time()) - start_ts < payload['retry_for']:
         if payload['command'] == 'drain':
-            r = plugin.rpc.getroute(my_id, payload['amount'], riskfactor=0,
+            r = plugin.rpc.getroute(my_id, amount, riskfactor=0,
                     cltv=9, fromid=peer_id, fuzzpercent=0, exclude=excludes)
             route_out = {'id': peer_id, 'channel': payload['scid'], 'direction': int(my_id >= peer_id)}
             route = [route_out] + r['route']
-            setup_routing_fees(plugin, payload, route, True)
+            setup_routing_fees(plugin, payload, route, amount, True)
         if payload['command'] == 'fill':
-            r = plugin.rpc.getroute(peer_id, payload['amount'], riskfactor=0,
+            r = plugin.rpc.getroute(peer_id, amount, riskfactor=0,
                     cltv=9, fromid=my_id, fuzzpercent=0, exclude=excludes)
             route_in = {'id': my_id, 'channel': payload['scid'], 'direction': int(peer_id >= my_id)}
             route = r['route'] + [route_in]
-            setup_routing_fees(plugin, payload, route, False)
+            setup_routing_fees(plugin, payload, route, amount , False)
 
         fees = route[0]['amount_msat'] - route[-1]['amount_msat']
 
         # check fee and exclude worst channel the next time
         # NOTE: the int(msat) casts are just a workaround for outdated pylightning versions
-        if fees > payload['exemptfee'] and int(fees) > int(payload['amount']) * payload['maxfeepercent'] / 100:
+        if fees > payload['exemptfee'] and int(fees) > int(amount) * payload['maxfeepercent'] / 100:
             worst_channel_id = find_worst_channel(route)
             if worst_channel_id is None:
                 raise RpcError(payload['command'], payload, {'message': 'Insufficient fee'})
             excludes += [worst_channel_id + '/0', worst_channel_id + '/1']
             continue
 
-        plugin.log("Sending over %d hops to %s %s using %s fees" % (len(route), payload['command'], payload['amount'], fees))
+        plugin.log("[%d/%d] Sending over %d hops to %s %s using %s fees" % (chunk+1, payload['chunks'], len(route), payload['command'], amount, fees))
         for r in route:
             plugin.log("    - %s  %14s  %s" % (r['id'], r['channel'], r['amount_msat']))
 
@@ -266,13 +266,13 @@ def try_for_htlc_fee(plugin, payload, my_id, peer_id, chunk, spendable_before):
             plugin.rpc.sendpay(route, payment_hash, label)
             result = plugin.rpc.waitsendpay(payment_hash, payload['retry_for'] + start_ts - int(time.time()))
             if result.get('status') == 'complete':
-                payload['success_msg'] += ["%dmsat sent over %d hops to %s %dmsat [%d/%d]" % (payload['amount'] + fees, len(route), payload['command'], payload['amount'], chunk+1, payload['chunks'])]
+                payload['success_msg'] += ["%dmsat sent over %d hops to %s %dmsat [%d/%d]" % (amount + fees, len(route), payload['command'], amount, chunk+1, payload['chunks'])]
                 # we need to wait for gossipd to update to new state,
                 # so remaining amounts will be calculated correctly for the next chunk
-                spendable, _ = spendable_from_scid(plugin, payload, payload['scid'])
+                spendable, _ = spendable_from_scid(plugin, payload)
                 while spendable == spendable_before:
                     time.sleep(0.5)
-                    spendable, _ = spendable_from_scid(plugin, payload, payload['scid'])
+                    spendable, _ = spendable_from_scid(plugin, payload)
                 return True
             return False
 
@@ -284,7 +284,7 @@ def try_for_htlc_fee(plugin, payload, my_id, peer_id, chunk, spendable_before):
 
             # detect exceeding of HTLC commitment fee
             if 'Capacity exceeded' in erring_message and erring_index == 0:
-                match = HTLC_FEE_PAT.search(erring_message);
+                match = HTLC_FEE_PAT.search(erring_message)
                 if match:  # new servers tell htlc_fee via exception (#2691)
                     raise ValueError("htlc_fee is %s" % match.group(1))
                 raise ValueError("htlc_fee unknown")
@@ -297,10 +297,19 @@ def try_for_htlc_fee(plugin, payload, my_id, peer_id, chunk, spendable_before):
                 excludes.append(erring_channel + '/' + str(erring_direction))
 
 
-def execute(command: str, scid: str, percentage: float,
+def read_params(command: str, scid: str, percentage: float,
         chunks: int, maxfeepercent: float, retry_for: int, exemptfee: Millisatoshi):
 
+    # check parameters
+    if command != 'drain' and command != 'fill' and command != 'setbalance':
+        raise RpcError(command, payload, {'message': 'Invalid command. Must be "drain", "fill" or "setbalance"'})
     percentage = float(percentage)
+    if percentage < 0 or percentage > 100:
+        raise RpcError(command, payload, {'message': 'Percentage must be between 0 and 100'})
+    if chunks < 0:
+        raise RpcError(command, payload, {'message': 'Negative chunks do not make sense. Try a positive value or use 0 (default) for auto-detection.'})
+
+    # forge operation payload
     payload = {
         "command" : command,
         "scid": scid,
@@ -313,15 +322,25 @@ def execute(command: str, scid: str, percentage: float,
         "success_msg" : [],
     }
 
-    # check parameters
-    if command != 'drain' and command != 'fill':
-        raise RpcError(payload['command'], payload, {'message': 'Invalid command. Must be drain or fill.'})
+    # translate a 'setbalance' into respective drain or fill
+    if command == 'setbalance':
+        spendable, receivable = spendable_from_scid(plugin, payload)
+        total = spendable + receivable
+        target = total * 0.01 * payload['percentage']
+        if target == spendable:
+            raise RpcError(payload['command'], payload, {'message': 'target already reached, nothing to do.'})
+        if spendable > target:
+            payload['command'] = 'drain'
+            amount = spendable - target
+        else:
+            payload['command'] = 'fill'
+            amount = target - spendable
+        payload['percentage'] = 100.0 * int(amount) / int(total)
 
-    if percentage <= 0 or percentage > 100:
-        raise RpcError(payload['command'], payload, {'message': 'Percentage must be between 0 and 100'})
-    if chunks < 0:
-        raise RpcError(payload['command'], payload, {'message': 'Negative chunks do not make sense. Try a positive value or use 0 (default) for auto-detection.'})
+    return payload
 
+
+def execute(payload: dict):
     my_id = plugin.rpc.getinfo().get('id')
     peer_id = peer_from_scid(plugin, payload, payload['scid'], my_id)
     get_channel(plugin, payload, peer_id, payload['scid']) # ensures or raises error
@@ -330,13 +349,19 @@ def execute(command: str, scid: str, percentage: float,
 
     # iterate of chunks, default just one
     for chunk in range(payload['chunks']):
-        # we discover capacities each chunk, as fees affect reserves
-        spendable, receivable = spendable_from_scid(plugin, payload, payload['scid'])
-        spendable_bak = spendable
+        # we discover remaining capacities for each chunk,
+        # as fees from previous chunks affect reserves
+        spendable, receivable = spendable_from_scid(plugin, payload)
         total = spendable + receivable
-        target = total * (0.01 * (100 - payload['percentage']))
-        result = False
+        amount = total * 0.01 * payload['percentage'] / payload['chunks']
 
+        # if capacity exceeds, limit amount to full or empty channel
+        if payload['command'] == "drain" and amount > spendable:
+            amount = spendable
+        if payload['command'] == "fill" and amount > receivable:
+            amount = receivable
+
+        result = False
         try:
             # we need to try with different HTLC_FEE values
             # until we dont get capacity error on first hop
@@ -344,20 +369,15 @@ def execute(command: str, scid: str, percentage: float,
             htlc_stp = HTLC_FEE_STP
 
             while htlc_fee < HTLC_FEE_MAX and result is False:
-                if payload['command'] == 'drain':
-                    amount = (spendable - target) / (payload['chunks'] - chunk)
-                if payload['command'] == 'fill':
-                    amount = (receivable - target) / (payload['chunks'] - chunk)
                 # When getting close to 100% we need to account for HTLC commitment fee
                 if payload['command'] == 'drain' and spendable - amount <= htlc_fee:
                     if amount < htlc_fee:
                         raise RpcError(payload['command'], payload, {'message': 'channel too low to cover fees'})
                     amount -= htlc_fee
-                payload['amount'] = amount
-                plugin.log("Trying... chunk:%s/%s  spendable:%s  receivable:%s  target:%s  htlc_fee:%s  =>  amount:%s" % (chunk+1, payload['chunks'], spendable, receivable, target, htlc_fee, amount))
+                plugin.log("Trying... chunk:%s/%s  spendable:%s  receivable:%s  htlc_fee:%s =>  amount:%s" % (chunk+1, payload['chunks'], spendable, receivable, htlc_fee, amount))
 
                 try:
-                    result = try_for_htlc_fee(plugin, payload, my_id, peer_id, chunk, spendable_bak)
+                    result = try_for_htlc_fee(plugin, payload, my_id, peer_id, amount, chunk, spendable)
                 except Exception as err:
                     if "htlc_fee unknown" in str(err):
                         if htlc_fee == HTLC_FEE_NUL:
@@ -391,7 +411,8 @@ def drain(plugin, scid: str, percentage: float=100, chunks: int=0, maxfeepercent
     Chunks defaults to 0 (auto-detect).
     Use 'drain 10' to decrease a channels total balance by 10%.
     """
-    return execute('drain', scid, percentage, chunks, maxfeepercent, retry_for, exemptfee)
+    payload = read_params('drain', scid, percentage, chunks, maxfeepercent, retry_for, exemptfee)
+    return execute(payload)
 
 
 @plugin.method("fill")
@@ -403,8 +424,20 @@ def fill(plugin, scid: str, percentage: float=100, chunks: int=0, maxfeepercent:
     Chunks defaults to 0 (auto-detect).
     Use 'fill 10' to incease a channels total balance by 10%.
     """
-    return execute('fill', scid, percentage, chunks, maxfeepercent, retry_for, exemptfee)
+    payload = read_params('fill', scid, percentage, chunks, maxfeepercent, retry_for, exemptfee)
+    return execute(payload)
 
+@plugin.method("setbalance")
+def setbalance(plugin, scid: str, percentage: float=50, chunks: int=0, maxfeepercent: float=0.5,
+        retry_for: int=60, exemptfee: Millisatoshi=Millisatoshi(5000)):
+    """Brings a channels own liquidity to X percent using circular payments.
+
+    Percentage defaults to 50, resulting in a balanced channel.
+    Chunks defaults to 0 (auto-detect).
+    Use 'setbalance 100' to fill a channel. Use 'setbalance 0' to drain a channel.
+    """
+    payload = read_params('setbalance', scid, percentage, chunks, maxfeepercent, retry_for, exemptfee)
+    return execute(payload)
 
 @plugin.init()
 def init(options, configuration, plugin):
