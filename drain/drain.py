@@ -150,14 +150,14 @@ def test_or_set_chunks(plugin, payload, my_id):
     # test if selected chunks fit into other channel capacities
     if payload['chunks'] >= 1:
         chunks = payload['chunks']
-        chunk = amount / chunks
+        chunksize = amount / chunks
         fit = 0
         for i in channels:
             channel = channels[i]
             if cmd == "drain":
-                fit += int(channel['receivable']) // int(chunk)
+                fit += int(channel['receivable']) // int(chunksize)
             if cmd == "fill":
-                fit += int(channel['spendable']) // int(chunk)
+                fit += int(channel['spendable']) // int(chunksize)
         if fit >= chunks:
             return
         if cmd == "drain":
@@ -171,14 +171,14 @@ def test_or_set_chunks(plugin, payload, my_id):
         chunks = 0
         while chunks < 16:
             chunks += 1
-            chunk = amount / chunks
+            chunksize = amount / chunks
             fit = 0
             for i in channels:
                 channel = channels[i]
-                if cmd == "drain":
-                    fit += int(channel['receivable']) // int(chunk)
-                if cmd == "fill":
-                    fit += int(channel['spendable']) // int(chunk)
+                if cmd == "drain" and int(channel['receivable']) > 0:
+                    fit += int(channel['receivable']) // int(chunksize)
+                if cmd == "fill" and int(channel['spendable']) > 0:
+                    fit += int(channel['spendable']) // int(chunksize)
                 if fit >= chunks:
                     payload['chunks'] = chunks
                     return
@@ -302,12 +302,12 @@ def read_params(command: str, scid: str, percentage: float,
 
     # check parameters
     if command != 'drain' and command != 'fill' and command != 'setbalance':
-        raise RpcError(command, payload, {'message': 'Invalid command. Must be "drain", "fill" or "setbalance"'})
+        raise RpcError(command, {}, {'message': 'Invalid command. Must be "drain", "fill" or "setbalance"'})
     percentage = float(percentage)
-    if percentage < 0 or percentage > 100:
-        raise RpcError(command, payload, {'message': 'Percentage must be between 0 and 100'})
+    if percentage < 0 or percentage > 100 or command != 'setbalance' and percentage == 0.0:
+        raise RpcError(command, {}, {'message': 'Percentage must be between 0 and 100'})
     if chunks < 0:
-        raise RpcError(command, payload, {'message': 'Negative chunks do not make sense. Try a positive value or use 0 (default) for auto-detection.'})
+        raise RpcError(command, {}, {'message': 'Negative chunks do not make sense. Try a positive value or use 0 (default) for auto-detection.'})
 
     # forge operation payload
     payload = {
@@ -336,6 +336,8 @@ def read_params(command: str, scid: str, percentage: float,
             payload['command'] = 'fill'
             amount = target - spendable
         payload['percentage'] = 100.0 * int(amount) / int(total)
+        if payload['percentage'] == 0.0:
+            raise RpcError(command, payload, {'message': 'target already reached, nothing to do.'})
 
     return payload
 
