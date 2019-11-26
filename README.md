@@ -2,6 +2,7 @@
 
 Community curated plugins for c-lightning.
 
+[![Build Status](https://travis-ci.org/lightningd/plugins.svg?branch=master)](https://travis-ci.org/lightningd/plugins)
 
 ## Available plugins
 
