@@ -22,6 +22,7 @@ Community curated plugins for c-lightning.
 | [sendinvoiceless][sendinvoiceless] | Sends some money without an invoice from the receiving node.               |
 | [sitzprobe][sitzprobe]             | A Lightning Network payment rehearsal utility                              |
 | [summary][summary]                 | Print a nice summary of the node status                                    |
+| [zmq][zmq]                         | Publishes notifications via [ZeroMQ][zmq-home] to configured endpoints     |
 
 
 ## Installation
@@ -136,3 +137,5 @@ your environment.
 [js-api]: https://github.com/darosior/clightningjs
 [monitor]: https://github.com/renepickhardt/plugins/tree/master/monitor
 [reckless]: https://github.com/darosior/reckless
+[zmq-home]: https://zeromq.org/
+[zmq]: https://github.com/lightningd/plugins/tree/master/zmq
