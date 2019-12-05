@@ -46,18 +46,44 @@ all plugin directories into your `~/.lightning/plugins` directory. The daemon
 will load each executeable it finds in sub-directories as a plugin. In this case
 you don't need to manage all the `--plugin=...` parameters.
 
-### Pylightning
+### `pyln`
 
-All python plugins depend on the `pylightning` library. It can be given in
-several ways:
+To simplify plugin development you can rely on `pyln-client` for the plugin
+implementation, `pyln-proto` if you need to parse or write lightning protocol
+messages, and `pyln-testing` in order to write tests. These libraries can be
+retrieved in a number of different ways:
 
- - Using `pip` tools: `pip3 install pylightning`
+ - Using `pip` tools: `pip3 install pyln-client pyln-testing`
  - Using the `PYTHONPATH` environment variable to include your clightning's
-   shipped `pylightning` library:
+   shipped `pyln-*` libraries:
 
 ```bash
-PYTHONPATH=/path/to/lightnind/contrib/pylightning lightningd
+export PYTHONPATH=/path/to/lightnind/contrib/pyln-client:/path/to/lightnind/contrib/pyln-testing:$PYTHONGPATH
 ```
+
+### Writing tests
+
+The `pyln-testing` library provides a number of helpers and fixtures to write
+tests. While not strictly necessary, writing a test will ensure that your
+plugin is working correctly against a number of configurations (both with and
+without `DEVELOPER`, `COMPAT` and `EXPERIMENTAL_FEATURES`), and more
+importantly that they will continue to work with newly release versions of
+c-lightning.
+
+Writing a test is as simple as this:
+
+```python
+from pyln.testing.fixtures import *
+
+def test_summary_start(node_factory):
+    l1 = node_factory.get_node(options=pluginopt)
+    s = l1.rpc.summary()
+	assert(s['network'] == 'REGTEST')  # or whatever you want to test
+```
+
+Tests are run against pull requests, all commits on `master`, as well as once
+ever 24 hours to test against the latest `master` branch of the c-lightning
+development tree.
 
 ### Additional dependencies
 
