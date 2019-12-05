@@ -37,7 +37,8 @@ def on_htlc_accepted(htlc, onion, plugin, request, **kwargs):
         return
 
     # Check to see if the next channel has sufficient capacity
-    scid = onion['per_hop_v0']['short_channel_id']
+
+    scid = onion['short_channel_id'] if 'short_channel_id' in onion else '0x0x0'
 
     # Are we the destination? Then there's nothing to do. Continue.
     if scid == '0x0x0':
@@ -66,7 +67,7 @@ def on_htlc_accepted(htlc, onion, plugin, request, **kwargs):
     # account as well.
     #funder = chan['msatoshi_to_us_max'] == chan['msatoshi_total']
 
-    forward_amt = Millisatoshi(onion['per_hop_v0']['forward_amount'])
+    forward_amt = Millisatoshi(onion['forward_amount'])
     incoming_amt = Millisatoshi(htlc['amount'])
     fee = incoming_amt - forward_amt
     pprint(fee)
