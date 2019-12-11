@@ -26,6 +26,9 @@ if have_utf8:
 else:
     draw = Charset('#', '[', '-', '/', ']', '#', '|')
 
+summary_description = "Gets summary information about this node.\n"\
+                      "Pass a list of scids to the {exclude} parameter"\
+                      " to exclude some channels from the outputs."
 
 class PriceThread(threading.Thread):
     def __init__(self):
@@ -89,8 +92,8 @@ def append_header(table, max_msat):
             % (draw.left, short_str, draw.mid, short_str, draw.right))
 
 
-@plugin.method("summary")
-def summary(plugin):
+@plugin.method("summary", long_desc=summary_description)
+def summary(plugin, exclude=''):
     """Gets summary information about this node."""
 
     reply = {}
@@ -107,7 +110,6 @@ def summary(plugin):
     else:
         reply['my_address'] = plugin.my_address
 
-    
     utxos = [int(f['amount_msat']) for f in funds['outputs']
              if f['status'] == 'confirmed']
     reply['num_utxos'] = len(utxos)
@@ -126,6 +128,8 @@ def summary(plugin):
             if c['state'] != 'CHANNELD_NORMAL':
                 continue
             active_channel = True
+            if c['short_channel_id'] in exclude:
+                continue
             if p['connected']:
                 reply['num_connected'] += 1
             if c['our_reserve_msat'] < c['to_us_msat']:
