@@ -50,7 +50,7 @@ all plugin directories into your `~/.lightning/plugins` directory. The daemon
 will load each executeable it finds in sub-directories as a plugin. In this case
 you don't need to manage all the `--plugin=...` parameters.
 
-### `pyln`
+### PYTHONPATH and `pyln`
 
 To simplify plugin development you can rely on `pyln-client` for the plugin
 implementation, `pyln-proto` if you need to parse or write lightning protocol
@@ -62,7 +62,7 @@ retrieved in a number of different ways:
    shipped `pyln-*` libraries:
 
 ```bash
-export PYTHONPATH=/path/to/lightnind/contrib/pyln-client:/path/to/lightnind/contrib/pyln-testing:$PYTHONGPATH
+export PYTHONPATH=/path/to/lightnind/contrib/pyln-client:/path/to/lightnind/contrib/pyln-testing:$PYTHONPATH
 ```
 
 ### Writing tests
@@ -76,18 +76,31 @@ c-lightning.
 
 Writing a test is as simple as this:
 
+- The framework will look for unittest filenames starting with `test_`.
+- The test functions should also start with `test_`.
+
 ```python
 from pyln.testing.fixtures import *
 
-def test_summary_start(node_factory):
+pluginopt = {'plugin': os.path.join(os.path.dirname(__file__), "YOUR_PLUGIN.py")}
+
+def test_your_plugin(node_factory, bitcoind):
     l1 = node_factory.get_node(options=pluginopt)
     s = l1.rpc.summary()
+    s = l1.rpc.getinfo()
     assert(s['network'] == 'REGTEST')  # or whatever you want to test
 ```
 
 Tests are run against pull requests, all commits on `master`, as well as once
 ever 24 hours to test against the latest `master` branch of the c-lightning
 development tree.
+
+Running tests locally can be done like this:
+(make sure the `PYTHONPATH` env variable is correct)
+
+```bash
+pytest YOUR_PLUGIN/YOUR_TEST.py
+```
 
 ### Additional dependencies
 
