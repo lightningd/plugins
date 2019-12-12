@@ -13,6 +13,7 @@ Community curated plugins for c-lightning.
 | [autoreload][autoreload]           | A developer plugin that reloads a plugin under development when it changes |
 | [csvexportpays][csvexportpays]     | A plugin that exports all payments to a CSV file                           |
 | [donations][donations]             | A simple donations page to accept donations from the web                   |
+| [drain][drain]                     | Draining, filling and balancing channels with automatic chunks.            |
 | [graphql][graphql]                 | Exposes the c-lightning API over [graphql][graphql-spec]                   |
 | [lightning-qt][lightning-qt]       | A bitcoin-qt-like GUI for lightningd                                       |
 | [monitor][monitor]                 | helps you analyze the health of your peers and channels                    |
