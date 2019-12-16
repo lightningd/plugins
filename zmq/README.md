@@ -10,7 +10,7 @@ The usage and setup mimics [similar functionality in `bitcoind`](https://github.
 [Twisted](https://twistedmatrix.com) and [txZMQ](https://pypi.org/project/txZMQ/) are used by this plugin.
 
 ```
-$ sudo pip3 install twisted txzmq
+$ sudo pip3 install -r requirements
 ```
 
 ## Installation
