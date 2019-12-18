@@ -19,7 +19,7 @@ if [ ! -f dependencies/bin/bitcoind ]; then
     rm -rf bitcoin-0.17.1-x86_64-linux-gnu.tar.gz bitcoin-0.17.1
 fi
 
-pyenv global 3.7.1
+pyenv global 3.7
 pip3 install --upgrade pip
 pip3 install --user --quiet \
      pyln-testing \
