@@ -12,7 +12,7 @@ circular payments to yourself. This can be useful for:
 
 ## Installation
 
-This plugin relies on the `pylightning` library. As with most plugins you should
+This plugin relies on the `pyln-client` library. As with most plugins you should
 be able to install dependencies with `pip`:
 
 ```bash
@@ -20,13 +20,13 @@ pip3 install -r requirements.txt
 ```
 
 You might need to also specify the `--user` command line flag depending on
-your environment. If you dont want this and your plugin only uses `pylightning`
+your environment. If you dont want this and your plugin only uses `pyln-client`
 as the only dependency, you can also start `lightningd` with the `PYTHONPATH`
-environment variable to the `pylightning` package of your `lightningd`
-installation. For example:
+environment variable to the `pyln-client` package of your `lightningd`
+installation, for example:
 
 ```
-PYTHONPATH=/path/to/lightning.git/contrib/pylightning lightningd --plugin=...
+PYTHONPATH=/home/user/lightning.git/contrib/pyln-client lightningd --plugin=...
 ```
 
 ## Startup
@@ -114,8 +114,7 @@ lightning-cli setbalance scid [percentage] [chunks] [maxfeepercent] [retry_for] 
 
 
 ## TODOs
+ - fix: use hook instead of waitsendpay to prevent race conditions
  - fix: occasionally strange route errors. maybe try increasing chunks on route errors.
- - fix: sometimes, if we ran in error, not all chunk results are returned, i.e. [2/4, error] but not 1/4.
-        This maybe relate to the waitsendpay timed out race condition. Can be solved by a new plugin hook.
  - feat: set HTLC_FEE MIN/MAX/STP by feerate
  - chore: reconsider use of listchannels
