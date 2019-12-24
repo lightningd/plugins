@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-from lightning import Plugin
+from pyln.client import Plugin
 from prometheus_client import start_http_server, CollectorRegistry
 from prometheus_client.core import InfoMetricFamily, GaugeMetricFamily
 from sys import exit

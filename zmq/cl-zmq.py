@@ -37,7 +37,7 @@ from txzmq import ZmqEndpoint, ZmqEndpointType
 from txzmq import ZmqFactory
 from txzmq import ZmqPubConnection
 
-from lightning import Plugin
+from pyln.client import Plugin
 
 ###############################################################################
 

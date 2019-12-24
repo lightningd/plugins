@@ -34,7 +34,7 @@ Failcode -1 and 16399 are special:
 
 """
 from datetime import datetime
-from lightning import Plugin, RpcError
+from pyln.client import Plugin, RpcError
 from random import choice
 from sqlalchemy import Column, Integer, String, DateTime
 from sqlalchemy import create_engine
