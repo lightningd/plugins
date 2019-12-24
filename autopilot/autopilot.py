@@ -2,7 +2,7 @@
 
 from bech32 import bech32_decode, CHARSET, convertbits
 from lib_autopilot import Autopilot, Strategy
-from lightning import LightningRpc, Plugin, RpcError
+from pyln.client import LightningRpc, Plugin, RpcError
 import random
 import math
 import networkx as nx

@@ -4,11 +4,10 @@ This is a quick hack and adapted plugin from the summary.py plugin (orinigally w
 This one is adapted by Rene Pickhardt and aims to help you identify inactive channels quickly
 """
 
-from lightning import Plugin, Millisatoshi
-import lightning
+import pyln.client
 import json
 
-plugin = Plugin()
+plugin = pyln.client.Plugin()
 
 # __version__ was introduced in 0.0.7.1, with utf8 passthrough support.
 try:

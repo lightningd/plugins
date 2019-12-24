@@ -26,7 +26,7 @@ from flask import Flask, render_template
 from flask_bootstrap import Bootstrap
 from flask_wtf import FlaskForm
 from io import BytesIO
-from lightning import LightningRpc, Plugin
+from pyln.client import LightningRpc, Plugin
 from os.path import join
 from random import random
 from time import time
