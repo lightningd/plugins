@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-from lightning import Plugin, RpcError
+from pyln.client import Plugin, RpcError
 from threading import Timer
 import os
 import json

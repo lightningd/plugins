@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-from lightning import Plugin, Millisatoshi, RpcError
+from pyln.client import Plugin, Millisatoshi, RpcError
 from datetime import datetime
 import time
 import uuid
