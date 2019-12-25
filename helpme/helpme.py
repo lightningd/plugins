@@ -1,5 +1,5 @@
 #! /usr/bin/env python3
-from lightning import Plugin, Millisatoshi, RpcError
+from pyln.client import Plugin, Millisatoshi, RpcError
 from collections import defaultdict
 from functools import wraps
 from os import path
