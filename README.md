@@ -10,6 +10,7 @@ Community curated plugins for c-lightning.
 |------------------------------------|----------------------------------------------------------------------------|
 | [autopilot][autopilot]             | An autopilot that suggests channels that should be established             |
 | [autoreload][autoreload]           | A developer plugin that reloads a plugin under development when it changes |
+| [csvexportpays][csvexportpays]     | A plugin that exports all payments to a CSV file                           |
 | [donations][donations]             | A simple donations page to accept donations from the web                   |
 | [graphql][graphql]                 | Exposes the c-lightning API over [graphql][graphql-spec]                   |
 | [lightning-qt][lightning-qt]       | A bitcoin-qt-like GUI for lightningd                                       |
@@ -79,7 +80,7 @@ from pyln.testing.fixtures import *
 def test_summary_start(node_factory):
     l1 = node_factory.get_node(options=pluginopt)
     s = l1.rpc.summary()
-	assert(s['network'] == 'REGTEST')  # or whatever you want to test
+    assert(s['network'] == 'REGTEST')  # or whatever you want to test
 ```
 
 Tests are run against pull requests, all commits on `master`, as well as once
@@ -139,3 +140,4 @@ your environment.
 [reckless]: https://github.com/darosior/reckless
 [zmq-home]: https://zeromq.org/
 [zmq]: https://github.com/lightningd/plugins/tree/master/zmq
+[csvexportpays]: https://github.com/0xB10C/c-lightning-plugin-csvexportpays
