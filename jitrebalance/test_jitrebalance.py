@@ -1,6 +1,5 @@
 from pyln.testing.fixtures import *  # noqa: F401, F403
 from pyln.testing.utils import wait_for
-from pprint import pprint
 import os
 import time
 import unittest
@@ -38,7 +37,7 @@ def test_simple_rebalance(node_factory):
 
     # Drain (l2, l3) so that a larger payment fails later on
     chan = l2.rpc.listpeers(l3.info['id'])['peers'][0]['channels'][0]
-    pprint(chan)
+
     # Send 9 million millisatoshis + reserve + a tiny fee allowance from l3 to
     # l2 for the actual payment
     inv = l2.rpc.invoice(
@@ -55,7 +54,6 @@ def test_simple_rebalance(node_factory):
     wait_for(no_pending_htlcs)
 
     chan = l2.rpc.listpeers(l3.info['id'])['peers'][0]['channels'][0]
-    pprint(chan)
     assert(chan['spendable_msatoshi'] < amt)
 
     # Get (l2, l5) so we can exclude it when routing from l1 to l4
@@ -77,4 +75,4 @@ def test_simple_rebalance(node_factory):
 
     # This will fail without the plugin doing a rebalancing.
     l1.rpc.sendpay(route, inv['payment_hash'])
-    pprint(l1.rpc.waitsendpay(inv['payment_hash']))
+    l1.rpc.waitsendpay(inv['payment_hash'])
