@@ -104,7 +104,7 @@ def on_htlc_accepted(htlc, onion, plugin, request, **kwargs):
 
     # The HTLC might be a rebalance we ourselves initiated, better check
     # against the list of pending ones.
-    rebalance = plugin.rebalances.get(htlc['payment_hash'])
+    rebalance = plugin.rebalances.get(htlc['payment_hash'], None)
     if rebalance is not None:
         # Settle the rebalance, before settling the request that initiated the
         # rebalance.
@@ -118,6 +118,9 @@ def on_htlc_accepted(htlc, onion, plugin, request, **kwargs):
         time.sleep(1)
 
         rebalance['request'].set_result({"result": "continue"})
+
+        # Clean up our stash of active rebalancings.
+        del plugin.rebalances[htlc['payment_hash']]
         return
 
     # Check to see if the next channel has sufficient capacity
