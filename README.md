@@ -12,6 +12,7 @@ Community curated plugins for c-lightning.
 | [autoreload][autoreload]           | A developer plugin that reloads a plugin under development when it changes |
 | [csvexportpays][csvexportpays]     | A plugin that exports all payments to a CSV file                           |
 | [donations][donations]             | A simple donations page to accept donations from the web                   |
+| [goodpeer][goodpeer]               | Find low-fees peers to fund a channel with                                 |
 | [graphql][graphql]                 | Exposes the c-lightning API over [graphql][graphql-spec]                   |
 | [lightning-qt][lightning-qt]       | A bitcoin-qt-like GUI for lightningd                                       |
 | [monitor][monitor]                 | helps you analyze the health of your peers and channels                    |
@@ -141,3 +142,4 @@ your environment.
 [zmq-home]: https://zeromq.org/
 [zmq]: https://github.com/lightningd/plugins/tree/master/zmq
 [csvexportpays]: https://github.com/0xB10C/c-lightning-plugin-csvexportpays
+[goodpeer]: https://github.com/lightningd/plugins/tree/master/goodpeer
