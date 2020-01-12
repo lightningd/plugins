@@ -2,6 +2,8 @@
 from collections import OrderedDict
 from pyln.client import Plugin, Millisatoshi
 
+from descriptions import goodpeers_small_desc, goodpeers_desc
+
 plugin = Plugin()
 
 
@@ -84,23 +86,27 @@ def reverse_sort(nodes):
                        key=lambda item: item[1]["score"], reverse=True))
 
 
-@plugin.method("goodpeers")
-def goodpeers(plugin):
-    """
-    Get a list of good enough peers to connect to, reversely sorted.
-    """
+@plugin.method("goodpeers", desc=goodpeers_small_desc,
+               long_desc=goodpeers_desc)
+def goodpeers(plugin, bias=None, **kwargs):
     nodes = get_nodes(plugin)
     # Leaf nodes and low-value channels nodes are not good peers..
     nodes = filter_nodes(nodes)
     # Add a score to each peer about its fees
     for id, channs in nodes.items():
         base, ppm = get_medians(channs)
-        # FIXME: Maybe ppm should have a higher ratio ? This means big payments
-        # are privileged.
+        if not bias:
+            score = float(base + ppm)
+        elif bias.lower() == "small":
+            score = float(base * 100 + ppm)
+        elif bias.lower() == "big":
+            score = float(base + ppm * 100)
+        else:
+            raise ValueError("Bad bias, should be 'big' or 'small'")
         nodes[id] = {
             "median_base": base,
             "median_ppm": ppm,
-            "score": float(base + ppm),
+            "score": score,
         }
     # If used in the cli, better to reverse it !
     return reverse_sort(nodes)
