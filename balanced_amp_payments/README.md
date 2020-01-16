@@ -14,7 +14,7 @@ and was suggested to be created by ZmnSCPxj.
 
 ## Command line options
 
-The plugin exposes no new command line options:
+The plugin exposes no new command line options.
    
 ## JSON-RPC methods
 
