@@ -32,7 +32,7 @@ If you like my work consider a donation at https://patreon.com/renepickhardt or 
 import json
 
 
-def helper_computer_node_parameters(channels):
+def helper_compute_node_parameters(channels):
     """
     computes the total funds (\tau) and the total capacity of a node (\kappa)
 
@@ -65,7 +65,7 @@ def recommend_incoming_channels(channels, amount):
     assert(amount <= total_receivable_amount), "can only receive %r but %r given" % (
         total_receivable_amount, amount)
 
-    kappa, tau = helper_computer_node_parameters(channels)
+    kappa, tau = helper_compute_node_parameters(channels)
     nu_target = float(tau + amount)/kappa
     channels = helper_compute_channel_balance_coefficients(channels)
 
@@ -106,7 +106,7 @@ def recommend_outgoing_channels(channels, amount, receiving=False):
     assert(amount <= total_sendable_amount), "can only send %r but %r given" % (
         total_sendable_amount, amount)
 
-    kappa, tau = helper_computer_node_parameters(channels)
+    kappa, tau = helper_compute_node_parameters(channels)
     nu_target = float(tau - amount)/kappa
     channels = helper_compute_channel_balance_coefficients(channels)
 
