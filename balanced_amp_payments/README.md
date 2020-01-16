@@ -19,9 +19,9 @@ The plugin exposes no new command line options.
 
 The plugin also exposes the following methods:
 
- - `amp_invoice_amounts`: splits an amount that is supposed to be received into smaller amounts in a way that maximally reduces the imbalance of the nodes channels.
+ - `amp_invoice_amounts`: splits an amount that is supposed to be received into smaller amounts in a way that maximally reduces the imbalance of the node's channels.
 
- - `amp_pay_amounts`: splits an amount that is supposed to be sent into smaller amounts respecting in a way that maximally decreases the imbalance of the nodes channels.
+ - `amp_pay_amounts`: splits an amount that is supposed to be sent into smaller amounts in a way that maximally decreases the imbalance of the node's channels.
 
 Both API calls return a dictionary with short channel IDs and amounts
    
