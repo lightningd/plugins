@@ -20,7 +20,7 @@ The plugin exposes no new command line options.
 
 The plugin also exposes the following methods:
 
- - `amp_invoice_amounts`: splits an amount that is supposed to be received into smaller amounts respecing in a way that best decreases the imbalance of the nodes channels
+ - `amp_invoice_amounts`: splits an amount that is supposed to be received into smaller amounts respecting in a way that best reduces the imbalance of the nodes channels.
 
  - `amp_pay_amounts`: splits an amount that is supposed to be send into smaller amounts respecing in a way that best decreases the imbalance of the nodes channels
 
