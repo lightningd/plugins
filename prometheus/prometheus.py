@@ -135,6 +135,7 @@ def init(options, configuration, plugin):
     registry.register(FundsCollector(plugin.rpc, registry))
     registry.register(PeerCollector(plugin.rpc, registry))
     registry.register(ChannelsCollector(plugin.rpc, registry))
+    plugin.log("Prometheus plugin started")
 
 
 plugin.add_option(
