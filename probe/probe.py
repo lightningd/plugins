@@ -103,22 +103,22 @@ def probe(plugin, request, node_id=None, **kwargs):
             exclude=exclusions + list(temporary_exclusions.keys())
         )['route']
         p.route = ','.join([r['channel'] for r in route])
-        p.payment_hash = ''.join(choice(string.hexdigits) for _ in range(64))
+        p.payment_hash = ''.join(choice(string.hexdigits) for _ in range(64)).lower()
     except RpcError:
         p.failcode = -1
+        p.finished_at = datetime.now()
         res = p.jsdict()
         s.commit()
-        return request.set_result(res) if request else None
+        request.set_result(res)
+        return
 
     s.commit()
+    with plugin.lock:
+        plugin.probes[p.payment_hash] = {
+            'request': request,
+            'timeout_at': time() + 30,
+        }
     plugin.rpc.sendpay(route, p.payment_hash)
-    plugin.pending_probes.append({
-        'request': request,
-        'probe_id': p.id,
-        'payment_hash': p.payment_hash,
-        'callback': complete_probe,
-        'plugin': plugin,
-    })
 
 
 @plugin.method('traceroute')
@@ -168,58 +168,49 @@ def traceroute(plugin, node_id, **kwargs):
 
 @plugin.method('probe-stats')
 def stats(plugin):
-    return {
-        'pending_probes': len(plugin.pending_probes),
-        'exclusions': len(exclusions),
-        'temporary_exclusions': len(temporary_exclusions),
-    }
+    now = time()
+    with plugin.lock:
+        return {
+            'pending_probes': len(plugin.probes),
+            'exclusions': len(exclusions),
+            'temporary_exclusions': len(temporary_exclusions),
+            'probes': [{
+                'payment_hash': k,
+                'timeout_at': v['timeout_at'],
+                'timeout_in': v['timeout_at'] - now
+            } for k, v in plugin.probes.items()],
+            'failcodes': plugin.probe_failcodes,
+        }
 
 
-def complete_probe(plugin, request, probe_id, payment_hash):
-    s = plugin.Session()
-    p = s.query(Probe).get(probe_id)
-    try:
-        plugin.rpc.waitsendpay(p.payment_hash)
-    except RpcError as e:
-        error = e.error['data']
-        p.erring_channel = e.error['data']['erring_channel']
-        p.failcode = e.error['data']['failcode']
-        p.error = json.dumps(error)
+@plugin.subscribe("sendpay_failure")
+def on_sendpay_failure(sendpay_failure, plugin, **kwargs):
+    d = sendpay_failure['data']
+    payment_hash = d['payment_hash'].lower()
+    with plugin.lock:
+        s = plugin.Session()
+        p = s.query(Probe).filter(Probe.payment_hash == payment_hash.lower()).first()
+        request = plugin.probes[payment_hash]['request'] if payment_hash in plugin.probes else None
 
-    if p.failcode in [16392, 16394]:
-        exclusion = "{erring_channel}/{erring_direction}".format(**error)
-        print('Adding exclusion for channel {} ({} total))'.format(
-            exclusion, len(exclusions))
-        )
-        exclusions.append(exclusion)
+        if request is None or p is None:
+            plugin.log("{payment_hash} does not seem like a probe, ignoring".format(
+                payment_hash=payment_hash,
+            ))
+            if request:
+                request.set_error("Could not load probe from DB when the result was returned. Please report to plugin devs.")
+            return
 
-    if p.failcode in [21, 4103]:
-        exclusion = "{erring_channel}/{erring_direction}".format(**error)
-        print('Adding temporary exclusion for channel {} ({} total))'.format(
-            exclusion, len(temporary_exclusions))
-        )
-        expiry = time() + plugin.probe_exclusion_duration
-        temporary_exclusions[exclusion] = expiry
+        p.failcode = d['failcode']
+        p.error = d['failcodename']
+        p.erring_channel = d.get('erring_channel', None)
+        p.finished_at = datetime.now()
+        s.commit()
+        request.set_result(p.jsdict())
+        del plugin.probes[payment_hash]
+        if d['failcode'] not in plugin.probe_failcodes:
+            plugin.probe_failcodes[d['failcode']] = 0
+        plugin.probe_failcodes[d['failcode']] += 1
 
-    p.finished_at = datetime.now()
-    res = p.jsdict()
-    s.commit()
-    s.close()
-    request.set_result(res)
-
-
-def poll_payments(plugin):
-    """Iterate through all probes and complete the finalized ones.
-    """
-    for probe in plugin.pending_probes:
-        p = plugin.rpc.listsendpays(None, payment_hash=probe['payment_hash'])
-        if p['payments'][0]['status'] == 'pending':
-            continue
-
-        plugin.pending_probes.remove(probe)
-        cb = probe['callback']
-        del probe['callback']
-        cb(**probe)
 
 def clear_temporary_exclusion(plugin):
     timed_out = [k for k, v in temporary_exclusions.items() if v < time()]
@@ -236,7 +227,7 @@ def schedule(plugin):
     next_runs = [
         (time() + 300, clear_temporary_exclusion, 300),
         (time() + plugin.probe_interval, start_probe, plugin.probe_interval),
-        (time() + 1, poll_payments, 1),
+        #(time() + 1, poll_payments, 1),
     ]
     heapq.heapify(next_runs)
 
@@ -252,6 +243,26 @@ def schedule(plugin):
         heapq.heappush(next_runs, (time() + n[2], n[1], n[2]))
 
 
+def timeout_thread(plugin):
+    while True:
+        now = time()
+        mintimeout = 30
+        with plugin.lock:
+            s = plugin.Session()
+            for h, pp in plugin.probes.items():
+                if pp['timeout_at'] < now:
+                    p = s.query(Probe).filter(Probe.payment_hash == h.lower()).first()
+                    p.failcode = -2
+                    p.error = "TIMEOUT"
+                    p.erring_channel = None
+                    p.finished_at = datetime.now()
+                    request.set_result(p.jsdict())
+                    del plugin.probes[payment_hash]
+                elif pp['timeout_at'] - now < mintimeout:
+                    mintimeout = pp['timeout_at'] - now
+        s.commit()
+        sleep(mintimeout)
+
 @plugin.init()
 def init(configuration, options, plugin):
     plugin.probe_interval = int(options['probe-interval'])
@@ -262,6 +273,12 @@ def init(configuration, options, plugin):
         'probes.db'
     )
 
+    # Probes that are still pending and need to be checked against.
+    plugin.pending_probes = []
+    plugin.probes = {}
+    plugin.probe_failcodes = {}
+    plugin.lock = threading.Lock()
+
     engine = create_engine(db_filename, echo=True)
     Base.metadata.create_all(engine)
     plugin.Session = sessionmaker()
@@ -270,8 +287,9 @@ def init(configuration, options, plugin):
     t.daemon = True
     t.start()
 
-    # Probes that are still pending and need to be checked against.
-    plugin.pending_probes = []
+    t = threading.Thread(target=timeout_thread, args=[plugin])
+    t.daemon = True
+    t.start()
 
 
 plugin.add_option(
