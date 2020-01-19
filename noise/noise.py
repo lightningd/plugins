@@ -12,10 +12,12 @@ from collections import namedtuple
 import shelve
 from pyln.proto.onion import OnionPayload
 import zbase32
+import hashlib
+import os
 
 plugin = Plugin()
 
-TLV_KEYSEND_PREIMAGE = 5482373484
+TLV_KEYSEND_PREIMAGE = 34349341
 TLV_NOISE_MESSAGE = 34349334
 TLV_NOISE_SIGNATURE = 34349335
 
@@ -73,13 +75,11 @@ def buildpath(plugin, node_id, payload, amt, exclusions):
     return first_hop, hops, route
 
 
-def deliver(node_id, payload, amt, max_attempts=5, payment_hash=None):
+def deliver(node_id, payload, amt, payment_hash, max_attempts=5):
     """Do your best to deliver `payload` to `node_id`.
     """
-    if payment_hash is None:
-        payment_hash = ''.join(random.choice(string.hexdigits) for _ in range(64)).lower()
-
     exclusions = []
+    payment_hash = hexlify(payment_hash).decode('ASCII')
 
     for attempt in range(max_attempts):
         plugin.log("Starting attempt {} to deliver message to {}".format(attempt, node_id))
@@ -108,20 +108,33 @@ def deliver(node_id, payload, amt, max_attempts=5, payment_hash=None):
 
 
 @plugin.async_method('sendmsg')
-def sendmsg(node_id, msg, plugin, request, amt=1000, **kwargs):
+def sendmsg(node_id, msg, plugin, request, pay=None, **kwargs):
     payload = TlvPayload()
     payload.add_field(TLV_NOISE_MESSAGE, msg.encode('UTF-8'))
 
+
+    payment_key = os.urandom(32)
+    payment_hash = hashlib.sha256(payment_key).digest()
+
+    # If we don't want to tell the recipient how to claim the funds unset the
+    # payment_key
+    if pay is not None:
+        payload.add_field(TLV_KEYSEND_PREIMAGE, payment_key)
+
+    # Signature generation always has to be last, otherwise we won't agree on
+    # the TLV payload and verification ends up with a bogus sender node_id.
     sigmsg = hexlify(payload.to_bytes()).decode('ASCII')
-
-    # Sign the message:
     sig = plugin.rpc.signmessage(sigmsg)
-
     sigcheck = plugin.rpc.checkmessage(sigmsg, sig['zbase'])
     sig = zbase32.decode(sig['zbase'])
     payload.add_field(TLV_NOISE_SIGNATURE, sig)
 
-    res = deliver(node_id, payload.to_bytes(), amt=amt)
+    res = deliver(
+        node_id,
+        payload.to_bytes(),
+        amt=pay if pay is not None else 10,
+        payment_hash=payment_hash
+    )
     request.set_result(res)
 
 
@@ -155,12 +168,21 @@ def on_htlc_accepted(onion, htlc, plugin, **kwargs):
     msg.sender = sigcheck['pubkey']
     msg.verified = sigcheck['verified']
 
+    preimage = payload.get(TLV_KEYSEND_PREIMAGE)
+    if preimage is not None:
+        res = {
+            'result': 'resolve',
+            'payment_key': hexlify(preimage.value).decode('ASCII')
+        }
+    else:
+        res = {'result': 'continue'}
+
     plugin.messages.append(msg)
     for r in plugin.receive_waiters:
         r.set_result(msg.to_dict())
     plugin.receive_waiters = []
 
-    return {'result': 'continue'}
+    return res
 
 
 @plugin.init()

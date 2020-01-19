@@ -64,3 +64,21 @@ def test_zbase32():
     b = zbase32.decode(zb32)
     enc = zbase32.encode(b)
     assert(enc == zb32)
+
+
+def test_msg_and_keysend(node_factory, executor):
+    opts = [{'plugin': plugin}, {}, {'plugin': plugin}]
+    l1, l2, l3 = node_factory.line_graph(3, wait_for_announce=True, opts=opts)
+    amt = 10000
+
+    # Check that l3 does not have funds initially
+    assert(l3.rpc.listpeers()['peers'][0]['channels'][0]['msatoshi_to_us'] == 0)
+
+    l1.rpc.sendmsg(l3.info['id'], "Hello world!", amt)
+    m = l3.rpc.recvmsg(last_id=-1)
+
+    assert(m['sender'] == l1.info['id'])
+    assert(m['verified'] == True)
+
+    # Check that l3 actually got the funds I sent it
+    wait_for(lambda: l3.rpc.listpeers()['peers'][0]['channels'][0]['msatoshi_to_us'] == amt)

@@ -3,7 +3,7 @@ The protocol was heavily inspired by the [[https://github.com/joostjager/whatsat
 
 | record type | length (bytes) | value                                                           |
 |-------------+----------------+-----------------------------------------------------------------|
-|  5482373484 |             32 | key send preimage                                               |
+|    34349341 |             32 | key send preimage                                               |
 |    34349334 |       variable | chat message                                                    |
 |    34349335 |             65 | compressed signature + recovery id                              |
 |    34349339 |             33 | sender pubkey                                                   |
