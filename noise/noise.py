@@ -11,9 +11,13 @@ import logging
 from collections import namedtuple
 import shelve
 from pyln.proto.onion import OnionPayload
+import zbase32
 
 plugin = Plugin()
 
+TLV_KEYSEND_PREIMAGE = 5482373484
+TLV_NOISE_MESSAGE = 34349334
+TLV_NOISE_SIGNATURE = 34349335
 
 class Message(object):
     def __init__(self, sender, body, signature, payment=None, id=None):
@@ -22,6 +26,7 @@ class Message(object):
         self.body = body
         self.signature = signature
         self.payment = payment
+        self.verified = None
 
     def to_dict(self):
         return {
@@ -30,6 +35,7 @@ class Message(object):
             "body": self.body,
             "signature": hexlify(self.signature).decode('ASCII'),
             "payment": self.payment,
+            "verified": self.verified,
         }
 
 
@@ -104,12 +110,16 @@ def deliver(node_id, payload, amt, max_attempts=5, payment_hash=None):
 @plugin.async_method('sendmsg')
 def sendmsg(node_id, msg, plugin, request, amt=1000, **kwargs):
     payload = TlvPayload()
-    payload.add_field(34349334, msg.encode('UTF-8'))
+    payload.add_field(TLV_NOISE_MESSAGE, msg.encode('UTF-8'))
+
+    sigmsg = hexlify(payload.to_bytes()).decode('ASCII')
 
     # Sign the message:
-    sig = plugin.rpc.signmessage(msg)['signature']
-    sig = unhexlify(sig)
-    payload.add_field(34349336, sig)
+    sig = plugin.rpc.signmessage(sigmsg)
+
+    sigcheck = plugin.rpc.checkmessage(sigmsg, sig['zbase'])
+    sig = zbase32.decode(sig['zbase'])
+    payload.add_field(TLV_NOISE_SIGNATURE, sig)
 
     res = deliver(node_id, payload.to_bytes(), amt=amt)
     request.set_result(res)
@@ -128,14 +138,22 @@ def recvmsg(plugin, request, last_id=None, **kwargs):
 def on_htlc_accepted(onion, htlc, plugin, **kwargs):
     payload = OnionPayload.from_hex(onion['payload'])
 
-    # TODO verify the signature to extract the sender
-
     msg = Message(
         id=len(plugin.messages),
-        sender="AAA",
+        sender=None,
         body=payload.get(34349334).value,
-        signature=payload.get(34349336).value,
+        signature=payload.get(34349335).value,
         payment=None)
+
+    # Filter out the signature so we can check it against the rest of the payload
+    sigpayload = TlvPayload()
+    sigpayload.fields = filter(lambda x: x.typenum != TLV_NOISE_SIGNATURE, payload.fields)
+    sigmsg = hexlify(sigpayload.to_bytes()).decode('ASCII')
+
+    zsig = zbase32.encode(msg.signature).decode('ASCII')
+    sigcheck = plugin.rpc.checkmessage(sigmsg, zsig)
+    msg.sender = sigcheck['pubkey']
+    msg.verified = sigcheck['verified']
 
     plugin.messages.append(msg)
     for r in plugin.receive_waiters:
