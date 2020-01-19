@@ -1,0 +1,21 @@
+* Protocol
+The protocol was heavily inspired by the [[https://github.com/joostjager/whatsat#protocol][WhatSat protocol]]:
+
+| record type | length (bytes) | value                                                           |
+|-------------+----------------+-----------------------------------------------------------------|
+|  5482373484 |             32 | key send preimage                                               |
+|    34349334 |       variable | chat message                                                    |
+|    34349335 |             65 | compressed signature + recovery id                              |
+|    34349339 |             33 | sender pubkey                                                   |
+|    34349343 |              8 | timestamp in nano seconds since unix epoch (big endian encoded) |
+
+The key differences are that we don't explicitly pass the sender pubkey, since
+we can recover that from the signature itself, and we use the compressed 64
+byte signature, instead of the DER encoded signature. This saves us 33 bytes
+for the pubkey and ~7 bytes for the signature, but requires that we change the
+TLV type for the signature (from ~34349337~ to ~34349335~).
+
+The signature is computed by serializing all other TLV fields, hex-encoding
+the resulting TLV payload, and signing it using ~lightning-cli signmessage~
+returning the ~zbase32~ encoded signature. The signature consists of a 1 byte
+recovery ID and the 64 byte raw signature.

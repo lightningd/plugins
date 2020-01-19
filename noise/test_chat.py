@@ -1,6 +1,8 @@
 from pyln.testing.fixtures import *
 from pyln.testing.utils import wait_for
 from pprint import pprint
+import zbase32
+
 
 plugin = os.path.join(os.path.dirname(__file__), 'noise.py')
 
@@ -19,6 +21,9 @@ def test_sendmsg_success(node_factory, executor):
     m2 = l3.rpc.recvmsg(last_id=-1)
     # They should be the same :-)
     assert(m1 == m2)
+
+    assert(m2['sender'] == l1.info['id'])
+    assert(m2['verified'] == True)
 
 
 def test_sendmsg_retry(node_factory, executor):
@@ -52,3 +57,10 @@ def test_sendmsg_retry(node_factory, executor):
     print(recv.result(10))
 
     msg = l4.rpc.recvmsg(last_id=-1)
+
+
+def test_zbase32():
+    zb32 = b'd75qtmgijm79rpooshmgzjwji9gj7dsdat8remuskyjp9oq1ugkaoj6orbxzhuo4njtyh96e3aq84p1tiuz77nchgxa1s4ka4carnbiy'
+    b = zbase32.decode(zb32)
+    enc = zbase32.encode(b)
+    assert(enc == zb32)
