@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 from pyln.client import Plugin, RpcError
-from pyln.proto.primitives import varint_decode, varint_encode
+from primitives import varint_decode, varint_encode
 from onion import TlvPayload
 from binascii import hexlify, unhexlify
 import struct
@@ -10,7 +10,7 @@ from io import BytesIO
 import logging
 from collections import namedtuple
 import shelve
-from pyln.proto.onion import OnionPayload
+from onion import OnionPayload
 import zbase32
 import hashlib
 import os
