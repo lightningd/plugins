@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 from pyln.client import Plugin, RpcError
 from pyln.proto.primitives import varint_decode, varint_encode
+from onion import TlvPayload
 from binascii import hexlify, unhexlify
 import struct
 import string
@@ -35,7 +36,7 @@ class Message(object):
 def serialize_payload(n, blockheight):
     block, tx, out = n['channel'].split('x')
     payload = hexlify(struct.pack(
-        "!QQL",
+        "!cQQL", b'\x00',
         int(block) << 40 | int(tx) << 16 | int(out),
         int(n['amount_msat']),
         blockheight + n['delay'])).decode('ASCII')
@@ -102,19 +103,15 @@ def deliver(node_id, payload, amt, max_attempts=5, payment_hash=None):
 
 @plugin.async_method('sendmsg')
 def sendmsg(node_id, msg, plugin, request, amt=1000, **kwargs):
-    payload = BytesIO()
-    varint_encode(34349334, payload)
-    varint_encode(len(msg), payload)
-    payload.write(msg.encode('UTF-8'))
+    payload = TlvPayload()
+    payload.add_field(34349334, msg.encode('UTF-8'))
 
     # Sign the message:
     sig = plugin.rpc.signmessage(msg)['signature']
     sig = unhexlify(sig)
-    varint_encode(34349336, payload)
-    varint_encode(len(sig), payload)
-    payload.write(sig)
+    payload.add_field(34349336, sig)
 
-    res = deliver(node_id, payload.getbuffer(), amt=amt)
+    res = deliver(node_id, payload.to_bytes(), amt=amt)
     request.set_result(res)
 
 

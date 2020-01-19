@@ -5,7 +5,7 @@ from pprint import pprint
 plugin = os.path.join(os.path.dirname(__file__), 'noise.py')
 
 
-def test_sendmsg(node_factory, executor):
+def test_sendmsg_success(node_factory, executor):
     opts = [{'plugin': plugin}, {}, {'plugin': plugin}]
     l1, l2, l3 = node_factory.line_graph(3, wait_for_announce=True, opts=opts)
 
