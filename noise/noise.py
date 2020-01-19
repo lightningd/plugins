@@ -90,9 +90,9 @@ def deliver(node_id, payload, amt, max_attempts=5, payment_hash=None):
             plugin.rpc.waitsendpay(payment_hash=payment_hash)
             return {'route': route, 'payment_hash': payment_hash, 'attempt': attempt}
         except RpcError as e:
-            print(e)
             failcode = e.error['data']['failcode']
-            if failcode == 16399:
+            failingidx = e.error['data']['erring_index']
+            if failcode == 16399 or failingidx == len(hops):
                 return {'route': route, 'payment_hash': payment_hash, 'attempt': attempt+1}
 
             plugin.log("Retrying delivery.")
