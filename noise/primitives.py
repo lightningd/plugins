@@ -11,7 +11,7 @@ def varint_encode(i, w):
     elif i <= 0xFFFFFFFF:
         w.write(struct.pack("!BL", 0xFE, i))
     else:
-        raise ValueError("Integers beyond 0xFFFFFFFF are not allowed in TLVs")
+        w.write(struct.pack("!BQ", 0xFF, i))
 
 
 def varint_decode(r):
@@ -29,7 +29,7 @@ def varint_decode(r):
     elif i == 0xFE:
         return struct.unpack("!L", r.read(4))[0]
     else:
-        raise ValueError("Attempted to unpack")
+        return struct.unpack("!Q", r.read(8))[0]
 
 
 class ShortChannelId(object):
