@@ -146,6 +146,7 @@ class TlvPayload(OnionPayload):
         return default
 
     def to_bytes(self):
+        self.fields = sorted(self.fields, key=lambda f: f.typenum)
         ser = [f.to_bytes() for f in self.fields]
         b = BytesIO()
         varint_encode(sum([len(b) for b in ser]), b)
