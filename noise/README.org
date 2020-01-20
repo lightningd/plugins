@@ -1,9 +1,44 @@
+The Noise plugin allows sending and receiving private messages through the
+Lightning Network. It is implemented on top to c-lightning's ~createonion~ and
+~sendonion~ RPC methods that allow delivering custom payloads to a specific
+node, as well as the ~htlc_accepted~ hook which can be used to extract the
+message from the onion payload.
+
+You can send a message using the following RPC method:
+
+#+BEGIN_SRC bash
+lightning-cli sendmsg 02a5deaa47804c518bb4a1c6f04a85b92b796516bd32c4114a51b00d73e251f999 "Hello world 👋"
+#+END_SRC
+
+In addition a message can also be accompanied by a payment (using the
+~keysend~ protocol draft) by specifying an amount of millisatoshis as the last
+argument:
+
+#+BEGIN_SRC bash
+lightning-cli sendmsg 02a5deaa47804c518bb4a1c6f04a85b92b796516bd32c4114a51b00d73e251f999 "Here's my rent" 31337
+#+END_SRC
+
+You can read the last message received using the following command:
+
+#+BEGIN_SRC bash
+lightning-cli recvmsg last_id
+#+END_SRC
+
+The ~last_id~ indicates the last message we read, so we can retrieve each message
+individually. If you'd just like to wait for the next message you can use a
+~last_id~ or ~-1~.
+* Todo
+
+- [ ] Persist messages across restarts
+- [ ] Use ~rpc_command~ to intercept any payment listing and add the keysend
+  payments to it.
+
 * Protocol
 The protocol was heavily inspired by the [[https://github.com/joostjager/whatsat#protocol][WhatSat protocol]]:
 
 | record type | length (bytes) | value                                                           |
 |-------------+----------------+-----------------------------------------------------------------|
-|    34349341 |             32 | key send preimage                                               |
+|  5482373484 |             32 | key send preimage                                               |
 |    34349334 |       variable | chat message                                                    |
 |    34349335 |             65 | compressed signature + recovery id                              |
 |    34349339 |             33 | sender pubkey                                                   |
@@ -11,9 +46,12 @@ The protocol was heavily inspired by the [[https://github.com/joostjager/whatsat
 
 The key differences are that we don't explicitly pass the sender pubkey, since
 we can recover that from the signature itself, and we use the compressed 64
-byte signature, instead of the DER encoded signature. This saves us 33 bytes
-for the pubkey and ~7 bytes for the signature, but requires that we change the
-TLV type for the signature (from ~34349337~ to ~34349335~).
+byte signature, instead of the DER encoded signature. This saves us 39 bytes
+for the pubkey (5 byte type, 1 byte length, 33 byte value) and about 6 bytes
+for the signature, but requires that we change the TLV type for the signature
+(from ~34349337~ to ~34349335~). More could be achieved by giving ~keysend~ a
+smaller type which currently is 9 bytes and could get down to 1 byte. We'll
+need to wait for the spec to catch up :wink:
 
 The signature is computed by serializing all other TLV fields, hex-encoding
 the resulting TLV payload, and signing it using ~lightning-cli signmessage~
