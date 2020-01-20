@@ -1,26 +1,27 @@
 #!/usr/bin/env python3
-from pyln.client import Plugin, RpcError
-from primitives import varint_decode, varint_encode
-from onion import TlvPayload
 from binascii import hexlify, unhexlify
-import struct
-import string
-import random
-from io import BytesIO
-import logging
 from collections import namedtuple
-import shelve
+from io import BytesIO
 from onion import OnionPayload
-import zbase32
+from onion import TlvPayload
+from primitives import varint_decode, varint_encode
+from pyln.client import Plugin, RpcError
 import hashlib
 import os
+import random
+import shelve
+import string
+import struct
+import time
+import zbase32
+
 
 plugin = Plugin()
 
-TLV_KEYSEND_PREIMAGE = 34349341
+TLV_KEYSEND_PREIMAGE = 5482373484
 TLV_NOISE_MESSAGE = 34349334
 TLV_NOISE_SIGNATURE = 34349335
-
+TLV_NOISE_TIMESTAMP = 34349343
 class Message(object):
     def __init__(self, sender, body, signature, payment=None, id=None):
         self.id = id
@@ -109,9 +110,10 @@ def deliver(node_id, payload, amt, payment_hash, max_attempts=5):
 
 @plugin.async_method('sendmsg')
 def sendmsg(node_id, msg, plugin, request, pay=None, **kwargs):
+    timestamp = struct.pack("!Q", int(time.time() * 1000))
     payload = TlvPayload()
     payload.add_field(TLV_NOISE_MESSAGE, msg.encode('UTF-8'))
-
+    payload.add_field(TLV_NOISE_TIMESTAMP, timestamp)
 
     payment_key = os.urandom(32)
     payment_hash = hashlib.sha256(payment_key).digest()
