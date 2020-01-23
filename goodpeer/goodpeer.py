@@ -42,7 +42,7 @@ def get_nodes(plugin):
     return peers
 
 
-def filter_nodes(nodes):
+def filter_nodes(nodes, min_height=None):
     """
     Filter out nodes with <=15 non-dust channels.
 
@@ -50,8 +50,15 @@ def filter_nodes(nodes):
     """
     filtered_nodes = {}
     dust_limit = Millisatoshi(650000000)
+    if min_height:
+        def filter_channs(c):
+            return (c["value"] > dust_limit and
+                    int(c["scid"].split('x')[0]) > min_height)
+    else:
+        def filter_channs(c):
+            return c["value"] > dust_limit
     for id, channs in nodes.items():
-        if len(list(filter(lambda c: c["value"] > dust_limit, channs))) > 15:
+        if len(list(filter(filter_channs, channs))) > 15:
             filtered_nodes[id] = channs
     return filtered_nodes
 
@@ -92,10 +99,10 @@ def reverse_sort(nodes):
 
 @plugin.method("goodpeers", desc=goodpeers_small_desc,
                long_desc=goodpeers_desc)
-def goodpeers(plugin, bias=None, **kwargs):
+def goodpeers(plugin, bias=None, min_height=None, **kwargs):
     nodes = get_nodes(plugin)
     # Leaf nodes and low-value channels nodes are not good peers..
-    nodes = filter_nodes(nodes)
+    nodes = filter_nodes(nodes, min_height)
     # Add a score to each peer about its fees
     for id, channs in nodes.items():
         med_base, med_ppm, avg_base, avg_ppm = get_stats(channs)
