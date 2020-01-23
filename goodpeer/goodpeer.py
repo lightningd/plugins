@@ -46,10 +46,10 @@ def filter_nodes(nodes):
     """
     Filter out nodes with <=15 non-dust channels.
 
-    20$ minimum for a bitcoin at 8000$ (250000000 msats).
+    55$ minimum for a bitcoin at 8500$ (650000000 msats).
     """
     filtered_nodes = {}
-    dust_limit = Millisatoshi(250000000)
+    dust_limit = Millisatoshi(650000000)
     for id, channs in nodes.items():
         if len(list(filter(lambda c: c["value"] > dust_limit, channs))) > 15:
             filtered_nodes[id] = channs
