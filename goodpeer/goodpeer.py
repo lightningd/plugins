@@ -56,9 +56,10 @@ def filter_nodes(nodes):
     return filtered_nodes
 
 
-def get_medians(channels):
+def get_stats(channels):
     """
-    Return the (median_base_fee, median_fees_ppm) of the given peer.
+    Return the (median_base_fee, median_fees_ppm, avg_base_fee, avg_fees_ppm)
+    of the given peer.
     """
     # Loop only once..
     base_fees = ppm_fees = []
@@ -68,13 +69,16 @@ def get_medians(channels):
     base_fees, ppm_fees = sorted(base_fees), sorted(ppm_fees)
     n_channs = len(channels)
     if n_channs % 2 == 0:
-        return base_fees[n_channs // 2], ppm_fees[n_channs // 2]
+        median_base = base_fees[n_channs // 2]
+        median_ppm = ppm_fees[n_channs // 2]
     else:
         median_base = (base_fees[n_channs // 2] +
                        base_fees[n_channs // 2 + 1]) / 2
         median_ppm = (ppm_fees[n_channs // 2] +
                       ppm_fees[n_channs // 2 + 1]) / 2
-        return median_base, median_ppm
+    avg_base = sum(base_fees) / len(base_fees)
+    avg_ppm = sum(ppm_fees) / len(ppm_fees)
+    return median_base, median_ppm, avg_base, avg_ppm
 
 
 def reverse_sort(nodes):
@@ -94,18 +98,24 @@ def goodpeers(plugin, bias=None, **kwargs):
     nodes = filter_nodes(nodes)
     # Add a score to each peer about its fees
     for id, channs in nodes.items():
-        base, ppm = get_medians(channs)
+        med_base, med_ppm, avg_base, avg_ppm = get_stats(channs)
+        # This is really just to sort *after* the median
+        avg_factor = 0.001
         if not bias:
-            score = float(base + ppm)
+            score = float(med_base + med_ppm) + avg_factor * (avg_base + avg_ppm)
         elif bias.lower() == "small":
-            score = float(base * 100 + ppm)
+            score = float(med_base * 100 + med_ppm)
+            score += avg_factor * avg_base + 2 * avg_factor * avg_ppm
         elif bias.lower() == "big":
-            score = float(base + ppm * 100)
+            score = float(med_base + med_ppm * 100)
+            score += 2 * avg_factor * avg_base + avg_factor * avg_ppm
         else:
             raise ValueError("Bad bias, should be 'big' or 'small'")
         nodes[id] = {
-            "median_base": base,
-            "median_ppm": ppm,
+            "median_base": med_base,
+            "median_ppm": med_ppm,
+            "avg_base": avg_base,
+            "avg_ppm": avg_ppm,
             "score": score,
         }
     # If used in the cli, better to reverse it !
