@@ -106,6 +106,7 @@ your environment.
  - [@renepickhardt's plugins](https://github.com/renepickhardt/c-lightning-plugin-collection)
  - [@fiatjaf's plugins](https://github.com/fiatjaf/lightningd-gjson-rpc/tree/master/cmd)
  - [@rsbondi's plugins](https://github.com/rsbondi/clightning-go-plugin)
+ - [c-lightning plugins emulating commands of LND (lncli)](https://github.com/kristapsk/c-lightning-lnd-plugins)
 
 ## Plugin Builder Resources
 
