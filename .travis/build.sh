@@ -31,7 +31,7 @@ pip3 install --user --quiet \
      pytest-timeout==1.3.3 \
      pytest-xdist==1.30.0 \
      coverage \
-     coveralls \
+     codecov \
      mrkd==0.1.6
 
 echo 'travis_fold:end:script.1'
