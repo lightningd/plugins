@@ -156,12 +156,18 @@ def on_htlc_accepted(onion, htlc, plugin, **kwargs):
         plugin.log("Payload is not a TLV payload")
         return {'result': 'continue'}
 
+    body_field = payload.get(34349334)
+    signature_field = payload.get(34349335)
+
+    if body_field is None or signature_field is None:
+        plugin.log("Missing message body or signature, ignoring HTLC")
+        return {'result': 'continue'}
 
     msg = Message(
         id=len(plugin.messages),
         sender=None,
-        body=payload.get(34349334).value,
-        signature=payload.get(34349335).value,
+        body=body_field.value,
+        signature=signature_field.value,
         payment=None)
 
     # Filter out the signature so we can check it against the rest of the payload
