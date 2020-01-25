@@ -37,8 +37,20 @@ class Message(object):
             "sender": self.sender,
             "body": self.body,
             "signature": hexlify(self.signature).decode('ASCII'),
-            "payment": self.payment,
+            "payment": self.payment.to_dict() if self.payment is not None else None,
             "verified": self.verified,
+        }
+
+class Payment(object):
+    def __init__(self, payment_key, amount):
+        self.payment_key = payment_key
+        self.amount = amount
+
+    def to_dict(self):
+        return {
+            "payment_key": hexlify(self.payment_key).decode('ASCII'),
+            "payment_hash": hashlib.sha256(self.payment_key).hexdigest(),
+            "amount": self.amount,
         }
 
 
@@ -182,6 +194,7 @@ def on_htlc_accepted(onion, htlc, plugin, **kwargs):
 
     preimage = payload.get(TLV_KEYSEND_PREIMAGE)
     if preimage is not None:
+        msg.payment = Payment(preimage.value, htlc['amount'])
         res = {
             'result': 'resolve',
             'payment_key': hexlify(preimage.value).decode('ASCII')
