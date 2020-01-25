@@ -12,13 +12,16 @@ export PYTHONPATH=/tmp/lightning/contrib/pyln-client:/tmp/lightning/contrib/pyln
 mkdir -p dependencies/bin
 
 # Download bitcoind and bitcoin-cli 
+echo 'travis_fold:start:script.0'
 if [ ! -f dependencies/bin/bitcoind ]; then
     wget https://bitcoin.org/bin/bitcoin-core-0.17.1/bitcoin-0.17.1-x86_64-linux-gnu.tar.gz
     tar -xzf bitcoin-0.17.1-x86_64-linux-gnu.tar.gz
     mv bitcoin-0.17.1/bin/* dependencies/bin
     rm -rf bitcoin-0.17.1-x86_64-linux-gnu.tar.gz bitcoin-0.17.1
 fi
+echo 'travis_fold:end:script.0'
 
+echo 'travis_fold:start:script.1'
 pyenv global 3.7
 pip3 install --upgrade pip
 pip3 install --user --quiet \
@@ -30,10 +33,13 @@ pip3 install --user --quiet \
      coverage \
      coveralls
 
+echo 'travis_fold:end:script.1'
+
 # Install the pyln-client and testing library matching c-lightning `master`
 
 PY3=$(which python3)
 
+echo 'travis_fold:start:script.2'
 git clone --recursive https://github.com/ElementsProject/lightning.git /tmp/lightning
 (cd /tmp/lightning && git checkout "$LIGHTNING_VERSION")
 (cd /tmp/lightning/contrib/pyln-client && $PY3 setup.py install)
@@ -47,9 +53,12 @@ if [ ! -f "$CWD/dependencies/usr/local/bin/lightningd" ]; then
 	make -j 8 DESTDIR=dependencies/
     )
 fi
+echo 'travis_fold:end:script.2'
 
 # Collect libraries that the plugins need and install them
+echo 'travis_fold:start:script.3'
 find . -name requirements.txt -exec pip3 install --user -r {} \;
+echo 'travis_fold:end:script.3'
 
 # Enable coverage reporting from inside the plugin. This is done by adding a
 # wrapper called python3 that internally just calls `coverage run` and stores
