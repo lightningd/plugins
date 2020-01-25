@@ -26,7 +26,9 @@ pip3 install --user --quiet \
      mako==1.0.14 \
      psycopg2-binary==2.8.3 \
      pytest-timeout==1.3.3 \
-     pytest-xdist==1.30.0
+     pytest-xdist==1.30.0 \
+     coverage \
+     coveralls
 
 # Install the pyln-client and testing library matching c-lightning `master`
 
@@ -49,4 +51,14 @@ fi
 # Collect libraries that the plugins need and install them
 find . -name requirements.txt -exec pip3 install --user -r {} \;
 
+# Enable coverage reporting from inside the plugin. This is done by adding a
+# wrapper called python3 that internally just calls `coverage run` and stores
+# the coverage output in `/tmp/.coverage.*` from where we can pick the details
+# up again.
+PATH="$(pwd)/.travis/bin:$PATH"
+export PATH
+
 pytest -vvv --timeout=550 --timeout_method=thread -p no:logging -n 10
+
+# Now collect the results in a single file so coveralls finds them
+coverage combine /tmp/.coverage.*
