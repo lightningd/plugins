@@ -3,6 +3,7 @@
 Community curated plugins for c-lightning.
 
 [![Build Status](https://travis-ci.org/lightningd/plugins.svg?branch=master)](https://travis-ci.org/lightningd/plugins)
+[![Coverage Status](https://coveralls.io/repos/github/lightningd/plugins/badge.svg?branch=master)](https://coveralls.io/github/lightningd/plugins?branch=master)
 
 ## Available plugins
 
