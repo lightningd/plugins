@@ -1,0 +1,3 @@
+#!/bin/bash
+export COVERAGE_FILE=/tmp/.coverage
+coverage run --omit='/home/travis/.local/,*/.direnv/*' --parallel-mode "$@"
