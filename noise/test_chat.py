@@ -1,6 +1,10 @@
+from binascii import hexlify
+from onion import TlvPayload
+from pprint import pprint
+from pyln.client import RpcError
 from pyln.testing.fixtures import *
 from pyln.testing.utils import wait_for
-from pprint import pprint
+import hashlib
 import zbase32
 
 
@@ -107,3 +111,37 @@ def test_forward_ok(node_factory, executor):
 
     assert(m2['sender'] == l1.info['id'])
     assert(m2['verified'] == True)
+
+
+def test_missing_tlv_fields(node_factory):
+    """If we're missing a field we should not crash
+    """
+    opts = [{'plugin': plugin}]*2
+    l1, l2  = node_factory.line_graph(2, wait_for_announce=True, opts=opts)
+    payment_key = os.urandom(32)
+    payment_hash = hashlib.sha256(payment_key).hexdigest()
+
+    route = l1.rpc.getroute(l2.info['id'], 10, 10)['route']
+
+    def send(key, value):
+        hops = [{"type":"tlv", "pubkey": l2.info['id'], "payload": None}]
+
+        payload = TlvPayload()
+        payload.add_field(key, value)
+
+        hops[0]['payload'] = payload.to_hex()
+        onion = l1.rpc.createonion(hops=hops, assocdata=payment_hash)
+        l1.rpc.sendonion(
+            onion=onion['onion'],
+            first_hop=route[0],
+            payment_hash=payment_hash,
+            shared_secrets=onion['shared_secrets'],
+        )
+        with pytest.raises(RpcError, match=r'WIRE_INVALID_ONION_PAYLOAD'):
+            l1.rpc.waitsendpay(payment_hash)
+
+    send(34349334, b'Message body')
+    assert(l2.daemon.wait_for_log(r'Missing message body or signature'))
+
+    send(34349335, b'00'*32)
+    assert(l2.daemon.wait_for_log(r'Missing message body or signature'))
