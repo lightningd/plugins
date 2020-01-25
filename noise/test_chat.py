@@ -82,3 +82,28 @@ def test_msg_and_keysend(node_factory, executor):
 
     # Check that l3 actually got the funds I sent it
     wait_for(lambda: l3.rpc.listpeers()['peers'][0]['channels'][0]['msatoshi_to_us'] == amt)
+
+
+def test_forward_ok(node_factory, executor):
+    """All nodes run plugin, forwarding node doesn't crash.
+
+    Reproduces the crash mentioned by @darosior in this comment:
+    https://github.com/lightningd/plugins/pull/68#issuecomment-577251902
+
+    """
+    opts = [{'plugin': plugin}]*3
+    l1, l2, l3 = node_factory.line_graph(3, wait_for_announce=True, opts=opts)
+
+    recv = executor.submit(l3.rpc.recvmsg)
+    l1.rpc.sendmsg(l3.info['id'], "Hello world!")
+
+    # This one is tailing the incoming messages
+    m1 = recv.result(10)
+
+    # This one should get the same result:
+    m2 = l3.rpc.recvmsg(last_id=-1)
+    # They should be the same :-)
+    assert(m1 == m2)
+
+    assert(m2['sender'] == l1.info['id'])
+    assert(m2['verified'] == True)

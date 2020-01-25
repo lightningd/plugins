@@ -152,6 +152,10 @@ def recvmsg(plugin, request, last_id=None, **kwargs):
 @plugin.hook('htlc_accepted')
 def on_htlc_accepted(onion, htlc, plugin, **kwargs):
     payload = OnionPayload.from_hex(onion['payload'])
+    if not isinstance(payload, TlvPayload):
+        plugin.log("Payload is not a TLV payload")
+        return {'result': 'continue'}
+
 
     msg = Message(
         id=len(plugin.messages),
