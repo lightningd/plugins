@@ -118,6 +118,7 @@ backend_map: Mapping[str, Type[Backend]] = {
 def abort(reason: str) -> None:
     plugin.log(reason)
     plugin.rpc.stop()
+    raise ValueError()
 
 
 def check_first_write(plugin, data_version):
@@ -149,11 +150,9 @@ def check_first_write(plugin, data_version):
 
     elif backend.prev_version > data_version - 1:
         abort("c-lightning seems to have lost some state (failed restore?). Emergency shutdown.")
-        return False
 
     else:
         abort("Backup is out of date, we cannot continue safely. Emergency shutdown.")
-        return False
 
 
 @plugin.hook('db_write')
@@ -192,7 +191,6 @@ def on_init(options: Mapping[str, str], plugin: Plugin, **kwargs):
     backend_cl = backend_map.get(p.scheme, None)
     if backend_cl is None:
         abort("Could not find a backend for scheme {p.scheme}".format(p=p))
-        return
 
     plugin.backend = backend_cl(destination)
     if not plugin.backend.initialize():
