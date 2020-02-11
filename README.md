@@ -25,6 +25,7 @@ Community curated plugins for c-lightning.
 | [pruning][pruning]                 | This plugin manages pruning of bitcoind such that it can always sync                      |
 | [rebalance][rebalance]             | Keeps your channels balanced                                                              |
 | [reckless][reckless]               | An **experimental** plugin manager (search/install plugins)                               |
+| [requestinvoice][request-invoice]  | Http server to request invoices                                            |
 | [sauron][sauron]                   | A Bitcoin backend relying on [Esplora][esplora]'s API                                     |
 | [sitzprobe][sitzprobe]             | A Lightning Network payment rehearsal utility                                             |
 | [sparko][sparko]                   | RPC over HTTP with fine-grained permissions, SSE and spark-wallet support                 |
@@ -157,6 +158,7 @@ your environment.
 [js-api]: https://github.com/darosior/clightningjs
 [monitor]: https://github.com/renepickhardt/plugins/tree/master/monitor
 [reckless]: https://github.com/darosior/reckless
+[request-invoice]: https://github.com/lightningd/plugins/tree/master/request-invoice
 [sauron]: https://github.com/lightningd/plugins/tree/master/sauron
 [zmq-home]: https://zeromq.org/
 [zmq]: https://github.com/lightningd/plugins/tree/master/zmq
