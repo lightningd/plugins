@@ -29,7 +29,7 @@ limiter = Limiter(
 
 
 @limiter.limit("20 per minute")
-def getinvoice(amount, description):       
+def getinvoice(amount, description):
         global plugin
         label = "ln-getinvoice-{}".format(random())
         invoice = plugin.rpc.invoice(int(amount)*1000, label, description)
@@ -37,7 +37,7 @@ def getinvoice(amount, description):
 
 
 def worker(port):
-    app.config['SECRET_KEY'] = secret    
+    app.config['SECRET_KEY'] = secret
     app.add_url_rule('/invoice/<int:amount>/<description>', 'getinvoice', getinvoice)
     http_server = HTTPServer(WSGIContainer(app))
     http_server.listen(port)
@@ -78,8 +78,7 @@ def invoiceserver(request, command="start", port=8089):
     /invoice/<amount>/<description>  
     where amount is in Satoshis.  
     The plugin takes one of the following commands: 
-    {start/stop/restart} and {port} .By default the plugin
-    starts the server on port 8089.
+    {start/stop/restart} and {port} , default port: 8089.
     """
     commands = {"start", "stop", "restart", "list"}
 
