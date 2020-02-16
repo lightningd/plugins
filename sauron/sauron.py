@@ -86,8 +86,8 @@ def sendrawtx(plugin, tx, **kwargs):
     }
 
 
-@plugin.method("gettxout")
-def gettxout(plugin, txid, vout, **kwargs):
+@plugin.method("getutxout")
+def getutxout(plugin, txid, vout, **kwargs):
     gettx_url = "{}/tx/{}".format(plugin.api_endpoint, txid)
     status_url = "{}/tx/{}/outspend/{}".format(plugin.api_endpoint, txid, vout)
 
