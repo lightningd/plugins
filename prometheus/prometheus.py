@@ -16,7 +16,7 @@ class BaseLnCollector(object):
 class NodeCollector(BaseLnCollector):
     def collect(self):
         info = self.rpc.getinfo()
-        info_labels = {k: v for k, v in info.items() if isinstance(v, str)}
+        info_labels = {k.replace('-', '_'): v for k, v in info.items() if isinstance(v, str)}
         node_info_fam = InfoMetricFamily(
             'lightning_node',
             'Static node information',
