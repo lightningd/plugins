@@ -41,19 +41,14 @@ echo 'travis_fold:end:script.1'
 PY3=$(which python3)
 
 echo 'travis_fold:start:script.2'
-git clone --recursive https://github.com/ElementsProject/lightning.git /tmp/lightning
+git clone --recursive -b plugin-hook-crash https://github.com/cdecker/lightning.git /tmp/lightning
 (cd /tmp/lightning && git checkout "$LIGHTNING_VERSION")
 (cd /tmp/lightning/contrib/pyln-client && $PY3 setup.py install)
 (cd /tmp/lightning/contrib/pyln-testing && $PY3 setup.py install)
 
-# Compiling lightningd can be noisy and time-consuming, cache the binaries
-if [ ! -f "$CWD/dependencies/usr/local/bin/lightningd" ]; then
-    (
-	cd /tmp/lightning && \
-	./configure --disable-valgrind && \
-	make -j 8 DESTDIR=dependencies/
-    )
-fi
+cd /tmp/lightning && \
+./configure --disable-valgrind && \
+make -j 8 DESTDIR=dependencies/
 echo 'travis_fold:end:script.2'
 
 # Collect libraries that the plugins need and install them
