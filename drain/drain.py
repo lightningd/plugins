@@ -135,6 +135,8 @@ def test_or_set_chunks(plugin, payload, my_id):
         amount = spendable
     if cmd == "fill" and amount > receivable:
         amount = receivable
+    if amount == Millisatoshi(0):
+        raise RpcError(payload['command'], payload, {'message': 'Cannot detect required chunks to perform operation. Amount would be 0msat.'})
 
     # get all spendable/receivables for our channels
     channels = {}
@@ -356,6 +358,8 @@ def execute(payload: dict):
         spendable, receivable = spendable_from_scid(plugin, payload)
         total = spendable + receivable
         amount = total * 0.01 * payload['percentage'] / payload['chunks']
+        if amount == Millisatoshi(0):
+            raise RpcError(payload['command'], payload, {'message': 'Cannot process chunk. Amount would be 0msat.'})
 
         # if capacity exceeds, limit amount to full or empty channel
         if payload['command'] == "drain" and amount > spendable:
