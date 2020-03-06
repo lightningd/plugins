@@ -58,8 +58,14 @@ def setup_routing_fees(plugin, payload, route, amount, substractfees: bool=False
 def get_channel(plugin, payload, peer_id, scid=None):
     if scid is None:
         scid = payload['scid']
-    peer = plugin.rpc.listpeers(peer_id).get('peers')[0]
-    channel = next(c for c in peer['channels'] if 'short_channel_id' in c and c['short_channel_id'] == scid)
+    try:
+        peer = plugin.rpc.listpeers(peer_id).get('peers')[0]
+    except IndexError:
+        raise RpcError(payload['command'], payload, {'message': 'Cannot find peer %s' % peer_id})
+    try:
+        channel = next(c for c in peer['channels'] if 'short_channel_id' in c and c['short_channel_id'] == scid)
+    except StopIteration:
+        raise RpcError(payload['command'], payload, {'message': 'Cannot find channel %s for peer %s' % (scid, peer_id) })
     if channel['state'] != "CHANNELD_NORMAL":
         raise RpcError(payload['command'], payload, {'message': 'Channel %s not in state CHANNELD_NORMAL, but: %s' % (scid, channel['state']) })
     if not peer['connected']:
@@ -67,14 +73,16 @@ def get_channel(plugin, payload, peer_id, scid=None):
     return channel
 
 
-def spendable_from_scid(plugin, payload, scid=None):
+def spendable_from_scid(plugin, payload, scid=None, _raise=False):
     if scid is None:
         scid = payload['scid']
 
     peer_id = peer_from_scid(plugin, payload, scid)
     try:
         channel_peer = get_channel(plugin, payload, peer_id, scid)
-    except RpcError:
+    except RpcError as e:
+        if _raise:
+            raise e
         return Millisatoshi(0), Millisatoshi(0)
 
     # we check amounts via gossip and not wallet funds, as its more accurate
@@ -143,11 +151,16 @@ def test_or_set_chunks(plugin, payload):
     for channel in plugin.rpc.listchannels(source = payload['my_id']).get('channels'):
         if channel['short_channel_id'] == scid:
             continue
-        spend, recv = spendable_from_scid(plugin, payload, channel['short_channel_id'])
+        try:
+            spend, recv = spendable_from_scid(plugin, payload, channel['short_channel_id'], True)
+        except RPCError as e:
+            continue
         channels[channel['short_channel_id']] = {
             'spendable' : spend,
             'receivable' : recv,
         }
+    if len(channels) == 0:
+        raise RpcError(payload['command'], payload, {'message': 'Not enough usable channels to perform cyclic routing.'})
 
     # test if selected chunks fit into other channel capacities
     chunks = payload['chunks']
@@ -166,7 +179,6 @@ def test_or_set_chunks(plugin, payload):
             raise RpcError(payload['command'], payload, {'message': 'Selected chunks (%d) will not fit incoming channel capacities.' % chunks})
         if cmd == "fill":
             raise RpcError(payload['command'], payload, {'message': 'Selected chunks (%d) will not fit outgoing channel capacities.' % chunks})
-
 
     # if chunks is 0 -> auto detect from 1 to 16 (max) chunks until amounts fit
     else:
