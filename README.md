@@ -21,6 +21,7 @@ Community curated plugins for c-lightning.
 | [prometheus][prometheus]           | Lightning node exporter for the prometheus timeseries server               |
 | [rebalance][rebalance]             | Keeps your channels balanced                                               |
 | [reckless][reckless]               | An **experimental** plugin manager (search/install plugins)                |
+| [sauron][sauron]                   | A Bitcoin backend relying on [Esplora][esplora]'s API                      |
 | [sendinvoiceless][sendinvoiceless] | Sends some money without an invoice from the receiving node.               |
 | [sitzprobe][sitzprobe]             | A Lightning Network payment rehearsal utility                              |
 | [summary][summary]                 | Print a nice summary of the node status                                    |
@@ -118,6 +119,7 @@ your environment.
  - [C++ Plugin API & RPC Client][cpp-api] by @darosior
  - [Javascript Plugin API & RPC Client][js-api] by @darosior
 
+[esplora]: https://github.com/Blockstream/esplora
 [pers-chans]: https://github.com/lightningd/plugins/tree/master/persistent-channels
 [probe]: https://github.com/lightningd/plugins/tree/master/probe
 [prometheus]: https://github.com/lightningd/plugins/tree/master/prometheus
@@ -140,6 +142,7 @@ your environment.
 [js-api]: https://github.com/darosior/clightningjs
 [monitor]: https://github.com/renepickhardt/plugins/tree/master/monitor
 [reckless]: https://github.com/darosior/reckless
+[sauron]: https://github.com/lightningd/plugins/tree/master/sauron
 [zmq-home]: https://zeromq.org/
 [zmq]: https://github.com/lightningd/plugins/tree/master/zmq
 [csvexportpays]: https://github.com/0xB10C/c-lightning-plugin-csvexportpays
