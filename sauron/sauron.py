@@ -53,7 +53,7 @@ def getrawblock(plugin, height, **kwargs):
     blockhash_url = "{}/block-height/{}".format(plugin.api_endpoint, height)
 
     blockhash_req = requests.get(blockhash_url)
-    # FIXME: Esplora doesn't serve raw blocks !
+    # FIXME: Esplora now serves raw blocks, integrate it when deployed !
     # https://github.com/Blockstream/esplora/issues/171
     block_url = "https://blockchain.info/block/{}?format=hex"
     block_req = requests.get(block_url.format(blockhash_req.text))
@@ -107,22 +107,28 @@ def getutxout(plugin, txid, vout, **kwargs):
     }
 
 
-@plugin.method("getfeerate")
-def getfeerate(plugin, blocks, mode, **kwargs):
+@plugin.method("estimatefees")
+def getfeerate(plugin, **kwargs):
     feerate_url = "{}/fee-estimates".format(plugin.api_endpoint)
-    # Use an estimation provided by esplora
-    if blocks == 100:
-        blocks = 144
 
     feerate_req = requests.get(feerate_url)
     assert feerate_req.status_code == 200
     feerates = json.loads(feerate_req.text)
-    # It renders sat/vB, so * 10**8 / 10**3 for BTC/kB
-    feerate = feerates[str(blocks)] * 10**5
+    # It renders sat/vB, we want sat/kVB, so multiply everything by 10**3
+    slow = int(feerates["144"] * 10**3)
+    normal = int(feerates["5"] * 10**3)
+    urgent = int(feerates["3"] * 10**3)
+    very_urgent = int(feerates["2"] * 10**3)
 
-    # FIXME mode ?
     return {
-        "feerate": int(feerate),
+        "opening": normal,
+        "mutual_close": normal,
+        "unilateral_close": very_urgent,
+        "delayed_to_us": normal,
+        "htlc_resolution": urgent,
+        "penalty": urgent,
+        "min_acceptable": slow // 2,
+        "max_acceptable": very_urgent * 10,
     }
 
 
