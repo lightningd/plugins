@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-import json
 import requests
 
 from art import sauron_eye
@@ -9,11 +8,15 @@ from pyln.client import Plugin
 plugin = Plugin()
 
 
+class SauronError(Exception):
+    pass
+
+
 @plugin.init()
 def init(plugin, options, configuration, **kwargs):
     plugin.api_endpoint = options.get("sauron-api-endpoint")
     if not plugin.api_endpoint:
-        raise Exception("You need to specify the sauron-api-endpoint option.")
+        raise SauronError("You need to specify the sauron-api-endpoint option.")
 
     plugin.log("Sauron plugin initialized")
     plugin.log(sauron_eye)
@@ -33,10 +36,20 @@ def getchaininfo(plugin, **kwargs):
     }
 
     genesis_req = requests.get(blockhash_url)
+    if not genesis_req.status_code == 200:
+        raise SauronError("Endpoint at {} returned {} ({}) when trying to "
+                          "get genesis block hash."
+                          .format(blockhash_url, genesis_req.status_code,
+                                  genesis_req.text))
+
     blockcount_req = requests.get(blockcount_url)
-    assert genesis_req.status_code == 200 and blockcount_req.status_code == 200
+    if not blockcount_req.status_code == 200:
+        raise SauronError("Endpoint at {} returned {} ({}) when trying to "
+                          "get blockcount.".format(blockcount_url,
+                                                   blockcount_req.status_code,
+                                                   blockcount_req.text))
     if genesis_req.text not in chains.keys():
-        raise Exception("Unsupported network")
+        raise SauronError("Unsupported network")
 
     # We wouldn't be able to hit it if its bitcoind wasn't synced, so
     # ibd = false and headercount = blockcount
@@ -90,15 +103,25 @@ def getutxout(plugin, txid, vout, **kwargs):
     status_url = "{}/tx/{}/outspend/{}".format(plugin.api_endpoint, txid, vout)
 
     gettx_req = requests.get(gettx_url)
+    if not gettx_req.status_code == 200:
+        raise SauronError("Endpoint at {} returned {} ({}) when trying to "
+                          "get transaction.".format(gettx_url,
+                                                    gettx_req.status_code,
+                                                    gettx_req.text))
     status_req = requests.get(status_url)
-    assert gettx_req.status_code == status_req.status_code == 200
-    if json.loads(status_req.text)["spent"]:
+    if not status_req.status_code == 200:
+        raise SauronError("Endpoint at {} returned {} ({}) when trying to "
+                          "get utxo status.".format(status_url,
+                                                    status_req.status_code,
+                                                    status_req.text))
+
+    if status_req.json()["spent"]:
         return {
             "amount": None,
             "script": None,
         }
 
-    txo = json.loads(gettx_req.text)["vout"][vout]
+    txo = gettx_req.json()["vout"][vout]
     return {
         "amount": txo["value"],
         "script": txo["scriptpubkey"],
@@ -111,7 +134,7 @@ def getfeerate(plugin, **kwargs):
 
     feerate_req = requests.get(feerate_url)
     assert feerate_req.status_code == 200
-    feerates = json.loads(feerate_req.text)
+    feerates = feerate_req.json()
     # It renders sat/vB, we want sat/kVB, so multiply everything by 10**3
     slow = int(feerates["144"] * 10**3)
     normal = int(feerates["5"] * 10**3)
