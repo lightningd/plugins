@@ -53,10 +53,8 @@ def getrawblock(plugin, height, **kwargs):
     blockhash_url = "{}/block-height/{}".format(plugin.api_endpoint, height)
 
     blockhash_req = requests.get(blockhash_url)
-    # FIXME: Esplora now serves raw blocks, integrate it when deployed !
-    # https://github.com/Blockstream/esplora/issues/171
-    block_url = "https://blockchain.info/block/{}?format=hex"
-    block_req = requests.get(block_url.format(blockhash_req.text))
+    block_req = requests.get("{}/block/{}/raw".format(plugin.api_endpoint,
+                                                      blockhash_req.text))
     if blockhash_req.status_code != 200 or block_req.status_code != 200:
         return {
             "blockhash": None,
@@ -65,7 +63,7 @@ def getrawblock(plugin, height, **kwargs):
 
     return {
         "blockhash": blockhash_req.text,
-        "block": block_req.text,
+        "block": block_req.content.hex(),
     }
 
 
