@@ -49,7 +49,6 @@ def init(lightning_dir, destination):
     else:
         print("Database does not exist yet, created an empty backup file")
 
-
     print("Initialized backup backend {destination}, you can now start c-lightning".format(
         destination=destination,
     ))
