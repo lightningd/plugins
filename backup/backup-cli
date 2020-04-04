@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-from backup import FileBackend
+from backup import FileBackend, get_backend
 import os
 import click
 import json
@@ -7,10 +7,9 @@ import json
 
 @click.command()
 @click.argument("lightning-dir", type=click.Path(exists=True))
-@click.argument("backup-dir", type=click.Path(exists=True))
-def init(lightning_dir, backup_dir):
-    destination = 'file://' + os.path.join(backup_dir, 'backup.dbak')
-    backend = FileBackend(destination)
+@click.argument("destination")
+def init(lightning_dir, destination):
+    backend = get_backend(destination)
     backend.version, backend.prev_version = 0, 0
     backend.offsets = [512, 0]
     backend.version_count = 0
@@ -22,6 +21,8 @@ def init(lightning_dir, backup_dir):
         f.write(json.dumps({
             'backend_url': destination,
         }))
+
+    # TODO Take a snapshot
 
     print("Initialized backup backend {destination}, you can now start c-lightning".format(
         destination=destination,

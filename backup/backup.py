@@ -122,15 +122,21 @@ class FileBackend(Backend):
         return True
 
     def add_entry(self, entry: Change) -> bool:
-        payload = b'\x00'.join([t.encode('ASCII') for t in entry.transaction])
+        typ = b'\x01' if entry.snapshot is None else b'\x02'
+        if typ == b'\x01':
+            payload = b'\x00'.join([t.encode('ASCII') for t in entry.transaction])
+        elif typ == b'\x02':
+            payload = entry.snapshot
+
         length = struct.pack("!I", len(payload))
         with open(self.url.path, 'ab') as f:
             f.seek(self.offsets[0])
             f.write(length)
+            f.write(typ)
             f.write(payload)
             self.prev_version, self.offsets[1] = self.version, self.offsets[0]
             self.version = entry.version
-            self.offsets[0] += 4 + len(payload)
+            self.offsets[0] += 5 + len(payload)
         self.write_metadata()
 
         return True
@@ -156,6 +162,15 @@ def resolve_backend_class(backend_url):
     p = urlparse(backend_url)
     backend_cl = backend_map.get(p.scheme, None)
     return backend_cl
+
+
+def get_backend(destination):
+    backend_cl = resolve_backend_class(destination)
+    if backend_cl is None:
+        raise ValueError("No backend implementation found for {destination}".format(
+            destination=destination,
+        ))
+    return backend_cl(destination)
 
 
 def abort(reason: str) -> None:
@@ -240,12 +255,7 @@ def on_init(options: Mapping[str, str], plugin: Plugin, **kwargs):
     if not plugin.db_path.startswith('sqlite3'):
         abort("The backup plugin only works with the sqlite3 database.")
 
-    # Let's initialize the backed. First we need to figure out which backend to use.
-    backend_cl = resolve_backend_class(destination)
-    if backend_cl is None:
-        abort("Could not find a backend for scheme {p.scheme}".format(p=p))
-
-    plugin.backend = backend_cl(destination)
+    plugin.backend = get_backend(destination)
     if not plugin.backend.initialize():
         abort("Could not initialize the backup {}, please use 'backup-cli' to initialize the backup first.".format(destination))
 

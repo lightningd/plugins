@@ -10,20 +10,13 @@ cli_path = os.path.join(os.path.dirname(__file__), "backup-cli")
 
 
 def test_start(node_factory, directory):
-    bdest = os.path.join(directory, 'lightning-1', 'backup.dbak')
-    opts = {
-        'plugin': plugin_path,
-        'backup-destination': 'file://' + bdest,
-        }
-
-    subprocess.check_call([cli_path, "init", directory, directory])
     bpath = os.path.join(directory, 'lightning-1', 'regtest')
-    bdest = os.path.join(bpath, 'backup.dbak')
+    bdest = 'file://' + os.path.join(bpath, 'backup.dbak')
     os.makedirs(bpath)
-    subprocess.check_call([cli_path, "init", bpath, bpath])
+    subprocess.check_call([cli_path, "init", bpath, bdest])
     opts = {
         'plugin': plugin_path,
-        'backup-destination': 'file://' + bdest,
+        'backup-destination': bdest,
         }
     l1 = node_factory.get_node(options=opts, cleandir=False)
 
@@ -46,12 +39,12 @@ def test_tx_abort(node_factory, directory):
 
     """
     bpath = os.path.join(directory, 'lightning-1', 'regtest')
-    bdest = os.path.join(bpath, 'backup.dbak')
+    bdest = 'file://' + os.path.join(bpath, 'backup.dbak')
     os.makedirs(bpath)
-    subprocess.check_call([cli_path, "init", bpath, bpath])
+    subprocess.check_call([cli_path, "init", bpath, bdest])
     opts = {
         'plugin': plugin_path,
-        'backup-destination': 'file://' + bdest,
+        'backup-destination': bdest,
         }
     l1 = node_factory.get_node(options=opts, cleandir=False)
     l1.stop()
@@ -75,12 +68,12 @@ def test_failing_restore(node_factory, directory):
 
     """
     bpath = os.path.join(directory, 'lightning-1', 'regtest')
-    bdest = os.path.join(bpath, 'backup.dbak')
+    bdest = 'file://' + os.path.join(bpath, 'backup.dbak')
     os.makedirs(bpath)
-    subprocess.check_call([cli_path, "init", bpath, bpath])
+    subprocess.check_call([cli_path, "init", bpath, bdest])
     opts = {
         'plugin': plugin_path,
-        'backup-destination': 'file://' + bdest,
+        'backup-destination': bdest,
         }
     l1 = node_factory.get_node(options=opts, cleandir=False)
     l1.stop()
@@ -99,12 +92,12 @@ def test_intermittent_backup(node_factory, directory):
 
     """
     bpath = os.path.join(directory, 'lightning-1', 'regtest')
-    bdest = os.path.join(bpath, 'backup.dbak')
+    bdest = 'file://' + os.path.join(bpath, 'backup.dbak')
     os.makedirs(bpath)
-    subprocess.check_call([cli_path, "init", bpath, bpath])
+    subprocess.check_call([cli_path, "init", bpath, bdest])
     opts = {
         'plugin': plugin_path,
-        'backup-destination': 'file://' + bdest,
+        'backup-destination': bdest,
         }
     l1 = node_factory.get_node(options=opts, cleandir=False)
 
