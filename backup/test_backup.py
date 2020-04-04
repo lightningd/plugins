@@ -1,20 +1,23 @@
 from pyln.testing.fixtures import *
 import os
 import time
+import shutil
+import subprocess
+
 
 plugin_dir = os.path.dirname(__file__)
-plugin_path =  os.path.join(plugin_dir, "backup.py")
+plugin_path = os.path.join(plugin_dir, "backup.py")
+cli_path = os.path.join(os.path.dirname(__file__), "backup-cli")
 
 
 def test_start(node_factory, directory):
+    bdest = os.path.join(directory, 'backup.dbak')
     opts = {
         'plugin': plugin_path,
-        'backup-destination': 'file://' + os.path.join(directory, 'backup.dbak')
+        'backup-destination': 'file://' + bdest,
         }
-    shutil.copyfile(
-        os.path.join(plugin_dir, 'fixtures', "backup.dbak"),
-        os.path.join(directory, "backup.dbak")
-    )
+
+    subprocess.check_call([cli_path, "init", directory, directory])
     l1 = node_factory.get_node(options=opts)
 
     l1.daemon.wait_for_log(r'backup.py')
@@ -35,14 +38,12 @@ def test_tx_abort(node_factory, directory):
     inbetween the hook call and the DB transaction.
 
     """
+    bdest = os.path.join(directory, 'backup.dbak')
     opts = {
         'plugin': plugin_path,
-        'backup-destination': 'file://' + os.path.join(directory, 'backup.dbak')
+        'backup-destination': 'file://' + bdest,
         }
-    shutil.copyfile(
-        os.path.join(plugin_dir, 'fixtures', "backup.dbak"),
-        os.path.join(directory, "backup.dbak")
-    )
+    subprocess.check_call([cli_path, "init", directory, directory])
     l1 = node_factory.get_node(options=opts)
     l1.stop()
 
@@ -68,10 +69,7 @@ def test_failing_restore(node_factory, directory):
         'plugin': plugin_path,
         'backup-destination': 'file://' + os.path.join(directory, 'backup.dbak')
         }
-    shutil.copyfile(
-        os.path.join(plugin_dir, 'fixtures', "backup.dbak"),
-        os.path.join(directory, "backup.dbak")
-    )
+    subprocess.check_call([cli_path, "init", directory, directory])
     l1 = node_factory.get_node(options=opts)
     l1.stop()
 
@@ -93,10 +91,7 @@ def test_intermittent_backup(node_factory, directory):
         'plugin': plugin_path,
         'backup-destination': 'file://' + os.path.join(directory, 'backup.dbak')
         }
-    shutil.copyfile(
-        os.path.join(plugin_dir, 'fixtures', "backup.dbak"),
-        os.path.join(directory, "backup.dbak")
-    )
+    subprocess.check_call([cli_path, "init", directory, directory])
     l1 = node_factory.get_node(options=opts)
 
     # Now start without the plugin. This should work fine.

@@ -1,0 +1,39 @@
+#!/usr/bin/env python3
+from backup import FileBackend
+import os
+import click
+import json
+
+
+@click.command()
+@click.argument("lightning-dir", type=click.Path(exists=True))
+@click.argument("backup-dir", type=click.Path(exists=True))
+def init(lightning_dir, backup_dir):
+    destination = 'file://' + os.path.join(backup_dir, 'backup.dbak')
+    backend = FileBackend(destination)
+    backend.version, backend.prev_version = 0, 0
+    backend.offsets = [512, 0]
+    backend.version_count = 0
+    backend.write_metadata()
+
+    lock_file = os.path.join(lightning_dir, "backup.lock")
+
+    with open(lock_file, "w") as f:
+        f.write(json.dumps({
+            'backend_url': destination,
+        }))
+
+    print("Initialized backup backend {destination}, you can now start c-lightning".format(
+        destination=destination,
+    ))
+
+
+@click.group()
+def cli():
+    pass
+
+
+cli.add_command(init)
+
+if __name__ == "__main__":
+    cli()

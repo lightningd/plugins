@@ -1,14 +1,13 @@
 #!/usr/bin/env python3
-from pyln.client import Plugin
-from pprint import pprint
 from collections import namedtuple
+from pyln.client import Plugin
+from typing import Mapping, Type
 from urllib.parse import urlparse
-import struct
-import os
-from typing import Mapping, Type, Optional
+import json
 import logging
+import os
+import struct
 import sys
-from binascii import hexlify
 
 
 plugin = Plugin()
@@ -25,7 +24,8 @@ root.addHandler(handler)
 # A change that was proposed by c-lightning that needs saving to the
 # backup. `version` is the database version before the transaction was
 # applied.
-Change = namedtuple('Change',['version', 'transaction'])
+Change = namedtuple('Change', ['version', 'transaction'])
+
 
 class Backend(object):
     def __init__(self, destination: str):
@@ -39,6 +39,7 @@ class Backend(object):
 
     def initialize(self) -> bool:
         raise NotImplementedError
+
 
 class FileBackend(Backend):
     def __init__(self, destination: str):
@@ -111,9 +112,15 @@ class FileBackend(Backend):
         self.prev_version, self.offsets[1] = 0, 0
         return True
 
-backend_map: Mapping[str, Type[Backend]] = {
-    'file': FileBackend,
-}
+
+def resolve_backend_class(backend_url):
+    backend_map: Mapping[str, Type[Backend]] = {
+        'file': FileBackend,
+    }
+    p = urlparse(backend_url)
+    backend_cl = backend_map.get(p.scheme, None)
+    return backend_cl
+
 
 def abort(reason: str) -> None:
     plugin.log(reason)
@@ -140,7 +147,7 @@ def check_first_write(plugin, data_version):
         backend.version, data_version
     ))
 
-    if backend.version  == data_version - 1:
+    if backend.version == data_version - 1:
         logging.info("Versions match up")
         return True
 
@@ -160,7 +167,7 @@ def on_db_write(writes, data_version, plugin, **kwargs):
     change = Change(data_version, writes)
     if not hasattr(plugin, 'backend'):
         plugin.early_writes.append(change)
-        return True
+        return {"result": "continue"}
     else:
         return apply_write(plugin, change)
 
@@ -170,7 +177,8 @@ def apply_write(plugin, change):
         assert(check_first_write(plugin, change.version))
         plugin.initialized = True
 
-    return plugin.backend.add_entry(change)
+    if plugin.backend.add_entry(change):
+        return {"result": "continue"}
 
 
 @plugin.init()
@@ -180,6 +188,17 @@ def on_init(options: Mapping[str, str], plugin: Plugin, **kwargs):
     plugin.db_path = configs['wallet']
     destination = options['backup-destination']
 
+    # Ensure that we don't inadventently switch the destination
+    if os.path.exists("backup.lock"):
+        d = json.load(open("backup.lock", 'r'))
+        if destination is None or destination == 'null':
+            destination = d['backend_url']
+        elif destination != d['backend_url']:
+            abort(
+                "The destination specified as option does not match the one "
+                "specified in backup.lock. Please check your settings"
+            )
+
     if not plugin.db_path.startswith('sqlite3'):
         abort("The backup plugin only works with the sqlite3 database.")
 
@@ -187,8 +206,7 @@ def on_init(options: Mapping[str, str], plugin: Plugin, **kwargs):
         abort("You must specify a backup destination, possibly on a secondary disk.")
 
     # Let's initialize the backed. First we need to figure out which backend to use.
-    p = urlparse(destination)
-    backend_cl = backend_map.get(p.scheme, None)
+    backend_cl = resolve_backend_class(destination)
     if backend_cl is None:
         abort("Could not find a backend for scheme {p.scheme}".format(p=p))
 
