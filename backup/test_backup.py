@@ -158,3 +158,19 @@ def test_intermittent_backup(node_factory, directory):
         l1.start()
 
     assert(l1.daemon.is_in_log(r'Backup is out of date'))
+
+
+def test_restore(node_factory, directory):
+    bpath = os.path.join(directory, 'lightning-1', 'regtest')
+    bdest = 'file://' + os.path.join(bpath, 'backup.dbak')
+    os.makedirs(bpath)
+    subprocess.check_call([cli_path, "init", bpath, bdest])
+    opts = {
+        'plugin': plugin_path,
+        'backup-destination': bdest,
+        }
+    l1 = node_factory.get_node(options=opts, cleandir=False)
+    l1.stop()
+
+    rdest = os.path.join(bpath, 'lightningd.sqlite.restore')
+    subprocess.check_call([cli_path, "restore", bdest, rdest])
