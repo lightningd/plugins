@@ -10,9 +10,16 @@ import sys
 @click.command()
 @click.argument("lightning-dir", type=click.Path(exists=True))
 @click.argument("backend-url")
-def init(lightning_dir, backend_url):
+@click.option("--dropbox-token")
+@click.option("--pgp-key")
+def init(lightning_dir, backend_url, dropbox_token, pgp_key):
     destination = backend_url
-    backend = get_backend(destination, create=True)
+    options = {
+        "dropbox-token": (os.environ.get("DROPBOX_TOKEN") or dropbox_token
+                          or "null"),
+        "pgp-key": pgp_key or "null",
+    }
+    backend = get_backend(destination, options, create=True)
     backend.version, backend.prev_version = 0, 0
     backend.offsets = [512, 0]
     backend.version_count = 0
@@ -58,9 +65,16 @@ def init(lightning_dir, backend_url):
 @click.command()
 @click.argument("backend-url")
 @click.argument("restore-destination")
-def restore(backend_url, restore_destination):
+@click.option("--dropbox-token")
+@click.option("--pgp-key")
+def restore(backend_url, restore_destination, dropbox_token, pgp_key):
     destination = backend_url
-    backend = get_backend(destination)
+    options = {
+        "dropbox-token": (os.environ.get("DROPBOX_TOKEN") or dropbox_token
+                          or "null"),
+        "pgp-key": pgp_key or "null",
+    }
+    backend = get_backend(destination, options)
     backend.restore(restore_destination)
 
 

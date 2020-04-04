@@ -1,2 +1,4 @@
 Click==7.0
+dropbox>=9.5.0
+python-gnupg>=0.4.5
 tqdm>=4.45
