@@ -228,7 +228,7 @@ def apply_write(plugin, change):
         assert(check_first_write(plugin, change.version))
         plugin.initialized = True
 
-    if plugin.backend.add_entry(change):
+    if plugin.backend.add_change(change):
         return {"result": "continue"}
 
 
