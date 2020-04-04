@@ -121,7 +121,7 @@ class FileBackend(Backend):
 
         return True
 
-    def add_entry(self, entry: Change) -> bool:
+    def add_change(self, entry: Change) -> bool:
         typ = b'\x01' if entry.snapshot is None else b'\x02'
         if typ == b'\x01':
             payload = b'\x00'.join([t.encode('ASCII') for t in entry.transaction])
