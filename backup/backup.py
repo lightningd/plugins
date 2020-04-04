@@ -128,19 +128,21 @@ class FileBackend(Backend):
     def add_change(self, entry: Change) -> bool:
         typ = b'\x01' if entry.snapshot is None else b'\x02'
         if typ == b'\x01':
-            payload = b'\x00'.join([t.encode('ASCII') for t in entry.transaction])
+            payload = b'\x00'.join([t.encode('UTF-8') for t in entry.transaction])
         elif typ == b'\x02':
             payload = entry.snapshot
 
         length = struct.pack("!I", len(payload))
+        version = struct.pack("!I", entry.version)
         with open(self.url.path, 'ab') as f:
             f.seek(self.offsets[0])
             f.write(length)
+            f.write(version)
             f.write(typ)
             f.write(payload)
             self.prev_version, self.offsets[1] = self.version, self.offsets[0]
             self.version = entry.version
-            self.offsets[0] += 5 + len(payload)
+            self.offsets[0] += 9 + len(payload)
         self.write_metadata()
 
         return True
