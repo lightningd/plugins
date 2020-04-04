@@ -43,7 +43,7 @@ def test_start_no_init(node_factory, directory):
         options=opts, cleandir=False, may_fail=True, start=False
     )
 
-    with pytest.raises(RpcError):
+    with pytest.raises((RpcError, ConnectionRefusedError, ConnectionResetError)):
         # The way we detect a failure to start is when we attempt to connect
         # to the RPC.
         l1.start()
