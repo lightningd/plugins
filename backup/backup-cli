@@ -55,12 +55,22 @@ def init(lightning_dir, backend_url):
     ))
 
 
+@click.command()
+@click.argument("backend-url")
+@click.argument("restore-destination")
+def restore(backend_url, restore_destination):
+    destination = backend_url
+    backend = get_backend(destination)
+    backend.restore(restore_destination)
+
+
 @click.group()
 def cli():
     pass
 
 
 cli.add_command(init)
+cli.add_command(restore)
 
 if __name__ == "__main__":
     cli()
