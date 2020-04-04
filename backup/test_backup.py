@@ -2,8 +2,7 @@ from flaky import flaky
 from pyln.client import RpcError
 from pyln.testing.fixtures import *
 import os
-import time
-import shutil
+import pytest
 import subprocess
 
 
@@ -13,14 +12,22 @@ cli_path = os.path.join(os.path.dirname(__file__), "backup-cli")
 
 
 def test_start(node_factory, directory):
-    bdest = os.path.join(directory, 'backup.dbak')
+    bdest = os.path.join(directory, 'lightning-1', 'backup.dbak')
     opts = {
         'plugin': plugin_path,
         'backup-destination': 'file://' + bdest,
         }
 
     subprocess.check_call([cli_path, "init", directory, directory])
-    l1 = node_factory.get_node(options=opts)
+    bpath = os.path.join(directory, 'lightning-1', 'regtest')
+    bdest = os.path.join(bpath, 'backup.dbak')
+    os.makedirs(bpath)
+    subprocess.check_call([cli_path, "init", bpath, bpath])
+    opts = {
+        'plugin': plugin_path,
+        'backup-destination': 'file://' + bdest,
+        }
+    l1 = node_factory.get_node(options=opts, cleandir=False)
 
     l1.daemon.wait_for_log(r'backup.py')
 
@@ -40,13 +47,15 @@ def test_tx_abort(node_factory, directory):
     inbetween the hook call and the DB transaction.
 
     """
-    bdest = os.path.join(directory, 'backup.dbak')
+    bpath = os.path.join(directory, 'lightning-1', 'regtest')
+    bdest = os.path.join(bpath, 'backup.dbak')
+    os.makedirs(bpath)
+    subprocess.check_call([cli_path, "init", bpath, bpath])
     opts = {
         'plugin': plugin_path,
         'backup-destination': 'file://' + bdest,
         }
-    subprocess.check_call([cli_path, "init", directory, directory])
-    l1 = node_factory.get_node(options=opts)
+    l1 = node_factory.get_node(options=opts, cleandir=False)
     l1.stop()
 
     print(l1.db.query("SELECT * FROM vars;"))
@@ -68,12 +77,15 @@ def test_failing_restore(nf, directory):
     in the database back to n-2, which is non-recoverable.
 
     """
+    bpath = os.path.join(directory, 'lightning-1', 'regtest')
+    bdest = os.path.join(bpath, 'backup.dbak')
+    os.makedirs(bpath)
+    subprocess.check_call([cli_path, "init", bpath, bpath])
     opts = {
         'plugin': plugin_path,
-        'backup-destination': 'file://' + os.path.join(directory, 'backup.dbak')
+        'backup-destination': 'file://' + bdest,
         }
-    subprocess.check_call([cli_path, "init", directory, directory])
-    l1 = node_factory.get_node(options=opts)
+    l1 = node_factory.get_node(options=opts, cleandir=False)
     l1.stop()
 
     # Now fudge the data_version:
@@ -90,13 +102,15 @@ def test_intermittent_backup(node_factory, directory):
     """Simulate intermittent use of the backup, or an old file backup.
 
     """
-
+    bpath = os.path.join(directory, 'lightning-1', 'regtest')
+    bdest = os.path.join(bpath, 'backup.dbak')
+    os.makedirs(bpath)
+    subprocess.check_call([cli_path, "init", bpath, bpath])
     opts = {
         'plugin': plugin_path,
-        'backup-destination': 'file://' + os.path.join(directory, 'backup.dbak')
+        'backup-destination': 'file://' + bdest,
         }
-    subprocess.check_call([cli_path, "init", directory, directory])
-    l1 = node_factory.get_node(options=opts)
+    l1 = node_factory.get_node(options=opts, cleandir=False)
 
     # Now start without the plugin. This should work fine.
     del l1.daemon.opts['plugin']
