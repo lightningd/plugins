@@ -1,10 +1,13 @@
 from binascii import hexlify
+from flaky import flaky
 from onion import TlvPayload
 from pprint import pprint
 from pyln.client import RpcError
 from pyln.testing.fixtures import *
 from pyln.testing.utils import wait_for
 import hashlib
+import os
+import pytest
 import zbase32
 
 
@@ -27,9 +30,10 @@ def test_sendmsg_success(node_factory, executor):
     assert(m1 == m2)
 
     assert(m2['sender'] == l1.info['id'])
-    assert(m2['verified'] == True)
+    assert(m2['verified'])
 
 
+@flaky
 def test_sendmsg_retry(node_factory, executor):
     opts = [{'plugin': plugin}, {}, {'fee-base': 10000}, {'plugin': plugin}]
     l1, l2, l3, l4 = node_factory.line_graph(4, opts=opts)
@@ -60,7 +64,7 @@ def test_sendmsg_retry(node_factory, executor):
     pprint(sres)
     print(recv.result(10))
 
-    msg = l4.rpc.recvmsg(last_id=-1)
+    l4.rpc.recvmsg(last_id=-1)
 
 
 def test_zbase32():
@@ -82,7 +86,7 @@ def test_msg_and_keysend(node_factory, executor):
     m = l3.rpc.recvmsg(last_id=-1)
 
     assert(m['sender'] == l1.info['id'])
-    assert(m['verified'] == True)
+    assert(m['verified'])
     p = m['payment']
     assert(p is not None)
     assert(p['payment_key'] is not None)
@@ -114,21 +118,21 @@ def test_forward_ok(node_factory, executor):
     assert(m1 == m2)
 
     assert(m2['sender'] == l1.info['id'])
-    assert(m2['verified'] == True)
+    assert(m2['verified'])
 
 
 def test_missing_tlv_fields(node_factory):
     """If we're missing a field we should not crash
     """
     opts = [{'plugin': plugin}]*2
-    l1, l2  = node_factory.line_graph(2, wait_for_announce=True, opts=opts)
+    l1, l2 = node_factory.line_graph(2, wait_for_announce=True, opts=opts)
     payment_key = os.urandom(32)
     payment_hash = hashlib.sha256(payment_key).hexdigest()
 
     route = l1.rpc.getroute(l2.info['id'], 10, 10)['route']
 
     def send(key, value):
-        hops = [{"type":"tlv", "pubkey": l2.info['id'], "payload": None}]
+        hops = [{"type": "tlv", "pubkey": l2.info['id'], "payload": None}]
 
         payload = TlvPayload()
         payload.add_field(key, value)
