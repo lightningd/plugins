@@ -40,6 +40,8 @@ class Backend(object):
          - backend.prev_version: the previous data version in case we need to
            roll back the last one
         """
+        self.version = None
+        self.prev_version = None
         raise NotImplementedError
 
     def add_change(self, change: Change) -> bool:
@@ -88,6 +90,8 @@ class FileBackend(Backend):
 
     def initialize(self) -> bool:
         if not os.path.exists(self.url.path):
+            self.version = 0
+            self.prev_version = 0
             return False
         return self.read_metadata()
 
@@ -170,7 +174,11 @@ def get_backend(destination):
         raise ValueError("No backend implementation found for {destination}".format(
             destination=destination,
         ))
-    return backend_cl(destination)
+    backend = backend_cl(destination)
+    backend.initialize()
+    assert(backend.version is not None)
+    assert(backend.prev_version is not None)
+    return backend
 
 
 def abort(reason: str) -> None:
