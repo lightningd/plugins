@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 
 import multiprocessing
-
 from flask import Flask
 from flask import jsonify
 from flask_limiter import Limiter
@@ -12,41 +11,43 @@ from tornado.ioloop import IOLoop
 
 from pyln.client import LightningRpc, Plugin
 from time import time
-from random import random
+import os, uuid
 
+from dotenv import load_dotenv, find_dotenv
+from pathlib import Path
 
-# change this
-secret= 'caba27ba-45c7-4495-aa53-fd6a5866fbd8'
-
+# read or create file .lightning/bitcoin/.env
+env_path = Path('.') / '.env'
+if not env_path.exists():
+    env_path.open('a')
+    env_path.write_text("FLASKSECRET="+uuid.uuid4().hex +"\nFLASKPORT=8809"+"\nAUTOSTART=0")
+load_dotenv(str(env_path))
 
 plugin = Plugin()
 app = Flask(__name__)
 limiter = Limiter(
     app,
     key_func=get_remote_address,
-    default_limits=["200 per day", "50 per hour"]
+    default_limits=["2000 per day", "20 per minute"]
 )
 
-
 @limiter.limit("20 per minute")
+@app.route('/invoice/<int:amount>/<description>')
 def getinvoice(amount, description):
-        global plugin
-        label = "ln-getinvoice-{}".format(random())
-        invoice = plugin.rpc.invoice(int(amount)*1000, label, description)
-        return invoice
-
+    global plugin
+    label = "ln-getinvoice-{}".format(uuid.uuid4())
+    invoice = plugin.rpc.invoice(int(amount)*1000, label, description)
+    return invoice
 
 def worker(port):
-    app.config['SECRET_KEY'] = secret
-    app.add_url_rule('/invoice/<int:amount>/<description>', 'getinvoice', getinvoice)
+    print('starting server')
+    app.config['SECRET_KEY'] = os.getenv("FLASKSECRET", default = uuid.uuid4())
     http_server = HTTPServer(WSGIContainer(app))
     http_server.listen(port)
     IOLoop.instance().start()
     return
 
-
 jobs = {}
-
 
 def start_server(port):
     if port in jobs:
@@ -58,7 +59,6 @@ def start_server(port):
 
     jobs[port] = p
     p.start()
-
     return True
 
 def stop_server(port):
@@ -69,75 +69,57 @@ def stop_server(port):
     else:
         return False
 
- 
+
 @plugin.method('invoiceserver')
-def invoiceserver(request, command="start", port=8089):
-    """Starts a server for requestiong invoices. 
-    
+def invoiceserver(request, command="start"):
+    """Starts a server for requestiong invoices.
+
     A rate limited HTTP Server returns a invoice on the following GET request:
-    /invoice/<amount>/<description>  
-    where amount is in Satoshis.  
-    The plugin takes one of the following commands: 
-    {start/stop/restart} and {port} , default port: 8089.
+    /invoice/<amount>/<description>
+    where amount is in Satoshis.
+    The plugin takes one of the following commands:
+    {start/stop/status/restart}.
     """
-    commands = {"start", "stop", "restart", "list"}
+    commands = {"start", "stop", "status","restart"}
+    port = os.getenv("FLASKPORT", default = 8809)
 
     # if command unknown make start our default command
     if command not in commands:
         command = "start"
 
-    # if port not an integer make 8088 as default
-    try:
-        port = int(port)
-    except:
-        port = int(plugin.options['invoice-web-port']['value'])
-
-    if command == "list":
-        return "servers running on the following ports: {}".format(list(jobs.keys()))
-
     if command == "start":
         if port in jobs:
-            return "Server already running on port {}. Maybe restart the server?".format(port)
-        suc = start_server(port)
-        if suc:
-            return "started server successfully on port {}".format(port)
+            return "Invoice server already running on port {}.".format(port)
+        if start_server(port):
+            return "Invoice server started successfully on port {}".format(port)
         else:
-            return "Could not start server on port {}".format(port)
+            return "Invoice server could not be started on port {}".format(port)
 
     if command == "stop":
         if stop_server(port):
-            return "stopped server on port{}".format(port)
+            return "Invoice server stopped on port {}".format(port)
         else:
-            return "could not stop the server"
+            if port in jobs:
+                return "Could not stop the Invoice server."
+            else:
+                return "Invoice server doen't seem to be active"
+
+    if command == "status":
+        if port in jobs:
+            return "Invoice server active on port {}".format(port)
+        else:
+            return "Invoice server not active."
 
     if command == "restart":
         stop_server(port)
-        suc = start_server(port)
-        if suc:
-            return "started server successfully on port {}".format(port)
-        else:
-            return "Could not start server on port {}".format(port)
-
-plugin.add_option(
-    'invoiceserver-autostart',
-    'true',
-    'Should the invoice server start automatically'
-)
-
-plugin.add_option(
-    'invoiceserver-web-port',
-    '8809',
-    'Which port should the invoice server listen to?'
-)
-
-
+        start_server(port)
+        return "Invoice server restarted"
 
 @plugin.init()
 def init(options, configuration, plugin):
-    port = int(options['invoiceserver-web-port'])
+    port = os.getenv("FLASKPORT", default = 8809)
 
-    if options['invoiceserver-autostart'].lower() in ['true', '1']:
+    if os.getenv("AUTOSTART") == 1:
         start_server(port)
-
 
 plugin.run()
