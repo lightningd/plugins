@@ -1,6 +1,7 @@
 from flaky import flaky
 from pyln.client import RpcError
 from pyln.testing.fixtures import *
+from pyln.client import RpcError
 import os
 import pytest
 import subprocess
@@ -28,6 +29,29 @@ def test_start(node_factory, directory):
     for i in range(5):
         l1.restart()
         l1.daemon.wait_for_log(r'Versions match up')
+
+
+def test_start_no_init(node_factory, directory):
+    """The plugin should refuse to start if we haven't initialized the backup
+    """
+    bpath = os.path.join(directory, 'lightning-1', 'regtest')
+    bdest = 'file://' + os.path.join(bpath, 'backup.dbak')
+    os.makedirs(bpath)
+    opts = {
+        'plugin': plugin_path,
+        'backup-destination': bdest,
+    }
+    l1 = node_factory.get_node(
+        options=opts, cleandir=False, may_fail=True, start=False
+    )
+
+    with pytest.raises((RpcError, ConnectionRefusedError, ConnectionResetError)):
+        # The way we detect a failure to start is when we attempt to connect
+        # to the RPC.
+        l1.start()
+    assert(l1.daemon.is_in_log(
+        r'Could not find backup.lock in the lightning-dir'
+    ))
 
 
 def test_tx_abort(node_factory, directory):
