@@ -52,6 +52,26 @@ def test_start_no_init(node_factory, directory):
     ))
 
 
+def test_init_not_empty(node_factory, directory):
+    """We want to add backups to an existing lightning node.
+
+    backup-cli init should start the backup with an initial snapshot.
+    """
+    bpath = os.path.join(directory, 'lightning-1', 'regtest')
+    bdest = 'file://' + os.path.join(bpath, 'backup.dbak')
+    l1 = node_factory.get_node()
+    l1.stop()
+
+    out = subprocess.check_output([cli_path, "init", bpath, bdest])
+    assert(b'Found an existing database' in out)
+    assert(b'Successfully written initial snapshot' in out)
+
+    # Now restart and add the plugin
+    l1.daemon.opts['plugin'] = plugin_path
+    l1.start()
+    l1.daemon.wait_for_log(r'plugin-backup.py: Versions match up')
+
+
 def test_tx_abort(node_factory, directory):
     """Simulate a crash between hook call and DB commit.
 
