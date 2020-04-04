@@ -9,8 +9,9 @@ import sys
 
 @click.command()
 @click.argument("lightning-dir", type=click.Path(exists=True))
-@click.argument("destination")
-def init(lightning_dir, destination):
+@click.argument("backend-url")
+def init(lightning_dir, backend_url):
+    destination = backend_url
     backend = get_backend(destination)
     backend.version, backend.prev_version = 0, 0
     backend.offsets = [512, 0]
