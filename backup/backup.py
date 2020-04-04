@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 from collections import namedtuple
 from pyln.client import Plugin
-from typing import Mapping, Type
+from typing import Mapping, Type, Iterator
 from urllib.parse import urlparse
 import json
 import logging
@@ -23,21 +23,57 @@ root.addHandler(handler)
 
 # A change that was proposed by c-lightning that needs saving to the
 # backup. `version` is the database version before the transaction was
-# applied.
-Change = namedtuple('Change', ['version', 'transaction'])
+# applied. The optional snapshot reqpresents a complete copy of the database,
+# as it was before applying the `transaction`. This is used by the plugin from
+# time to time to allow the backend to compress the changelog and forms a new
+# basis for the backup.
+Change = namedtuple('Change', ['version', 'snapshot', 'transaction'])
 
 
 class Backend(object):
     def __init__(self, destination: str):
-        raise NotImplementedError
+        """Read the metadata from the destination and prepare any necesary resources.
 
-    def snapshot(self, filename: str) -> bool:
+        After this call the following members must be initialized:
+
+         - backend.version: the last data version we wrote to the backend
+         - backend.prev_version: the previous data version in case we need to
+           roll back the last one
+        """
         raise NotImplementedError
 
     def add_change(self, change: Change) -> bool:
+        """Add a single change to the backend.
+
+        This call should always make sure that the change has been correctly
+        written and flushed before returning.
+        """
         raise NotImplementedError
 
     def initialize(self) -> bool:
+        """Set up any resources needed by this backend.
+
+        """
+        raise NotImplementedError
+
+    def stream_changes(self) -> Iterator[Change]:
+        """Retrieve changes from the backend in order to perform a restore.
+        """
+        raise NotImplementedError
+
+    def rewind(self) -> bool:
+        """Remove the last change that was added to the backup
+
+        Because the transaction is reported to the backup plugin before it is
+        being committed to the database it can happen that we get notified
+        about a transaction but then `lightningd` is stopped and the
+        transaction is not committed. This means the backup includes an
+        extraneous transaction which needs to be removed. A backend must allow
+        a single rewind operation, and should fail additional calls to rewind
+        (we may have at most one pending transaction not being committed at
+        any time).
+
+        """
         raise NotImplementedError
 
 
@@ -169,7 +205,7 @@ def check_first_write(plugin, data_version):
 
 @plugin.hook('db_write')
 def on_db_write(writes, data_version, plugin, **kwargs):
-    change = Change(data_version, writes)
+    change = Change(data_version, None, writes)
     if not hasattr(plugin, 'backend'):
         plugin.early_writes.append(change)
         return {"result": "continue"}
