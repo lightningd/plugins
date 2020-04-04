@@ -241,6 +241,7 @@ def on_init(options: Mapping[str, str], plugin: Plugin, **kwargs):
 
     # Ensure that we don't inadventently switch the destination
     if not os.path.exists("backup.lock"):
+        print("Files in the current directory {}".format(", ".join(os.listdir(".")))
         return abort("Could not find backup.lock in the lightning-dir, have you initialized using the backup-cli utility?")
 
     d = json.load(open("backup.lock", 'r'))
