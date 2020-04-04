@@ -12,7 +12,67 @@ plugin_path = os.path.join(plugin_dir, "backup.py")
 cli_path = os.path.join(os.path.dirname(__file__), "backup-cli")
 
 
-def test_start(node_factory, directory):
+class NodeFactoryWrapper(NodeFactory):
+    def get_node(self, node_id=None, options=None, dbfile=None,
+                 feerates=(15000, 11000, 7500, 3750), start=True,
+                 wait_for_bitcoind_sync=True, expect_fail=False,
+                 cleandir=True, **kwargs):
+
+        node_id = self.get_node_id() if not node_id else node_id
+        port = self.get_next_port()
+
+        lightning_dir = os.path.join(
+            self.directory, "lightning-{}/".format(node_id))
+
+        if cleandir and os.path.exists(lightning_dir):
+            shutil.rmtree(lightning_dir)
+
+        # Get the DB backend DSN we should be using for this test and this
+        # node.
+        db = self.db_provider.get_db(os.path.join(lightning_dir, 'regtest'), self.testname, node_id)
+        node = self.node_cls(
+            node_id, lightning_dir, self.bitcoind, self.executor, db=db,
+            port=port, options=options, **kwargs
+        )
+
+        # Regtest estimatefee are unusable, so override.
+        node.set_feerates(feerates, False)
+
+        self.nodes.append(node)
+        if start:
+            try:
+                # Capture stderr if we're failing
+                if expect_fail:
+                    stderr = subprocess.PIPE
+                else:
+                    stderr = None
+                node.start(wait_for_bitcoind_sync, stderr=stderr)
+            except Exception:
+                if expect_fail:
+                    return node
+                node.daemon.stop()
+                raise
+        return node
+
+
+@pytest.fixture
+def nf(request, directory, test_name, bitcoind, executor, db_provider, node_cls):
+    """Temporarily patch the node_factory to not always clean the node directory.
+    """
+    nf = NodeFactoryWrapper(
+        test_name,
+        bitcoind,
+        executor,
+        directory=directory,
+        db_provider=db_provider,
+        node_cls=node_cls
+    )
+
+    yield nf
+    ok, errs = nf.killall([not n.may_fail for n in nf.nodes])
+
+
+def test_start(nf, directory):
     bpath = os.path.join(directory, 'lightning-1', 'regtest')
     bdest = 'file://' + os.path.join(bpath, 'backup.dbak')
     os.makedirs(bpath)
@@ -21,7 +81,7 @@ def test_start(node_factory, directory):
         'plugin': plugin_path,
         'backup-destination': bdest,
         }
-    l1 = node_factory.get_node(options=opts, cleandir=False)
+    l1 = nf.get_node(options=opts, cleandir=False)
 
     l1.daemon.wait_for_log(r'backup.py')
 
@@ -31,7 +91,7 @@ def test_start(node_factory, directory):
         l1.daemon.wait_for_log(r'Versions match up')
 
 
-def test_start_no_init(node_factory, directory):
+def test_start_no_init(nf, directory):
     """The plugin should refuse to start if we haven't initialized the backup
     """
     bpath = os.path.join(directory, 'lightning-1', 'regtest')
@@ -41,7 +101,7 @@ def test_start_no_init(node_factory, directory):
         'plugin': plugin_path,
         'backup-destination': bdest,
     }
-    l1 = node_factory.get_node(
+    l1 = nf.get_node(
         options=opts, cleandir=False, may_fail=True, start=False
     )
 
@@ -54,14 +114,14 @@ def test_start_no_init(node_factory, directory):
     ))
 
 
-def test_init_not_empty(node_factory, directory):
+def test_init_not_empty(nf, directory):
     """We want to add backups to an existing lightning node.
 
     backup-cli init should start the backup with an initial snapshot.
     """
     bpath = os.path.join(directory, 'lightning-1', 'regtest')
     bdest = 'file://' + os.path.join(bpath, 'backup.dbak')
-    l1 = node_factory.get_node()
+    l1 = nf.get_node()
     l1.stop()
 
     out = subprocess.check_output([cli_path, "init", bpath, bdest])
@@ -74,7 +134,7 @@ def test_init_not_empty(node_factory, directory):
     l1.daemon.wait_for_log(r'plugin-backup.py: Versions match up')
 
 
-def test_tx_abort(node_factory, directory):
+def test_tx_abort(nf, directory):
     """Simulate a crash between hook call and DB commit.
 
     We simulate this by updating the data_version var in the database before
@@ -92,7 +152,7 @@ def test_tx_abort(node_factory, directory):
         'plugin': plugin_path,
         'backup-destination': bdest,
         }
-    l1 = node_factory.get_node(options=opts, cleandir=False)
+    l1 = nf.get_node(options=opts, cleandir=False)
     l1.stop()
 
     print(l1.db.query("SELECT * FROM vars;"))
@@ -122,7 +182,7 @@ def test_failing_restore(nf, directory):
         'plugin': plugin_path,
         'backup-destination': bdest,
         }
-    l1 = node_factory.get_node(options=opts, cleandir=False)
+    l1 = nf.get_node(options=opts, cleandir=False)
     l1.stop()
 
     # Now fudge the data_version:
@@ -135,7 +195,7 @@ def test_failing_restore(nf, directory):
     assert(l1.daemon.is_in_log(r'lost some state') is not None)
 
 
-def test_intermittent_backup(node_factory, directory):
+def test_intermittent_backup(nf, directory):
     """Simulate intermittent use of the backup, or an old file backup.
 
     """
@@ -147,7 +207,7 @@ def test_intermittent_backup(node_factory, directory):
         'plugin': plugin_path,
         'backup-destination': bdest,
         }
-    l1 = node_factory.get_node(options=opts, cleandir=False)
+    l1 = nf.get_node(options=opts, cleandir=False)
 
     # Now start without the plugin. This should work fine.
     del l1.daemon.opts['plugin']
