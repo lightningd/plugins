@@ -225,21 +225,20 @@ def on_init(options: Mapping[str, str], plugin: Plugin, **kwargs):
     destination = options['backup-destination']
 
     # Ensure that we don't inadventently switch the destination
-    if os.path.exists("backup.lock"):
-        d = json.load(open("backup.lock", 'r'))
-        if destination is None or destination == 'null':
-            destination = d['backend_url']
-        elif destination != d['backend_url']:
-            abort(
-                "The destination specified as option does not match the one "
-                "specified in backup.lock. Please check your settings"
-            )
+    if not os.path.exists("backup.lock"):
+        return abort("Could not find backup.lock in the lightning-dir, have you initialized using the backup-cli utility?")
+
+    d = json.load(open("backup.lock", 'r'))
+    if destination is None or destination == 'null':
+        destination = d['backend_url']
+    elif destination != d['backend_url']:
+        abort(
+            "The destination specified as option does not match the one "
+            "specified in backup.lock. Please check your settings"
+        )
 
     if not plugin.db_path.startswith('sqlite3'):
         abort("The backup plugin only works with the sqlite3 database.")
-
-    if destination == 'null':
-        abort("You must specify a backup destination, possibly on a secondary disk.")
 
     # Let's initialize the backed. First we need to figure out which backend to use.
     backend_cl = resolve_backend_class(destination)
