@@ -113,7 +113,7 @@ class Backend(object):
             os.unlink(dest)
 
         self.db = self._db_open(dest)
-        for c in self.stream_changes():
+        for c in tqdm(self.stream_changes()):
             if c.snapshot is not None:
                 self._restore_snapshot(c.snapshot, dest)
             if c.transaction is not None:
