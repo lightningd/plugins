@@ -132,7 +132,6 @@ class FileBackend(Backend):
         if os.path.exists(self.url.path) and create:
             raise ValueError("Attempted to create a FileBackend, but file already exists.")
 
-
     def initialize(self) -> bool:
         if not os.path.exists(self.url.path):
             self.version = 0
