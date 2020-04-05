@@ -1,4 +1,3 @@
-from binascii import hexlify
 from flaky import flaky
 from onion import TlvPayload
 from pprint import pprint
@@ -35,7 +34,32 @@ def test_sendmsg_success(node_factory, executor):
 
 @flaky
 def test_sendmsg_retry(node_factory, executor):
-    opts = [{'plugin': plugin}, {}, {'fee-base': 10000}, {'plugin': plugin}]
+    """Bait l1 into a short-cut that doesn't exist and it should retry.
+
+    The network topology is as follows:
+
+    ```dot
+    digraph {
+      l1 -> l2 -> l3 -> l4;
+      l2 -> l5 -> l4;
+    }
+    ```
+
+    `l1` attempts to send a message to `l4`. It should use the cheaper route
+    `l1 -> l2 -> l5 -> l4` since `l3` is really expensive. However `l5` dies
+    and `l1` will have to retry using the expensive route.
+
+    The test can be flaky from time to time given that route selection is
+    randomized...
+
+    """
+    opts = [
+        {'plugin': plugin},
+        {},
+        {'fee-base': 1000000, 'fee-per-satoshi': 10000},
+        {'plugin': plugin}
+    ]
+
     l1, l2, l3, l4 = node_factory.line_graph(4, opts=opts)
     l5 = node_factory.get_node()
 
@@ -44,9 +68,9 @@ def test_sendmsg_retry(node_factory, executor):
 
     def gossip_synced(nodes):
         for a, b in zip(nodes[:-1], nodes[1:]):
-            if a.rpc.listchannels() != b.rpc.listchannels():
-                return False
-        return True
+            chansa = [(c['source'], c['destination']) for c in a.rpc.listchannels()['channels']]
+            chansb = [(c['source'], c['destination']) for c in b.rpc.listchannels()['channels']]
+        return set(chansa) == set(chansb)
 
     wait_for(lambda: gossip_synced([l1, l2, l3, l4, l5]))
 
