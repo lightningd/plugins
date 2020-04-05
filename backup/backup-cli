@@ -12,7 +12,7 @@ import sys
 @click.argument("backend-url")
 def init(lightning_dir, backend_url):
     destination = backend_url
-    backend = get_backend(destination)
+    backend = get_backend(destination, create=True)
     backend.version, backend.prev_version = 0, 0
     backend.offsets = [512, 0]
     backend.version_count = 0
