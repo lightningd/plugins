@@ -121,13 +121,16 @@ class Backend(object):
 
 
 class FileBackend(Backend):
-    def __init__(self, destination: str):
+    def __init__(self, destination: str, create: bool):
         self.version = None
         self.prev_version = None
         self.destination = destination
         self.offsets = [0, 0]
         self.version_count = 0
         self.url = urlparse(self.destination)
+
+        if os.path.exists(self.url.path) and create:
+            raise ValueError("Attempted to create a FileBackend, but file already exists.")
 
     def initialize(self) -> bool:
         if not os.path.exists(self.url.path):
@@ -232,13 +235,13 @@ def resolve_backend_class(backend_url):
     return backend_cl
 
 
-def get_backend(destination):
+def get_backend(destination, create=False):
     backend_cl = resolve_backend_class(destination)
     if backend_cl is None:
         raise ValueError("No backend implementation found for {destination}".format(
             destination=destination,
         ))
-    backend = backend_cl(destination)
+    backend = backend_cl(destination, create=create)
     backend.initialize()
     assert(backend.version is not None)
     assert(backend.prev_version is not None)
