@@ -86,7 +86,6 @@ class Backend(object):
         return db
 
     def _restore_snapshot(self, snapshot: bytes, dest: str):
-        print("Snapshot", len(snapshot))
         if os.path.exists(dest):
             os.unlink(dest)
         with open(dest, 'wb') as f:
@@ -96,9 +95,7 @@ class Backend(object):
     def _restore_transaction(self, tx: Iterator[bytes]):
         assert(self.db)
         cur = self.db.cursor()
-        print("TX")
         for q in tx:
-            print("Query", q.decode('UTF-8'))
             cur.execute(q.decode('UTF-8'))
         self.db.commit()
 
