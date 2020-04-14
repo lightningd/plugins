@@ -235,14 +235,16 @@ def resolve_backend_class(backend_url):
     return backend_cl
 
 
-def get_backend(destination, create=False):
+def get_backend(destination, create=False, require_init=False):
     backend_cl = resolve_backend_class(destination)
     if backend_cl is None:
         raise ValueError("No backend implementation found for {destination}".format(
             destination=destination,
         ))
     backend = backend_cl(destination, create=create)
-    backend.initialize()
+    initialized = backend.initialize()
+    if require_init and not initialized:
+        abort("Could not initialize the backup {}, please use 'backup-cli' to initialize the backup first.".format(destination))
     assert(backend.version is not None)
     assert(backend.prev_version is not None)
     return backend
@@ -331,9 +333,7 @@ def on_init(options: Mapping[str, str], plugin: Plugin, **kwargs):
     if not plugin.db_path.startswith('sqlite3'):
         abort("The backup plugin only works with the sqlite3 database.")
 
-    plugin.backend = get_backend(destination)
-    if not plugin.backend.initialize():
-        abort("Could not initialize the backup {}, please use 'backup-cli' to initialize the backup first.".format(destination))
+    plugin.backend = get_backend(destination, require_init=True)
 
     for c in plugin.early_writes:
         apply_write(plugin, c)
