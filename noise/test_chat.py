@@ -77,18 +77,16 @@ def test_sendmsg_retry(node_factory, executor):
     # Now stop l5 so the first attempt will fail.
     l5.stop()
 
-    recv = executor.submit(l4.rpc.recvmsg)
-
-    send = executor.submit(l1.rpc.sendmsg, l4.info['id'], "Hello world!")
+    recvs = []
+    sends = []
+    for i in range(50):
+        recvs.append(executor.submit(l4.rpc.recvmsg))
+        sends.append(executor.submit(l1.rpc.sendmsg, l4.info['id'], "Hello world!"))
 
     l1.daemon.wait_for_log(r'Retrying delivery')
 
-    sres = send.result(10)
-    assert(sres['attempt'] == 2)
-    pprint(sres)
-    print(recv.result(10))
-
-    l4.rpc.recvmsg(last_id=-1)
+    for recv in recvs:
+        print(recv.result(10))
 
 
 def test_zbase32():
