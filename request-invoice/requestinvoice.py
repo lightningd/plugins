@@ -15,12 +15,6 @@ import os
 import threading
 import uuid
 
-# read or create file .lightning/bitcoin/.env
-env_path = Path('.') / '.env'
-if not env_path.exists():
-    env_path.open('a')
-    env_path.write_text("FLASKSECRET="+uuid.uuid4().hex +"\nFLASKPORT=8809"+"\nAUTOSTART=0")
-
 plugin = Plugin()
 app = Flask(__name__)
 limiter = Limiter(
@@ -28,7 +22,6 @@ limiter = Limiter(
     key_func=get_remote_address,
     default_limits=["2000 per day", "20 per minute"]
 )
-
 
 jobs = {}
 
