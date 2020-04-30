@@ -1,5 +1,6 @@
-dotenv
+python-dotenv>=0.13.0
 flask
 flask-limiter
 tornado
 pyln-client
+requests
