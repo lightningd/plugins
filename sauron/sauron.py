@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import sys
 import requests
 
 from art import sauron_eye
@@ -17,6 +18,7 @@ def init(plugin, options, configuration, **kwargs):
     plugin.api_endpoint = options.get("sauron-api-endpoint")
     if not plugin.api_endpoint:
         raise SauronError("You need to specify the sauron-api-endpoint option.")
+        sys.exit(1)
 
     plugin.log("Sauron plugin initialized")
     plugin.log(sauron_eye)
