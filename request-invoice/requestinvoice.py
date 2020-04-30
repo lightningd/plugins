@@ -1,27 +1,25 @@
 #!/usr/bin/env python3
 
-import multiprocessing
 from flask import Flask
-from flask import jsonify
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
-from tornado.wsgi import WSGIContainer
+from pathlib import Path
+from pyln.client import Plugin
 from tornado.httpserver import HTTPServer
 from tornado.ioloop import IOLoop
+from tornado.wsgi import WSGIContainer
 
-from pyln.client import LightningRpc, Plugin
-from time import time
-import os, uuid
 
-from dotenv import load_dotenv, find_dotenv
-from pathlib import Path
+import asyncio
+import os
+import threading
+import uuid
 
 # read or create file .lightning/bitcoin/.env
 env_path = Path('.') / '.env'
 if not env_path.exists():
     env_path.open('a')
     env_path.write_text("FLASKSECRET="+uuid.uuid4().hex +"\nFLASKPORT=8809"+"\nAUTOSTART=0")
-load_dotenv(str(env_path))
 
 plugin = Plugin()
 app = Flask(__name__)
@@ -30,6 +28,11 @@ limiter = Limiter(
     key_func=get_remote_address,
     default_limits=["2000 per day", "20 per minute"]
 )
+
+
+jobs = {}
+
+
 
 @limiter.limit("20 per minute")
 @app.route('/invoice/<int:amount>/<description>')
@@ -40,34 +43,37 @@ def getinvoice(amount, description):
     return invoice
 
 def worker(port):
-    print('starting server')
-    app.config['SECRET_KEY'] = os.getenv("FLASKSECRET", default = uuid.uuid4())
+    asyncio.set_event_loop(asyncio.new_event_loop())
+
+    print('Starting server on port {port}'.format(
+        port=port
+    ))
+    app.config['SECRET_KEY'] = os.getenv(
+        "REQUEST_INVOICE_SECRET",
+        default=uuid.uuid4())
+
     http_server = HTTPServer(WSGIContainer(app))
     http_server.listen(port)
     IOLoop.instance().start()
-    return
 
-jobs = {}
 
 def start_server(port):
     if port in jobs:
-        return False, "server already running"
+        raise ValueError("server already running on port {port}".format(port=port))
 
-    p = multiprocessing.Process(
-        target=worker, args=[port], name="server on port {}".format(port))
-    p.daemon = True
+    p = threading.Thread(
+        target=worker, args=(port,), daemon=True)
 
     jobs[port] = p
     p.start()
-    return True
+
 
 def stop_server(port):
     if port in jobs:
         jobs[port].terminate()
         del jobs[port]
-        return True
     else:
-        return False
+        raise ValueError("No server listening on port {port}".format(port=port))
 
 
 @plugin.method('invoiceserver')
@@ -88,21 +94,22 @@ def invoiceserver(request, command="start"):
         command = "start"
 
     if command == "start":
-        if port in jobs:
-            return "Invoice server already running on port {}.".format(port)
-        if start_server(port):
+        try:
+            start_server(port)
             return "Invoice server started successfully on port {}".format(port)
-        else:
-            return "Invoice server could not be started on port {}".format(port)
+        except Exception as e:
+            return "Error starting server on port {port}: {e}".format(
+                port=port, e=e
+            )
 
     if command == "stop":
-        if stop_server(port):
+        try:
+            stop_server(port)
             return "Invoice server stopped on port {}".format(port)
-        else:
-            if port in jobs:
-                return "Could not stop the Invoice server."
-            else:
-                return "Invoice server doen't seem to be active"
+        except Exception as e:
+            return "Could not stop server on port {port}: {e}".format(
+                port=port, e=e
+            )
 
     if command == "status":
         if port in jobs:
@@ -115,11 +122,11 @@ def invoiceserver(request, command="start"):
         start_server(port)
         return "Invoice server restarted"
 
+
 @plugin.init()
 def init(options, configuration, plugin):
-    port = os.getenv("FLASKPORT", default = 8809)
+    port = os.getenv("REQUEST_INVOICE_PORT", default = 8809)
+    start_server(port)
 
-    if os.getenv("AUTOSTART") == 1:
-        start_server(port)
 
 plugin.run()

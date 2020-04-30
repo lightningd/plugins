@@ -17,6 +17,9 @@ def test_requestinvoice_starts(node_factory):
     l1.daemon.opts["plugin"] = plugin_path
     l1.start()
 
+    l1.daemon.logsearch_start = 0
+    l1.daemon.wait_for_log(r'Starting server on port 8809')
+
     r = requests.get('http://localhost:8809/invoice/1000/text')
 
     # check for hanging process if status_code = 500
