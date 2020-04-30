@@ -2,7 +2,7 @@
 from pyln.client import Plugin, Millisatoshi
 from packaging import version
 from collections import namedtuple
-import lightning
+import pyln.client
 import json
 from math import floor, log10
 import requests
@@ -15,7 +15,7 @@ have_utf8 = False
 
 # __version__ was introduced in 0.0.7.1, with utf8 passthrough support.
 try:
-    if version.parse(lightning.__version__) >= version.parse("0.0.7.1"):
+    if version.parse(pyln.client.__version__) >= version.parse("0.0.7.1"):
         have_utf8 = True
 except Exception:
     pass
