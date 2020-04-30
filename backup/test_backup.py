@@ -41,12 +41,7 @@ class NodeFactoryWrapper(NodeFactory):
         self.nodes.append(node)
         if start:
             try:
-                # Capture stderr if we're failing
-                if expect_fail:
-                    stderr = subprocess.PIPE
-                else:
-                    stderr = None
-                node.start(wait_for_bitcoind_sync, stderr=stderr)
+                node.start(wait_for_bitcoind_sync)
             except Exception:
                 if expect_fail:
                     return node
