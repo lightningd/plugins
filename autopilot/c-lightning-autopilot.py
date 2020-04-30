@@ -52,7 +52,7 @@ import math
 import pickle
 import sys
 
-from lightning import LightningRpc
+from pyln.client import LightningRpc
 import dns.resolver
 
 from bech32 import bech32_decode, CHARSET, convertbits
