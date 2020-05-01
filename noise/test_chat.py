@@ -32,7 +32,7 @@ def test_sendmsg_success(node_factory, executor):
     assert(m2['verified'])
 
 
-@flaky
+@pytest.mark.skip(reason="Could not get this working reliably")
 def test_sendmsg_retry(node_factory, executor):
     """Bait l1 into a short-cut that doesn't exist and it should retry.
 
