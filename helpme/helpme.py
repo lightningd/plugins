@@ -512,7 +512,7 @@ node!  Be prepared to lose your funds (but please report a bug if you do!)
                     continue
                 parts = l2.split('=', 1)
                 if len(parts) == 1:
-                    parts[1] = None
+                    parts.append(None)
                 config[parts[0]].append(parts[1])
     except FileNotFoundError:
         pass
