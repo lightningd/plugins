@@ -31,6 +31,7 @@ def foafbalance(plugin):
     return reply
 
 
+<<<<<<< HEAD
 def get_message_type(message):
     assert len(message) > 4
     return message[:4]
@@ -50,6 +51,11 @@ def send_reply_foaf_balances(peer, channels, plugin):
     # TODO: CHECK if 107b is the correct little endian of 439
     plugin.rpc.dev_sendcustommsg(peer, "107b123412341234")
     return
+
+@plugin.hook('peer_connected')
+def on_connected(plugin, **kwargs):
+    plugin.log("GOT PEER CONNECTION HOOK")
+    return {'result': 'continue'}
 
 
 @plugin.hook('custommsg')
@@ -73,7 +79,7 @@ def on_custommsg(peer_id, message, plugin, **kwargs):
 
     plugin.log(message)
     plugin.log(str(type(message)))
-
+    return {'result': 'continue'}
 
 @plugin.init()
 def init(options, configuration, plugin):
