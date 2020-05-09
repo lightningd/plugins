@@ -73,16 +73,6 @@ def foafbalance(plugin):
         if not peer["connected"] or not has_feature(peer["features"]):
             continue
         peer_id = peer["id"]
-        peer_channel = get_channel(channels, peer_id)
-
-        if peer_channel is None:
-            plugin.log(
-                "No channel found for {peer_id}".format(peer_id=peer_id))
-            continue
-        else:
-            plugin.log("Found channel for {peer_id}: {channel}".format(
-                peer_id=peer_id, channel=peer_channel["short_channel_id"]
-            ))
 
         res = plugin.rpc.dev_sendcustommsg(peer_id, msg)
         plugin.log("RPC response" + str(res))
