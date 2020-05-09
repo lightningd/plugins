@@ -21,22 +21,35 @@ def foafbalance(plugin):
     """gets the balance of our friends channels"""
     reply = {}
     info = plugin.rpc.getinfo()
-    #addr = plugin.rpc.dev_rescan_outputs()
-    msg = r'ff' * 32
-    #serialized = r'04070020' + msg
+    msg = r'105b126182746121'
     for peer in plugin.rpc.listpeers()["peers"]:
         res = plugin.rpc.dev_sendcustommsg(peer["id"], msg)
         plugin.log(str(res))
     nid = info["id"]
     reply["id"] = nid
-    #reply["addr"] = addr
     reply["change"] = nid
     return reply
 
 
-# @plugin.hook('peer_connected')
-# def on_connected(plugin, **kwargs):
-#    plugin.log("GOT PEER CONNECTION HOOK")
+def get_message_type(message):
+    assert len(message) > 4
+    return message[:4]
+
+
+def get_message_payload(message):
+    assert len(message) > 4
+    return message[4:]
+
+
+def handle_query_foaf_balances(payload, plugin):
+    plugin.rpc.listfunds()["channels"]
+    return
+
+
+def send_reply_foaf_balances(peer, channels, plugin):
+    # TODO: CHECK if 107b is the correct little endian of 439
+    plugin.rpc.dev_sendcustommsg(peer, "107b123412341234")
+    return
 
 
 @plugin.hook('custommsg')
@@ -45,14 +58,21 @@ def on_custommsg(peer_id, message, plugin, **kwargs):
         msg=message,
         peer_id=peer_id
     ))
+    # message has to be at least 6 bytes. 4 bytes prefix and 2 bytes for the type
+    assert len(message) > 12
+    # remove prefix:
+    message = message[8:]
+    message_type = get_message_type(message)
+    message_payload = get_message_payload(message)
 
-# @plugin.hook("custommsg")
-# def on_custommsg(plugin, **kwargs):
-#    plugin.log('custommsg called')
-#    #res = {'result': {'id': peer_id, 'msg': message}}
-    # plugin.log(res)
-    # time.sleep(20)
-#    return {'result': 'continue'}
+    # query_foaf_balances message has type 437 which is 01b5 in hex
+    if message_type == "105b":
+        plugin.log("received query_foaf_balances message")
+        result = handle_query_foaf_balances(message_payload, plugin)
+        send_reply_foaf_balances(peer_id, result, plugin)
+
+    plugin.log(message)
+    plugin.log(str(type(message)))
 
 
 @plugin.init()
