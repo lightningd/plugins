@@ -1,0 +1,1 @@
+pyln-testing>=0.8.2
