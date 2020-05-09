@@ -5,6 +5,8 @@
 
 import pyln.client
 import json
+import os
+
 
 plugin = pyln.client.Plugin()
 
@@ -35,8 +37,9 @@ def get_funds(plugin):
 
 def list_funds_mock():
     """"read funds from file"""
-    # TODO: add dir
-    with open('<dir>/funds.json', 'r') as funds_file:
+    dir_path = os.path.dirname(os.path.realpath(__file__))
+    file_name = os.path.join(dir_path, "funds.json")
+    with open(file_name, 'r') as funds_file:
         data = funds_file.read()
 
     return json.loads(data)
@@ -60,6 +63,8 @@ def foafbalance(plugin):
     reply = {}
     info = plugin.rpc.getinfo()
     msg = r'105b126182746121'
+    dir_path = os.path.dirname(os.path.realpath(__file__))
+    plugin.log(dir_path)
 
     outputs, channels = get_funds(plugin)
 
@@ -71,7 +76,8 @@ def foafbalance(plugin):
         peer_channel = get_channel(channels, peer_id)
 
         if peer_channel is None:
-            plugin.log("No channel found for {peer_id}".format(peer_id=peer_id))
+            plugin.log(
+                "No channel found for {peer_id}".format(peer_id=peer_id))
             continue
         else:
             plugin.log("Found channel for {peer_id}: {channel}".format(
@@ -98,7 +104,10 @@ def get_message_payload(message):
 
 
 def handle_query_foaf_balances(payload, plugin):
-    plugin.rpc.listfunds()["channels"]
+    _, channels = get_funds(plugin)
+    plugin.log("AAAAAA")
+    for channel in channels:
+        plugin.log(channel["short_channel_id"])
     return
 
 
