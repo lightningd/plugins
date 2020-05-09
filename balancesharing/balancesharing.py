@@ -21,8 +21,11 @@ def foafbalance(plugin):
     """gets the balance of our friends channels"""
     reply = {}
     info = plugin.rpc.getinfo()
+    addr = plugin.rpc.dev_rescan_outputs()
     nid = info["id"]
     reply["id"] = nid
+    reply["addr"] = addr
+    reply["change"] = nid
     return reply
 
 
