@@ -21,21 +21,33 @@ def foafbalance(plugin):
     """gets the balance of our friends channels"""
     reply = {}
     info = plugin.rpc.getinfo()
-    addr = plugin.rpc.dev_rescan_outputs()
+    #addr = plugin.rpc.dev_rescan_outputs()
+    msg = r'ff' * 32
+    #serialized = r'04070020' + msg
+    for peer in plugin.rpc.listpeers()["peers"]:
+        res = plugin.rpc.dev_sendcustommsg(peer["id"], msg)
+        plugin.log(str(res))
     nid = info["id"]
     reply["id"] = nid
-    reply["addr"] = addr
+    #reply["addr"] = addr
     reply["change"] = nid
     return reply
 
 
-@plugin.hook("custommsg")
-def on_custommsg(plugin, **kwargs):
-    plugin.log('custommsg called')
-    #res = {'result': {'id': peer_id, 'msg': message}}
+@plugin.hook('custommsg')
+def on_custommsg(peer_id, message, plugin, **kwargs):
+    plugin.log("Got a custom message {msg} from peer {peer_id}".format(
+        msg=message,
+        peer_id=peer_id
+    ))
+
+# @plugin.hook("custommsg")
+# def on_custommsg(plugin, **kwargs):
+#    plugin.log('custommsg called')
+#    #res = {'result': {'id': peer_id, 'msg': message}}
     # plugin.log(res)
     # time.sleep(20)
-    return {'result': 'continue'}
+#    return {'result': 'continue'}
 
 
 @plugin.init()
