@@ -29,6 +29,15 @@ def foafbalance(plugin):
     return reply
 
 
+@plugin.hook("custommsg")
+def on_custommsg(plugin, **kwargs):
+    plugin.log('custommsg called')
+    #res = {'result': {'id': peer_id, 'msg': message}}
+    # plugin.log(res)
+    # time.sleep(20)
+    return {'result': 'continue'}
+
+
 @plugin.init()
 def init(options, configuration, plugin):
     plugin.log("Plugin balancesharing.py initialized")
