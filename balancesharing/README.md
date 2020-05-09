@@ -22,6 +22,7 @@ We make use of the autoreload plugin as you don't have to restart your lightning
 
 note that if you use the autoreload plugin you MUST pass the path the the balancesharing plugin as a command line argument to lightningd instead of writing it in the config file. e.g:
 
+** Warning ** The autoreload plugin cannot register new hooks while running. so if new hooks are to be registered lightingd has to be restarted
 ```
 lightningd --network regtest --autoreload-plugin=/path/to/plugins/balancesharing/balancesharing.py
 ```
