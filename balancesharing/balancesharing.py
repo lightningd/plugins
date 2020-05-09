@@ -45,14 +45,7 @@ def on_custommsg(peer_id, message, plugin, **kwargs):
         msg=message,
         peer_id=peer_id
     ))
-
-# @plugin.hook("custommsg")
-# def on_custommsg(plugin, **kwargs):
-#    plugin.log('custommsg called')
-#    #res = {'result': {'id': peer_id, 'msg': message}}
-    # plugin.log(res)
-    # time.sleep(20)
-#    return {'result': 'continue'}
+    return {'result': 'continue'}
 
 
 @plugin.init()
