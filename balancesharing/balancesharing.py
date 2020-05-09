@@ -93,12 +93,57 @@ def get_message_payload(message):
     return message[4:]
 
 
+def helper_compute_node_parameters(channels):
+    """
+    computes the total funds (\tau) and the total capacity of a node (\kappa)
+    channels: is a list of local channels. Entries are formatted as in `listunfunds` API call
+    returns total capacity (\kappa) and total funds (\tau) of the node as integers in satoshis.
+    """
+    kappa = sum(x["channel_total_sat"] for x in channels)
+    tau = sum(x["channel_sat"] for x in channels)
+    return kappa, tau
+
+
+def helper_compute_channel_balance_coefficients(channels):
+    # assign zetas to channels:
+    for c in channels:
+        c["zeta"] = float(c["channel_sat"]) / c["channel_total_sat"]
+    return channels
+
+
 def handle_query_foaf_balances(payload, plugin):
+    # TODO: parse from payload
+    amt_to_rebalance = 150000
+    # TODO: parse from payload but 1 means Outgoing forwarding
+    flow_value = 0
+
+    if flow_value == 0:
+        plugin.log("compute channels on which I want {} satoshis incoming while rebalancing".format(
+            amt_to_rebalance))
+    elif flow_value == 1:
+        plugin.log("compute channels on which I want to forward {} satoshis  while rebalancing".format(
+            amt_to_rebalance))
+
     _, channels = get_funds(plugin)
-    plugin.log("AAAAAA")
+
+    kappa, tau = helper_compute_node_parameters(channels)
+    nu = float(tau)/kappa
+    channels = helper_compute_channel_balance_coefficients(channels)
+
+    result = []
     for channel in channels:
-        plugin.log(channel["short_channel_id"])
-    return
+        reserve = int(int(channel["channel_total_sat"]) * 0.01) + 1
+        if flow_value == 1:
+            if channel["zeta"] > nu:
+                if int(channel["channel_sat"]) > amt_to_rebalance + reserve:
+                    result.append(channel["short_channel_id"])
+        elif flow_value == 0:
+            if channel["zeta"] < nu:
+                if int(channel["channel_total_sat"])-int(channel["channel_sat"]) > amt_to_rebalance + reserve:
+                    result.append(channel["short_channel_id"])
+    plugin.log("{} of {} channels are good for rebalancing {} satoshis they are: {}".format(
+        len(result), len(channels), amt_to_rebalance, ", ".join(result)))
+    return result
 
 
 def send_reply_foaf_balances(peer, channels, plugin):
