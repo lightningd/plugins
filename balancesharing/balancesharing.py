@@ -16,15 +16,71 @@ except Exception:
     pass
 
 
+# TODO: implement
+def has_feature(feature):
+    """"check if XXX feature bit present"""
+    return True
+
+
+def get_funds(plugin):
+    """"get output and channels"""
+    # TODO: switch to real data
+    # fund_list = plugin.rpc.listfunds()
+    fund_list = list_funds_mock()
+    outputs = fund_list["outputs"]
+    channels = fund_list["channels"]
+
+    return outputs, channels
+
+
+def list_funds_mock():
+    """"read funds from file"""
+    # TODO: add dir
+    with open('<dir>/funds.json', 'r') as funds_file:
+        data = funds_file.read()
+
+    return json.loads(data)
+
+
+# TODO: we need to extend this, if we want to handle multiple channels per peer
+def get_channel(channels, peer_id):
+    """"searches for ONE channel with the given  peer_id"""
+    for ch in channels:
+        if ch["peer_id"] == peer_id:
+            return ch
+
+    return None
+
+
 @plugin.method("foafbalance")
 def foafbalance(plugin):
     """gets the balance of our friends channels"""
+    flow_value = 1
+    amt_to_rebalance = 10
     reply = {}
     info = plugin.rpc.getinfo()
     msg = r'105b126182746121'
+
+    outputs, channels = get_funds(plugin)
+
     for peer in plugin.rpc.listpeers()["peers"]:
-        res = plugin.rpc.dev_sendcustommsg(peer["id"], msg)
-        plugin.log(str(res))
+        # check if peer is the desired state
+        if not peer["connected"] or not has_feature(peer["features"]):
+            continue
+        peer_id = peer["id"]
+        peer_channel = get_channel(channels, peer_id)
+
+        if peer_channel is None:
+            plugin.log("No channel found for {peer_id}".format(peer_id=peer_id))
+            continue
+        else:
+            plugin.log("Found channel for {peer_id}: {channel}".format(
+                peer_id=peer_id, channel=peer_channel["short_channel_id"]
+            ))
+
+        res = plugin.rpc.dev_sendcustommsg(peer_id, msg)
+        plugin.log("RPC response" + str(res))
+
     nid = info["id"]
     reply["id"] = nid
     reply["change"] = nid
@@ -50,6 +106,7 @@ def send_reply_foaf_balances(peer, channels, plugin):
     # TODO: CHECK if 107b is the correct little endian of 439
     plugin.rpc.dev_sendcustommsg(peer, "107b123412341234")
     return
+
 
 @plugin.hook('peer_connected')
 def on_connected(plugin, **kwargs):
@@ -79,6 +136,7 @@ def on_custommsg(peer_id, message, plugin, **kwargs):
     plugin.log(message)
     plugin.log(str(type(message)))
     return {'result': 'continue'}
+
 
 @plugin.init()
 def init(options, configuration, plugin):
