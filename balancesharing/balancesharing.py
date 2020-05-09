@@ -31,7 +31,6 @@ def foafbalance(plugin):
     return reply
 
 
-<<<<<<< HEAD
 def get_message_type(message):
     assert len(message) > 4
     return message[:4]
