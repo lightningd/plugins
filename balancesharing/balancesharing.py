@@ -34,6 +34,11 @@ def foafbalance(plugin):
     return reply
 
 
+@plugin.hook('peer_connected')
+def on_connected(plugin, **kwargs):
+    plugin.log("GOT PEER CONNECTION HOOK")
+
+
 @plugin.hook('custommsg')
 def on_custommsg(peer_id, message, plugin, **kwargs):
     plugin.log("Got a custom message {msg} from peer {peer_id}".format(
