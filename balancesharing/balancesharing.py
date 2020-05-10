@@ -72,12 +72,12 @@ def encode_query_foaf_balances(flow_value, amt_to_rebalance):
     """Encode flow_value and amt_to_rebalance"""
     """type: short, flow_value: char, amt_to_rebalance: unsigned long long"""
     global QUERY_FOAF_BALANCES
-    return hexlify(struct.pack("!hcQ", QUERY_FOAF_BALANCES, flow_value, amt_to_rebalance)).decode('ASCII')
+    return hexlify(struct.pack("!HcQ", QUERY_FOAF_BALANCES, flow_value, amt_to_rebalance)).decode('ASCII')
 
 
 def decode_query_foaf_balances(data):
     """Decode query_foaf_balances. Return type, flow_value and amt_to_rebalance"""
-    return struct.unpack("!hcQ", unhexlify(data.encode('ASCII')))
+    return struct.unpack("!HcQ", unhexlify(data.encode('ASCII')))
 
 
 def get_flow_value(flow):
@@ -101,7 +101,6 @@ def log_error(msg):
     plugin.log("Error in balancesharing plugin: {msg}".format(msg=msg))
 
 
-# todo: add flow_value and amt_to_rebalance as arguments
 @plugin.method("foafbalance")
 def foafbalance(plugin, flow, amount):
     """gets the balance of our friends channels"""
@@ -122,8 +121,9 @@ def foafbalance(plugin, flow, amount):
     ))
 
     data = encode_query_foaf_balances(flow_value, amt_to_rebalance)
-    msg_type, new_flow_value, new_amt_to_rebalance = decode_query_foaf_balances(data)
 
+    # todo: remove. only for debugging
+    msg_type, new_flow_value, new_amt_to_rebalance = decode_query_foaf_balances(data)
     plugin.log(str(data))
     plugin.log("New values: {msg_type} -- {flow_value} -- {amt_to_rebalance}".format(
         msg_type=msg_type,
@@ -134,11 +134,6 @@ def foafbalance(plugin, flow, amount):
     global foaf_network
     foaf_network = nx.DiGraph()
 
-    info = plugin.rpc.getinfo()
-    msg = r'105b126182746121'
-    reply = {}
-    outputs, channels = get_funds(plugin)
-
     for peer in plugin.rpc.listpeers()["peers"]:
         # check if peer is the desired state
         if not peer["connected"] or not has_feature(peer["features"]):
@@ -148,9 +143,8 @@ def foafbalance(plugin, flow, amount):
         res = plugin.rpc.dev_sendcustommsg(peer_id, data)
         plugin.log("RPC response" + str(res))
 
-    nid = info["id"]
-    reply["id"] = nid
-    reply["change"] = nid
+    nid = plugin.rpc.getinfo()["id"]
+    reply = {"id": nid, "change": nid}
     return reply
 
 
@@ -159,7 +153,7 @@ def get_message_type(message):
     if they are a well known message type"""
     assert len(message) > 4
     message_type = message[:4]
-    return struct.unpack(">H", unhexlify(message_type))[0]
+    return struct.unpack(">H", unhexlify(message_type.encode('ASCII')))[0]
 
 
 def get_message_payload(message):
@@ -246,9 +240,9 @@ def on_custommsg(peer_id, message, plugin, **kwargs):
         _, flow, amt = decode_query_foaf_balances(message)
         result = handle_query_foaf_balances(flow, amt, plugin)
         send_reply_foaf_balances(peer_id, result, plugin)
-
-    if message_type == REPLY_FOAF_BALANCES:
+    elif message_type == REPLY_FOAF_BALANCES:
         plugin.log("received a reply_foaf_balances message")
+
     plugin.log(message)
     plugin.log(str(type(message)))
     return {'result': 'continue'}
