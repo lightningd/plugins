@@ -180,7 +180,7 @@ def log_error(msg):
 
 
 @plugin.method("foafbalance")
-def foafbalance(plugin, flow, amount):
+def foafbalance(plugin, flow=1, amount=50000):
     """gets the balance of our friends channels"""
     plugin.log("Building query_foaf_balances message...")
     # Read input data
@@ -332,12 +332,13 @@ def on_connected(plugin, **kwargs):
 @plugin.hook('custommsg')
 def on_custommsg(peer_id, message, plugin, **kwargs):
     global BTC_CHAIN_HASH
+    global foaf_network
     plugin.log("Got a custom message {msg} from peer {peer_id}".format(
         msg=message,
         peer_id=peer_id
     ))
     # TODO: Remove to stop mocking
-    peer_id = "03efccf2c383d7bf340da9a3f02e2c23104a0e4fe8ac1a880c8e2dc92fbdacd9df"
+    mock_peer_id = "03efccf2c383d7bf340da9a3f02e2c23104a0e4fe8ac1a880c8e2dc92fbdacd9df"
     plugin.log("switched peer_id to {} for testing".format(peer_id))
     # message has to be at least 6 bytes. 4 bytes prefix and 2 bytes for the type
     assert len(message) > 12
@@ -364,7 +365,8 @@ def on_custommsg(peer_id, message, plugin, **kwargs):
             message)
         plugin.log("received a reply_foaf_balances message")
         for short_channel_id in short_channel_ids:
-            partner = get_other_node(peer_id, short_channel_id)
+            # TODO: remove mock
+            partner = get_other_node(mock_peer_id, short_channel_id)
             if partner is None:
                 continue
             # TODO: shall we include the timestamp the the edges?
