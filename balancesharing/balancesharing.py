@@ -16,15 +16,12 @@ import os
 import struct
 from binascii import hexlify, unhexlify
 
-hexlify(struct.pack(">H", 437))
-
 QUERY_FOAF_BALANCES = 437
 REPLY_FOAF_BALANCES = 439
 
 foaf_network = None
 
 plugin = pyln.client.Plugin()
-
 
 # __version__ was introduced in 0.0.7.1, with utf8 passthrough support.
 try:
@@ -162,11 +159,6 @@ def get_message_type(message):
     if they are a well known message type"""
     assert len(message) > 4
     message_type = message[:4]
-    # >>> hexlify(pack(">H",437))
-    # b'01b5'
-    # >>> unpack(">H",unhexlify(b'01b5'))
-    # (437,)
-    # >>> unpack(">H",unhexlify(b'01b5'))[0]
     return struct.unpack(">H", unhexlify(message_type))[0]
 
 
