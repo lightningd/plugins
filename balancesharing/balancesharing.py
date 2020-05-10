@@ -14,6 +14,7 @@ import pyln.client
 import json
 import os
 import struct
+import time
 from binascii import hexlify, unhexlify
 
 QUERY_FOAF_BALANCES = 437
@@ -69,6 +70,40 @@ def get_channel(channels, peer_id):
     return None
 
 
+def encode_reply_foaf_balances(short_channels, amt_to_rebalance, plugin):
+    """Encode flow_value and amt_to_rebalance"""
+    """
+    H ->        type: short
+    32s ->      chain_hash: 32byte char
+    L ->        timestamp: unsigned long
+    Q ->        amt_to_rebalance: unsigned long long
+    H ->        number_of_short_channels: unsigned short
+    {len*8}s -> short_channel_id
+    """
+    global REPLY_FOAF_BALANCES
+    global CHAIN_HASH
+
+    fund_list = list_funds_mock()
+    channels = fund_list["channels"]
+
+    # TODO: remove mock
+    mock_short_channels = []
+    for ch in channels:
+        mock_short_channels.append(ch["short_channel_id"])
+    short_channels = mock_short_channels
+
+    # time.time() returns a float with 4 decimal places
+    timestamp = int(time.time() * 1000)
+    number_of_short_channels = len(short_channels)
+    channel_array_sign = str(number_of_short_channels * 8) + 's'
+    plugin.log("Channel sign: {channel_array_sign}"
+               .format(channel_array_sign=channel_array_sign))
+    return hexlify(struct.pack(
+        "!H32sLQH", REPLY_FOAF_BALANCES, CHAIN_HASH.encode('ASCII'),
+        timestamp, number_of_short_channels, amt_to_rebalance)
+    ).decode('ASCII')
+
+
 def encode_query_foaf_balances(flow_value, amt_to_rebalance):
     """Encode flow_value and amt_to_rebalance"""
     """
@@ -115,6 +150,7 @@ def log_error(msg):
 @plugin.method("foafbalance")
 def foafbalance(plugin, flow, amount):
     """gets the balance of our friends channels"""
+    plugin.log("Building query_foaf_balances message...")
     # Read input data
     flow_value = get_flow_value(flow)
     if flow_value is None:
@@ -126,17 +162,11 @@ def foafbalance(plugin, flow, amount):
         log_error("argument 'amt_to_rebalance' for function 'foafbalance' was not valid")
         return
 
-    plugin.log("Input data: {flow_value} and {amt_to_rebalance}".format(
-        flow_value=flow_value,
-        amt_to_rebalance=amt_to_rebalance
-    ))
-
     data = encode_query_foaf_balances(flow_value, amt_to_rebalance)
 
     # todo: remove. only for debugging
     msg_type, chain_hash, new_flow_value, new_amt_to_rebalance = decode_query_foaf_balances(data)
-    plugin.log(str(data))
-    plugin.log("New values: {msg_type} -- {chain_hash} -- {flow_value} -- {amt_to_rebalance}".format(
+    plugin.log("Test decoding: {msg_type} -- {chain_hash} -- {flow_value} -- {amt_to_rebalance}".format(
         msg_type=msg_type,
         chain_hash=chain_hash,
         flow_value=new_flow_value,
@@ -146,6 +176,7 @@ def foafbalance(plugin, flow, amount):
     global foaf_network
     foaf_network = nx.DiGraph()
 
+    counter = 0
     for peer in plugin.rpc.listpeers()["peers"]:
         # check if peer is the desired state
         if not peer["connected"] or not has_feature(peer["features"]):
@@ -153,10 +184,15 @@ def foafbalance(plugin, flow, amount):
         peer_id = peer["id"]
 
         res = plugin.rpc.dev_sendcustommsg(peer_id, data)
-        plugin.log("RPC response" + str(res))
+        plugin.log("Sent query_foaf_balances message to {peer_id}. Response: {res}".format(
+            peer_id=peer_id,
+            res=res
+        ))
+
+        counter = counter + 1
 
     nid = plugin.rpc.getinfo()["id"]
-    reply = {"id": nid, "change": nid}
+    reply = {"id": nid, "num_sent_queries": counter}
     return reply
 
 
@@ -205,26 +241,33 @@ def handle_query_foaf_balances(flow_value, amt_to_rebalance, plugin):
     nu = float(tau) / kappa
     channels = helper_compute_channel_balance_coefficients(channels)
 
-    result = []
+    channel_ids = []
     for channel in channels:
         reserve = int(int(channel["channel_total_sat"]) * 0.01) + 1
         if flow_value == 1:
             if channel["zeta"] > nu:
                 if int(channel["channel_sat"]) > amt_to_rebalance + reserve:
-                    result.append(channel["short_channel_id"])
+                    channel_ids.append(channel["short_channel_id"])
         elif flow_value == 0:
             if channel["zeta"] < nu:
                 if int(channel["channel_total_sat"]) - int(channel["channel_sat"]) > amt_to_rebalance + reserve:
-                    result.append(channel["short_channel_id"])
+                    channel_ids.append(channel["short_channel_id"])
     plugin.log("{} of {} channels are good for rebalancing {} satoshis they are: {}".format(
-        len(result), len(channels), amt_to_rebalance, ", ".join(result)))
-    return result
+        len(channel_ids), len(channels), amt_to_rebalance, ", ".join(channel_ids)))
+    return channel_ids
 
 
-def send_reply_foaf_balances(peer, channels, plugin):
+def send_reply_foaf_balances(peer, amt, channels, plugin):
+    encode_reply_foaf_balances(channels, amt, plugin)
+
     # TODO: CHECK if 107b is the correct little endian of 439
-    plugin.rpc.dev_sendcustommsg(peer, "107b123412341234")
-    return
+    res = plugin.rpc.dev_sendcustommsg(peer, "107b123412341234")
+    plugin.log("Sent query_foaf_balances message to {peer_id}. Response: {res}".format(
+        peer_id=peer,
+        res=res
+    ))
+    reply = {"peer_id": peer, "response": res}
+    return reply
 
 
 @plugin.hook('peer_connected')
@@ -248,22 +291,22 @@ def on_custommsg(peer_id, message, plugin, **kwargs):
     # message_payload = get_message_payload(message)
 
     # query_foaf_balances message has type 437 which is 01b5 in hex
+    return_value = {}
     if message_type == QUERY_FOAF_BALANCES:
         plugin.log("received query_foaf_balances message")
         _, chain_hash, flow, amt = decode_query_foaf_balances(message)
 
         if chain_hash == BTC_CHAIN_HASH:
             result = handle_query_foaf_balances(flow, amt, plugin)
-            send_reply_foaf_balances(peer_id, result, plugin)
+            r = send_reply_foaf_balances(peer_id, amt, result, plugin)
+            return_value = {"result": r}
         else:
             plugin.log("not handling non bitcoin chains for now")
 
     elif message_type == REPLY_FOAF_BALANCES:
         plugin.log("received a reply_foaf_balances message")
 
-    plugin.log(message)
-    plugin.log(str(type(message)))
-    return {'result': 'continue'}
+    return return_value
 
 
 @plugin.init()
