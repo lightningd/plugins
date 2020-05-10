@@ -9,12 +9,22 @@ More theory about imbalances and the algorithm to decrease the imblance of a nod
 suggested by this research: https://arxiv.org/abs/1912.09555
 """
 
+import networkx as nx
 import pyln.client
 import json
 import os
 import struct
+from binascii import hexlify, unhexlify
+
+hexlify(struct.pack(">H", 437))
+
+QUERY_FOAF_BALANCES = 437
+REPLY_FOAF_BALANCES = 439
+
+foaf_network = None
 
 plugin = pyln.client.Plugin()
+
 
 # __version__ was introduced in 0.0.7.1, with utf8 passthrough support.
 try:
@@ -52,6 +62,8 @@ def list_funds_mock():
 
 
 # TODO: we need to extend this, if we want to handle multiple channels per peer
+
+
 def get_channel(channels, peer_id):
     """"searches for ONE channel with the given  peer_id"""
     for ch in channels:
@@ -74,6 +86,8 @@ def decode_query_foaf_balances(data):
 @plugin.method("foafbalance")
 def foafbalance(plugin):
     """gets the balance of our friends channels"""
+    global foaf_network
+    foaf_network = nx.DiGraph()
     flow_value = b'\x01'
     amt_to_rebalance = int(123)
     data = encode_query_foaf_balances(flow_value, amt_to_rebalance)
@@ -87,7 +101,9 @@ def foafbalance(plugin):
 
     reply = {}
     info = plugin.rpc.getinfo()
-    msg = r'105b126182746121'
+    #msg = r'01b5' + str(hexlify(struct.pack(">H", 437))) + '126182746121'
+    msg = r'01b5126182746121'
+
     dir_path = os.path.dirname(os.path.realpath(__file__))
     plugin.log(dir_path)
 
@@ -109,8 +125,16 @@ def foafbalance(plugin):
 
 
 def get_message_type(message):
+    """takes the 4 hex digits of a string and returns them as an integer 
+    if they are a well known message type"""
     assert len(message) > 4
-    return message[:4]
+    message_type = message[:4]
+    # >>> hexlify(pack(">H",437))
+    # b'01b5'
+    # >>> unpack(">H",unhexlify(b'01b5'))
+    # (437,)
+    # >>> unpack(">H",unhexlify(b'01b5'))[0]
+    return struct.unpack(">H", unhexlify(message_type))[0]
 
 
 def get_message_payload(message):
@@ -197,11 +221,13 @@ def on_custommsg(peer_id, message, plugin, **kwargs):
     message_payload = get_message_payload(message)
 
     # query_foaf_balances message has type 437 which is 01b5 in hex
-    if message_type == "105b":
+    if message_type == QUERY_FOAF_BALANCES:
         plugin.log("received query_foaf_balances message")
         result = handle_query_foaf_balances(message_payload, plugin)
         send_reply_foaf_balances(peer_id, result, plugin)
 
+    if message_type == REPLY_FOAF_BALANCES:
+        plugin.log("received a reply_foaf_balances message")
     plugin.log(message)
     plugin.log(str(type(message)))
     return {'result': 'continue'}
