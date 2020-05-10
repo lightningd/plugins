@@ -75,7 +75,7 @@ def encode_reply_foaf_balances(short_channels, amt_to_rebalance, plugin):
     """
     H ->        type: short
     32s ->      chain_hash: 32byte char
-    L ->        timestamp: unsigned long
+    Q ->        timestamp: unsigned long
     Q ->        amt_to_rebalance: unsigned long long
     H ->        number_of_short_channels: unsigned short
     {len*8}s -> short_channel_id
@@ -83,14 +83,14 @@ def encode_reply_foaf_balances(short_channels, amt_to_rebalance, plugin):
     global REPLY_FOAF_BALANCES
     global CHAIN_HASH
 
-    fund_list = list_funds_mock()
-    channels = fund_list["channels"]
-
-    # TODO: remove mock
-    mock_short_channels = []
-    for ch in channels:
-        mock_short_channels.append(ch["short_channel_id"])
-    short_channels = mock_short_channels
+    # fund_list = list_funds_mock()
+    # channels = fund_list["channels"]
+    #
+    # # TODO: remove mock
+    # mock_short_channels = []
+    # for ch in channels:
+    #     mock_short_channels.append(ch["short_channel_id"])
+    # short_channels = mock_short_channels
 
     # time.time() returns a float with 4 decimal places
     timestamp = int(time.time() * 1000)
@@ -99,7 +99,7 @@ def encode_reply_foaf_balances(short_channels, amt_to_rebalance, plugin):
     plugin.log("Channel sign: {channel_array_sign}"
                .format(channel_array_sign=channel_array_sign))
     return hexlify(struct.pack(
-        "!H32sLQH", REPLY_FOAF_BALANCES, CHAIN_HASH.encode('ASCII'),
+        "!H32sQQH", REPLY_FOAF_BALANCES, CHAIN_HASH.encode('ASCII'),
         timestamp, number_of_short_channels, amt_to_rebalance)
     ).decode('ASCII')
 
