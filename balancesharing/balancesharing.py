@@ -13,6 +13,7 @@ import pyln.client
 import json
 import os
 import struct
+from binascii import hexlify, unhexlify
 
 plugin = pyln.client.Plugin()
 
@@ -63,13 +64,14 @@ def get_channel(channels, peer_id):
 
 
 def encode_query_foaf_balances(flow_value, amt_to_rebalance):
-    """Encode flow_value as 'char' and amount as 'unsigend long long'; C-Type data structure"""
-    return struct.pack("!cQ", flow_value, amt_to_rebalance)
+    """Encode flow_value and amt_to_rebalance"""
+    """type: short, flow_value: char, amt_to_rebalance: unsigned long long"""
+    return hexlify(struct.pack("!hcQ", 437, flow_value, amt_to_rebalance)).decode('ASCII')
 
 
 def decode_query_foaf_balances(data):
-    """Decode query_foaf_balances. Returns a byte and int; Python-Type data structure"""
-    return struct.unpack("!cQ", data)
+    """Decode query_foaf_balances. Return type, flow_value and amt_to_rebalance"""
+    return struct.unpack("!hcQ", unhexlify(data.encode('ASCII')))
 
 
 def get_flow_value(flow):
@@ -115,20 +117,18 @@ def foafbalance(plugin, flow, amount):
     ))
 
     data = encode_query_foaf_balances(flow_value, amt_to_rebalance)
-    new_flow_value, new_amt_to_rebalance = decode_query_foaf_balances(data)
+    msg_type, new_flow_value, new_amt_to_rebalance = decode_query_foaf_balances(data)
 
     plugin.log(str(data))
-    plugin.log("New values: {flow_value}  {amt_to_rebalance}".format(
+    plugin.log("New values: {msg_type} -- {flow_value} -- {amt_to_rebalance}".format(
+        msg_type=msg_type,
         flow_value=new_flow_value,
         amt_to_rebalance=new_amt_to_rebalance
     ))
 
-    reply = {}
     info = plugin.rpc.getinfo()
     msg = r'105b126182746121'
-    dir_path = os.path.dirname(os.path.realpath(__file__))
-    plugin.log(dir_path)
-
+    reply = {}
     outputs, channels = get_funds(plugin)
 
     for peer in plugin.rpc.listpeers()["peers"]:
@@ -137,7 +137,7 @@ def foafbalance(plugin, flow, amount):
             continue
         peer_id = peer["id"]
 
-        res = plugin.rpc.dev_sendcustommsg(peer_id, msg)
+        res = plugin.rpc.dev_sendcustommsg(peer_id, data)
         plugin.log("RPC response" + str(res))
 
     nid = info["id"]
