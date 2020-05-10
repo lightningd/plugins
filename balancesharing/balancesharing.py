@@ -21,6 +21,9 @@ QUERY_FOAF_BALANCES = 437
 REPLY_FOAF_BALANCES = 439
 CHAIN_HASH = r'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'
 BTC_CHAIN_HASH = CHAIN_HASH
+# TODO: replace with plugin.rpc.listchannels(short_channel_id)
+CHANNEL_INDEX = {}
+
 foaf_network = None
 
 plugin = pyln.client.Plugin()
@@ -37,6 +40,17 @@ except Exception:
 def has_feature(feature):
     """"check if XXX feature bit present"""
     return True
+
+
+def get_other_node(node_id, short_channel_id):
+    channel = CHANNEL_INDEX[short_channel_id]
+    if channel == None:
+        return None
+    if channel["source"] == node_id:
+        return channel["destination"]
+    if channel["destination"] == node_id:
+        return channel["source"]
+    return None
 
 
 def get_funds(plugin):
@@ -121,7 +135,8 @@ def encode_query_foaf_balances(flow_value, amt_to_rebalance):
 
 def decode_query_foaf_balances(data):
     """Decode query_foaf_balances. Return type, chain_hash, flow_value and amt_to_rebalance"""
-    msg_type, chain_hash, flow, amt = struct.unpack("!H32scQ", unhexlify(data.encode('ASCII')))
+    msg_type, chain_hash, flow, amt = struct.unpack(
+        "!H32scQ", unhexlify(data.encode('ASCII')))
     chain_hash = chain_hash.decode('ASCII')
     return msg_type, chain_hash, flow, amt
 
@@ -159,13 +174,15 @@ def foafbalance(plugin, flow, amount):
 
     amt_to_rebalance = get_amount(amount)
     if amt_to_rebalance is None:
-        log_error("argument 'amt_to_rebalance' for function 'foafbalance' was not valid")
+        log_error(
+            "argument 'amt_to_rebalance' for function 'foafbalance' was not valid")
         return
 
     data = encode_query_foaf_balances(flow_value, amt_to_rebalance)
 
     # todo: remove. only for debugging
-    msg_type, chain_hash, new_flow_value, new_amt_to_rebalance = decode_query_foaf_balances(data)
+    msg_type, chain_hash, new_flow_value, new_amt_to_rebalance = decode_query_foaf_balances(
+        data)
     plugin.log("Test decoding: {msg_type} -- {chain_hash} -- {flow_value} -- {amt_to_rebalance}".format(
         msg_type=msg_type,
         chain_hash=chain_hash,
@@ -270,6 +287,23 @@ def send_reply_foaf_balances(peer, amt, channels, plugin):
     return reply
 
 
+def decode_reply_foaf_balances_mock(message):
+    """
+    * [`chain_hash: chain_hash`]
+    * [`byte: flow_value`]
+    * [`u64: timestamp`]
+    * [`u64: amt_to_rebalance`]
+    * [`u16:len`]
+    * [`len*u64: short_channel_id`]
+    """
+    chain_hash = CHAIN_HASH
+    flow_value = 1
+    ts = int(time.time() * 1000)
+    amt_to_rebalance = 50000
+    short_channel_ids = list(CHANNEL_INDEX.keys())
+    return chain_hash, flow_value, ts, amt_to_rebalance, short_channel_ids
+
+
 @plugin.hook('peer_connected')
 def on_connected(plugin, **kwargs):
     plugin.log("GOT PEER CONNECTION HOOK")
@@ -283,6 +317,9 @@ def on_custommsg(peer_id, message, plugin, **kwargs):
         msg=message,
         peer_id=peer_id
     ))
+    # TODO: Remove to stop mocking
+    peer_id = "03efccf2c383d7bf340da9a3f02e2c23104a0e4fe8ac1a880c8e2dc92fbdacd9df"
+    plugin.log("switched peer_id to {} for testing".format(peer_id))
     # message has to be at least 6 bytes. 4 bytes prefix and 2 bytes for the type
     assert len(message) > 12
     # remove prefix:
@@ -304,14 +341,46 @@ def on_custommsg(peer_id, message, plugin, **kwargs):
             plugin.log("not handling non bitcoin chains for now")
 
     elif message_type == REPLY_FOAF_BALANCES:
+        chain_hash, flow_value, ts, amt_to_rebalance, short_channel_ids = decode_reply_foaf_balances_mock(
+            message)
         plugin.log("received a reply_foaf_balances message")
+        for short_channel_id in short_channel_ids:
+            partner = get_other_node(peer_id, short_channel_id)
+            if partner is None:
+                continue
+            # TODO: shall we include the timestamp the the edges?
+            # TODO: an edge MUST only exist in one direction
+            if flow_value == 1:
+                foaf_network.add_edge(peer_id, partner)
+            else:
+                foaf_network.add_edge(partner, peer_id)
+        # TODO invoke rebalance path finding logic (but with whome? need a peer to which an HTLC is stuck)
+        plugin.log("FOAF Graph now has {} channels".format(
+            len(foaf_network.edges())))
 
     return return_value
+
+
+def reindex_channels(plugin):
+    plugin.log("indexing payment channels by short channel id")
+    # TODO: REMOVE MOCK
+    # channels=plugin.rpc.listchannels()["channels"]
+    dir_path = os.path.dirname(os.path.realpath(__file__))
+    file_name = os.path.join(dir_path, "channels.json")
+    with open(file_name, 'r') as funds_file:
+        data = funds_file.read()
+
+    channels = json.loads(data)["channels"]
+
+    for channel in channels:
+        short_channel_id = channel["short_channel_id"]
+        CHANNEL_INDEX[short_channel_id] = channel
 
 
 @plugin.init()
 def init(options, configuration, plugin):
     plugin.log("Plugin balancesharing.py initialized")
+    reindex_channels(plugin)
 
 
 plugin.run()
