@@ -18,7 +18,8 @@ from binascii import hexlify, unhexlify
 
 QUERY_FOAF_BALANCES = 437
 REPLY_FOAF_BALANCES = 439
-
+CHAIN_HASH = r'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'
+BTC_CHAIN_HASH = CHAIN_HASH
 foaf_network = None
 
 plugin = pyln.client.Plugin()
@@ -70,14 +71,24 @@ def get_channel(channels, peer_id):
 
 def encode_query_foaf_balances(flow_value, amt_to_rebalance):
     """Encode flow_value and amt_to_rebalance"""
-    """type: short, flow_value: char, amt_to_rebalance: unsigned long long"""
+    """
+    H ->    type: short
+    32s ->  chain_hash: 32byte char
+    c ->    flow_value: char
+    Q ->    amt_to_rebalance: unsigned long long
+    """
     global QUERY_FOAF_BALANCES
-    return hexlify(struct.pack("!HcQ", QUERY_FOAF_BALANCES, flow_value, amt_to_rebalance)).decode('ASCII')
+    global CHAIN_HASH
+    return hexlify(
+        struct.pack("!H32scQ", QUERY_FOAF_BALANCES, CHAIN_HASH.encode('ASCII'), flow_value, amt_to_rebalance)).decode(
+        'ASCII')
 
 
 def decode_query_foaf_balances(data):
-    """Decode query_foaf_balances. Return type, flow_value and amt_to_rebalance"""
-    return struct.unpack("!HcQ", unhexlify(data.encode('ASCII')))
+    """Decode query_foaf_balances. Return type, chain_hash, flow_value and amt_to_rebalance"""
+    msg_type, chain_hash, flow, amt = struct.unpack("!H32scQ", unhexlify(data.encode('ASCII')))
+    chain_hash = chain_hash.decode('ASCII')
+    return msg_type, chain_hash, flow, amt
 
 
 def get_flow_value(flow):
@@ -123,10 +134,11 @@ def foafbalance(plugin, flow, amount):
     data = encode_query_foaf_balances(flow_value, amt_to_rebalance)
 
     # todo: remove. only for debugging
-    msg_type, new_flow_value, new_amt_to_rebalance = decode_query_foaf_balances(data)
+    msg_type, chain_hash, new_flow_value, new_amt_to_rebalance = decode_query_foaf_balances(data)
     plugin.log(str(data))
-    plugin.log("New values: {msg_type} -- {flow_value} -- {amt_to_rebalance}".format(
+    plugin.log("New values: {msg_type} -- {chain_hash} -- {flow_value} -- {amt_to_rebalance}".format(
         msg_type=msg_type,
+        chain_hash=chain_hash,
         flow_value=new_flow_value,
         amt_to_rebalance=new_amt_to_rebalance
     ))
@@ -223,6 +235,7 @@ def on_connected(plugin, **kwargs):
 
 @plugin.hook('custommsg')
 def on_custommsg(peer_id, message, plugin, **kwargs):
+    global BTC_CHAIN_HASH
     plugin.log("Got a custom message {msg} from peer {peer_id}".format(
         msg=message,
         peer_id=peer_id
@@ -237,9 +250,14 @@ def on_custommsg(peer_id, message, plugin, **kwargs):
     # query_foaf_balances message has type 437 which is 01b5 in hex
     if message_type == QUERY_FOAF_BALANCES:
         plugin.log("received query_foaf_balances message")
-        _, flow, amt = decode_query_foaf_balances(message)
-        result = handle_query_foaf_balances(flow, amt, plugin)
-        send_reply_foaf_balances(peer_id, result, plugin)
+        _, chain_hash, flow, amt = decode_query_foaf_balances(message)
+
+        if chain_hash == BTC_CHAIN_HASH:
+            result = handle_query_foaf_balances(flow, amt, plugin)
+            send_reply_foaf_balances(peer_id, result, plugin)
+        else:
+            plugin.log("not handling non bitcoin chains for now")
+
     elif message_type == REPLY_FOAF_BALANCES:
         plugin.log("received a reply_foaf_balances message")
 
