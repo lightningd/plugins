@@ -85,6 +85,31 @@ def pack_channels(channels, plugin):
     return channels_packed
 
 
+def decode_reply_foaf_balances(data, plugin):
+    """Decode query_foaf_balances. Return type, chain_hash, flow_value and amt_to_rebalance"""
+    # first part is 53 bytes big -> 106 characters
+    assert len(data) >= 106
+
+    first_part = data[:106]
+    second_part = data[106:]
+    plugin.log("Splitting data 1")
+    plugin.log(first_part)
+    msg_type, chain_hash, flow, timestamp, amt, num_channels \
+        = struct.unpack("!H32scQQH", unhexlify(first_part.encode('ASCII')))
+    # plugin.log("Msg type: " + str(msg_type))
+    plugin.log("Splitting data 2")
+    chain_hash = chain_hash.decode('ASCII')
+    plugin.log("Splitting data 3")
+
+    unpack_type = '!' + 'Q' * num_channels
+    plugin.log(unpack_type)
+    plugin.log(str(num_channels))
+    plugin.log(str(len(second_part)))
+    short_channel_ids = struct.unpack(unpack_type, unhexlify(second_part.encode('ASCII')))
+
+    return msg_type, chain_hash, flow, timestamp, amt, short_channel_ids
+
+
 def encode_reply_foaf_balances(short_channels, flow_value, amt_to_rebalance, plugin):
     """Encode flow_value and amt_to_rebalance"""
     """
@@ -99,14 +124,14 @@ def encode_reply_foaf_balances(short_channels, flow_value, amt_to_rebalance, plu
     global REPLY_FOAF_BALANCES
     global CHAIN_HASH
 
-    # fund_list = list_funds_mock()
-    # channels = fund_list["channels"]
-    #
-    # # TODO: remove mock
-    # mock_short_channels = []
-    # for ch in channels:
-    #     mock_short_channels.append(ch["short_channel_id"])
-    # short_channels = mock_short_channels
+    fund_list = list_funds_mock()
+    channels = fund_list["channels"]
+
+    # TODO: remove mock
+    mock_short_channels = []
+    for ch in channels:
+        mock_short_channels.append(ch["short_channel_id"])
+    short_channels = mock_short_channels
 
     # time.time() returns a float with 4 decimal places
     timestamp = int(time.time() * 1000)
@@ -114,11 +139,17 @@ def encode_reply_foaf_balances(short_channels, flow_value, amt_to_rebalance, plu
     channel_array_sign = str(number_of_short_channels * 8) + 's'
     plugin.log("Channel sign: {channel_array_sign}"
                .format(channel_array_sign=channel_array_sign))
-    pack_channels(short_channels, plugin)
-    return hexlify(struct.pack(
-        "!H32scQQH", REPLY_FOAF_BALANCES, CHAIN_HASH.encode('ASCII'),
-        flow_value, timestamp, number_of_short_channels, amt_to_rebalance)
-    ).decode('ASCII')
+
+    packed_first_part = struct.pack("!H32scQQH", REPLY_FOAF_BALANCES, CHAIN_HASH.encode('ASCII'),
+                                    flow_value, timestamp, amt_to_rebalance, number_of_short_channels)
+
+    packed_second_part = b''
+    packed_chs = pack_channels(short_channels, plugin)
+    for ch in packed_chs:
+        packed_second_part += ch
+    tmp = hexlify(packed_first_part + packed_second_part).decode('ASCII')
+    plugin.log(tmp)
+    return tmp
 
 
 def encode_query_foaf_balances(flow_value, amt_to_rebalance):
@@ -199,7 +230,7 @@ def foafbalance(plugin, flow, amount):
         if not peer["connected"] or not has_feature(peer["features"]):
             continue
         peer_id = peer["id"]
-
+        plugin.log(data)
         res = plugin.rpc.dev_sendcustommsg(peer_id, data)
         plugin.log("Sent query_foaf_balances message to {peer_id}. Response: {res}".format(
             peer_id=peer_id,
@@ -277,7 +308,12 @@ def handle_query_foaf_balances(flow_value, amt_to_rebalance, plugin):
 
 
 def send_reply_foaf_balances(peer, amt, flow, channels, plugin):
-    encode_reply_foaf_balances(channels, flow, amt, plugin)
+    msg = encode_reply_foaf_balances(channels, flow, amt, plugin)
+    msg_type, chain_hash, flow, timestamp, amt, short_channel_ids \
+        = decode_reply_foaf_balances(msg, plugin)
+
+    for ids in short_channel_ids:
+        plugin.log(str(ids))
 
     # TODO: CHECK if 107b is the correct little endian of 439
     res = plugin.rpc.dev_sendcustommsg(peer, "107b123412341234")
