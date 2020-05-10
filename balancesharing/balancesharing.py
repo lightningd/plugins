@@ -6,7 +6,7 @@
 import pyln.client
 import json
 import os
-
+import struct
 
 plugin = pyln.client.Plugin()
 
@@ -55,11 +55,30 @@ def get_channel(channels, peer_id):
     return None
 
 
+def encode_query_foaf_balances(flow_value, amt_to_rebalance):
+    """Encode flow_value (char) and amount (unsigend long long) """
+    return struct.pack("!cQ", flow_value, amt_to_rebalance)
+
+
+def decode_query_foaf_balances(data):
+    """Decode query_foaf_balances. Returns a byte and int"""
+    return struct.unpack("!cQ", data)
+
+
 @plugin.method("foafbalance")
 def foafbalance(plugin):
     """gets the balance of our friends channels"""
-    flow_value = 1
-    amt_to_rebalance = 10
+    flow_value = b'\x01'
+    amt_to_rebalance = int(123)
+    data = encode_query_foaf_balances(flow_value, amt_to_rebalance)
+    new_flow_value, new_amt_to_rebalance = decode_query_foaf_balances(data)
+
+    plugin.log(str(data))
+    plugin.log("New values: {flow_value}  {amt_to_rebalance}".format(
+        flow_value=new_flow_value,
+        amt_to_rebalance=new_amt_to_rebalance
+    ))
+
     reply = {}
     info = plugin.rpc.getinfo()
     msg = r'105b126182746121'
