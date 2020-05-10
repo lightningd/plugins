@@ -68,14 +68,14 @@ def get_channel(channels, peer_id):
     for ch in channels:
         if ch["peer_id"] == peer_id:
             return ch
-
     return None
 
 
 def encode_query_foaf_balances(flow_value, amt_to_rebalance):
     """Encode flow_value and amt_to_rebalance"""
     """type: short, flow_value: char, amt_to_rebalance: unsigned long long"""
-    return hexlify(struct.pack("!hcQ", 437, flow_value, amt_to_rebalance)).decode('ASCII')
+    global QUERY_FOAF_BALANCES
+    return hexlify(struct.pack("!hcQ", QUERY_FOAF_BALANCES, flow_value, amt_to_rebalance)).decode('ASCII')
 
 
 def decode_query_foaf_balances(data):
@@ -108,9 +108,6 @@ def log_error(msg):
 @plugin.method("foafbalance")
 def foafbalance(plugin, flow, amount):
     """gets the balance of our friends channels"""
-    global foaf_network
-    foaf_network = nx.DiGraph()
-
     # Read input data
     flow_value = get_flow_value(flow)
     if flow_value is None:
@@ -136,6 +133,9 @@ def foafbalance(plugin, flow, amount):
         flow_value=new_flow_value,
         amt_to_rebalance=new_amt_to_rebalance
     ))
+
+    global foaf_network
+    foaf_network = nx.DiGraph()
 
     info = plugin.rpc.getinfo()
     msg = r'105b126182746121'
@@ -193,16 +193,11 @@ def helper_compute_channel_balance_coefficients(channels):
     return channels
 
 
-def handle_query_foaf_balances(payload, plugin):
-    # TODO: parse from payload
-    amt_to_rebalance = 150000
-    # TODO: parse from payload but 1 means Outgoing forwarding
-    flow_value = 0
-
-    if flow_value == 0:
+def handle_query_foaf_balances(flow_value, amt_to_rebalance, plugin):
+    if flow_value == b'\x00':
         plugin.log("compute channels on which I want {} satoshis incoming while rebalancing".format(
             amt_to_rebalance))
-    elif flow_value == 1:
+    elif flow_value == b'\x01':
         plugin.log("compute channels on which I want to forward {} satoshis  while rebalancing".format(
             amt_to_rebalance))
 
@@ -251,12 +246,13 @@ def on_custommsg(peer_id, message, plugin, **kwargs):
     # remove prefix:
     message = message[8:]
     message_type = get_message_type(message)
-    message_payload = get_message_payload(message)
+    # message_payload = get_message_payload(message)
 
     # query_foaf_balances message has type 437 which is 01b5 in hex
     if message_type == QUERY_FOAF_BALANCES:
         plugin.log("received query_foaf_balances message")
-        result = handle_query_foaf_balances(message_payload, plugin)
+        _, flow, amt = decode_query_foaf_balances(message)
+        result = handle_query_foaf_balances(flow, amt, plugin)
         send_reply_foaf_balances(peer_id, result, plugin)
 
     if message_type == REPLY_FOAF_BALANCES:
