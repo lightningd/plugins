@@ -84,11 +84,27 @@ def get_channel(channels, peer_id):
     return None
 
 
-def encode_reply_foaf_balances(short_channels, amt_to_rebalance, plugin):
+def pack_channels(channels, plugin):
+    # structure: blockheight 4 byte, index 2 byte, output 2 byte
+    channels_packed = []
+    for ch in channels:
+        nums = ch.split('x')
+        if len(nums) != 3:
+            break
+        ch_packed = struct.pack("!LHH", int(nums[0]),
+                                int(nums[1]), int(nums[2]))
+        channels_packed.append(ch_packed)
+        plugin.log("channel: " + ch + " " + str(ch_packed))
+
+    return channels_packed
+
+
+def encode_reply_foaf_balances(short_channels, flow_value, amt_to_rebalance, plugin):
     """Encode flow_value and amt_to_rebalance"""
     """
     H ->        type: short
     32s ->      chain_hash: 32byte char
+    c ->        flow_value: char
     Q ->        timestamp: unsigned long
     Q ->        amt_to_rebalance: unsigned long long
     H ->        number_of_short_channels: unsigned short
@@ -112,9 +128,10 @@ def encode_reply_foaf_balances(short_channels, amt_to_rebalance, plugin):
     channel_array_sign = str(number_of_short_channels * 8) + 's'
     plugin.log("Channel sign: {channel_array_sign}"
                .format(channel_array_sign=channel_array_sign))
+    pack_channels(short_channels, plugin)
     return hexlify(struct.pack(
-        "!H32sQQH", REPLY_FOAF_BALANCES, CHAIN_HASH.encode('ASCII'),
-        timestamp, number_of_short_channels, amt_to_rebalance)
+        "!H32scQQH", REPLY_FOAF_BALANCES, CHAIN_HASH.encode('ASCII'),
+        flow_value, timestamp, number_of_short_channels, amt_to_rebalance)
     ).decode('ASCII')
 
 
@@ -153,7 +170,7 @@ def get_flow_value(flow):
 
 
 def get_amount(amt):
-    if type(amt) is not int or amt <= 0:
+    if type(amt) is not int or amt == 0:
         return None
     return amt
 
@@ -251,6 +268,8 @@ def handle_query_foaf_balances(flow_value, amt_to_rebalance, plugin):
     elif flow_value == b'\x01':
         plugin.log("compute channels on which I want to forward {} satoshis  while rebalancing".format(
             amt_to_rebalance))
+    else:
+        return []
 
     _, channels = get_funds(plugin)
 
@@ -274,8 +293,8 @@ def handle_query_foaf_balances(flow_value, amt_to_rebalance, plugin):
     return channel_ids
 
 
-def send_reply_foaf_balances(peer, amt, channels, plugin):
-    encode_reply_foaf_balances(channels, amt, plugin)
+def send_reply_foaf_balances(peer, amt, flow, channels, plugin):
+    encode_reply_foaf_balances(channels, flow, amt, plugin)
 
     # TODO: CHECK if 107b is the correct little endian of 439
     res = plugin.rpc.dev_sendcustommsg(peer, "107b123412341234")
@@ -335,7 +354,7 @@ def on_custommsg(peer_id, message, plugin, **kwargs):
 
         if chain_hash == BTC_CHAIN_HASH:
             result = handle_query_foaf_balances(flow, amt, plugin)
-            r = send_reply_foaf_balances(peer_id, amt, result, plugin)
+            r = send_reply_foaf_balances(peer_id, amt, flow, result, plugin)
             return_value = {"result": r}
         else:
             plugin.log("not handling non bitcoin chains for now")
