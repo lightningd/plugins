@@ -1,6 +1,12 @@
 #!/usr/bin/env python3
 """
-
+author: Rene Pickhardt (rene.m.pickhardt@ntnu.no) & Michael Ziegler (michael.h.ziegler@ntnu.no)
+Date: 9.5.2020
+License: MIT
+This code computes an optimal split of a payment amount for the use of AMP.
+The split is optimal in the sense that it reduces the imbalance of the funds of the node.
+More theory about imbalances and the algorithm to decrease the imblance of a node was
+suggested by this research: https://arxiv.org/abs/1912.09555
 """
 
 import pyln.client
