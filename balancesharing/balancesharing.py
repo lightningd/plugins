@@ -35,6 +35,7 @@ def get_funds(plugin):
     return outputs, channels
 
 
+# TODO: remove when finished, or keep for test cases
 def list_funds_mock():
     """"read funds from file"""
     dir_path = os.path.dirname(os.path.realpath(__file__))
@@ -56,20 +57,57 @@ def get_channel(channels, peer_id):
 
 
 def encode_query_foaf_balances(flow_value, amt_to_rebalance):
-    """Encode flow_value (char) and amount (unsigend long long) """
+    """Encode flow_value as 'char' and amount as 'unsigend long long'; C-Type data structure"""
     return struct.pack("!cQ", flow_value, amt_to_rebalance)
 
 
 def decode_query_foaf_balances(data):
-    """Decode query_foaf_balances. Returns a byte and int"""
+    """Decode query_foaf_balances. Returns a byte and int; Python-Type data structure"""
     return struct.unpack("!cQ", data)
 
 
+def get_flow_value(flow):
+    if type(flow) is not int:
+        return None
+
+    if flow == 1:
+        return b'\x01'
+    elif flow == 0:
+        return b'\x00'
+    return None
+
+
+def get_amount(amt):
+    if type(amt) is not int or amt <= 0:
+        return None
+    return amt
+
+
+def log_error(msg):
+    plugin.log("Error in balancesharing plugin: {msg}".format(msg=msg))
+
+
+# todo: add flow_value and amt_to_rebalance as arguments
 @plugin.method("foafbalance")
-def foafbalance(plugin):
+def foafbalance(plugin, flow, amount):
     """gets the balance of our friends channels"""
-    flow_value = b'\x01'
-    amt_to_rebalance = int(123)
+
+    # Read input data
+    flow_value = get_flow_value(flow)
+    if flow_value is None:
+        log_error("argument 'flow_value' for function 'foafbalance' was not 0 or 1")
+        return
+
+    amt_to_rebalance = get_amount(amount)
+    if amt_to_rebalance is None:
+        log_error("argument 'amt_to_rebalance' for function 'foafbalance' was not valid")
+        return
+
+    plugin.log("Input data: {flow_value} and {amt_to_rebalance}".format(
+        flow_value=flow_value,
+        amt_to_rebalance=amt_to_rebalance
+    ))
+
     data = encode_query_foaf_balances(flow_value, amt_to_rebalance)
     new_flow_value, new_amt_to_rebalance = decode_query_foaf_balances(data)
 
@@ -146,7 +184,7 @@ def handle_query_foaf_balances(payload, plugin):
     _, channels = get_funds(plugin)
 
     kappa, tau = helper_compute_node_parameters(channels)
-    nu = float(tau)/kappa
+    nu = float(tau) / kappa
     channels = helper_compute_channel_balance_coefficients(channels)
 
     result = []
@@ -158,7 +196,7 @@ def handle_query_foaf_balances(payload, plugin):
                     result.append(channel["short_channel_id"])
         elif flow_value == 0:
             if channel["zeta"] < nu:
-                if int(channel["channel_total_sat"])-int(channel["channel_sat"]) > amt_to_rebalance + reserve:
+                if int(channel["channel_total_sat"]) - int(channel["channel_sat"]) > amt_to_rebalance + reserve:
                     result.append(channel["short_channel_id"])
     plugin.log("{} of {} channels are good for rebalancing {} satoshis they are: {}".format(
         len(result), len(channels), amt_to_rebalance, ", ".join(result)))
