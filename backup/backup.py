@@ -11,6 +11,7 @@ import struct
 import sys
 import sqlite3
 import time
+import psutil
 
 
 plugin = Plugin()
@@ -245,17 +246,10 @@ def get_backend(destination, create=False, require_init=False):
     backend = backend_cl(destination, create=create)
     initialized = backend.initialize()
     if require_init and not initialized:
-        abort("Could not initialize the backup {}, please use 'backup-cli' to initialize the backup first.".format(destination))
+        kill("Could not initialize the backup {}, please use 'backup-cli' to initialize the backup first.".format(destination))
     assert(backend.version is not None)
     assert(backend.prev_version is not None)
     return backend
-
-
-def abort(reason: str) -> None:
-    plugin.log(reason)
-    time.sleep(1)
-    plugin.rpc.stop()
-    raise ValueError()
 
 
 def check_first_write(plugin, data_version):
@@ -286,10 +280,10 @@ def check_first_write(plugin, data_version):
         return True
 
     elif backend.prev_version > data_version - 1:
-        abort("c-lightning seems to have lost some state (failed restore?). Emergency shutdown.")
+        kill("c-lightning seems to have lost some state (failed restore?). Emergency shutdown.")
 
     else:
-        abort("Backup is out of date, we cannot continue safely. Emergency shutdown.")
+        kill("Backup is out of date, we cannot continue safely. Emergency shutdown.")
 
 
 @plugin.hook('db_write')
@@ -321,19 +315,19 @@ def on_init(options: Mapping[str, str], plugin: Plugin, **kwargs):
     # Ensure that we don't inadventently switch the destination
     if not os.path.exists("backup.lock"):
         print("Files in the current directory {}".format(", ".join(os.listdir("."))))
-        return abort("Could not find backup.lock in the lightning-dir, have you initialized using the backup-cli utility?")
+        kill("Could not find backup.lock in the lightning-dir, have you initialized using the backup-cli utility?")
 
     d = json.load(open("backup.lock", 'r'))
     if destination is None or destination == 'null':
         destination = d['backend_url']
     elif destination != d['backend_url']:
-        abort(
+        kill(
             "The destination specified as option does not match the one "
             "specified in backup.lock. Please check your settings"
         )
 
     if not plugin.db_path.startswith('sqlite3'):
-        abort("The backup plugin only works with the sqlite3 database.")
+        kill("The backup plugin only works with the sqlite3 database.")
 
     plugin.backend = get_backend(destination, require_init=True)
 
