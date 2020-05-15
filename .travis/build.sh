@@ -23,7 +23,7 @@ echo 'travis_fold:end:script.0'
 
 echo 'travis_fold:start:script.1'
 pyenv global 3.7
-pip3 install --upgrade pip
+pip3 install --quiet --upgrade pip
 pip3 install --user --quiet \
      pyln-testing \
      mako==1.0.14 \
@@ -58,7 +58,7 @@ echo 'travis_fold:end:script.2'
 
 # Collect libraries that the plugins need and install them
 echo 'travis_fold:start:script.3'
-find . -name requirements.txt -exec pip3 install --user -r {} \;
+find . -name requirements.txt -exec pip3 install --quiet --upgrade --user -r {} \;
 echo 'travis_fold:end:script.3'
 
 # Enable coverage reporting from inside the plugin. This is done by adding a
@@ -68,7 +68,7 @@ echo 'travis_fold:end:script.3'
 PATH="$(pwd)/.travis/bin:$PATH"
 export PATH
 
-pytest -vvv --timeout=550 --timeout_method=thread -p no:logging -n 10
+pytest -vvv --timeout=550 --timeout_method=thread -p no:logging -n 2
 
 # Now collect the results in a single file so coveralls finds them
 coverage combine /tmp/.coverage.*
