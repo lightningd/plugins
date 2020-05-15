@@ -10,6 +10,7 @@ import os
 import struct
 import sys
 import sqlite3
+import time
 
 
 plugin = Plugin()
@@ -252,6 +253,7 @@ def get_backend(destination, create=False, require_init=False):
 
 def abort(reason: str) -> None:
     plugin.log(reason)
+    time.sleep(1)
     plugin.rpc.stop()
     raise ValueError()
 
