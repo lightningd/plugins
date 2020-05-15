@@ -341,7 +341,33 @@ plugin.add_option(
 )
 
 
+def kill(message: str):
+    plugin.log(message)
+    time.sleep(1)
+    # Search for lightningd in my ancestor processes:
+    procs = [p for p in psutil.Process(os.getpid()).parents()]
+    for p in procs:
+        if p.name() != 'lightningd':
+            continue
+        plugin.log("Killing process {name} ({pid})".format(
+            name=p.name(),
+            pid=p.pid
+        ))
+        p.kill()
+
+    # Sleep forever, just in case the master doesn't die on us...
+    while True:
+        time.sleep(30)
+
+
+def preflight(plugin: Plugin):
+    """Perform some preflight checks.
+    """
+    if not os.path.exists("backup.lock"):
+        kill("Could not find backup.lock in the lightning-dir")
+
 if __name__ == "__main__":
+    preflight(plugin)
     # Did we perform the version check of backend versus the first write?
     plugin.initialized = False
     plugin.early_writes = []
