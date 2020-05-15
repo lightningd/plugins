@@ -177,16 +177,24 @@ def test_failing_restore(nf, directory):
         'plugin': plugin_path,
         'backup-destination': bdest,
         }
+
+    def section(comment):
+        print("="*25, comment, "="*25)
+
+    section("Starting node for the first time")
     l1 = nf.get_node(options=opts, cleandir=False)
     l1.stop()
 
     # Now fudge the data_version:
+    section("Simulating a restore of an old version")
     l1.db.execute("UPDATE vars SET intval = intval - 2 WHERE name = 'data_version'")
 
+    section("Restarting node, should fail")
     with pytest.raises(Exception):
         l1.start()
 
     l1.daemon.proc.wait()
+    section("Verifying the node died with an error")
     assert(l1.daemon.is_in_log(r'lost some state') is not None)
 
 
