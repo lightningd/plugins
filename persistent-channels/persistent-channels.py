@@ -39,6 +39,10 @@ def is_connectable(rpc, node_id):
 def maybe_open_channel(desired, rpc):
     peers = rpc.listpeers(desired['node_id'])['peers']
 
+    if 'satoshi' in desired:
+        desired['amount'] = "{}sat".format(desired['satoshi'])
+        del desired['satoshi']
+
     if peers == []:
         # Need to connect first, and then open a channel
         #if not is_connectable(rpc, desired['node_id']):
