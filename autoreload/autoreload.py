@@ -37,8 +37,11 @@ class ChildPlugin(object):
                 last = now
                 try:
                     self.restart()
-                except:
-                    self.plugin.log("Failed to start plugin, will wait for next change and try again.", level='warn')
+                except Exception as e:
+                    self.plugin.log(
+                        "Failed to start plugin, will wait for next change and try again:",
+                        level='error'
+                    )
 
     def handle_init(self, request):
         """Lightningd has sent us its first init message, clean and forward.
@@ -93,7 +96,7 @@ class ChildPlugin(object):
         try:
             self.proc = subprocess.Popen([self.path], stdout=subprocess.PIPE, stdin=subprocess.PIPE)
             self.status = 'started'
-            self.getmanifest()
+            manifest = self.getmanifest()
             return True
         except Exception as e:
             self.plugin.log(e, level='warn')
@@ -129,6 +132,15 @@ class ChildPlugin(object):
                 raise ValueError()
 
             if 'id' in msg and msg['id'] == 0:
+
+                if self.manifest is not None and msg['result'] != self.manifest:
+                    plugin.log(
+                        "Plugin manifest changed between restarts: {new} != {old}\n\n"
+                        "==> You need to restart c-lightning for these changes to be picked up! <==".format(
+                            new=json.dumps(msg['result'], indent=True).replace("\"", "'"),
+                            old=json.dumps(self.manifest, indent=True).replace("\"", "'")
+                    ), level='warn')
+                    raise ValueError()
                 self.manifest = msg['result']
                 break
             self.plugin._write_locked(msg)
@@ -180,6 +192,7 @@ class ChildPlugin(object):
 
 @plugin.init()
 def init(options, configuration, plugin, request):
+    #import remote_pdb; remote_pdb.set_trace()
     if options['autoreload-plugin'] in ['null', None]:
         print("Cannot run the autoreload plugin on its own, please specify --autoreload-plugin")
         plugin.rpc.stop()
