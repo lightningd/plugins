@@ -23,3 +23,12 @@ Here is a fully reptilian example running against [blockstream.info](https://blo
 ```
 lightningd --mainnet --disable-plugin bcli --plugin $PWD/sauron.py --sauron-api-endpoint https://blockstream.info/api/
 ```
+
+You can use also proxy your requests through [Tor](https://www.torproject.org/) by
+specifying a SOCKS proxy to use with the `--sauron-tor-proxy` startup option, in
+the form `address:port`.
+
+Hidden services are also supported :
+```
+lightningd --testnet --disable-plugin bcli --plugin $PWD/sauron.py --sauron-tor-proxy localhost:9050 --sauron-api-endpoint http://explorerzydxu5ecjrkwceayqybizmpjjznk5izmitf2modhcusuqlid.onion/testnet/api/
+```
