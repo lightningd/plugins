@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 from pyln.client import Plugin
 import json
+import os
 import psutil
 import subprocess
+import sys
 import threading
 import time
-import os
 
 try:
     # C-lightning v0.7.2
@@ -233,6 +234,8 @@ def restart(plugin):
 # any cli options. So we're doomed to get our parent cmdline and parse out the
 # argument by hand.
 parent = psutil.Process().parent()
+while parent.name() != 'lightningd':
+    parent = parent.parent()
 cmdline = parent.cmdline()
 plugin.path = None
 
@@ -243,7 +246,6 @@ for c in cmdline:
         plugin.path = c[len(prefix):]
         break
 
-
 if plugin.path:
     plugin.child = ChildPlugin(plugin.path, plugin)
 
@@ -253,6 +255,10 @@ if plugin.path:
         raise Exception("Could not start the plugin under development, can't continue")
 
     inject_manifest(plugin, plugin.child.manifest)
+
+else:
+    plugin.log("Could not locate the plugin to control: {cmdline}".format(cmdline=cmdline))
+    sys.exit(1)
 
 
 # Now we can run the actual plugin
