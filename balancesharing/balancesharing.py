@@ -3,10 +3,25 @@
 author: Rene Pickhardt (rene.m.pickhardt@ntnu.no) & Michael Ziegler (michael.h.ziegler@ntnu.no)
 Date: 9.5.2020
 License: MIT
-This code computes an optimal split of a payment amount for the use of AMP.
-The split is optimal in the sense that it reduces the imbalance of the funds of the node.
-More theory about imbalances and the algorithm to decrease the imblance of a node was
-suggested by this research: https://arxiv.org/abs/1912.09555
+
+This is a reference example implementatation of the two new Lightning messages
+`query_foaf_balances` and `reply_foaf_balances` introduced in BOLT 14 as a c-lightning plugin. 
+In order to run this plugin you need to compile c-lightning with developers=1 enabeled as it
+makes use of `dev-sendcustommsg` api command.
+
+The tool also replies with channels that meet the rebalancing criteria from this research:
+https://arxiv.org/abs/1912.09555
+
+This plugin does not yet implement JIT routing / meaning it does not yet interrupt the 
+routing process if it cannot forward an HTLC due to a lack of liquidity on the requested
+channel. 
+Thus the API forseing he query to all friends is currently exposed to the command line with: 
+
+`lightning-cli foafalance {dirirction} {amount}`
+
+The messages have typ 437 (a prime number with checksum 14 and in the correct semantic range)
+
+The messages are currently not implemented in a TLV style.
 """
 
 import networkx as nx
@@ -21,6 +36,9 @@ QUERY_FOAF_BALANCES = 437
 REPLY_FOAF_BALANCES = 439
 CHAIN_HASH = r'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'
 BTC_CHAIN_HASH = CHAIN_HASH
+
+MOCK_CALLS = True
+
 # TODO: replace with plugin.rpc.listchannels(short_channel_id)
 CHANNEL_INDEX = {}
 
@@ -56,8 +74,12 @@ def get_other_node(node_id, short_channel_id):
 def get_funds(plugin):
     """"get output and channels"""
     # TODO: switch to real data
-    # fund_list = plugin.rpc.listfunds()
-    fund_list = list_funds_mock()
+    fund_list = None
+    if MOCK_CALLS:
+        fund_list = list_funds_mock()
+    else:
+        fund_list = plugin.rpc.listfunds()
+
     outputs = fund_list["outputs"]
     channels = fund_list["channels"]
 
@@ -347,8 +369,11 @@ def send_reply_foaf_balances(peer, amt, flow, channels, plugin):
     for ids in unpack_channels(short_channel_ids, plugin):
         plugin.log(str(ids))
 
+    plugin.log("attempting to send {} of type {}".format(msg, msg_type))
+
     # TODO: CHECK if 107b is the correct little endian of 439
-    res = plugin.rpc.dev_sendcustommsg(peer, "107b123412341234")
+    # "107b"+msg[4:])  # "107b123412341234")
+    res = plugin.rpc.dev_sendcustommsg(peer, msg)
     plugin.log("Sent query_foaf_balances message to {peer_id}. Response: {res}".format(
         peer_id=peer,
         res=res
@@ -388,8 +413,11 @@ def on_custommsg(peer_id, message, plugin, **kwargs):
         msg=message,
         peer_id=peer_id
     ))
-    # TODO: Remove to stop mocking
-    mock_peer_id = "03efccf2c383d7bf340da9a3f02e2c23104a0e4fe8ac1a880c8e2dc92fbdacd9df"
+    mock_peer_id = None
+    if MOCK_CALLS:
+        mock_peer_id = "03efccf2c383d7bf340da9a3f02e2c23104a0e4fe8ac1a880c8e2dc92fbdacd9df"
+    else:
+        mock_peer_id = peer_id
     plugin.log("switched peer_id to {} for testing".format(peer_id))
     # message has to be at least 6 bytes. 4 bytes prefix and 2 bytes for the type
     assert len(message) > 12
@@ -400,6 +428,7 @@ def on_custommsg(peer_id, message, plugin, **kwargs):
 
     # query_foaf_balances message has type 437 which is 01b5 in hex
     return_value = {}
+    plugin.log("message type {}".format(message_type))
     if message_type == QUERY_FOAF_BALANCES:
         plugin.log("received query_foaf_balances message")
         _, chain_hash, flow, amt = decode_query_foaf_balances(message)
@@ -409,6 +438,7 @@ def on_custommsg(peer_id, message, plugin, **kwargs):
             plugin.log("HALLO" + str(result))
             r = send_reply_foaf_balances(peer_id, amt, flow, result, plugin)
             return_value = {"result": r}
+            plugin.log("return value!!!! {}".format(return_value))
         else:
             plugin.log("not handling non bitcoin chains for now")
 
@@ -416,9 +446,14 @@ def on_custommsg(peer_id, message, plugin, **kwargs):
         _, chain_hash, flow_value, ts, amt_to_rebalance, short_channel_ids = decode_reply_foaf_balances(
             message, plugin)
         # decode_reply_foaf_balances_mock(message)
-        plugin.log("received a reply_foaf_balances message")
-        for short_channel_id in short_channel_ids:
-            # TODO: remove mock
+        plugin.log("received a reply_foaf_balances message {} with channels {} ".format(
+            message, short_channel_ids))
+        # for short_channel_id in short_channel_ids:
+        #    plugin.log("{}".format(short_channel_id))
+        #    return_value = {"result": {'peer_id': '03a0fe68c028d5779d999c08ebd91d23a735aa3fe94f7cc3e5c6f40a922033c531', 'response': {
+        #        'status': 'Message sent to subdaemon openingd for delivery'}}}
+        # TODO: remove mock
+        """
             partner = get_other_node(mock_peer_id, short_channel_id)
             if partner is None:
                 continue
@@ -431,7 +466,7 @@ def on_custommsg(peer_id, message, plugin, **kwargs):
         # TODO invoke rebalance path finding logic (but with whome? need a peer to which an HTLC is stuck)
         plugin.log("FOAF Graph now has {} channels".format(
             len(foaf_network.edges())))
-
+"""
     return return_value
 
 
