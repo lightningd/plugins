@@ -3,7 +3,7 @@ set -e
 
 CWD=$(pwd)
 export SLOW_MACHINE=1
-export PATH=$CWD/dependencies/bin:$CWD/dependencies/usr/local/bin/:/tmp/lightning/lightningd/:"$HOME"/.local/bin:"$PATH"
+export PATH="$HOME/.local/bin:$PATH"
 export PYTEST_PAR=10
 export TEST_DEBUG=1
 export LIGHTNING_VERSION=${LIGHTNING_VERSION:-master}
@@ -61,14 +61,26 @@ echo 'travis_fold:start:script.3'
 find . -name requirements.txt -exec pip3 install --quiet --upgrade --user -r {} \;
 echo 'travis_fold:end:script.3'
 
+# Add the local bitcoind bin dir so we can start and control it:
+export PATH="$CWD/.travis/bin:$CWD/dependencies/bin:$CWD/dependencies/usr/local/bin/:$PATH"
+
+# Add the directory we put the newly compiled lightningd in
+export PATH="/tmp/lightning/lightningd/:$PATH"
+
 # Enable coverage reporting from inside the plugin. This is done by adding a
 # wrapper called python3 that internally just calls `coverage run` and stores
 # the coverage output in `/tmp/.coverage.*` from where we can pick the details
 # up again.
-PATH="$(pwd)/.travis/bin:$PATH"
-export PATH
+export PATH="$CWD/.travis/bin:$PATH"
+
+# Make sure we use the correct python3 wrapper (the one that calls coverage
+# internally).
+which python3
 
 pytest -vvv --timeout=550 --timeout_method=thread -p no:logging -n 2
 
+# Print the coverage files
+ls -lha /tmp/.coverage.*
+
 # Now collect the results in a single file so coveralls finds them
-coverage combine /tmp/.coverage.*
+coverage combine -a /tmp/.coverage.*
