@@ -30,6 +30,7 @@ pip3 install --user --quiet \
      psycopg2-binary>=2.8.3 \
      pytest-timeout==1.3.3 \
      pytest-xdist==1.30.0 \
+     pytest-cov \
      coverage \
      codecov \
      mrkd==0.1.6
@@ -77,10 +78,14 @@ export PATH="$CWD/.travis/bin:$PATH"
 # internally).
 which python3
 
+rm /tmp/.coverage.* .coverage.tmp .coverage || true
+
 pytest -vvv --timeout=550 --timeout_method=thread -p no:logging -n 2
 
 # Print the coverage files
 ls -lha /tmp/.coverage.*
 
 # Now collect the results in a single file so coveralls finds them
-coverage combine -a /tmp/.coverage.*
+touch .coverage
+mv .coverage .coverage.tmp
+coverage combine -a /tmp/.coverage.* .coverage.tmp
