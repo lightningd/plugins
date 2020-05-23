@@ -74,6 +74,9 @@ export PATH="/tmp/lightning/lightningd/:$PATH"
 # up again.
 export PATH="$CWD/.travis/bin:$PATH"
 
+# Force coverage to write files in $CWD
+export COVERAGE_FILE="$CWD/.coverage"
+
 # Make sure we use the correct python3 wrapper (the one that calls coverage
 # internally).
 which python3
@@ -81,11 +84,3 @@ which python3
 rm /tmp/.coverage.* .coverage.tmp .coverage || true
 
 pytest -vvv --timeout=550 --timeout_method=thread -p no:logging -n 2
-
-# Print the coverage files
-ls -lha /tmp/.coverage.*
-
-# Now collect the results in a single file so coveralls finds them
-touch .coverage
-mv .coverage .coverage.tmp
-coverage combine -a /tmp/.coverage.* .coverage.tmp
