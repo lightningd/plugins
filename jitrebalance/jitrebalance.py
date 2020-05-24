@@ -138,7 +138,7 @@ def on_htlc_accepted(htlc, onion, plugin, request, **kwargs):
     peer = None
     for p in peers:
         for c in p['channels']:
-            if c['short_channel_id'] == scid:
+            if 'short_channel_id' in c and c['short_channel_id'] == scid:
                 chan = c
                 peer = p
 
