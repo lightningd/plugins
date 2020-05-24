@@ -2,6 +2,7 @@ from pyln.testing.fixtures import *  # noqa: F401, F403
 from pyln.testing.utils import wait_for
 import os
 import time
+import pytest
 import unittest
 
 
@@ -76,3 +77,32 @@ def test_simple_rebalance(node_factory):
     # This will fail without the plugin doing a rebalancing.
     l1.rpc.sendpay(route, inv['payment_hash'])
     l1.rpc.waitsendpay(inv['payment_hash'])
+
+
+@pytest.mark.xfail(strict=True)
+def test_issue_88(node_factory):
+    """Reproduce issue #88: crash due to unconfirmed channel.
+
+    l2 has a channel open with l4, that is not confirmed yet, doesn't have a
+    stable short_channel_id, and will crash.
+
+    """
+    l1, l2, l3 = node_factory.line_graph(3, opts=[{}, {'plugin': plugin}, {}], wait_for_announce=True)
+    l4 = node_factory.get_node()
+
+    l2.connect(l4)
+    l2.rpc.fundchannel(l4.info['id'], 10**5)
+
+    peers = l2.rpc.listpeers()['peers']
+
+    # We should have 3 peers...
+    assert(len(peers) == 3)
+    # ... but only 2 channels with a short_channel_id...
+    assert(sum([1 for p in peers if 'short_channel_id' in p['channels'][0]]) == 2)
+    # ... and one with l4, without a short_channel_id
+    assert('short_channel_id' not in l4.rpc.listpeers()['peers'][0]['channels'])
+
+    # Now if we send a payment l1 -> l2 -> l3, then l2 will stumble while
+    # attempting to access the short_channel_id on the l2 -> l4 channel:
+    inv = l3.rpc.invoice(1000, 'lbl', 'desc')['bolt11']
+    l1.rpc.pay(inv)
