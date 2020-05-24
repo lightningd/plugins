@@ -79,7 +79,6 @@ def test_simple_rebalance(node_factory):
     l1.rpc.waitsendpay(inv['payment_hash'])
 
 
-@pytest.mark.xfail(strict=True)
 def test_issue_88(node_factory):
     """Reproduce issue #88: crash due to unconfirmed channel.
 
