@@ -25,4 +25,4 @@ script:
   .travis/build.sh
 
 after_success:
-  - codecov
+  - codecov --env COMPAT,DEVELOPER,EXPERIMENTAL_FEATURES
