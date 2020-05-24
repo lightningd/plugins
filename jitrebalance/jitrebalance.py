@@ -154,6 +154,13 @@ def on_htlc_accepted(htlc, onion, plugin, request, **kwargs):
     #funder = chan['msatoshi_to_us_max'] == chan['msatoshi_total']
     forward_amt = Millisatoshi(onion['forward_amount'])
 
+    # If we have enough capacity just let it through now. Otherwise the
+    # Millisatoshi raises an error for negative amounts in the calculation
+    # below.
+    if forward_amt < chan['spendable_msat']:
+        request.set_result({"result": "continue"})
+        return
+
     # Compute the amount we need to rebalance, give us a bit of breathing room
     # while we're at it (25% more rebalancing than strictly necessary) so we
     # don't end up with a completely unbalanced channel right away again, and
