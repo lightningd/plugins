@@ -10,17 +10,20 @@ import time
 plugin = Plugin()
 
 
+def get_reverse_chan(scid, chan):
+    for c in plugin.rpc.listchannels(scid)['channels']:
+        if c['channel_flags'] != chan['direction']:
+            return c
+
+    return None
+
 def get_circular_route(scid, chan, amt, peer, exclusions, request):
     """Compute a circular route with `scid` as last leg.
 
     """
     # Compute the last leg of the route first, so we know the parameters to
     # traverse that last edge.
-    reverse_chan = plugin.rpc.listchannels(scid)['channels']
-    assert(len(reverse_chan) == 2)
-    reverse_chan = [
-        c for c in reverse_chan if c['channel_flags'] != chan['direction']
-    ][0]
+    reverse_chan = get_reverse_chan(scid, chan)
 
     if reverse_chan is None:
         print("Could not compute parameters for the last hop")
