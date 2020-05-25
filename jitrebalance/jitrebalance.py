@@ -92,7 +92,8 @@ def try_rebalance(scid, chan, amt, peer, request):
         except RpcError as e:
             error = e.error['data']
             erring_channel = error['erring_channel']
-            exclusions.append(erring_channel)
+            erring_direction = error['erring_direction']
+            exclusions.append("{}/{}".format(erring_channel, erring_direction))
             plugin.log("Excluding {} due to a failed attempt".format(erring_channel))
 
     request.set_result({"result": "continue"})
