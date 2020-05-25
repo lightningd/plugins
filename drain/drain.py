@@ -153,7 +153,7 @@ def test_or_set_chunks(plugin, payload):
             continue
         try:
             spend, recv = spendable_from_scid(plugin, payload, channel['short_channel_id'], True)
-        except RPCError as e:
+        except RpcError as e:
             continue
         channels[channel['short_channel_id']] = {
             'spendable' : spend,
