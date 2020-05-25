@@ -272,9 +272,9 @@ def try_for_htlc_fee(plugin, payload, peer_id, amount, chunk, spendable_before):
             excludes += [worst_channel_id + '/0', worst_channel_id + '/1']
             continue
 
-        plugin.log("[%d/%d] Sending over %d hops to %s %s using %s fees" % (chunk+1, payload['chunks'], len(route), payload['command'], amount, fees))
+        plugin.log("[%d/%d] Sending over %d hops to %s %s using %s fees" % (chunk+1, payload['chunks'], len(route), payload['command'], amount, fees), 'debug')
         for r in route:
-            plugin.log("    - %s  %14s  %s" % (r['id'], r['channel'], r['amount_msat']))
+            plugin.log("    - %s  %14s  %s" % (r['id'], r['channel'], r['amount_msat']), 'debug')
 
         try:
             ours = get_ours(plugin, payload['scid'])
