@@ -99,7 +99,7 @@ def spendable_from_scid(plugin, payload, scid=None, _raise=False):
         their_reserve = their
 
     spendable = channel_peer['spendable_msat']
-    receivable = channel_peer['receivable_msat']
+    receivable = channel_peer.get('receivable_msat')
     if not receivable:
         # receivable_msat was added with the 0.8.2 release, have a fallback
         receivable = their - their_reserve - Millisatoshi('3000sat')
