@@ -191,9 +191,9 @@ def rebalance(plugin, outgoing_scid, incoming_scid, msatoshi: Millisatoshi=None,
                 continue
 
             success_msg = "%d msat sent over %d hops to rebalance %d msat" % (msatoshi + fees, len(route), msatoshi)
-            plugin.log("Sending %s over %d hops to rebalance %s" % (msatoshi + fees, len(route), msatoshi))
+            plugin.log("Sending %s over %d hops to rebalance %s" % (msatoshi + fees, len(route), msatoshi), 'debug')
             for r in route:
-                plugin.log("    - %s  %14s  %s" % (r['id'], r['channel'], r['amount_msat']))
+                plugin.log("    - %s  %14s  %s" % (r['id'], r['channel'], r['amount_msat']), 'debug')
 
             try:
                 plugin.rpc.sendpay(route, payment_hash)
