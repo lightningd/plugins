@@ -68,7 +68,9 @@ def try_rebalance(scid, chan, amt, peer, request):
         "{scid}/{direction}".format(scid=scid, direction=chan['direction'])
     ]
 
-    while True:
+    # Try as many routes as possible before the timeout expires
+    stop_time = int(time.time()) + plugin.rebalance_timeout
+    while int(time.time()) <= stop_time:
         route = get_circular_route(scid, chan, amt, peer, exclusions, request)
         # We exhausted all the possibilities, Game Over
         if route is None:
@@ -204,9 +206,20 @@ def on_htlc_accepted(htlc, onion, plugin, request, **kwargs):
 def init(options, configuration, plugin):
     plugin.log("jitrebalance.py initializing {}".format(configuration))
     plugin.node_id = plugin.rpc.getinfo()['id']
+    # FIXME: this int() shouldn't be needed: check if this is pyln's or
+    # lightningd's fault.
+    plugin.rebalance_timeout = int(options.get("jitrebalance-try-timeout"))
 
     # Set of currently active rebalancings, keyed by their payment_hash
     plugin.rebalances = {}
+
+
+plugin.add_option(
+    "jitrebalance-try-timeout",
+    60,
+    "Number of seconds before we stop trying to rebalance a channel.",
+    opt_type="int"
+)
 
 
 plugin.run()
