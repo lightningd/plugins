@@ -79,6 +79,7 @@ def test_simple_rebalance(node_factory):
     l1.rpc.waitsendpay(inv['payment_hash'])
 
 
+@unittest.skipIf(not DEVELOPER, "gossip is too slow if we're not in developer mode")
 def test_issue_88(node_factory):
     """Reproduce issue #88: crash due to unconfirmed channel.
 
