@@ -112,6 +112,8 @@ def try_rebalance(scid, chan, amt, peer, request):
             # can be "0x0x0"
             erring_channel = error.get('erring_channel', '0x0x0')
             if erring_channel != '0x0x0':
+                if erring_channel == scid:
+                    break
                 erring_direction = error['erring_direction']
                 exclusions.append("{}/{}".format(erring_channel,
                                                  erring_direction))
