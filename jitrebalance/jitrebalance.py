@@ -99,7 +99,10 @@ def try_rebalance(scid, chan, amt, peer, request):
             # If the attempt is successful, we acknowledged it on the
             # receiving end (a couple of line above), so we leave it dangling
             # here.
-            plugin.rpc.waitsendpay(payment_hash)
+            if (plugin.rpc.waitsendpay(payment_hash).get("status")
+                    == "complete"):
+                plugin.log("Succesfully re-filled outgoing capacity in {},"
+                           "payment_hash={}".format(scid, payment_hash))
             return
         except RpcError as e:
             error = e.error['data']
@@ -118,7 +121,7 @@ def try_rebalance(scid, chan, amt, peer, request):
 
 @plugin.async_hook("htlc_accepted")
 def on_htlc_accepted(htlc, onion, plugin, request, **kwargs):
-    plugin.log("Got an incoming HTLC htlc={}, onion={}".format(htlc, onion))
+    plugin.log("Got an incoming HTLC htlc={}".format(htlc))
 
     # The HTLC might be a rebalance we ourselves initiated, better check
     # against the list of pending ones.
