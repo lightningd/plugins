@@ -137,8 +137,7 @@ def on_htlc_accepted(htlc, onion, plugin, request, **kwargs):
         })
 
         # Now wait for it to settle correctly
-        # TODO Maybe be a bit smarter than having a fixed timeout here?
-        time.sleep(1)
+        plugin.rpc.waitsendpay(htlc['payment_hash'])
 
         rebalance['request'].set_result({"result": "continue"})
 
