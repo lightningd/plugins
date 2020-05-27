@@ -74,9 +74,10 @@ def test_simple_rebalance(node_factory):
     route = l1.rpc.getroute(node_id=l4.info['id'], msatoshi=amt, riskfactor=1,
                             exclude=[scid + '/0', scid + '/1'])['route']
 
-    # This will fail without the plugin doing a rebalancing.
+    # This will succeed with l2 doing a rebalancing just-in-time !
     l1.rpc.sendpay(route, inv['payment_hash'])
-    l1.rpc.waitsendpay(inv['payment_hash'])
+    assert l1.rpc.waitsendpay(inv['payment_hash'])['status'] == 'complete'
+    assert l2.daemon.is_in_log('Succesfully re-filled outgoing capacity')
 
 
 @unittest.skipIf(not DEVELOPER, "gossip is too slow if we're not in developer mode")
