@@ -1,3 +1,4 @@
+from pyln.client import RpcError
 from pyln.testing.fixtures import *  # noqa: F401, F403
 from pyln.testing.utils import wait_for
 import os
@@ -6,7 +7,10 @@ import pytest
 import unittest
 
 
-plugin = os.path.join(os.path.dirname(__file__), 'jitrebalance.py')
+currdir = os.path.dirname(__file__)
+plugin = os.path.join(currdir, 'jitrebalance.py')
+hold_plugin = os.path.join(currdir, 'tests/hold_htlcs.py')
+reject_plugin = os.path.join(currdir, 'tests/refuse_htlcs.py')
 
 
 @unittest.skipIf(not DEVELOPER, "gossip is too slow if we're not in developer mode")
@@ -78,6 +82,84 @@ def test_simple_rebalance(node_factory):
     l1.rpc.sendpay(route, inv['payment_hash'])
     assert l1.rpc.waitsendpay(inv['payment_hash'])['status'] == 'complete'
     assert l2.daemon.is_in_log('Succesfully re-filled outgoing capacity')
+
+
+@unittest.skipIf(not DEVELOPER, "gossip is too slow if we're not in developer mode")
+def test_rebalance_failure(node_factory):
+    """Same setup as the first test :
+
+    l1 ---- l2 ---- l3 ----- l4
+              |    /
+              |   /
+              |  /
+               l5
+
+    We now test failures (l5 rejects HTLCs, l3 takes too long to resolve it).
+    """
+    # First, the "no route left" case.
+    opts = [{}, {'plugin': plugin, 'jitrebalance-try-timeout': 3}, {}, {},
+            {'plugin': reject_plugin}]
+    l1, l2, l3, l4, l5 = node_factory.get_nodes(5, opts=opts)
+    amt = 10**7
+
+    # Open the channels
+    channels = [(l1, l2), (l3, l2), (l3, l4), (l2, l5), (l5, l3)]
+    for src, dst in channels:
+        src.openchannel(dst, capacity=10**6)
+
+    # Drain (l2, l3) so that a larger payment fails later on
+    chan = l2.rpc.listpeers(l3.info['id'])['peers'][0]['channels'][0]
+
+    # Send 9 million millisatoshis + reserve + a tiny fee allowance from l3 to
+    # l2 for the actual payment
+    inv = l2.rpc.invoice(
+        chan['our_channel_reserve_satoshis']*1000 + 9000000 + 100,
+        "imbalance", "imbalance"
+    )
+    time.sleep(1)
+    l3.rpc.pay(inv['bolt11'])
+
+    def no_pending_htlcs():
+        peer = l2.rpc.listpeers(l3.info['id'])['peers'][0]
+        return peer['channels'][0]['htlcs'] == []
+
+    wait_for(no_pending_htlcs)
+
+    chan = l2.rpc.listpeers(l3.info['id'])['peers'][0]['channels'][0]
+    assert(chan['spendable_msatoshi'] < amt)
+
+    # Get (l2, l5) so we can exclude it when routing from l1 to l4
+    peer = l2.rpc.listpeers(l5.info['id'])['peers'][0]
+    scid = peer['channels'][0]['short_channel_id']
+
+    # The actual invoice that l1 will attempt to pay to l4, and that will be
+    # larger than the current capacity of (l2, l3) so it triggers a
+    # rebalancing.
+    inv = l4.rpc.invoice(amt, "test", "test")
+
+    # Now wait for gossip to settle and l1 to learn the topology so it can
+    # then route the payment. We do this now since we already did what we
+    # could without this info
+    wait_for(lambda: len(l1.rpc.listchannels()['channels']) == 2*len(channels))
+
+    route = l1.rpc.getroute(node_id=l4.info['id'], msatoshi=amt, riskfactor=1,
+                            exclude=[scid + '/0', scid + '/1'])['route']
+
+    # This will exclude [l5, l3] and fail as there is no route left
+    l1.rpc.sendpay(route, inv['payment_hash'])
+    with pytest.raises(RpcError, match='WIRE_TEMPORARY_CHANNEL_FAILURE'):
+        l1.rpc.waitsendpay(inv['payment_hash'])
+    assert l2.daemon.is_in_log('Could not get a route, no remaining one?')
+    l5.rpc.plugin_stop(reject_plugin)
+
+    # Now test the timeout on number of attempts
+    l3.rpc.plugin_start(hold_plugin)
+    l1.rpc.sendpay(route, inv['payment_hash'])
+    # l3 will hold on the HTLC, and at the time it rejects it, l2 won't try
+    # other routes as it exceeded its timeout
+    with pytest.raises(RpcError, match='WIRE_TEMPORARY_CHANNEL_FAILURE'):
+        l1.rpc.waitsendpay(inv['payment_hash'])
+    assert l2.daemon.is_in_log('Timed out while trying to rebalance')
 
 
 @unittest.skipIf(not DEVELOPER, "gossip is too slow if we're not in developer mode")

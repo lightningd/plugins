@@ -120,6 +120,7 @@ def try_rebalance(scid, chan, amt, peer, request):
                 plugin.log("Excluding {} due to a failed attempt"
                            .format(erring_channel))
 
+    plugin.log("Timed out while trying to rebalance")
     request.set_result({"result": "continue"})
 
 
