@@ -35,25 +35,29 @@ def get_circular_route(scid, chan, amt, peer, exclusions, request):
                     reverse_chan['base_fee_millisatoshi'])
     last_cltv = 9 + reverse_chan['delay']
 
-    route = plugin.rpc.getroute(
-        node_id=peer['id'],
-        msatoshi=last_amt,
-        riskfactor=1,
-        exclude=exclusions,
-        cltv=last_cltv,
-    )['route']
+    try:
+        route = plugin.rpc.getroute(
+            node_id=peer['id'],
+            msatoshi=last_amt,
+            riskfactor=1,
+            exclude=exclusions,
+            cltv=last_cltv,
+        )['route']
 
-    # Append the last hop we computed manually above
-    route += [{
-        'id': plugin.node_id,
-        'channel': scid,
-        'direction': chan['direction'],
-        'msatoshi': amt,
-        'amount_msat': '{}msat'.format(amt),
-        'delay': 9
-    }]
+        # Append the last hop we computed manually above
+        route += [{
+            'id': plugin.node_id,
+            'channel': scid,
+            'direction': chan['direction'],
+            'msatoshi': amt,
+            'amount_msat': '{}msat'.format(amt),
+            'delay': 9
+        }]
 
-    return route
+        return route
+    except RpcError:
+        # Could not find a route
+        return None
 
 
 def try_rebalance(scid, chan, amt, peer, request):
@@ -64,9 +68,14 @@ def try_rebalance(scid, chan, amt, peer, request):
         "{scid}/{direction}".format(scid=scid, direction=chan['direction'])
     ]
 
-    # Try up to 5 times to rebalance that last leg.
-    for i in range(0, 5):
+    while True:
         route = get_circular_route(scid, chan, amt, peer, exclusions, request)
+        # We exhausted all the possibilities, Game Over
+        if route is None:
+            plugin.log("Could not get a route, no remaining one? Exclusions : {}"
+                       .format(exclusions))
+            request.set_result({"result": "continue"})
+            return
 
         # We're about to initiate a rebalancing, we'd better remember how we can
         # settle it once we see it back here.
