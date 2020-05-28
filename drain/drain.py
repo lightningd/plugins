@@ -15,6 +15,7 @@ HTLC_FEE_NUL = Millisatoshi('0sat')
 HTLC_FEE_STP = Millisatoshi('10sat')
 HTLC_FEE_MIN = Millisatoshi('100sat')
 HTLC_FEE_MAX = Millisatoshi('100000sat')
+HTLC_FEE_EST = Millisatoshi('3000sat')
 HTLC_FEE_PAT = re.compile("^.* HTLC fee: ([0-9]+sat).*$")
 
 
@@ -100,9 +101,12 @@ def spendable_from_scid(plugin, payload, scid=None, _raise=False):
 
     spendable = channel_peer['spendable_msat']
     receivable = channel_peer.get('receivable_msat')
+    # receivable_msat was added with the 0.8.2 release, have a fallback
     if not receivable:
-        # receivable_msat was added with the 0.8.2 release, have a fallback
-        receivable = their - their_reserve - Millisatoshi('3000sat')
+        receivable = their - their_reserve
+        # we also need to subsctract a possible commit tx fee
+        if receivable >= HTLC_FEE_EST:
+            receivable -= HTLC_FEE_EST
     return spendable, receivable
 
 
