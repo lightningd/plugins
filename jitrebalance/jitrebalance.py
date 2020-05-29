@@ -26,9 +26,8 @@ def get_circular_route(scid, chan, amt, peer, exclusions, request):
     reverse_chan = get_reverse_chan(scid, chan)
 
     if reverse_chan is None:
-        print("Could not compute parameters for the last hop")
-        request.set_result({"result": "continue"})
-        return
+        plugin.log("Could not compute parameters for the last hop")
+        return None
 
     last_amt = ceil(float(amt) +
                     float(amt) * reverse_chan['fee_per_millionth'] / 10**6 +
@@ -56,7 +55,8 @@ def get_circular_route(scid, chan, amt, peer, exclusions, request):
 
         return route
     except RpcError:
-        # Could not find a route
+        plugin.log("Could not get a route, no remaining one? Exclusions : {}"
+                   .format(exclusions))
         return None
 
 
@@ -74,8 +74,6 @@ def try_rebalance(scid, chan, amt, peer, request):
         route = get_circular_route(scid, chan, amt, peer, exclusions, request)
         # We exhausted all the possibilities, Game Over
         if route is None:
-            plugin.log("Could not get a route, no remaining one? Exclusions : {}"
-                       .format(exclusions))
             request.set_result({"result": "continue"})
             return
 
