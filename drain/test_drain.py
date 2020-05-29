@@ -10,6 +10,8 @@ pluginopt = {'plugin': os.path.join(os.path.dirname(__file__), "drain.py")}
 
 @unittest.skipIf(not DEVELOPER, "slow gossip, needs DEVELOPER=1")
 def test_drain_and_refill(node_factory, bitcoind):
+    # Scenario: first drain then refill
+    #
     # SETUP: A basic circular setup to run drain and fill tests
     #
     #   l1---l2
@@ -19,32 +21,85 @@ def test_drain_and_refill(node_factory, bitcoind):
 
     l1, l2, l3, l4 = node_factory.line_graph(4, opts=pluginopt)
     l4.rpc.connect(l1.info['id'], 'localhost', l1.port)
+    nodes = [l1, l2, l3, l4]
 
     scid12 = l1.get_channel_scid(l2)
     scid23 = l2.get_channel_scid(l3)
     scid34 = l3.get_channel_scid(l4)
     scid41 = l4.fund_channel(l1, 10**6)
 
+    # disable fees to make circular line graph tests a lot easier
+    for n in nodes:
+        n.rpc.setchannelfee('all', 0, 0)
+
     # wait for each others gossip
     bitcoind.generate_block(6)
-    for n in [l1,l2,l3,l4]:
+    for n in nodes:
         for scid in [scid12,scid23,scid34,scid41]:
             n.wait_channel_active(scid)
-
 
     # do some draining and filling
     ours_before = get_ours(l1, scid12)
     assert(l1.rpc.drain(scid12))
-    ours_after = wait_ours(l1, scid12, ours_before)
-    assert(ours_after < ours_before * 0.05)  # account some reserves
+    wait_for_all_htlcs(nodes)
+    assert(get_ours(l1, scid12) < ours_before * 0.05)  # account some reserves
 
     # refill again with 100% should not be possible in a line_graph circle,
-    # as we also paid some fees earlier and lost a tiny bit of total capacity.
+    # this is not because of ln routing fees (turned off) but because of
+    # HTLC commitment tx fee margin that applies for the funder.
     with pytest.raises(RpcError, match=r"Outgoing capacity problem"):
         l1.rpc.fill(scid12)
 
-    # refill to 99.9% should work however
+    # If we only go for 99.9% or exatctly 9741msat less, this must work.
+    theirs_before = get_theirs(l1, scid12)
     assert(l1.rpc.fill(scid12, 99.9))
+    wait_for_all_htlcs(nodes)
+    assert(get_theirs(l1, scid12) < theirs_before * 0.05)  # account some reserves
+
+
+@unittest.skipIf(not DEVELOPER, "slow gossip, needs DEVELOPER=1")
+def test_fill_and_drain(node_factory, bitcoind):
+    # Scenario: first fill of an empty channel and drain afterwards.
+    #
+    # SETUP: A basic circular setup to run drain and fill tests#
+    #
+    #   l1---l2
+    #    |    |
+    #   l4---l3
+    #
+
+    l1, l2, l3, l4 = node_factory.line_graph(4, opts=pluginopt)
+    l4.rpc.connect(l1.info['id'], 'localhost', l1.port)
+    nodes = [l1, l2, l3, l4]
+
+    scid12 = l1.get_channel_scid(l2)
+    scid23 = l2.get_channel_scid(l3)
+    scid34 = l3.get_channel_scid(l4)
+    scid41 = l4.fund_channel(l1, 10**6)
+
+    # disable fees to make circular line graph tests a lot easier
+    for n in nodes:
+        n.rpc.setchannelfee('all', 0, 0)
+
+    # wait for each others gossip
+    bitcoind.generate_block(6)
+    for n in nodes:
+        for scid in [scid12,scid23,scid34,scid41]:
+            n.wait_channel_active(scid)
+
+    # for l2 to fill scid12, it needs to send on scid23, where its funder
+    # commit tx fee applies, so doing 99.9% or exactly 9741msat less must work.
+    ours_before = get_ours(l1, scid12)
+    assert(l2.rpc.fill(scid12, 99.9))
+    wait_for_all_htlcs(nodes)
+    assert(get_ours(l1, scid12) < ours_before * 0.05)  # account some reserves
+
+    # note: fees are disabled, drain 100% must work,
+    # as fundee doesnt pay commit tx fee
+    theirs_before = get_theirs(l1, scid12)
+    l2.rpc.drain(scid12)
+    wait_for_all_htlcs(nodes)
+    assert(get_theirs(l1, scid12) < theirs_before * 0.05)  # account some reserves
 
 
 @unittest.skipIf(not DEVELOPER, "slow gossip, needs DEVELOPER=1")
@@ -58,6 +113,7 @@ def test_setbalance(node_factory, bitcoind):
 
     l1, l2, l3, l4 = node_factory.line_graph(4, opts=pluginopt)
     l4.rpc.connect(l1.info['id'], 'localhost', l1.port)
+    nodes = [l1, l2, l3, l4]
 
     scid12 = l1.get_channel_scid(l2)
     scid23 = l2.get_channel_scid(l3)
@@ -66,7 +122,7 @@ def test_setbalance(node_factory, bitcoind):
 
     # wait for each others gossip
     bitcoind.generate_block(6)
-    for n in [l1,l2,l3,l4]:
+    for n in nodes:
         for scid in [scid12,scid23,scid34,scid41]:
             n.wait_channel_active(scid)
 
@@ -80,12 +136,14 @@ def test_setbalance(node_factory, bitcoind):
 
     # set and test some 70/30 specific balancing
     assert(l1.rpc.setbalance(scid12, 30))
-    ours_after = wait_ours(l1, scid12, ours_after)
+    wait_for_all_htlcs(nodes)
+    ours_after = get_ours(l1, scid12)
     assert(ours_after < ours_before * 0.33)
     assert(ours_after > ours_before * 0.27)
 
     assert(l1.rpc.setbalance(scid12, 70))
-    ours_after = wait_ours(l1, scid12, ours_after)
+    wait_for_all_htlcs(nodes)
+    ours_after = get_ours(l1, scid12)
     assert(ours_after < ours_before * 0.73)
     assert(ours_after > ours_before * 0.67)
 
