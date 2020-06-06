@@ -325,8 +325,8 @@ class Autopilot():
             capacity = sum([self.G.get_edge_data(k, n)["satoshis"]
                             for n in neighbors])
             name = k
-            if "alias" in self.G.node[k]:
-                name = self.G.node[k]["alias"]
+            if "alias" in self.G.nodes[k]:
+                name = self.G.nodes[k]["alias"]
             print("{:12.2f}  ".format(100 * v),
                   "{:12.2f}     ".format(
                       100 * (w * v + (1 - w) / len(candidates))),
@@ -414,8 +414,8 @@ class Autopilot():
         """
         following code prints a list of candidates for debugging
         for k in res:
-            if "alias" in self.G.node[key[k]]:
-                print(pdf[key[k]], self.G.node[key[k]]["alias"])
+            if "alias" in self.G.nodes[key[k]]:
+                print(pdf[key[k]], self.G.nodes[key[k]]["alias"])
         """
 
         if len(candidats) > num_items:
