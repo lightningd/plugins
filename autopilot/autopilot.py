@@ -104,11 +104,11 @@ class CLightning_autopilot(Autopilot):
         connection_dict = self.calculate_proposed_channel_capacities(pdf, balance)
         for nodeid, fraction in connection_dict.items():
             try:
-                satoshis = math.ceil(balance * fraction)
+                satoshis = min(math.ceil(balance * fraction), 16777215)
                 print("Try to open channel with a capacity of {} to node {}".format(satoshis, nodeid))
                 if not dryrun:
                     self.__rpc_interface.connect(nodeid)
-                    self.__rpc_interface.fundchannel(nodeid, satoshis)
+                    self.__rpc_interface.fundchannel(nodeid, satoshis, None, True, 0)
             except ValueError as e:
                 print("Could not open a channel to {} with capacity of {}. Error: {}".format(nodeid, satoshis, str(e)))
 
