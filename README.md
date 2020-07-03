@@ -20,6 +20,7 @@ Community curated plugins for c-lightning.
 | [persistent-channels][pers-chans]  | Maintains a number of channels to peers                                    |
 | [probe][probe]                     | Regularly probes the network for stability                                 |
 | [prometheus][prometheus]           | Lightning node exporter for the prometheus timeseries server               |
+| [pruning][pruning]                 | This plugin manages pruning of bitcoind such that it can always sync       |
 | [rebalance][rebalance]             | Keeps your channels balanced                                               |
 | [reckless][reckless]               | An **experimental** plugin manager (search/install plugins)                |
 | [sauron][sauron]                   | A Bitcoin backend relying on [Esplora][esplora]'s API                      |
@@ -27,7 +28,6 @@ Community curated plugins for c-lightning.
 | [sitzprobe][sitzprobe]             | A Lightning Network payment rehearsal utility                              |
 | [summary][summary]                 | Print a nice summary of the node status                                    |
 | [zmq][zmq]                         | Publishes notifications via [ZeroMQ][zmq-home] to configured endpoints     |
-
 
 ## Installation
 
@@ -160,3 +160,4 @@ your environment.
 [zmq-home]: https://zeromq.org/
 [zmq]: https://github.com/lightningd/plugins/tree/master/zmq
 [csvexportpays]: https://github.com/0xB10C/c-lightning-plugin-csvexportpays
+[pruning]: https://github.com/Start9Labs/c-lightning-pruning-plugin
