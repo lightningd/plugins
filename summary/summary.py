@@ -3,7 +3,6 @@ from pyln.client import Plugin, Millisatoshi
 from packaging import version
 from collections import namedtuple
 import pyln.client
-import json
 from math import floor, log10
 import requests
 import threading
@@ -34,17 +33,16 @@ class PriceThread(threading.Thread):
     def __init__(self):
         super().__init__()
         self.daemon = True
-        self.start()
 
     def run(self):
-        try:
-            r = requests.get('https://apiv2.bitcoinaverage.com/convert/global'
-                             '?from=BTC&to={}&amount=1'.format(plugin.currency))
-            plugin.fiat_per_btc = json.loads(r.content.decode('UTF-8'))['price']
-        except Exception:
-            pass
-        # Six hours is more than often enough for polling
-        time.sleep(6*3600)
+        while True:
+            try:
+                r = requests.get('https://www.bitstamp.net/api/v2/ticker/BTC{}'.format(plugin.currency))
+                plugin.fiat_per_btc = float(r.json()['last'])
+            except Exception as ex:
+                plugin.log("[PriceThread] " + str(ex), 'error')
+            # Six hours is more than often enough for polling
+            time.sleep(6*3600)
 
 
 def to_fiatstr(msat: Millisatoshi):
@@ -85,6 +83,7 @@ def msat_to_approx_str(msat, digits: int = 3):
         else:
             return result
 
+
 # appends an output table header that explains fields and capacity
 def append_header(table, max_msat):
     short_str = msat_to_approx_str(Millisatoshi(max_msat))
@@ -105,10 +104,10 @@ def summary(plugin, exclude=''):
     if info['network'] != 'bitcoin':
         reply['network'] = info['network'].upper()
 
-    if not plugin.my_address:
-        reply['warning_no_address'] = "NO PUBLIC ADDRESSES"
-    else:
+    if hasattr(plugin, 'my_address') and plugin.my_address:
         reply['my_address'] = plugin.my_address
+    else:
+        reply['warning_no_address'] = "NO PUBLIC ADDRESSES"
 
     utxos = [int(f['amount_msat']) for f in funds['outputs']
              if f['status'] == 'confirmed']
@@ -224,7 +223,7 @@ def init(options, configuration, plugin):
     info = plugin.rpc.getinfo()
 
     # Try to grab conversion price
-    PriceThread()
+    PriceThread().start()
 
     # Prefer IPv4, otherwise take any to give out address.
     best_address = None
