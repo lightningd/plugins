@@ -79,7 +79,7 @@ class PeerThread(threading.Thread):
                         peerstate[pid]['connected'] = False
                         peerstate[pid]['availability'] = 0.0 * alpha + peerstate[pid]['availability'] * beta
             except Exception as ex:
-                plugin.log("[PeerThread] " + str(ex), 'error')
+                plugin.log("[PeerThread] " + str(ex), 'warn')
             time.sleep(interval)
 
 
@@ -94,7 +94,7 @@ class PriceThread(threading.Thread):
                 r = requests.get('https://www.bitstamp.net/api/v2/ticker/BTC{}'.format(plugin.currency))
                 plugin.fiat_per_btc = float(r.json()['last'])
             except Exception as ex:
-                plugin.log("[PriceThread] " + str(ex), 'error')
+                plugin.log("[PriceThread] " + str(ex), 'warn')
             # Six hours is more than often enough for polling
             time.sleep(6*3600)
 
