@@ -2,6 +2,7 @@
 from pyln.client import Plugin, Millisatoshi
 from packaging import version
 from collections import namedtuple
+from datetime import datetime
 import pyln.client
 from math import floor, log10
 import requests
@@ -28,6 +29,59 @@ else:
 summary_description = "Gets summary information about this node.\n"\
                       "Pass a list of scids to the {exclude} parameter"\
                       " to exclude some channels from the outputs."
+
+# Global state to measure online% and last_seen
+peerstate = {}
+
+
+# ensure an rpc peer is added
+def addpeer(p):
+    pid = p['id']
+    if not pid in peerstate:
+        peerstate[pid] = {
+            'connected' : p['connected'],
+            'last_seen' : datetime.now() if p['connected'] else None,
+            'availability' : 1.0 if p['connected'] else 0.0
+        }
+
+
+class PeerThread(threading.Thread):
+    def __init__(self):
+        super().__init__()
+        self.daemon = True
+
+    def run(self):
+        interval = 5 * 60            # collect peer state once in a while
+        window   = 3 * 24 * 60 * 60  # 72hr availability window
+        count    = 0
+
+        # delay initial execution, so peers have a chance to connect on startup
+        time.sleep(interval)
+
+        while True:
+            count += 1
+            leadwin  = max(min(window, count * interval), interval)
+            samples  = leadwin / interval
+            alpha   = 1.0 / samples
+            beta    = 1.0 - alpha
+
+            try:
+                peers = plugin.rpc.listpeers()
+                for p in peers['peers']:
+                    pid = p['id']
+                    addpeer(p)
+
+                    if p['connected']:
+                        peerstate[pid]['last_seen'] = datetime.now()
+                        peerstate[pid]['connected'] = True
+                        peerstate[pid]['availability'] = 1.0 * alpha + peerstate[pid]['availability'] * beta
+                    else:
+                        peerstate[pid]['connected'] = False
+                        peerstate[pid]['availability'] = 0.0 * alpha + peerstate[pid]['availability'] * beta
+            except Exception as ex:
+                plugin.log("[PeerThread] " + str(ex), 'error')
+            time.sleep(interval)
+
 
 class PriceThread(threading.Thread):
     def __init__(self):
@@ -87,7 +141,7 @@ def msat_to_approx_str(msat, digits: int = 3):
 # appends an output table header that explains fields and capacity
 def append_header(table, max_msat):
     short_str = msat_to_approx_str(Millisatoshi(max_msat))
-    table.append("%c%-13sOUT/OURS %c IN/THEIRS%12s%c SCID           FLAG ALIAS"
+    table.append("%c%-13sOUT/OURS %c IN/THEIRS%12s%c SCID           FLAG AVAIL ALIAS"
             % (draw.left, short_str, draw.mid, short_str, draw.right))
 
 
@@ -122,6 +176,8 @@ def summary(plugin, exclude=''):
     reply['num_connected'] = 0
     reply['num_gossipers'] = 0
     for p in peers['peers']:
+        pid = p['id']
+        addpeer(p)
         active_channel = False
         for c in p['channels']:
             if c['state'] != 'CHANNELD_NORMAL':
@@ -145,7 +201,15 @@ def summary(plugin, exclude=''):
                 to_them = Millisatoshi(0)
             avail_in += to_them
             reply['num_channels'] += 1
-            chans.append((c['total_msat'], to_us, to_them, p['id'], c['private'], p['connected'], c['short_channel_id']))
+            chans.append((
+                c['total_msat'],
+                to_us, to_them,
+                p['id'],
+                c['private'],
+                p['connected'],
+                c['short_channel_id'],
+                peerstate[pid]['availability']
+            ))
 
         if not active_channel and p['connected']:
             reply['num_gossipers'] += 1
@@ -203,6 +267,10 @@ def summary(plugin, exclude=''):
                 extra += '_'
             s += '[{}] '.format(extra)
 
+            # append 24hr availability
+            s += '{:4.0%}  '.format(c[7])
+
+            # append alias or id
             node = plugin.rpc.listnodes(c[3])['nodes']
             if len(node) != 0 and 'alias' in node[0]:
                 s += node[0]['alias']
@@ -222,6 +290,8 @@ def init(options, configuration, plugin):
     plugin.fiat_per_btc = 0
     info = plugin.rpc.getinfo()
 
+    # Measure availability
+    PeerThread().start()
     # Try to grab conversion price
     PriceThread().start()
 
