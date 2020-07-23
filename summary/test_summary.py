@@ -1,10 +1,149 @@
 import subprocess
 import unittest
 
+from pyln.client import Plugin
 from pyln.testing.fixtures import *  # noqa: F401,F403
 from pyln.testing.utils import DEVELOPER
 
+from summary_avail import *
+
 pluginopt = {'plugin': os.path.join(os.path.dirname(__file__), "summary.py")}
+
+
+# returns a test plugin stub
+def get_stub():
+    plugin = Plugin()
+    plugin.avail_peerstate = {}
+    plugin.avail_count     = 0
+    plugin.avail_interval  = 60
+    plugin.avail_window    = 3600
+    return plugin
+
+
+# tests the 72hr exponential availibility tracing
+# tests base algo and peerstate tracing
+def test_summary_avail_101():
+    # given
+    plugin = get_stub()
+    rpcpeers = {
+        'peers' : [
+            { 'id' : '1', 'connected' : True },
+            { 'id' : '2', 'connected' : False },
+            { 'id' : '3', 'connected' : True },
+        ]
+    }
+
+    # when
+    for i in range(100):
+        trace_availability(plugin, rpcpeers)
+
+    # then
+    assert(plugin.avail_peerstate['1']['avail'] == 1.0)
+    assert(plugin.avail_peerstate['2']['avail'] == 0.0)
+    assert(plugin.avail_peerstate['3']['avail'] == 1.0)
+    assert(plugin.avail_peerstate['1']['connected'] == True)
+    assert(plugin.avail_peerstate['2']['connected'] == False)
+    assert(plugin.avail_peerstate['3']['connected'] == True)
+
+
+# tests for 50% downtime
+def test_summary_avail_50():
+    # given
+    plugin = get_stub()
+    rpcpeers_on = {
+        'peers' : [
+            { 'id' : '1', 'connected' : True },
+        ]
+    }
+    rpcpeers_off = {
+        'peers' : [
+            { 'id' : '1', 'connected' : False },
+        ]
+    }
+
+    # when
+    for i in range(30):
+        trace_availability(plugin, rpcpeers_on)
+    for i in range(30):
+        trace_availability(plugin, rpcpeers_off)
+
+    # then
+    assert(round(plugin.avail_peerstate['1']['avail'], 3) == 0.5)
+
+
+# tests for 2/3 downtime
+def test_summary_avail_33():
+    # given
+    plugin = get_stub()
+    rpcpeers_on = {
+        'peers' : [
+            { 'id' : '1', 'connected' : True },
+        ]
+    }
+    rpcpeers_off = {
+        'peers' : [
+            { 'id' : '1', 'connected' : False },
+        ]
+    }
+
+    # when
+    for i in range(20):
+        trace_availability(plugin, rpcpeers_on)
+    for i in range(40):
+        trace_availability(plugin, rpcpeers_off)
+
+    # then
+    assert(round(plugin.avail_peerstate['1']['avail'], 3) == 0.333)
+
+
+# tests for 1/3 downtime
+def test_summary_avail_66():
+    # given
+    plugin = get_stub()
+    rpcpeers_on = {
+        'peers' : [
+            { 'id' : '1', 'connected' : True },
+        ]
+    }
+    rpcpeers_off = {
+        'peers' : [
+            { 'id' : '1', 'connected' : False },
+        ]
+    }
+
+    # when
+    for i in range(40):
+        trace_availability(plugin, rpcpeers_on)
+    for i in range(20):
+        trace_availability(plugin, rpcpeers_off)
+
+    # then
+    assert(round(plugin.avail_peerstate['1']['avail'], 3) == 0.667)
+
+
+# checks the leading window is smaller if interval count is low
+# when a node just started
+def test_summary_avail_leadwin():
+    # given
+    plugin = get_stub()
+    rpcpeers_on = {
+        'peers' : [
+            { 'id' : '1', 'connected' : True },
+        ]
+    }
+    rpcpeers_off = {
+        'peers' : [
+            { 'id' : '1', 'connected' : False },
+        ]
+    }
+
+    # when
+    trace_availability(plugin, rpcpeers_on)
+    trace_availability(plugin, rpcpeers_on)
+    trace_availability(plugin, rpcpeers_off)
+
+    # then
+    assert(round(plugin.avail_peerstate['1']['avail'], 3) == 0.667)
 
 
 def test_summary_start(node_factory):

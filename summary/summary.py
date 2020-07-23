@@ -2,7 +2,7 @@
 from pyln.client import Plugin, Millisatoshi
 from packaging import version
 from collections import namedtuple
-from datetime import datetime
+from summary_avail import *
 import pyln.client
 from math import floor, log10
 import requests
@@ -30,20 +30,6 @@ summary_description = "Gets summary information about this node.\n"\
                       "Pass a list of scids to the {exclude} parameter"\
                       " to exclude some channels from the outputs."
 
-# Global state to measure online% and last_seen
-peerstate = {}
-
-
-# ensure an rpc peer is added
-def addpeer(p):
-    pid = p['id']
-    if not pid in peerstate:
-        peerstate[pid] = {
-            'connected' : p['connected'],
-            'last_seen' : datetime.now() if p['connected'] else None,
-            'availability' : 1.0 if p['connected'] else 0.0
-        }
-
 
 class PeerThread(threading.Thread):
     def __init__(self):
@@ -51,36 +37,16 @@ class PeerThread(threading.Thread):
         self.daemon = True
 
     def run(self):
-        interval = 5 * 60            # collect peer state once in a while
-        window   = 3 * 24 * 60 * 60  # 72hr availability window
-        count    = 0
-
         # delay initial execution, so peers have a chance to connect on startup
-        time.sleep(interval)
+        time.sleep(plugin.avail_interval)
 
         while True:
-            count += 1
-            leadwin  = max(min(window, count * interval), interval)
-            samples  = leadwin / interval
-            alpha   = 1.0 / samples
-            beta    = 1.0 - alpha
-
             try:
-                peers = plugin.rpc.listpeers()
-                for p in peers['peers']:
-                    pid = p['id']
-                    addpeer(p)
-
-                    if p['connected']:
-                        peerstate[pid]['last_seen'] = datetime.now()
-                        peerstate[pid]['connected'] = True
-                        peerstate[pid]['availability'] = 1.0 * alpha + peerstate[pid]['availability'] * beta
-                    else:
-                        peerstate[pid]['connected'] = False
-                        peerstate[pid]['availability'] = 0.0 * alpha + peerstate[pid]['availability'] * beta
+                rpcpeers = plugin.rpc.listpeers()
+                trace_availability(plugin, rpcpeers)
+                time.sleep(plugin.avail_interval)
             except Exception as ex:
                 plugin.log("[PeerThread] " + str(ex), 'warn')
-            time.sleep(interval)
 
 
 class PriceThread(threading.Thread):
@@ -177,7 +143,7 @@ def summary(plugin, exclude=''):
     reply['num_gossipers'] = 0
     for p in peers['peers']:
         pid = p['id']
-        addpeer(p)
+        addpeer(plugin, p)
         active_channel = False
         for c in p['channels']:
             if c['state'] != 'CHANNELD_NORMAL':
@@ -208,7 +174,7 @@ def summary(plugin, exclude=''):
                 c['private'],
                 p['connected'],
                 c['short_channel_id'],
-                peerstate[pid]['availability']
+                plugin.avail_peerstate[pid]['avail']
             ))
 
         if not active_channel and p['connected']:
@@ -288,6 +254,12 @@ def init(options, configuration, plugin):
     plugin.currency = options['summary-currency']
     plugin.currency_prefix = options['summary-currency-prefix']
     plugin.fiat_per_btc = 0
+
+    plugin.avail_peerstate = {}
+    plugin.avail_count     = 0
+    plugin.avail_interval  = float(options['summary-availability-interval'])
+    plugin.avail_window    = 60 * 60 * int(options['summary-availability-window'])
+
     info = plugin.rpc.getinfo()
 
     # Measure availability
@@ -322,5 +294,15 @@ plugin.add_option(
     'summary-currency-prefix',
     'USD $',
     'What prefix to use for currency'
+)
+plugin.add_option(
+    'summary-availability-interval',
+    300,
+    'How often in seconds the availability should be calculated.'
+)
+plugin.add_option(
+    'summary-availability-window',
+    72,
+    'How many hours the availability should be averaged over.'
 )
 plugin.run()
