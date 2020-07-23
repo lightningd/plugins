@@ -70,43 +70,9 @@ def to_fiatstr(msat: Millisatoshi):
                               int(msat) / 10**11 * plugin.fiat_per_btc)
 
 
-# This is part of pylightning, but its just merged,
-# so old releases wont have it yet.
-def msat_to_approx_str(msat, digits: int = 3):
-    """Returns the shortmost string using common units representation.
-
-    Rounds to significant `digits`. Default: 3
-    """
-    round_to_n = lambda x, n: round(x, -int(floor(log10(x))) + (n - 1))
-    result = None
-
-    # we try to increase digits to check if we did loose out on precision
-    # without gaining a shorter string, since this is a rarely used UI
-    # function, performance is not an issue. Adds at least one iteration.
-    while True:
-        # first round everything down to effective digits
-        amount_rounded = round_to_n(msat.millisatoshis, digits)
-        # try different units and take shortest resulting normalized string
-        amounts_str = [
-            "%gbtc" % (amount_rounded / 1000 / 10**8),
-            "%gsat" % (amount_rounded / 1000),
-            "%gmsat" % (amount_rounded),
-        ]
-        test_result = min(amounts_str, key=len)
-
-        # check result and do another run if necessary
-        if test_result == result:
-            return result
-        elif not result or len(test_result) <= len(result):
-            digits = digits + 1
-            result = test_result
-        else:
-            return result
-
-
 # appends an output table header that explains fields and capacity
 def append_header(table, max_msat):
-    short_str = msat_to_approx_str(Millisatoshi(max_msat))
+    short_str = Millisatoshi(max_msat).to_approx_str()
     table.append("%c%-13sOUT/OURS %c IN/THEIRS%12s%c SCID           FLAG AVAIL ALIAS"
             % (draw.left, short_str, draw.mid, short_str, draw.right))
 
