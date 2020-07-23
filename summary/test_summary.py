@@ -1,5 +1,7 @@
 import subprocess
 import unittest
+import time
+import re
 
 from pyln.client import Plugin
 from pyln.testing.fixtures import *  # noqa: F401,F403
@@ -18,6 +20,26 @@ def get_stub():
     plugin.avail_interval  = 60
     plugin.avail_window    = 3600
     return plugin
+
+
+def test_summary_peer_thread(node_factory):
+    # in order to give the PeerThread a chance in a unit test
+    # we need to give it a low interval
+    opts = {'summary-availability-interval' : 0.1}
+    opts.update(pluginopt)
+    l1, l2 = node_factory.line_graph(2, opts=opts)
+
+    # when
+    s1 = l1.rpc.summary()
+    l2.stop()        # we stop l2 and
+    time.sleep(0.5)  # wait a bit for the PeerThread to see it
+    s2 = l1.rpc.summary()
+
+    # then
+    avail1 = int(re.search(' ([0-9]*)% ', s1['channels'][2]).group(1))
+    avail2 = int(re.search(' ([0-9]*)% ', s2['channels'][2]).group(1))
+    assert(avail1 == 100)
+    assert(avail2 > 0 and avail2 < avail1)
 
 
 # tests the 72hr exponential availibility tracing
@@ -147,19 +169,24 @@ def test_summary_avail_leadwin():
 
 
 def test_summary_start(node_factory):
+    # given
     l1 = node_factory.get_node(options=pluginopt)
+    l2 = node_factory.get_node(options=pluginopt)
+    l1.connect(l2)
+
+    # when
     s = l1.rpc.summary()
 
+    # then
     expected = {
         'format-hint': 'simple',
         'network': 'REGTEST',
         'num_channels': 0,
         'num_connected': 0,
-        'num_gossipers': 0,
+        'num_gossipers': 1,
         'num_utxos': 0,
         'warning_no_address': 'NO PUBLIC ADDRESSES'
     }
-
     for k, v in expected.items():
         assert(s[k] == v)
 
