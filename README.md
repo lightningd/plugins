@@ -139,6 +139,7 @@ your environment.
 [prometheus]: https://github.com/lightningd/plugins/tree/master/prometheus
 [summary]: https://github.com/lightningd/plugins/tree/master/summary
 [donations]: https://github.com/lightningd/plugins/tree/master/donations
+[drain]: https://github.com/lightningd/plugins/tree/master/drain
 [plugin-docs]: https://lightning.readthedocs.io/PLUGINS.html
 [c-api]: https://github.com/ElementsProject/lightning/blob/master/plugins/libplugin.h
 [python-api]: https://github.com/ElementsProject/lightning/tree/master/contrib/pylightning
