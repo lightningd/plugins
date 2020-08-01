@@ -20,6 +20,7 @@ try:
 except Exception:
     pass
 
+Channel = namedtuple('Channel', ['total', 'ours', 'theirs', 'pid', 'private', 'connected', 'scid', 'avail'])
 Charset = namedtuple('Charset', ['double_left', 'left', 'bar', 'mid', 'right', 'double_right', 'empty'])
 if have_utf8:
     draw = Charset('╟', '├', '─', '┼', '┤', '╢', '║')
@@ -133,10 +134,10 @@ def summary(plugin, exclude=''):
                 to_them = Millisatoshi(0)
             avail_in += to_them
             reply['num_channels'] += 1
-            chans.append((
+            chans.append(Channel(
                 c['total_msat'],
                 to_us, to_them,
-                p['id'],
+                pid,
                 c['private'],
                 p['connected'],
                 c['short_channel_id'],
@@ -157,12 +158,12 @@ def summary(plugin, exclude=''):
     if chans != []:
         reply['channels_flags'] = 'P:private O:offline'
         reply['channels'] = ["\n"]
-        biggest = max(max(int(c[1]), int(c[2])) for c in chans)
+        biggest = max(max(int(c.ours), int(c.theirs)) for c in chans)
         append_header(reply['channels'], biggest)
         for c in chans:
             # Create simple line graph, 47 chars wide.
-            our_len = int(round(int(c[1]) / biggest * 23))
-            their_len = int(round(int(c[2]) / biggest * 23))
+            our_len = int(round(int(c.ours) / biggest * 23))
+            their_len = int(round(int(c.theirs) / biggest * 23))
             divided = False
 
             # We put midpoint in the middle.
@@ -186,28 +187,28 @@ def summary(plugin, exclude=''):
             s = left + mid + right
 
             # output short channel id, so things can be copyNpasted easily
-            s += " {:14} ".format(c[6])
+            s += " {:14} ".format(c.scid)
 
             extra = ''
-            if c[4]:
+            if c.private:
                 extra += 'P'
             else:
                 extra += '_'
-            if not c[5]:
+            if not c.connected:
                 extra += 'O'
             else:
                 extra += '_'
             s += '[{}] '.format(extra)
 
             # append 24hr availability
-            s += '{:4.0%}  '.format(c[7])
+            s += '{:4.0%}  '.format(c.avail)
 
             # append alias or id
-            node = plugin.rpc.listnodes(c[3])['nodes']
+            node = plugin.rpc.listnodes(c.pid)['nodes']
             if len(node) != 0 and 'alias' in node[0]:
                 s += node[0]['alias']
             else:
-                s += c[3][0:32]
+                s += c.pid[0:32]
             reply['channels'].append(s)
 
     # Make modern lightning-cli format this human-readble by default!
