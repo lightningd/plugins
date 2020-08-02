@@ -6,6 +6,7 @@ from summary_avail import *
 import pyln.client
 from math import floor, log10
 import requests
+import shelve
 import threading
 import time
 
@@ -45,6 +46,7 @@ class PeerThread(threading.Thread):
             try:
                 rpcpeers = plugin.rpc.listpeers()
                 trace_availability(plugin, rpcpeers)
+                plugin.avail_peerstate.sync()
                 time.sleep(plugin.avail_interval)
             except Exception as ex:
                 plugin.log("[PeerThread] " + str(ex), 'warn')
@@ -222,7 +224,7 @@ def init(options, configuration, plugin):
     plugin.currency_prefix = options['summary-currency-prefix']
     plugin.fiat_per_btc = 0
 
-    plugin.avail_peerstate = {}
+    plugin.avail_peerstate = shelve.open('summary.dat', writeback=True)
     plugin.avail_count     = 0
     plugin.avail_interval  = float(options['summary-availability-interval'])
     plugin.avail_window    = 60 * 60 * int(options['summary-availability-window'])
