@@ -46,7 +46,7 @@ class PeerThread(threading.Thread):
             try:
                 rpcpeers = plugin.rpc.listpeers()
                 trace_availability(plugin, rpcpeers)
-                plugin.avail_peerstate.sync()
+                plugin.persist.sync()
                 time.sleep(plugin.avail_interval)
             except Exception as ex:
                 plugin.log("[PeerThread] " + str(ex), 'warn')
@@ -143,7 +143,7 @@ def summary(plugin, exclude=''):
                 c['private'],
                 p['connected'],
                 c['short_channel_id'],
-                plugin.avail_peerstate[pid]['avail']
+                plugin.persist['peerstate'][pid]['avail']
             ))
 
         if not active_channel and p['connected']:
@@ -224,10 +224,12 @@ def init(options, configuration, plugin):
     plugin.currency_prefix = options['summary-currency-prefix']
     plugin.fiat_per_btc = 0
 
-    plugin.avail_peerstate = shelve.open('summary.dat', writeback=True)
-    plugin.avail_count     = 0
     plugin.avail_interval  = float(options['summary-availability-interval'])
     plugin.avail_window    = 60 * 60 * int(options['summary-availability-window'])
+    plugin.persist         = shelve.open('summary.dat', writeback=True)
+    if not 'peerstate' in plugin.persist:
+        plugin.persist['peerstate'] = {}
+        plugin.persist['availcount'] = 0
 
     info = plugin.rpc.getinfo()
 

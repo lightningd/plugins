@@ -15,10 +15,11 @@ pluginopt = {'plugin': os.path.join(os.path.dirname(__file__), "summary.py")}
 # returns a test plugin stub
 def get_stub():
     plugin = Plugin()
-    plugin.avail_peerstate = {}
-    plugin.avail_count     = 0
     plugin.avail_interval  = 60
     plugin.avail_window    = 3600
+    plugin.persist = {}
+    plugin.persist['peerstate'] = {}
+    plugin.persist['availcount'] = 0
     return plugin
 
 
@@ -60,12 +61,12 @@ def test_summary_avail_101():
         trace_availability(plugin, rpcpeers)
 
     # then
-    assert(plugin.avail_peerstate['1']['avail'] == 1.0)
-    assert(plugin.avail_peerstate['2']['avail'] == 0.0)
-    assert(plugin.avail_peerstate['3']['avail'] == 1.0)
-    assert(plugin.avail_peerstate['1']['connected'] == True)
-    assert(plugin.avail_peerstate['2']['connected'] == False)
-    assert(plugin.avail_peerstate['3']['connected'] == True)
+    assert(plugin.persist['peerstate']['1']['avail'] == 1.0)
+    assert(plugin.persist['peerstate']['2']['avail'] == 0.0)
+    assert(plugin.persist['peerstate']['3']['avail'] == 1.0)
+    assert(plugin.persist['peerstate']['1']['connected'] == True)
+    assert(plugin.persist['peerstate']['2']['connected'] == False)
+    assert(plugin.persist['peerstate']['3']['connected'] == True)
 
 
 # tests for 50% downtime
@@ -90,7 +91,7 @@ def test_summary_avail_50():
         trace_availability(plugin, rpcpeers_off)
 
     # then
-    assert(round(plugin.avail_peerstate['1']['avail'], 3) == 0.5)
+    assert(round(plugin.persist['peerstate']['1']['avail'], 3) == 0.5)
 
 
 # tests for 2/3 downtime
@@ -115,7 +116,7 @@ def test_summary_avail_33():
         trace_availability(plugin, rpcpeers_off)
 
     # then
-    assert(round(plugin.avail_peerstate['1']['avail'], 3) == 0.333)
+    assert(round(plugin.persist['peerstate']['1']['avail'], 3) == 0.333)
 
 
 # tests for 1/3 downtime
@@ -140,7 +141,7 @@ def test_summary_avail_66():
         trace_availability(plugin, rpcpeers_off)
 
     # then
-    assert(round(plugin.avail_peerstate['1']['avail'], 3) == 0.667)
+    assert(round(plugin.persist['peerstate']['1']['avail'], 3) == 0.667)
 
 
 # checks the leading window is smaller if interval count is low
@@ -165,7 +166,28 @@ def test_summary_avail_leadwin():
     trace_availability(plugin, rpcpeers_off)
 
     # then
-    assert(round(plugin.avail_peerstate['1']['avail'], 3) == 0.667)
+    assert(round(plugin.persist['peerstate']['1']['avail'], 3) == 0.667)
+
+
+# checks whether the peerstate is persistent
+def test_summary_persist(node_factory):
+    # in order to give the PeerThread a chance in a unit test
+    # we need to give it a low interval
+    opts = {'summary-availability-interval' : 0.1}
+    opts.update(pluginopt)
+    l1, l2 = node_factory.line_graph(2, opts=opts)
+
+    # when
+    time.sleep(0.5)        # wait a bit for the PeerThread to capture data
+    s1 = l1.rpc.summary()
+    l1.restart()
+    s2 = l1.rpc.summary()
+
+    # then
+    avail1 = int(re.search(' ([0-9]*)% ', s1['channels'][2]).group(1))
+    avail2 = int(re.search(' ([0-9]*)% ', s2['channels'][2]).group(1))
+    assert(avail1 == 100)
+    assert(avail2 > 0)
 
 
 def test_summary_start(node_factory):
