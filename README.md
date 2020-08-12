@@ -26,7 +26,10 @@ Community curated plugins for c-lightning.
 | [sauron][sauron]                   | A Bitcoin backend relying on [Esplora][esplora]'s API                      |
 | [sendinvoiceless][sendinvoiceless] | Sends some money without an invoice from the receiving node.               |
 | [sitzprobe][sitzprobe]             | A Lightning Network payment rehearsal utility                              |
+| [sparko][sparko]                   | RPC over HTTP with fine-grained permissions, SSE and spark-wallet support  |
 | [summary][summary]                 | Print a nice summary of the node status                                    |
+| [trustedcoin][trustedcoin]         | Replace your Bitcoin Core with data from public block explorers            |
+| [webhook][webhook]                 | Dispatches webhooks based from [event notifications][event-notifications]  |
 | [zmq][zmq]                         | Publishes notifications via [ZeroMQ][zmq-home] to configured endpoints     |
 
 ## Installation
@@ -120,7 +123,6 @@ your environment.
 
  - [@conscott's plugins](https://github.com/conscott/c-lightning-plugins)
  - [@renepickhardt's plugins](https://github.com/renepickhardt/c-lightning-plugin-collection)
- - [@fiatjaf's plugins](https://github.com/fiatjaf/lightningd-gjson-rpc/tree/master/cmd)
  - [@rsbondi's plugins](https://github.com/rsbondi/clightning-go-plugin)
  - [c-lightning plugins emulating commands of LND (lncli)](https://github.com/kristapsk/c-lightning-lnd-plugins)
 
@@ -162,3 +164,7 @@ your environment.
 [zmq]: https://github.com/lightningd/plugins/tree/master/zmq
 [csvexportpays]: https://github.com/0xB10C/c-lightning-plugin-csvexportpays
 [pruning]: https://github.com/Start9Labs/c-lightning-pruning-plugin
+[sparko]: https://github.com/fiatjaf/sparko
+[webhook]: https://github.com/fiatjaf/webhook
+[trustedcoin]: https://github.com/fiatjaf/trustedcoin
+[event-notifications]: https://lightning.readthedocs.io/PLUGINS.html#event-notifications
