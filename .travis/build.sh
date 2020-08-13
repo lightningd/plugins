@@ -3,21 +3,22 @@ set -e
 
 CWD=$(pwd)
 export SLOW_MACHINE=1
-export PATH="$HOME/.local/bin:dependencies/bin:$PATH"
+export PATH="$HOME/.local/bin:$(pwd)/dependencies/bin:$PATH"
 export PYTEST_PAR=10
 export TEST_DEBUG=1
 export LIGHTNING_VERSION=${LIGHTNING_VERSION:-master}
 export PYTHONPATH=/tmp/lightning/contrib/pyln-client:/tmp/lightning/contrib/pyln-testing:/tmp/lightning/contrib/pylightning:$$PYTHONPATH
+export BITCOIND_VERSION="0.18.1"
 
 mkdir -p dependencies/bin
 
 # Download bitcoind and bitcoin-cli 
 echo 'travis_fold:start:script.0'
 if [ ! -f dependencies/bin/bitcoind ]; then
-    wget https://bitcoin.org/bin/bitcoin-core-0.17.1/bitcoin-0.17.1-x86_64-linux-gnu.tar.gz
-    tar -xzf bitcoin-0.17.1-x86_64-linux-gnu.tar.gz
-    mv bitcoin-0.17.1/bin/* dependencies/bin
-    rm -rf bitcoin-0.17.1-x86_64-linux-gnu.tar.gz bitcoin-0.17.1
+    wget https://storage.googleapis.com/c-lightning-tests/bitcoin-${BITCOIND_VERSION}-x86_64-linux-gnu.tar.bz2
+    tar -xjf bitcoin-${BITCOIND_VERSION}-x86_64-linux-gnu.tar.bz2
+    mv bitcoin-${BITCOIND_VERSION}/bin/* dependencies/bin
+    rm -rf bitcoin-${BITCOIND_VERSION}-x86_64-linux-gnu.tar.gz bitcoin-${BITCOIND_VERSION}
 fi
 echo 'travis_fold:end:script.0'
 
