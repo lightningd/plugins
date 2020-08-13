@@ -42,16 +42,12 @@ PY3=$(which python3)
 
 echo 'travis_fold:start:script.2'
 git clone --recursive https://github.com/ElementsProject/lightning.git /tmp/lightning
-(cd /tmp/lightning && git checkout "$LIGHTNING_VERSION")
-
-# Compiling lightningd can be noisy and time-consuming, cache the binaries
-if [ ! -f "$CWD/dependencies/usr/local/bin/lightningd" ]; then
-    (
-	cd /tmp/lightning && \
-	./configure --disable-valgrind && \
-	make -j 8 DESTDIR=dependencies/
-    )
-fi
+(
+    cd /tmp/lightning
+    git checkout "$LIGHTNING_VERSION"
+    ./configure --disable-valgrind
+    make -j 8
+)
 echo 'travis_fold:end:script.2'
 
 # Collect libraries that the plugins need and install them
@@ -83,4 +79,5 @@ which python3
 
 rm /tmp/.coverage.* .coverage.tmp .coverage || true
 
-pytest -vvv --timeout=550 --timeout_method=thread -p no:logging -n 2
+pytest -vvv --timeout=550 --timeout_method=thread -p no:logging -n 5
+ls -lha
