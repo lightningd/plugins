@@ -25,7 +25,6 @@ echo 'travis_fold:start:script.1'
 pyenv global 3.7
 pip3 install --quiet --upgrade pip
 pip3 install --user --quiet \
-     pyln-testing \
      mako==1.0.14 \
      psycopg2-binary>=2.8.3 \
      pytest-timeout==1.3.3 \
@@ -44,8 +43,6 @@ PY3=$(which python3)
 echo 'travis_fold:start:script.2'
 git clone --recursive https://github.com/ElementsProject/lightning.git /tmp/lightning
 (cd /tmp/lightning && git checkout "$LIGHTNING_VERSION")
-(cd /tmp/lightning/contrib/pyln-client && $PY3 setup.py install)
-(cd /tmp/lightning/contrib/pyln-testing && $PY3 setup.py install)
 
 # Compiling lightningd can be noisy and time-consuming, cache the binaries
 if [ ! -f "$CWD/dependencies/usr/local/bin/lightningd" ]; then
@@ -60,6 +57,9 @@ echo 'travis_fold:end:script.2'
 # Collect libraries that the plugins need and install them
 echo 'travis_fold:start:script.3'
 find . -name requirements.txt -exec pip3 install --quiet --upgrade --user -r {} \;
+
+# Force the tests to use the latest and greatest version of pyln
+pip install -U pyln-testing>=0.8.2 pyln-client>=0.8.2
 echo 'travis_fold:end:script.3'
 
 # Add the local bitcoind bin dir so we can start and control it:
