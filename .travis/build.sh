@@ -3,7 +3,7 @@ set -e
 
 CWD=$(pwd)
 export SLOW_MACHINE=1
-export PATH="$HOME/.local/bin:$PATH"
+export PATH="$HOME/.local/bin:dependencies/bin:$PATH"
 export PYTEST_PAR=10
 export TEST_DEBUG=1
 export LIGHTNING_VERSION=${LIGHTNING_VERSION:-master}
@@ -29,7 +29,7 @@ pip3 install --user --quiet \
      psycopg2-binary>=2.8.3 \
      pytest-timeout==1.3.3 \
      pytest-xdist==1.30.0 \
-     pytest-cov \
+     pytest-cover \
      coverage \
      codecov \
      mrkd==0.1.6
@@ -46,7 +46,7 @@ git clone --recursive https://github.com/ElementsProject/lightning.git /tmp/ligh
     cd /tmp/lightning
     git checkout "$LIGHTNING_VERSION"
     ./configure --disable-valgrind
-    make -j 8
+    make -j 16 > /dev/null
 )
 echo 'travis_fold:end:script.2'
 
@@ -58,26 +58,14 @@ find . -name requirements.txt -exec pip3 install --quiet --upgrade --user -r {} 
 pip install -U pyln-testing>=0.8.2 pyln-client>=0.8.2
 echo 'travis_fold:end:script.3'
 
-# Add the local bitcoind bin dir so we can start and control it:
-export PATH="$CWD/.travis/bin:$CWD/dependencies/bin:$CWD/dependencies/usr/local/bin/:$PATH"
-
 # Add the directory we put the newly compiled lightningd in
 export PATH="/tmp/lightning/lightningd/:$PATH"
 
-# Enable coverage reporting from inside the plugin. This is done by adding a
-# wrapper called python3 that internally just calls `coverage run` and stores
-# the coverage output in `/tmp/.coverage.*` from where we can pick the details
-# up again.
-export PATH="$CWD/.travis/bin:$PATH"
-
 # Force coverage to write files in $CWD
 export COVERAGE_FILE="$CWD/.coverage"
+export COVERAGE_RCFILE="$CWD/.coveragerc"
 
-# Make sure we use the correct python3 wrapper (the one that calls coverage
-# internally).
-which python3
+export PYTHONPATH="$CWD"
+pytest -vvv --timeout=550 --timeout_method=thread -p no:logging -n 5 --cov
 
-rm /tmp/.coverage.* .coverage.tmp .coverage || true
-
-pytest -vvv --timeout=550 --timeout_method=thread -p no:logging -n 5
-ls -lha
+codecov --env COMPAT,DEVELOPER,EXPERIMENTAL_FEATURES

@@ -19,6 +19,3 @@ before_install:
 
 script:
   .travis/build.sh
-
-after_success:
-  - codecov --env COMPAT,DEVELOPER,EXPERIMENTAL_FEATURES

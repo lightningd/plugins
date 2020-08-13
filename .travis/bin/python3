@@ -1,2 +1,0 @@
-#!/bin/bash
-coverage run --omit='/home/travis/.local/,*/.direnv/*' --parallel-mode "$@"
