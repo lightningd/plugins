@@ -2,6 +2,8 @@
 import sys
 import requests
 
+from requests.packages.urllib3.util.retry import Retry
+from requests.adapters import HTTPAdapter
 from art import sauron_eye
 from pyln.client import Plugin
 
@@ -21,6 +23,17 @@ def fetch(url):
     # transaction a certain amount of times.
     session = requests.session()
     session.proxies = plugin.sauron_socks_proxies
+    retry_strategy = Retry(
+        backoff_factor=1,
+        total=10,
+        status_forcelist=[429, 500, 502, 503, 504],
+        method_whitelist=["HEAD", "GET", "OPTIONS"]
+    )
+    adapter = HTTPAdapter(max_retries=retry_strategy)
+
+    session.mount("https://", adapter)
+    session.mount("http://", adapter)
+
     return session.get(url)
 
 
