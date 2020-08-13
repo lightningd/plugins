@@ -14,10 +14,6 @@ env:
  - COMPAT=1 DEVELOPER=1 EXPERIMENTAL_FEATURES=0
  - COMPAT=1 DEVELOPER=1 EXPERIMENTAL_FEATURES=1
 
-cache:
-  directories:
-    - dependencies
-
 before_install:
   sudo apt-get install -y libsqlite3-dev gcc-4.8 gettext python python3 python3-mako net-tools zlib1g-dev libsodium-dev
 
