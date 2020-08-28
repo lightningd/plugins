@@ -156,7 +156,9 @@ def sendmsg(node_id, msg, plugin, request, pay=None, **kwargs):
 def recvmsg(plugin, request, last_id=None, **kwargs):
     next_id = int(last_id) + 1 if last_id is not None else len(plugin.messages)
     if next_id < len(plugin.messages):
-        request.set_result(plugin.messages[int(last_id)].to_dict())
+        res = plugin.messages[int(last_id)].to_dict()
+        res['total_messages'] = len(plugin.messages)
+        request.set_result(res)
     else:
         plugin.receive_waiters.append(request)
 
@@ -203,8 +205,13 @@ def on_htlc_accepted(onion, htlc, plugin, **kwargs):
         res = {'result': 'continue'}
 
     plugin.messages.append(msg)
+    print("Delivering message to {c} waiters".format(
+        c=len(plugin.receive_waiters)
+    ))
     for r in plugin.receive_waiters:
-        r.set_result(msg.to_dict())
+        m = msg.to_dict()
+        m['total_messages'] = len(plugin.messages)
+        r.set_result(m)
     plugin.receive_waiters = []
 
     return res
@@ -215,5 +222,6 @@ def init(configuration, options, plugin, **kwargs):
     print("Starting noise chat plugin")
     plugin.messages = []
     plugin.receive_waiters = []
+
 
 plugin.run()
