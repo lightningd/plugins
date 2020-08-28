@@ -67,6 +67,6 @@ export COVERAGE_FILE="$CWD/.coverage"
 export COVERAGE_RCFILE="$CWD/.coveragerc"
 
 export PYTHONPATH="$CWD"
-pytest -vvv --timeout=550 --timeout_method=thread -p no:logging -n 5 --cov
+pytest -vvv --timeout=550 --timeout_method=thread -p no:logging -n 5
 
-codecov --env COMPAT,DEVELOPER,EXPERIMENTAL_FEATURES
+#codecov --env COMPAT,DEVELOPER,EXPERIMENTAL_FEATURES
