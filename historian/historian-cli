@@ -6,7 +6,7 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy import func
 from datetime import datetime, timedelta
 import click
-from pyln.proto.primitives import varint_encode
+from pyln.proto.primitives import varint_encode, varint_decode
 import os
 from sqlalchemy.orm import load_only
 
@@ -152,6 +152,21 @@ ORDER BY timestamp DESC
 def full(ctx, destination, db):
     since = datetime.utcnow() - timedelta(weeks=2)
     ctx.invoke(incremental, since=since, destination=destination, db=db)
+
+
+@snapshot.command()
+@click.argument('snapshot', type=click.File('rb'))
+def read(snapshot):
+    while True:
+        l = varint_decode(snapshot)
+        if l is None:
+            break
+
+        msg = snapshot.read(l)
+        if len(msg) != l:
+            raise ValueError("Incomplete read at end of file")
+
+        print(msg.hex())
 
 
 if __name__ == "__main__":
