@@ -8,7 +8,7 @@ export PYTEST_PAR=10
 export TEST_DEBUG=1
 export LIGHTNING_VERSION=${LIGHTNING_VERSION:-master}
 export PYTHONPATH=/tmp/lightning/contrib/pyln-client:/tmp/lightning/contrib/pyln-testing:/tmp/lightning/contrib/pylightning:$$PYTHONPATH
-export BITCOIND_VERSION="0.18.1"
+export BITCOIND_VERSION="0.20.1"
 
 mkdir -p dependencies/bin
 
