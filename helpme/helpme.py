@@ -715,6 +715,8 @@ Note that the default expiry is 7 days, but you can change it: see 'man lightnin
 def give_channel_advice(plugin, *args):
     if len(args) > 1:
         raise ValueError("Sorry, I can only give channel advice for one invoice at a time")
+    elif len(args) < 1:
+        raise ValueError("I can only give channel advice if you specify an invoice")
 
     offline_funds = plugin.rpc.listfunds()['outputs']
     tot_off_funds = sum([f['amount_msat'] for f in offline_funds
