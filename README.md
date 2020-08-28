@@ -7,30 +7,32 @@ Community curated plugins for c-lightning.
 
 ## Available plugins
 
-| Name                               | Short description                                                          |
-|------------------------------------|----------------------------------------------------------------------------|
-| [autopilot][autopilot]             | An autopilot that suggests channels that should be established             |
-| [autoreload][autoreload]           | A developer plugin that reloads a plugin under development when it changes |
-| [csvexportpays][csvexportpays]     | A plugin that exports all payments to a CSV file                           |
-| [donations][donations]             | A simple donations page to accept donations from the web                   |
-| [drain][drain]                     | Draining, filling and balancing channels with automatic chunks.            |
-| [graphql][graphql]                 | Exposes the c-lightning API over [graphql][graphql-spec]                   |
-| [lightning-qt][lightning-qt]       | A bitcoin-qt-like GUI for lightningd                                       |
-| [monitor][monitor]                 | helps you analyze the health of your peers and channels                    |
-| [persistent-channels][pers-chans]  | Maintains a number of channels to peers                                    |
-| [probe][probe]                     | Regularly probes the network for stability                                 |
-| [prometheus][prometheus]           | Lightning node exporter for the prometheus timeseries server               |
-| [pruning][pruning]                 | This plugin manages pruning of bitcoind such that it can always sync       |
-| [rebalance][rebalance]             | Keeps your channels balanced                                               |
-| [reckless][reckless]               | An **experimental** plugin manager (search/install plugins)                |
-| [sauron][sauron]                   | A Bitcoin backend relying on [Esplora][esplora]'s API                      |
-| [sendinvoiceless][sendinvoiceless] | Sends some money without an invoice from the receiving node.               |
-| [sitzprobe][sitzprobe]             | A Lightning Network payment rehearsal utility                              |
-| [sparko][sparko]                   | RPC over HTTP with fine-grained permissions, SSE and spark-wallet support  |
-| [summary][summary]                 | Print a nice summary of the node status                                    |
-| [trustedcoin][trustedcoin]         | Replace your Bitcoin Core with data from public block explorers            |
-| [webhook][webhook]                 | Dispatches webhooks based from [event notifications][event-notifications]  |
-| [zmq][zmq]                         | Publishes notifications via [ZeroMQ][zmq-home] to configured endpoints     |
+| Name                               | Short description                                                                         |
+|------------------------------------|-------------------------------------------------------------------------------------------|
+| [autopilot][autopilot]             | An autopilot that suggests channels that should be established                            |
+| [autoreload][autoreload]           | A developer plugin that reloads a plugin under development when it changes                |
+| [csvexportpays][csvexportpays]     | A plugin that exports all payments to a CSV file                                          |
+| [donations][donations]             | A simple donations page to accept donations from the web                                  |
+| [drain][drain]                     | Draining, filling and balancing channels with automatic chunks.                           |
+| [event-websocket][event-websocket] | Exposes notifications over a Websocket                                                    |
+| [graphql][graphql]                 | Exposes the c-lightning API over [graphql][graphql-spec]                                  |
+| [invoice-queue][invoice-queue]     | Listen to lightning invoices from multiple nodes and send to a redis queue for processing |
+| [lightning-qt][lightning-qt]       | A bitcoin-qt-like GUI for lightningd                                                      |
+| [monitor][monitor]                 | helps you analyze the health of your peers and channels                                   |
+| [persistent-channels][pers-chans]  | Maintains a number of channels to peers                                                   |
+| [probe][probe]                     | Regularly probes the network for stability                                                |
+| [prometheus][prometheus]           | Lightning node exporter for the prometheus timeseries server                              |
+| [pruning][pruning]                 | This plugin manages pruning of bitcoind such that it can always sync                      |
+| [rebalance][rebalance]             | Keeps your channels balanced                                                              |
+| [reckless][reckless]               | An **experimental** plugin manager (search/install plugins)                               |
+| [sauron][sauron]                   | A Bitcoin backend relying on [Esplora][esplora]'s API                                     |
+| [sendinvoiceless][sendinvoiceless] | Sends some money without an invoice from the receiving node.                              |
+| [sitzprobe][sitzprobe]             | A Lightning Network payment rehearsal utility                                             |
+| [sparko][sparko]                   | RPC over HTTP with fine-grained permissions, SSE and spark-wallet support                 |
+| [summary][summary]                 | Print a nice summary of the node status                                                   |
+| [trustedcoin][trustedcoin]         | Replace your Bitcoin Core with data from public block explorers                           |
+| [webhook][webhook]                 | Dispatches webhooks based from [event notifications][event-notifications]                 |
+| [zmq][zmq]                         | Publishes notifications via [ZeroMQ][zmq-home] to configured endpoints                    |
 
 ## Installation
 
@@ -168,3 +170,5 @@ your environment.
 [webhook]: https://github.com/fiatjaf/webhook
 [trustedcoin]: https://github.com/fiatjaf/trustedcoin
 [event-notifications]: https://lightning.readthedocs.io/PLUGINS.html#event-notifications
+[event-websocket]: https://github.com/rbndg/c-lightning-events
+[invoice-queue]: https://github.com/rbndg/Lightning-Invoice-Queue
