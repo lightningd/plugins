@@ -58,29 +58,42 @@ default_since = datetime.utcnow() - timedelta(hours=1)
 @click.option('--db', type=str, default=default_db)
 def incremental(since, destination, db):
     with db_session(db) as session:
-        # The following is a mouthful, but it is relatively simple. The inner
-        # query selects all scids that had any updates in the timerange we're
-        # interested in. The outer query then selects announcements and
-        # channel_updates that match those scids. The results are ordered by
-        # scid, and update timestamps, so we can deduplicate them while
-        # iterating through them. This last step is a bit wasteful, since we
-        # end up iterating over many more entries than strictly necessary, but
-        # a `GROUP BY a.scid` may filter out the latest updates, which is not
-        # what we want and we were unable to find a `HAVING` statement that'd
-        # filter only on the group rather than the table.
+        # Several nested queries here because join was a bit too
+        # restrictive. The inner SELECT in the WHERE-clause selects all scids
+        # that had any updates in the desired timerange. The outer SELECT then
+        # gets all the announcements and kicks off inner SELECTs that look for
+        # the latest update for each direction.
         rows = session.execute("""
 SELECT
   a.scid,
   a.raw,
-  u1.raw,
-  u2.raw
+  (
+    SELECT
+      u.raw
+    FROM
+      channel_updates u
+    WHERE
+      u.scid = a.scid AND
+      direction = 0
+    ORDER BY
+      timestamp
+    DESC LIMIT 1
+  ) as u0,
+  (
+    SELECT
+      u.raw
+    FROM
+      channel_updates u
+    WHERE
+      u.scid = a.scid AND
+      direction = 1
+    ORDER BY
+      timestamp
+    DESC LIMIT 1
+  ) as u1
 FROM
-  channel_announcements a LEFT JOIN
-  channel_updates u1 ON (a.scid = u1.scid) LEFT JOIN
-  channel_updates u2 ON (a.scid = u2.scid)
+  channel_announcements a
 WHERE
-  (u1.direction IS NULL OR u1.direction = 0) AND
-  (u2.direction IS NULL OR u2.direction = 1) AND
   a.scid IN (
     SELECT
       u.scid
@@ -92,9 +105,7 @@ WHERE
       u.scid
   )
 ORDER BY
-  a.scid,
-  u1.timestamp DESC,
-  u2.timestamp DESC
+  a.scid
         """.format(since.strftime("%Y-%m-%d %H:%M:%S")))
 
         chan_count = 0
@@ -106,10 +117,12 @@ ORDER BY
             chan_count += 1
             varint_encode(len(cann), destination)
             destination.write(cann)
-            varint_encode(len(u1), destination)
-            destination.write(u1)
-            varint_encode(len(u2), destination)
-            destination.write(u2)
+            if u1 is not None:
+                varint_encode(len(u1), destination)
+                destination.write(u1)
+            if u2 is not None:
+                varint_encode(len(u2), destination)
+                destination.write(u2)
 
         # Now get and return the node_announcements in the timerange. These
         # come after the channels since no node without a
