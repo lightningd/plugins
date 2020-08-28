@@ -30,6 +30,7 @@ pip3 install --user --quiet \
      psycopg2-binary>=2.8.3 \
      pytest-timeout==1.3.3 \
      pytest-xdist==1.30.0 \
+     pytest-rerunfailures \
      pytest-cover \
      coverage \
      codecov \
@@ -67,6 +68,6 @@ export COVERAGE_FILE="$CWD/.coverage"
 export COVERAGE_RCFILE="$CWD/.coveragerc"
 
 export PYTHONPATH="$CWD"
-pytest -vvv --timeout=550 --timeout_method=thread -p no:logging -n 5
+pytest -vvv --timeout=550 --timeout_method=thread -p no:logging -n 5 --reruns=3
 
 #codecov --env COMPAT,DEVELOPER,EXPERIMENTAL_FEATURES
