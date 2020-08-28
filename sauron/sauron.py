@@ -10,6 +10,7 @@ from pyln.client import Plugin
 
 plugin = Plugin(dynamic=False)
 plugin.sauron_socks_proxies = None
+plugin.sauron_network = "test"
 
 
 class SauronError(Exception):
@@ -85,11 +86,12 @@ def getchaininfo(plugin, **kwargs):
                                                    blockcount_req.text))
     if genesis_req.text not in chains.keys():
         raise SauronError("Unsupported network")
+    plugin.sauron_network = chains[genesis_req.text]
 
     # We wouldn't be able to hit it if its bitcoind wasn't synced, so
     # ibd = false and headercount = blockcount
     return {
-        "chain": chains[genesis_req.text],
+        "chain": plugin.sauron_network,
         "blockcount": blockcount_req.text,
         "headercount": blockcount_req.text,
         "ibd": False,
@@ -164,17 +166,22 @@ def getutxout(plugin, txid, vout, **kwargs):
 
 
 @plugin.method("estimatefees")
-def getfeerate(plugin, **kwargs):
+def estimatefees(plugin, **kwargs):
     feerate_url = "{}/fee-estimates".format(plugin.api_endpoint)
 
     feerate_req = fetch(feerate_url)
     assert feerate_req.status_code == 200
     feerates = feerate_req.json()
-    # It renders sat/vB, we want sat/kVB, so multiply everything by 10**3
-    slow = int(feerates["144"] * 10**3)
-    normal = int(feerates["5"] * 10**3)
-    urgent = int(feerates["3"] * 10**3)
-    very_urgent = int(feerates["2"] * 10**3)
+    if plugin.sauron_network == "test":
+        # FIXME: remove the hack if the test API is "fixed"
+        feerate = feerates.get("144", 1)
+        slow = normal = urgent = very_urgent = int(feerate * 10**3)
+    else:
+        # It returns sat/vB, we want sat/kVB, so multiply everything by 10**3
+        slow = int(feerates["144"] * 10**3)
+        normal = int(feerates["5"] * 10**3)
+        urgent = int(feerates["3"] * 10**3)
+        very_urgent = int(feerates["2"] * 10**3)
 
     return {
         "opening": normal,
