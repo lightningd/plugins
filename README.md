@@ -3,14 +3,12 @@
 Community curated plugins for c-lightning.
 
 [![Build Status](https://travis-ci.org/lightningd/plugins.svg?branch=master)](https://travis-ci.org/lightningd/plugins)
-[![Coverage Status](https://codecov.io/gh/lightningd/plugins/branch/master/graph/badge.svg)](https://codecov.io/gh/lightningd/plugins)
 
 ## Available plugins
 
 | Name                               | Short description                                                                         |
 |------------------------------------|-------------------------------------------------------------------------------------------|
 | [autopilot][autopilot]             | An autopilot that suggests channels that should be established                            |
-| [autoreload][autoreload]           | A developer plugin that reloads a plugin under development when it changes                |
 | [boltz-channel-creation][boltz]    | A c-lightning plugin for Boltz Channel Creation Swaps                                     |
 | [csvexportpays][csvexportpays]     | A plugin that exports all payments to a CSV file                                          |
 | [donations][donations]             | A simple donations page to accept donations from the web                                  |
@@ -156,7 +154,6 @@ your environment.
 [sendinvoiceless]: https://github.com/lightningd/plugins/tree/master/sendinvoiceless
 [graphql]: https://github.com/nettijoe96/c-lightning-graphql
 [graphql-spec]: https://graphql.org/
-[autoreload]: https://github.com/lightningd/plugins/tree/master/autoreload
 [lightning-qt]: https://github.com/darosior/pylightning-qt
 [cpp-api]: https://github.com/darosior/lightningcpp
 [js-api]: https://github.com/darosior/clightningjs
