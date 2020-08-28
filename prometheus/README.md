@@ -5,7 +5,7 @@ so it can be scraped, plotted and alerts can be created on it. The plugin adds
 the following command line arguments:
 
  - `prometheus-listen`: the IP address and port to bind the HTTP server to
-   (default: `0.0.0.0:9900`)
+   (default: `0.0.0.0:9750`)
    
 Exposed variables include:
 
