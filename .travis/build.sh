@@ -48,7 +48,7 @@ git clone --recursive https://github.com/ElementsProject/lightning.git /tmp/ligh
     cd /tmp/lightning
     git checkout "$LIGHTNING_VERSION"
     ./configure --disable-valgrind
-    make -j 16 > /dev/null
+    make -j 4 > /dev/null
 )
 echo 'travis_fold:end:script.2'
 
