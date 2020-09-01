@@ -20,34 +20,20 @@ def get_ratio(our_percentage):
     return 50**(0.5 - our_percentage)
 
 
-def get_fees(plugin: Plugin, scid: str):
-    for half in plugin.rpc.listchannels(scid)["channels"]:
-        if plugin.our_node_id in half["source"]:
-            return (half["base_fee_millisatoshi"], half["fee_per_millionth"])
-
-    # Note: the half may not be present, so this may actually return None!
-
-
 def maybe_adjust_fees(plugin: Plugin, scids: list):
     for scid in scids:
         # FIXME: set a threshold to avoid flooding!
         if True:
-            # FIXME: it's exponential! We need to cache the startup
-            # fees instead of always factorising the updated ones.
-            fees = get_fees(plugin, scid)
-            if fees is None:
-                return
-
             our = plugin.adj_balances[scid]["our"]
             total = plugin.adj_balances[scid]["total"]
             ratio = get_ratio(our / total)
             try:
-                plugin.rpc.setchannelfee(scid, int(fees[0] * ratio),
-                                         int(fees[1] * ratio))
+                plugin.rpc.setchannelfee(scid, int(plugin.adj_basefee * ratio),
+                                         int(plugin.adj_ppmfee * ratio))
                 plugin.log("Adjusted fees of {} with a ratio of {}"
                            .format(scid, ratio))
             except RpcError as e:
-                plugin.log(str(e), level="warn")
+                plugin.log("setchannelfee error: " + str(e), level="warn")
 
 
 def get_chan(plugin: Plugin, scid: str):
@@ -85,7 +71,10 @@ def threaded_forward_event(plugin: Plugin, forward_event: dict):
 
     plugin.adj_balances[in_scid]["our"] += forward_event["in_msatoshi"]
     plugin.adj_balances[out_scid]["our"] -= forward_event["out_msatoshi"]
-    maybe_adjust_fees(plugin, [in_scid, out_scid])
+    try:
+        maybe_adjust_fees(plugin, [in_scid, out_scid])
+    except Exception as e:
+        plugin.log("Adjusting fees: " + str(e), level="error")
 
 
 @plugin.subscribe("forward_event")
@@ -101,6 +90,9 @@ def init(options: dict, configuration: dict, plugin: Plugin, **kwargs):
     plugin.adj_thread_pool = ThreadPoolExecutor(
         max_workers=int(options["feeadjuster-par"])
     )
+    config = plugin.rpc.listconfigs()
+    plugin.adj_basefee = config["fee-base"]
+    plugin.adj_ppmfee = config["fee-per-satoshi"]
 
     for peer in plugin.rpc.listpeers()["peers"]:
         if len(peer["channels"]) == 0:
@@ -116,5 +108,6 @@ def init(options: dict, configuration: dict, plugin: Plugin, **kwargs):
 
 
 plugin.add_option("feeadjuster-par", 8, "Maximum number of threads launched to"
-                  "adjust fees", opt_type="int")
+                  " adjust fees", opt_type="int")
+
 plugin.run()
