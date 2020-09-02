@@ -22,16 +22,20 @@ def get_ratio(our_percentage):
 
 def maybe_adjust_fees(plugin: Plugin, scids: list):
     for scid in scids:
-        # FIXME: set a threshold to avoid flooding!
-        if True:
-            our = plugin.adj_balances[scid]["our"]
-            total = plugin.adj_balances[scid]["total"]
-            ratio = get_ratio(our / total)
+        our = plugin.adj_balances[scid]["our"]
+        total = plugin.adj_balances[scid]["total"]
+        percentage = our / total
+        last_percentage = plugin.adj_balances[scid].get("last_percentage")
+
+        # Only update on substantial balance moves to avoid flooding
+        if last_percentage is None or abs(last_percentage - percentage) > 0.05:
+            ratio = get_ratio(percentage)
             try:
                 plugin.rpc.setchannelfee(scid, int(plugin.adj_basefee * ratio),
                                          int(plugin.adj_ppmfee * ratio))
                 plugin.log("Adjusted fees of {} with a ratio of {}"
                            .format(scid, ratio))
+                plugin.adj_balances[scid]["last_percentage"] = percentage
             except RpcError as e:
                 plugin.log("setchannelfee error: " + str(e), level="warn")
 
