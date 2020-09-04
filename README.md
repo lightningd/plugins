@@ -11,6 +11,7 @@ Community curated plugins for c-lightning.
 |------------------------------------|-------------------------------------------------------------------------------------------|
 | [autopilot][autopilot]             | An autopilot that suggests channels that should be established                            |
 | [autoreload][autoreload]           | A developer plugin that reloads a plugin under development when it changes                |
+| [boltz-channel-creation][boltz]    | A c-lightning plugin for Boltz Channel Creation Swaps                                     |
 | [csvexportpays][csvexportpays]     | A plugin that exports all payments to a CSV file                                          |
 | [donations][donations]             | A simple donations page to accept donations from the web                                  |
 | [drain][drain]                     | Draining, filling and balancing channels with automatic chunks.                           |
@@ -172,3 +173,4 @@ your environment.
 [event-notifications]: https://lightning.readthedocs.io/PLUGINS.html#event-notifications
 [event-websocket]: https://github.com/rbndg/c-lightning-events
 [invoice-queue]: https://github.com/rbndg/Lightning-Invoice-Queue
+[boltz]: https://github.com/BoltzExchange/channel-creation-plugin
