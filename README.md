@@ -16,6 +16,7 @@ Community curated plugins for c-lightning.
 | [donations][donations]             | A simple donations page to accept donations from the web                                  |
 | [drain][drain]                     | Draining, filling and balancing channels with automatic chunks.                           |
 | [event-websocket][event-websocket] | Exposes notifications over a Websocket                                                    |
+| [fixroute]                         | Compute a route that includes a number of specified waypoints                             |
 | [graphql][graphql]                 | Exposes the c-lightning API over [graphql][graphql-spec]                                  |
 | [invoice-queue][invoice-queue]     | Listen to lightning invoices from multiple nodes and send to a redis queue for processing |
 | [lightning-qt][lightning-qt]       | A bitcoin-qt-like GUI for lightningd                                                      |
@@ -140,6 +141,7 @@ your environment.
 
 [esplora]: https://github.com/Blockstream/esplora
 [pers-chans]: https://github.com/lightningd/plugins/tree/master/persistent-channels
+[fixroute]: https://github.com/lightningd/plugins/tree/master/fixroute
 [probe]: https://github.com/lightningd/plugins/tree/master/probe
 [prometheus]: https://github.com/lightningd/plugins/tree/master/prometheus
 [summary]: https://github.com/lightningd/plugins/tree/master/summary
