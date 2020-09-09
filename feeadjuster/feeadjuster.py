@@ -6,8 +6,6 @@ from pyln.client import Plugin, Millisatoshi, RpcError
 plugin = Plugin()
 # Our amount and the total amount in each of our channel, indexed by scid
 plugin.adj_balances = {}
-# Make requests to lightningd in parallel
-plugin.adj_thread_pool = None
 # Cache to avoid loads of calls to getinfo
 plugin.our_node_id = None
 
@@ -37,7 +35,8 @@ def maybe_adjust_fees(plugin: Plugin, scids: list):
                            .format(scid, ratio))
                 plugin.adj_balances[scid]["last_percentage"] = percentage
             except RpcError as e:
-                plugin.log("setchannelfee error: " + str(e), level="warn")
+                plugin.log("Could not adjust fees for channel {}: '{}'"
+                           .format(scid, e), level="warn")
 
 
 def get_chan(plugin: Plugin, scid: str):
@@ -68,32 +67,24 @@ def maybe_add_new_balances(plugin: Plugin, scids: list):
             }
 
 
-def threaded_forward_event(plugin: Plugin, forward_event: dict):
-    in_scid = forward_event["in_channel"]
-    out_scid = forward_event["out_channel"]
-    maybe_add_new_balances(plugin, [in_scid, out_scid])
-
-    plugin.adj_balances[in_scid]["our"] += forward_event["in_msatoshi"]
-    plugin.adj_balances[out_scid]["our"] -= forward_event["out_msatoshi"]
-    try:
-        maybe_adjust_fees(plugin, [in_scid, out_scid])
-    except Exception as e:
-        plugin.log("Adjusting fees: " + str(e), level="error")
-
-
 @plugin.subscribe("forward_event")
 def forward_event(plugin: Plugin, forward_event: dict, **kwargs):
     if forward_event["status"] == "settled":
-        plugin.adj_thread_pool.submit(threaded_forward_event,
-                                      plugin, forward_event)
+        in_scid = forward_event["in_channel"]
+        out_scid = forward_event["out_channel"]
+        maybe_add_new_balances(plugin, [in_scid, out_scid])
+
+        plugin.adj_balances[in_scid]["our"] += forward_event["in_msatoshi"]
+        plugin.adj_balances[out_scid]["our"] -= forward_event["out_msatoshi"]
+        try:
+            maybe_adjust_fees(plugin, [in_scid, out_scid])
+        except Exception as e:
+            plugin.log("Adjusting fees: " + str(e), level="error")
 
 
 @plugin.init()
 def init(options: dict, configuration: dict, plugin: Plugin, **kwargs):
     plugin.our_node_id = plugin.rpc.getinfo()["id"]
-    plugin.adj_thread_pool = ThreadPoolExecutor(
-        max_workers=int(options["feeadjuster-par"])
-    )
     config = plugin.rpc.listconfigs()
     plugin.adj_basefee = config["fee-base"]
     plugin.adj_ppmfee = config["fee-per-satoshi"]
@@ -107,11 +98,8 @@ def init(options: dict, configuration: dict, plugin: Plugin, **kwargs):
         if chan["state"] != "CHANNELD_NORMAL":
             continue
 
-    plugin.log("Plugin feeadjuster initialized with {} threads"
-               .format(options["feeadjuster-par"]))
+    plugin.log("Plugin feeadjuster initialized ({} base / {} ppm)"
+               .format(plugin.adj_basefee, plugin.adj_ppmfee))
 
-
-plugin.add_option("feeadjuster-par", 8, "Maximum number of threads launched to"
-                  " adjust fees", opt_type="int")
 
 plugin.run()
