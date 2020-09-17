@@ -140,7 +140,7 @@ def test_setbalance(node_factory, bitcoind):
     assert(l1.rpc.setbalance(scid12, 30))
     wait_for_all_htlcs(nodes)
     ours_after = get_ours(l1, scid12)
-    assert(ours_after < ours_before * 0.33)
+    assert(ours_after < ours_before * 0.34)
     assert(ours_after > ours_before * 0.27)
 
     assert(l1.rpc.setbalance(scid12, 70))
