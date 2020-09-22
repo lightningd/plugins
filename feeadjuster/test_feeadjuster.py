@@ -61,7 +61,8 @@ def test_feeadjuster_adjusts(node_factory):
     l2_opts = {
         "fee-base": base_fee,
         "fee-per-satoshi": ppm_fee,
-        "plugin": plugin_path
+        "plugin": plugin_path,
+        "feeadjuster-deactivate-fuzz": None,
     }
     l1, l2, l3 = node_factory.line_graph(3, opts=[{}, l2_opts, {}],
                                          wait_for_announce=True)

@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-from concurrent.futures import ThreadPoolExecutor
+import random
+import time
 from pyln.client import Plugin, Millisatoshi, RpcError
 
 
@@ -25,8 +26,14 @@ def maybe_adjust_fees(plugin: Plugin, scids: list):
         percentage = our / total
         last_percentage = plugin.adj_balances[scid].get("last_percentage")
 
-        # Only update on substantial balance moves to avoid flooding
-        if last_percentage is None or abs(last_percentage - percentage) > 0.05:
+        # Only update on substantial balance moves to avoid flooding, and add
+        # some pseudo-randomness to avoid too easy channel balance probing
+        update_treshold = 0.05
+        if not plugin.deactivate_fuzz:
+            update_treshold += random.uniform(-0.015, 0.015)
+
+        if (last_percentage is None
+                or abs(last_percentage - percentage) > update_treshold):
             ratio = get_ratio(percentage)
             try:
                 plugin.rpc.setchannelfee(scid, int(plugin.adj_basefee * ratio),
@@ -77,6 +84,9 @@ def forward_event(plugin: Plugin, forward_event: dict, **kwargs):
         plugin.adj_balances[in_scid]["our"] += forward_event["in_msatoshi"]
         plugin.adj_balances[out_scid]["our"] -= forward_event["out_msatoshi"]
         try:
+            # Pseudo-randomly add some hysterisis to the update
+            if not plugin.deactivate_fuzz and random.randint(0, 9) == 9:
+                time.sleep(random.randint(0, 5))
             maybe_adjust_fees(plugin, [in_scid, out_scid])
         except Exception as e:
             plugin.log("Adjusting fees: " + str(e), level="error")
@@ -85,6 +95,7 @@ def forward_event(plugin: Plugin, forward_event: dict, **kwargs):
 @plugin.init()
 def init(options: dict, configuration: dict, plugin: Plugin, **kwargs):
     plugin.our_node_id = plugin.rpc.getinfo()["id"]
+    plugin.deactivate_fuzz = options.get("feeadjuster-deactivate-fuzz", False)
     config = plugin.rpc.listconfigs()
     plugin.adj_basefee = config["fee-base"]
     plugin.adj_ppmfee = config["fee-per-satoshi"]
@@ -102,4 +113,10 @@ def init(options: dict, configuration: dict, plugin: Plugin, **kwargs):
                .format(plugin.adj_basefee, plugin.adj_ppmfee))
 
 
+plugin.add_option(
+    "feeadjuster-deactivate-fuzz",
+    False,
+    "Deactivate update threshold randomization and hysterisis.",
+    "flag"
+)
 plugin.run()
