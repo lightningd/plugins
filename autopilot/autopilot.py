@@ -140,6 +140,15 @@ def run_once(plugin, dryrun=False):
     # Now we can look whether and how we'd like to open new channels. This
     # depends on available funds and the number of channels we were configured
     # to open
+
+    if available_funds < plugin.min_capacity_sat:
+        print("Too low available funds: {} < {}".format(available_funds, plugin.min_capacity_sat))
+        return False
+
+    if len(channels) >= plugin.num_channels:
+        print("Already have {} channels. Aim is for {}.".format(len(channels), plugin.num_channels))
+        return False
+
     num_channels = min(
         int(available_funds / plugin.min_capacity_sat),
         plugin.num_channels - len(channels)
