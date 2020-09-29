@@ -133,7 +133,8 @@ def init(configuration, options, plugin):
 def run_once(plugin, dryrun=False):
     # Let's start by inspecting the current state of the node
     funds = plugin.rpc.listfunds()
-    output_funds = sum([o['value'] for o in funds['outputs'] if o['status'] == 'confirmed'])
+    awaiting_lockin_funds = sum([o['channel_sat'] for o in funds['channels'] if o['state'] == 'CHANNELD_AWAITING_LOCKIN'])
+    output_funds = sum([o['value'] for o in funds['outputs'] if o['status'] == 'confirmed']) - awaiting_lockin_funds
     channels = funds['channels']
     available_funds = output_funds / 100.0 * plugin.percent
 
