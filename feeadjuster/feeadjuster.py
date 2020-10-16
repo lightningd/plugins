@@ -50,11 +50,13 @@ def get_chan(plugin: Plugin, scid: str):
     for peer in plugin.rpc.listpeers()["peers"]:
         if len(peer["channels"]) == 0:
             continue
-        chan = peer["channels"][0]
-        if "short_channel_id" not in chan:
-            continue
-        if chan["short_channel_id"] == scid:
-            return chan
+        # We might have multiple channel entries ! Eg if one was just closed
+        # and reopened.
+        for chan in peer["channels"]:
+            if "short_channel_id" not in chan:
+                continue
+            if chan["short_channel_id"] == scid:
+                return chan
 
 
 def maybe_add_new_balances(plugin: Plugin, scids: list):
