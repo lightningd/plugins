@@ -9,6 +9,8 @@ plugin = Plugin()
 plugin.adj_balances = {}
 # Cache to avoid loads of calls to getinfo
 plugin.our_node_id = None
+# Users can configure this
+plugin.update_treshold = 0.05
 
 
 def get_ratio(our_percentage):
@@ -28,7 +30,7 @@ def maybe_adjust_fees(plugin: Plugin, scids: list):
 
         # Only update on substantial balance moves to avoid flooding, and add
         # some pseudo-randomness to avoid too easy channel balance probing
-        update_treshold = 0.05
+        update_treshold = plugin.update_treshold
         if not plugin.deactivate_fuzz:
             update_treshold += random.uniform(-0.015, 0.015)
 
@@ -98,6 +100,7 @@ def forward_event(plugin: Plugin, forward_event: dict, **kwargs):
 def init(options: dict, configuration: dict, plugin: Plugin, **kwargs):
     plugin.our_node_id = plugin.rpc.getinfo()["id"]
     plugin.deactivate_fuzz = options.get("feeadjuster-deactivate-fuzz", False)
+    plugin.update_treshold = float(options.get("feeadjuster-threshold", "0.05"))
     config = plugin.rpc.listconfigs()
     plugin.adj_basefee = config["fee-base"]
     plugin.adj_ppmfee = config["fee-per-satoshi"]
@@ -111,8 +114,10 @@ def init(options: dict, configuration: dict, plugin: Plugin, **kwargs):
         if chan["state"] != "CHANNELD_NORMAL":
             continue
 
-    plugin.log("Plugin feeadjuster initialized ({} base / {} ppm)"
-               .format(plugin.adj_basefee, plugin.adj_ppmfee))
+    plugin.log("Plugin feeadjuster initialized ({} base / {} ppm) with a "
+               "threshold of {}"
+               .format(plugin.adj_basefee, plugin.adj_ppmfee,
+                       plugin.update_treshold))
 
 
 plugin.add_option(
@@ -120,5 +125,12 @@ plugin.add_option(
     False,
     "Deactivate update threshold randomization and hysterisis.",
     "flag"
+)
+plugin.add_option(
+    "feeadjuster-threshold",
+    "0.05",
+    "Channel balance update threshold at which to trigger an update. Note "
+    "it's fuzzed.",
+    "string"
 )
 plugin.run()
