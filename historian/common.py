@@ -17,6 +17,7 @@ class ChannelUpdate(Base):
     @classmethod
     def from_gossip(cls, gcu: parser.ChannelUpdate,
                     raw: bytes) -> 'ChannelUpdate':
+        assert(raw[:2] == b'\x01\x02')
         self = ChannelUpdate()
         self.scid = gcu.num_short_channel_id
         self.timestamp = datetime.fromtimestamp(gcu.timestamp)
@@ -42,6 +43,7 @@ class ChannelAnnouncement(Base):
     @classmethod
     def from_gossip(cls, gca: parser.ChannelAnnouncement,
                     raw: bytes) -> 'ChannelAnnouncement':
+        assert(raw[:2] == b'\x01\x00')
         self = ChannelAnnouncement()
         self.scid = gca.num_short_channel_id
         self.raw = raw
@@ -64,6 +66,7 @@ class NodeAnnouncement(Base):
     @classmethod
     def from_gossip(cls, gna: parser.NodeAnnouncement,
                     raw: bytes) -> 'NodeAnnouncement':
+        assert(raw[:2] == b'\x01\x01')
         self = NodeAnnouncement()
         self.node_id = gna.node_id
         self.timestamp = datetime.fromtimestamp(gna.timestamp)
