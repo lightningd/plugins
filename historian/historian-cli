@@ -117,7 +117,7 @@ WHERE
     FROM
       channel_updates u
     WHERE
-      u.timestamp >= DATETIME('{}')
+      u.timestamp >= '{}'
     GROUP BY
       u.scid
   )
@@ -159,9 +159,10 @@ SELECT
 FROM
   node_announcements n
 WHERE
-  n.timestamp >=  DATETIME('{}')
+  n.timestamp >=  '{}'
 GROUP BY
-  n.node_id
+  n.node_id,
+  n.timestamp
 HAVING
   n.timestamp = MAX(n.timestamp)
 ORDER BY timestamp DESC
