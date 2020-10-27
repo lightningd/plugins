@@ -1,7 +1,7 @@
 from binascii import hexlify
 from datetime import datetime
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy import Column, BigInteger, SmallInteger, DateTime, BLOB
+from sqlalchemy import Column, BigInteger, SmallInteger, DateTime, LargeBinary
 import parser
 
 Base = declarative_base()
@@ -12,7 +12,7 @@ class ChannelUpdate(Base):
     scid = Column(BigInteger, primary_key=True)
     direction = Column(SmallInteger, primary_key=True)
     timestamp = Column(DateTime, primary_key=True)
-    raw = Column(BLOB)
+    raw = Column(LargeBinary)
 
     @classmethod
     def from_gossip(cls, gcu: parser.ChannelUpdate,
@@ -38,7 +38,7 @@ class ChannelUpdate(Base):
 class ChannelAnnouncement(Base):
     __tablename__ = "channel_announcements"
     scid = Column(BigInteger, primary_key=True)
-    raw = Column(BLOB)
+    raw = Column(LargeBinary)
 
     @classmethod
     def from_gossip(cls, gca: parser.ChannelAnnouncement,
@@ -59,9 +59,9 @@ class ChannelAnnouncement(Base):
 
 class NodeAnnouncement(Base):
     __tablename__ = "node_announcements"
-    node_id = Column(BLOB, primary_key=True)
+    node_id = Column(LargeBinary, primary_key=True)
     timestamp = Column(DateTime, primary_key=True)
-    raw = Column(BLOB)
+    raw = Column(LargeBinary)
 
     @classmethod
     def from_gossip(cls, gna: parser.NodeAnnouncement,
