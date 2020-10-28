@@ -2,3 +2,5 @@ inotify==0.2.10
 sqlalchemy==1.3.17
 pyln-proto
 tqdm
+python-dotenv==0.14.0
+pyln-client ~= 0.9
