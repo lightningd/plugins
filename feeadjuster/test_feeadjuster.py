@@ -124,3 +124,66 @@ def test_feeadjuster_adjusts(node_factory):
                                          " 4.".format(scid_A)) is not None)
     wait_for(lambda: l2.daemon.is_in_log("Adjusted fees of {} with a ratio of"
                                          " 0.2".format(scid_B)) is not None)
+
+
+@unittest.skipIf(not DEVELOPER, "Too slow without fast gossip")
+def test_feeadjuster_imbalance(node_factory):
+    """
+    A rather simple network:
+
+            A                   B
+    l1  <========>   l2   <=========>  l3
+
+    l2 will adjust its configuration-set base and proportional fees for
+    channels A and B as l1 and l3 exchange payments.
+    """
+    base_fee = 5000
+    ppm_fee = 300
+    l2_opts = {
+        "fee-base": base_fee,
+        "fee-per-satoshi": ppm_fee,
+        "plugin": plugin_path,
+        "feeadjuster-deactivate-fuzz": None,
+        "feeadjuster-imbalance": 0.7,  # should be normalized to 30/70
+    }
+    l1, l2, l3 = node_factory.line_graph(3, opts=[{}, l2_opts, {}],
+                                         wait_for_announce=True)
+
+    chan_A = l2.rpc.listpeers(l1.info["id"])["peers"][0]["channels"][0]
+    chan_B = l2.rpc.listpeers(l3.info["id"])["peers"][0]["channels"][0]
+    scid_A = chan_A["short_channel_id"]
+    scid_B = chan_B["short_channel_id"]
+    l2_scids = [scid_A, scid_B]
+
+    chan_total = int(chan_A["total_msat"])
+    assert chan_total == int(chan_B["total_msat"])
+    l2.daemon.wait_for_log('imbalance of 30%/70%')
+
+    # First bring channel to somewhat of a blanance
+    amount = int(chan_total * 0.5)
+    pay(l1, l3, amount)
+    l2.daemon.wait_for_log('Set default fees as imbalance is too low')
+    for scid in l2_scids:
+        sync_gossip(l3, l2, scid)
+        sync_gossip(l1, l2, scid)
+    fees_before = [get_chan_fees(l2, scid) for scid in [scid_A, scid_B]]
+    assert fees_before == [(base_fee, ppm_fee), (base_fee, ppm_fee)]
+
+    # Because of the 70/30 imbalance limiter, a 15% payment must not yet trigger
+    # 50% + 15% = 65% .. which is < 70%
+    amount = int(chan_total * 0.15)
+    pay(l1, l3, amount)
+    for scid in l2_scids:
+        sync_gossip(l3, l2, scid)
+        sync_gossip(l1, l2, scid)
+    fees_before = [get_chan_fees(l2, scid) for scid in [scid_A, scid_B]]
+    assert fees_before == [get_chan_fees(l2, scid) for scid in l2_scids]
+    assert not l2.daemon.is_in_log("Adjusted fees")
+
+    # Sending another 20% must now trigger because the imbalance
+    pay(l1, l3, amount)
+    l2.daemon.wait_for_log("Adjusted fees")
+
+    # Bringing it back must cause default fees
+    pay(l3, l1, amount)
+    l2.daemon.wait_for_log('Set default fees as imbalance is too low')
