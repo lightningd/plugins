@@ -105,15 +105,6 @@ def init(options: dict, configuration: dict, plugin: Plugin, **kwargs):
     plugin.adj_basefee = config["fee-base"]
     plugin.adj_ppmfee = config["fee-per-satoshi"]
 
-    for peer in plugin.rpc.listpeers()["peers"]:
-        if len(peer["channels"]) == 0:
-            continue
-        chan = peer["channels"][0]
-        if "short_channel_id" not in chan:
-            continue
-        if chan["state"] != "CHANNELD_NORMAL":
-            continue
-
     plugin.log("Plugin feeadjuster initialized ({} base / {} ppm) with a "
                "threshold of {}"
                .format(plugin.adj_basefee, plugin.adj_ppmfee,
