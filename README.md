@@ -14,6 +14,7 @@ Community curated plugins for c-lightning.
 | [donations][donations]             | A simple donations page to accept donations from the web                                  |
 | [drain][drain]                     | Draining, filling and balancing channels with automatic chunks.                           |
 | [event-websocket][event-websocket] | Exposes notifications over a Websocket                                                    |
+| [feeadjuster][feeadjuster]         | Dynamic fees to keep your channels more balanced                                          |
 | [graphql][graphql]                 | Exposes the c-lightning API over [graphql][graphql-spec]                                  |
 | [invoice-queue][invoice-queue]     | Listen to lightning invoices from multiple nodes and send to a redis queue for processing |
 | [lightning-qt][lightning-qt]       | A bitcoin-qt-like GUI for lightningd                                                      |
@@ -171,3 +172,4 @@ your environment.
 [event-websocket]: https://github.com/rbndg/c-lightning-events
 [invoice-queue]: https://github.com/rbndg/Lightning-Invoice-Queue
 [boltz]: https://github.com/BoltzExchange/channel-creation-plugin
+[feeadjuster]: https://github.com/lightningd/plugins/tree/master/feeadjuster
