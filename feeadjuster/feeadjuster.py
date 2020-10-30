@@ -28,6 +28,12 @@ def maybe_adjust_fees(plugin: Plugin, scids: list):
         percentage = our / total
         last_percentage = plugin.adj_balances[scid].get("last_percentage")
 
+        # reset to normal fees if imbalance is not high enough
+        if (percentage > plugin.imbalance and percentage < 1 - plugin.imbalance):
+            plugin.rpc.setchannelfee(scid)  # applies default values
+            plugin.log("Set default fees as imbalance is too low: {}".format(scid))
+            return
+
         # Only update on substantial balance moves to avoid flooding, and add
         # some pseudo-randomness to avoid too easy channel balance probing
         update_threshold = plugin.update_threshold
@@ -101,14 +107,22 @@ def init(options: dict, configuration: dict, plugin: Plugin, **kwargs):
     plugin.our_node_id = plugin.rpc.getinfo()["id"]
     plugin.deactivate_fuzz = options.get("feeadjuster-deactivate-fuzz", False)
     plugin.update_threshold = float(options.get("feeadjuster-threshold", "0.05"))
+    plugin.imbalance = float(options.get("feeadjuster-imbalance", 0.5))
     config = plugin.rpc.listconfigs()
     plugin.adj_basefee = config["fee-base"]
     plugin.adj_ppmfee = config["fee-per-satoshi"]
 
-    plugin.log("Plugin feeadjuster initialized ({} base / {} ppm) with a "
-               "threshold of {}"
-               .format(plugin.adj_basefee, plugin.adj_ppmfee,
-                       plugin.update_threshold))
+    # normalize the imbalance percentage value to 0%-50%
+    if plugin.imbalance < 0 or plugin.imbalance > 1:
+        raise ValueError("feeadjuster-imbalance must be between 0 and 1.")
+    if plugin.imbalance > 0.5:
+        plugin.imbalance = 1 - plugin.imbalance
+
+    plugin.log("Plugin feeadjuster initialized ({} base / {} ppm) with an "
+               "imbalance of {}%/{}%".format(plugin.adj_basefee,
+                                           plugin.adj_ppmfee,
+                                           int(100*plugin.imbalance),
+                                           int(100*(1-plugin.imbalance))))
 
 
 plugin.add_option(
@@ -122,6 +136,15 @@ plugin.add_option(
     "0.05",
     "Channel balance update threshold at which to trigger an update. "
     "Note: it's also fuzzed by 1.5%",
+    "string"
+)
+plugin.add_option(
+    "feeadjuster-imbalance",
+    "0.5",
+    "Ratio at which channel imbalance the feeadjuster should start acting. "
+    "Default: 0.5 (always). Set higher or lower values to limit feeadjuster's "
+    "activity to more imbalanced channels. "
+    "E.g. 0.3 for '70/30'% or 0.6 for '40/60'%.",
     "string"
 )
 plugin.run()
