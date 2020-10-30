@@ -24,7 +24,7 @@ def test_feeadjuster_starts(node_factory):
     # Then statically
     l1.daemon.opts["plugin"] = plugin_path
     l1.start()
-    assert l1.daemon.is_in_log("Plugin feeadjuster initialized.*")
+    l1.daemon.wait_for_log("Plugin feeadjuster initialized.*")
 
 
 def get_chan_fees(l, scid):
