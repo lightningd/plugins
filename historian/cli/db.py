@@ -35,6 +35,8 @@ def merge(source, destination):
                 total=meta['channel_announcements'],
         ):
             msg = parse(r)
+            if isinstance(r, memoryview):
+                r = bytes(r)
             target.merge(ChannelAnnouncement.from_gossip(msg, r))
 
         for r, in tqdm(
@@ -42,6 +44,8 @@ def merge(source, destination):
                 total=meta['channel_updates'],
         ):
             msg = parse(r)
+            if isinstance(r, memoryview):
+                r = bytes(r)
             target.merge(ChannelUpdate.from_gossip(msg, r))
 
         for r, in tqdm(
@@ -49,6 +53,8 @@ def merge(source, destination):
                 total=meta['node_announcements'],
         ):
             msg = parse(r)
+            if isinstance(r, memoryview):
+                r = bytes(r)
             target.merge(NodeAnnouncement.from_gossip(msg, r))
 
         target.commit()
