@@ -86,7 +86,7 @@ def start_probe(plugin):
 
 
 @plugin.async_method('probe')
-def probe(plugin, request, node_id=None, **kwargs):
+def probe(plugin, request, node_id=None, amount='10sat', **kwargs):
     res = None
     if node_id is None:
         nodes = plugin.rpc.listnodes()['nodes']
@@ -103,7 +103,7 @@ def probe(plugin, request, node_id=None, **kwargs):
     try:
         route = plugin.rpc.getroute(
             node_id,
-            msatoshi=10000,
+            msatoshi=amount,
             riskfactor=1,
             exclude=exclusions + list(temporary_exclusions.keys())
         )['route']
