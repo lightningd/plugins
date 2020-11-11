@@ -189,7 +189,7 @@ def complete_probe(plugin, request, probe_id, payment_hash):
         error = e.error['data']
         p.erring_channel = e.error['data']['erring_channel']
         p.failcode = e.error['data']['failcode']
-        p.error = json.dumps(error)
+        p.error = json.dumps(error, cls=LightningJSONEncoder)
 
     if p.failcode in [16392, 16394]:
         exclusion = "{erring_channel}/{erring_direction}".format(**error)
@@ -288,4 +288,14 @@ plugin.add_option(
     '1800',
     'How many seconds should temporarily failed channels be excluded?'
 )
+
+class LightningJSONEncoder(json.JSONEncoder):
+    def default(self, o):
+        try:
+            return o.to_json()
+        except NameError:
+            pass
+        return json.JSONEncoder.default(self, o)
+
+
 plugin.run()
