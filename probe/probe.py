@@ -114,7 +114,9 @@ def probe(plugin, request, node_id=None, **kwargs):
         p.failcode = -1
         res = p.jsdict()
         s.commit()
-        return request.set_result(res) if request else None
+        if request is not None:
+            request.set_result(res)
+        return
 
     s.commit()
     plugin.rpc.sendpay(route, p.payment_hash)
