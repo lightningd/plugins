@@ -108,7 +108,8 @@ def probe(plugin, request, node_id=None, **kwargs):
             exclude=exclusions + list(temporary_exclusions.keys())
         )['route']
         p.route = ','.join([r['channel'] for r in route])
-        p.payment_hash = ''.join(choice(string.hexdigits) for _ in range(64))
+        p.payment_hash = ''.join(choice(string.hexdigits) for _ in range(64)).lower()
+        print(f"Got a route to {node_id} for payment_hash={p.payment_hash}")
     except RpcError:
         p.failcode = -1
         res = p.jsdict()
@@ -213,18 +214,23 @@ def complete_probe(plugin, request, probe_id, payment_hash):
     request.set_result(res)
 
 
-def poll_payments(plugin):
-    """Iterate through all probes and complete the finalized ones.
-    """
-    for probe in plugin.pending_probes:
-        p = plugin.rpc.listsendpays(None, payment_hash=probe['payment_hash'])
-        if p['payments'][0]['status'] == 'pending':
-            continue
+@plugin.subscribe('sendpay_failure')
+def on_sendpay_failure(sendpay_failure, plugin, **kwargs):
+    payment_hash = sendpay_failure['data']['payment_hash']
 
-        plugin.pending_probes.remove(probe)
-        cb = probe['callback']
-        del probe['callback']
-        cb(**probe)
+    # Go look format a pending probe
+    probes = [p for p in plugin.pending_probes if p['payment_hash'] == payment_hash]
+    if len(probes) != 1:
+        print(f"No matching probe found for payment_hash={payment_hash}")
+        return
+
+    p = probes[0]
+    print(f"Found a pending probe for payment_hash={payment_hash}")
+    plugin.pending_probes.remove(p)
+    cb = p['callback']
+    del p['callback']
+    cb(**p)
+
 
 def clear_temporary_exclusion(plugin):
     timed_out = [k for k, v in temporary_exclusions.items() if v < time()]
@@ -240,7 +246,6 @@ def schedule(plugin):
     # List of scheduled calls with next runtime, function and interval
     next_runs = [
         (time() + plugin.probe_interval, start_probe, plugin.probe_interval),
-        (time() + 1, poll_payments, 1),
     ]
     heapq.heapify(next_runs)
 
