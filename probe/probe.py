@@ -92,6 +92,11 @@ def probe(plugin, request, node_id=None, **kwargs):
         nodes = plugin.rpc.listnodes()['nodes']
         node_id = choice(nodes)['nodeid']
 
+    print(f"Starting a new probe to {node_id}")
+
+    # Amortized clearing of temporary exclusions.
+    clear_temporary_exclusion(plugin)
+
     s = plugin.Session()
     p = Probe(destination=node_id, started_at=datetime.now())
     s.add(p)
@@ -234,7 +239,6 @@ def clear_temporary_exclusion(plugin):
 def schedule(plugin):
     # List of scheduled calls with next runtime, function and interval
     next_runs = [
-        (time() + 300, clear_temporary_exclusion, 300),
         (time() + plugin.probe_interval, start_probe, plugin.probe_interval),
         (time() + 1, poll_payments, 1),
     ]
