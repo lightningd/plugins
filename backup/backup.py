@@ -335,10 +335,6 @@ def on_init(options: Mapping[str, str], plugin: Plugin, **kwargs):
         apply_write(plugin, c)
 
 
-plugin.add_option(
-    'backup-destination', None,
-    'Destination of the database backups (file:///filename/on/another/disk/).'
-)
 
 
 def kill(message: str):
@@ -365,6 +361,12 @@ def preflight(plugin: Plugin):
     """
     if not os.path.exists("backup.lock"):
         kill("Could not find backup.lock in the lightning-dir")
+
+plugin.add_option(
+    'backup-destination', None,
+    'UNUSED. Kept for backward compatibility only. Please update your configuration to remove this option.'
+)
+
 
 if __name__ == "__main__":
     preflight(plugin)
