@@ -59,6 +59,7 @@ temporary_exclusions = {}
 class Probe(Base):
     __tablename__ = "probes"
     id = Column(Integer, primary_key=True)
+    amount = Column(String)
     destination = Column(String)
     route = Column(String)
     error = Column(String)
@@ -72,6 +73,7 @@ class Probe(Base):
         return {
             'id': self.id,
             'destination': self.destination,
+            'amount': self.amount,
             'route': self.route,
             'erring_channel': self.erring_channel,
             'failcode': self.failcode,
@@ -98,7 +100,7 @@ def probe(plugin, request, node_id=None, amount='10sat', **kwargs):
     clear_temporary_exclusion(plugin)
 
     s = plugin.Session()
-    p = Probe(destination=node_id, started_at=datetime.now())
+    p = Probe(destination=node_id, started_at=datetime.now(), amount=str(amount))
     s.add(p)
     try:
         route = plugin.rpc.getroute(
