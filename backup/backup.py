@@ -289,52 +289,14 @@ def check_first_write(plugin, data_version):
 @plugin.hook('db_write')
 def on_db_write(writes, data_version, plugin, **kwargs):
     change = Change(data_version, None, writes)
-    if not hasattr(plugin, 'backend'):
-        plugin.early_writes.append(change)
-        return {"result": "continue"}
-    else:
-        return apply_write(plugin, change)
-
-
-def apply_write(plugin, change):
     if not plugin.initialized:
         assert(check_first_write(plugin, change.version))
         plugin.initialized = True
 
     if plugin.backend.add_change(change):
         return {"result": "continue"}
-
-
-@plugin.init()
-def on_init(options: Mapping[str, str], plugin: Plugin, **kwargs):
-    # Reach into the DB and
-    configs = plugin.rpc.listconfigs()
-    plugin.db_path = configs['wallet']
-    destination = options['backup-destination']
-
-    # Ensure that we don't inadventently switch the destination
-    if not os.path.exists("backup.lock"):
-        print("Files in the current directory {}".format(", ".join(os.listdir("."))))
-        kill("Could not find backup.lock in the lightning-dir, have you initialized using the backup-cli utility?")
-
-    d = json.load(open("backup.lock", 'r'))
-    if destination is None or destination == 'null':
-        destination = d['backend_url']
-    elif destination != d['backend_url']:
-        kill(
-            "The destination specified as option does not match the one "
-            "specified in backup.lock. Please check your settings"
-        )
-
-    if not plugin.db_path.startswith('sqlite3'):
-        kill("The backup plugin only works with the sqlite3 database.")
-
-    plugin.backend = get_backend(destination, require_init=True)
-
-    for c in plugin.early_writes:
-        apply_write(plugin, c)
-
-
+    else:
+        kill("Could not append DB change to the backup. Need to shutdown!")
 
 
 def kill(message: str):
@@ -356,11 +318,6 @@ def kill(message: str):
         time.sleep(30)
 
 
-def preflight(plugin: Plugin):
-    """Perform some preflight checks.
-    """
-    if not os.path.exists("backup.lock"):
-        kill("Could not find backup.lock in the lightning-dir")
 
 plugin.add_option(
     'backup-destination', None,
@@ -369,8 +326,12 @@ plugin.add_option(
 
 
 if __name__ == "__main__":
-    preflight(plugin)
-    # Did we perform the version check of backend versus the first write?
+    # Did we perform the first write check?
     plugin.initialized = False
-    plugin.early_writes = []
+    if not os.path.exists("backup.lock"):
+        kill("Could not find backup.lock in the lightning-dir")
+
+    d = json.load(open("backup.lock", 'r'))
+    destination = d['backend_url']
+    plugin.backend = get_backend(destination, require_init=True)
     plugin.run()
