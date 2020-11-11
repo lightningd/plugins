@@ -11,6 +11,8 @@ plugin_dir = os.path.dirname(__file__)
 plugin_path = os.path.join(plugin_dir, "backup.py")
 cli_path = os.path.join(os.path.dirname(__file__), "backup-cli")
 
+# For the transition period we require deprecated_apis to be true
+deprecated_apis = True
 
 def test_start(node_factory, directory):
     bpath = os.path.join(directory, 'lightning-1', 'regtest')
@@ -19,16 +21,17 @@ def test_start(node_factory, directory):
     subprocess.check_call([cli_path, "init", bpath, bdest])
     opts = {
         'plugin': plugin_path,
-        'backup-destination': bdest,
+        'allow-deprecated-apis': deprecated_apis,
         }
     l1 = node_factory.get_node(options=opts, cleandir=False)
-
-    l1.daemon.wait_for_log(r'backup.py')
+    plugins = [os.path.basename(p['name']) for p in l1.rpc.plugin("list")['plugins']]
+    assert("backup.py" in plugins)
 
     # Restart the node a couple of times, to check that we can resume normally
     for i in range(5):
         l1.restart()
-        l1.daemon.wait_for_log(r'Versions match up')
+        plugins = [os.path.basename(p['name']) for p in l1.rpc.plugin("list")['plugins']]
+        assert("backup.py" in plugins)
 
 
 def test_start_no_init(node_factory, directory):
@@ -39,7 +42,6 @@ def test_start_no_init(node_factory, directory):
     os.makedirs(bpath)
     opts = {
         'plugin': plugin_path,
-        'backup-destination': bdest,
     }
     l1 = node_factory.get_node(
         options=opts, cleandir=False, may_fail=True, start=False
@@ -70,8 +72,9 @@ def test_init_not_empty(node_factory, directory):
 
     # Now restart and add the plugin
     l1.daemon.opts['plugin'] = plugin_path
+    l1.daemon.opts['allow-deprecated-apis'] = deprecated_apis
     l1.start()
-    l1.daemon.wait_for_log(r'plugin-backup.py: Versions match up')
+    assert(l1.daemon.is_in_log(r'plugin-backup.py: Versions match up'))
 
 
 def test_tx_abort(node_factory, directory):
@@ -90,7 +93,7 @@ def test_tx_abort(node_factory, directory):
     subprocess.check_call([cli_path, "init", bpath, bdest])
     opts = {
         'plugin': plugin_path,
-        'backup-destination': bdest,
+        'allow-deprecated-apis': deprecated_apis,
         }
     l1 = node_factory.get_node(options=opts, cleandir=False)
     l1.stop()
@@ -103,7 +106,7 @@ def test_tx_abort(node_factory, directory):
     print(l1.db.query("SELECT * FROM vars;"))
 
     l1.restart()
-    l1.daemon.wait_for_log(r'Last changes not applied')
+    assert(l1.daemon.is_in_log(r'Last changes not applied'))
 
 
 @flaky
@@ -120,7 +123,7 @@ def test_failing_restore(node_factory, directory):
     subprocess.check_call([cli_path, "init", bpath, bdest])
     opts = {
         'plugin': plugin_path,
-        'backup-destination': bdest,
+        'allow-deprecated-apis': deprecated_apis,
         }
 
     def section(comment):
@@ -153,13 +156,12 @@ def test_intermittent_backup(node_factory, directory):
     subprocess.check_call([cli_path, "init", bpath, bdest])
     opts = {
         'plugin': plugin_path,
-        'backup-destination': bdest,
+        'allow-deprecated-apis': deprecated_apis,
         }
     l1 = node_factory.get_node(options=opts, cleandir=False, may_fail=True)
 
     # Now start without the plugin. This should work fine.
     del l1.daemon.opts['plugin']
-    del l1.daemon.opts['backup-destination']
     l1.restart()
 
     # Now restart adding the plugin again, and it should fail due to gaps in
@@ -180,7 +182,7 @@ def test_restore(node_factory, directory):
     subprocess.check_call([cli_path, "init", bpath, bdest])
     opts = {
         'plugin': plugin_path,
-        'backup-destination': bdest,
+        'allow-deprecated-apis': deprecated_apis,
         }
     l1 = node_factory.get_node(options=opts, cleandir=False)
     l1.stop()
