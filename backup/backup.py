@@ -299,6 +299,23 @@ def on_db_write(writes, data_version, plugin, **kwargs):
         kill("Could not append DB change to the backup. Need to shutdown!")
 
 
+@plugin.init()
+def on_init(options, **kwargs):
+    dest = options.get('backup-destination', 'null')
+    if dest != 'null':
+        plugin.log(
+            "The `--backup-destination` option is deprecated and will be "
+            "removed in future versions of the backup plugin. Please remove "
+            "it from your configuration. The destination is now determined by "
+            "the `backup.lock` file in the lightning directory",
+            level="warn"
+        )
+
+    configs = plugin.rpc.listconfigs()
+    if not configs['wallet'].startswith('sqlite3'):
+        kill("The backup plugin only works with the sqlite3 database.")
+
+
 def kill(message: str):
     plugin.log(message)
     time.sleep(1)
