@@ -53,14 +53,15 @@ class PeerThread(threading.Thread):
 
 
 class PriceThread(threading.Thread):
-    def __init__(self):
+    def __init__(self, proxies):
         super().__init__()
         self.daemon = True
+        self.proxies = proxies
 
     def run(self):
         while True:
             try:
-                r = requests.get('https://www.bitstamp.net/api/v2/ticker/BTC{}'.format(plugin.currency))
+                r = requests.get('https://www.bitstamp.net/api/v2/ticker/BTC{}'.format(plugin.currency), proxies=self.proxies)
                 plugin.fiat_per_btc = float(r.json()['last'])
             except Exception as ex:
                 plugin.log("[PriceThread] " + str(ex), 'warn')
@@ -232,11 +233,21 @@ def init(options, configuration, plugin):
         plugin.persist['availcount'] = 0
 
     info = plugin.rpc.getinfo()
+    config = plugin.rpc.listconfigs()
+    if 'always-use-proxy' in config:
+        paddr = config['proxy']
+        # Default port in 9050
+        if ':' not in paddr:
+            paddr += ':9050'
+        proxies = { 'https': 'socks5h://' + paddr,
+                    'http': 'socks5h://' + paddr }
+    else:
+        proxies = None
 
     # Measure availability
     PeerThread().start()
     # Try to grab conversion price
-    PriceThread().start()
+    PriceThread(proxies).start()
 
     # Prefer IPv4, otherwise take any to give out address.
     best_address = None
