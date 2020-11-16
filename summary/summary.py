@@ -61,7 +61,14 @@ class PriceThread(threading.Thread):
     def run(self):
         while True:
             try:
-                r = requests.get('https://www.bitstamp.net/api/v2/ticker/BTC{}'.format(plugin.currency), proxies=self.proxies)
+                # NOTE: Bitstamp has a DNS/Proxy issues that can return 404
+                # Workaround: retry up to 5 times with a delay
+                for _ in range(5):
+                    r = requests.get('https://www.bitstamp.net/api/v2/ticker/BTC{}'.format(plugin.currency), proxies=self.proxies)
+                    if not r.status_code == 200:
+                        time.sleep(1)
+                        continue
+                    break
                 plugin.fiat_per_btc = float(r.json()['last'])
             except Exception as ex:
                 plugin.log("[PriceThread] " + str(ex), 'warn')
