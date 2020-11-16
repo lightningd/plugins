@@ -234,7 +234,7 @@ def init(options, configuration, plugin):
 
     info = plugin.rpc.getinfo()
     config = plugin.rpc.listconfigs()
-    if 'always-use-proxy' in config:
+    if 'always-use-proxy' in config and config['always-use-proxy']:
         paddr = config['proxy']
         # Default port in 9050
         if ':' not in paddr:
