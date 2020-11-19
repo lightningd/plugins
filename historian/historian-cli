@@ -23,6 +23,7 @@ from pyln.proto import wire
 from cli.backup import backup
 from cli.db import db
 from common import db_session, default_db, stream_snapshot_since
+import json
 
 
 @click.group()
@@ -242,8 +243,27 @@ def split_gossip(reader: io.BytesIO):
 
 @snapshot.command()
 @click.argument("snapshot", type=click.File("rb"))
-@click.argument("destination", type=LightningAddressParam())
-def load(snapshot, destination):
+@click.argument("destination", type=LightningAddressParam(), required=False)
+def load(snapshot, destination=None):
+
+    if destination is None:
+        logging.debug("No destination specified, attempting auto-discovery")
+        info = json.loads(subprocess.check_output(["lightning-cli", "getinfo"]))
+        id = info["id"]
+        bindings = [
+            (id, b["address"], b["port"])
+            for b in info["binding"]
+            if b["type"] == "ipv4"
+        ]
+        if len(bindings) < 1:
+            raise ValueError(
+                "Could not automatically determine the c-lightning"
+                " address to connect to. Please provide a --destination"
+            )
+        binding = bindings[0]
+        logging.debug("Discovered local node {}@{}:{}".format(*binding))
+        destination = LightningAddress(*binding)
+
     header = snapshot.read(4)
     if len(header) < 4:
         raise ValueError("Could not read header")
