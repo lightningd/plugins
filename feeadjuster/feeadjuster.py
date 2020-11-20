@@ -112,15 +112,19 @@ def forward_event(plugin: Plugin, forward_event: dict, **kwargs):
 def forcefeeadjust(plugin: Plugin):
     """Adjust fees for all existing channels.
 
-    Can run effectively only once as an initial setup. After that, the plugin keeps the fees up-to-date.
+    Can run effectively once as an initial setup, or after a successful payment. Otherwise, the plugin keeps the fees up-to-date.
     """
     peers = plugin.rpc.listpeers()["peers"]
     channels_adjusted = 0
     for peer in peers:
         for chan in peer["channels"]:
             if chan["state"] == "CHANNELD_NORMAL":
-                maybe_add_new_balances(plugin, [chan['short_channel_id']])
-                channels_adjusted += maybe_adjust_fees(plugin, [chan['short_channel_id']])
+                scid = chan['short_channel_id'];
+                if scid not in plugin.adj_balances:
+                    plugin.adj_balances[scid] = {}
+                plugin.adj_balances[scid]["our"] = int(chan["to_us_msat"])
+                plugin.adj_balances[scid]["total"] = int(chan["total_msat"])
+                channels_adjusted += maybe_adjust_fees(plugin, [scid])
     return "%s channels adjusted" % channels_adjusted
 
 
