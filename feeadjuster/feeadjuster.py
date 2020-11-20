@@ -13,45 +13,51 @@ plugin.our_node_id = None
 plugin.update_threshold = 0.05
 
 
-def get_ratio(our_percentage):
+def get_ratio(plugin: Plugin, our_percentage):
     """
     Basic algorithm: the farther we are from the optimal case, the more we
     bump/lower.
     """
-    return 50**(0.5 - our_percentage)
+    return plugin.ratio_base**(0.5 - our_percentage)
 
 
 def maybe_adjust_fees(plugin: Plugin, scids: list):
+    channels_adjusted = 0
     for scid in scids:
         our = plugin.adj_balances[scid]["our"]
         total = plugin.adj_balances[scid]["total"]
         percentage = our / total
         last_percentage = plugin.adj_balances[scid].get("last_percentage")
 
-        # reset to normal fees if imbalance is not high enough
-        if (percentage > plugin.imbalance and percentage < 1 - plugin.imbalance):
-            plugin.rpc.setchannelfee(scid)  # applies default values
-            plugin.log("Set default fees as imbalance is too low: {}".format(scid))
-            return
-
         # Only update on substantial balance moves to avoid flooding, and add
         # some pseudo-randomness to avoid too easy channel balance probing
         update_threshold = plugin.update_threshold
         if not plugin.deactivate_fuzz:
             update_threshold += random.uniform(-0.015, 0.015)
+        if (last_percentage is not None
+                and abs(last_percentage - percentage) < update_threshold):
+            continue
 
-        if (last_percentage is None
-                or abs(last_percentage - percentage) > update_threshold):
-            ratio = get_ratio(percentage)
-            try:
-                plugin.rpc.setchannelfee(scid, int(plugin.adj_basefee * ratio),
-                                         int(plugin.adj_ppmfee * ratio))
-                plugin.log("Adjusted fees of {} with a ratio of {}"
-                           .format(scid, ratio))
-                plugin.adj_balances[scid]["last_percentage"] = percentage
-            except RpcError as e:
-                plugin.log("Could not adjust fees for channel {}: '{}'"
-                           .format(scid, e), level="warn")
+        # reset to normal fees if imbalance is not high enough
+        if (percentage > plugin.imbalance and percentage < 1 - plugin.imbalance):
+            plugin.rpc.setchannelfee(scid)  # applies default values
+            plugin.log("Set default fees as imbalance is too low: {}".format(scid))
+            plugin.adj_balances[scid]["last_percentage"] = percentage
+            channels_adjusted += 1
+            continue
+
+        ratio = get_ratio(plugin, percentage)
+        try:
+            plugin.rpc.setchannelfee(scid, int(plugin.adj_basefee * ratio),
+                                     int(plugin.adj_ppmfee * ratio))
+            plugin.log("Adjusted fees of {} with a ratio of {}"
+                       .format(scid, ratio))
+            plugin.adj_balances[scid]["last_percentage"] = percentage
+            channels_adjusted += 1
+        except RpcError as e:
+            plugin.log("Could not adjust fees for channel {}: '{}'"
+                       .format(scid, e), level="warn")
+    return channels_adjusted
 
 
 def get_chan(plugin: Plugin, scid: str):
@@ -102,12 +108,29 @@ def forward_event(plugin: Plugin, forward_event: dict, **kwargs):
             plugin.log("Adjusting fees: " + str(e), level="error")
 
 
+@plugin.method("forcefeeadjust")
+def forcefeeadjust(plugin: Plugin):
+    """Adjust fees for all existing channels.
+
+    Can run effectively only once as an initial setup. After that, the plugin keeps the fees up-to-date.
+    """
+    peers = plugin.rpc.listpeers()["peers"]
+    channels_adjusted = 0
+    for peer in peers:
+        for chan in peer["channels"]:
+            if chan["state"] == "CHANNELD_NORMAL":
+                maybe_add_new_balances(plugin, [chan['short_channel_id']])
+                channels_adjusted += maybe_adjust_fees(plugin, [chan['short_channel_id']])
+    return "%s channels adjusted" % channels_adjusted
+
+
 @plugin.init()
 def init(options: dict, configuration: dict, plugin: Plugin, **kwargs):
     plugin.our_node_id = plugin.rpc.getinfo()["id"]
     plugin.deactivate_fuzz = options.get("feeadjuster-deactivate-fuzz", False)
     plugin.update_threshold = float(options.get("feeadjuster-threshold", "0.05"))
     plugin.imbalance = float(options.get("feeadjuster-imbalance", 0.5))
+    plugin.ratio_base = int(options.get("feeadjuster-ratio-base", "50"))
     config = plugin.rpc.listconfigs()
     plugin.adj_basefee = config["fee-base"]
     plugin.adj_ppmfee = config["fee-per-satoshi"]
@@ -119,10 +142,13 @@ def init(options: dict, configuration: dict, plugin: Plugin, **kwargs):
         plugin.imbalance = 1 - plugin.imbalance
 
     plugin.log("Plugin feeadjuster initialized ({} base / {} ppm) with an "
-               "imbalance of {}%/{}%".format(plugin.adj_basefee,
+               "imbalance of {}%/{}%, update_threshold: {}, deactivate_fuzz: {}, ratio_base {}".format(plugin.adj_basefee,
                                            plugin.adj_ppmfee,
                                            int(100*plugin.imbalance),
-                                           int(100*(1-plugin.imbalance))))
+                                           int(100*(1-plugin.imbalance)),
+                                           plugin.update_threshold,
+                                           plugin.deactivate_fuzz,
+                                           plugin.ratio_base))
 
 
 plugin.add_option(
@@ -136,6 +162,13 @@ plugin.add_option(
     "0.05",
     "Channel balance update threshold at which to trigger an update. "
     "Note: it's also fuzzed by 1.5%",
+    "string"
+)
+plugin.add_option(
+    "feeadjuster-ratio-base",
+    "50",
+    "Channel fees will be adjusted by the exponent of this."
+    "New fee = <default fee> * feeadjuster-ratio-base**(0.5 - <our liquidity ratio>)"
     "string"
 )
 plugin.add_option(
