@@ -27,7 +27,8 @@ def test_drain_and_refill(node_factory, bitcoind):
     scid12 = l1.get_channel_scid(l2)
     scid23 = l2.get_channel_scid(l3)
     scid34 = l3.get_channel_scid(l4)
-    scid41 = l4.fund_channel(l1, 10**6)
+    l4.openchannel(l1, 10**6)
+    scid41 = l4.get_channel_scid(l1)
 
     # disable fees to make circular line graph tests a lot easier
     for n in nodes:
@@ -76,7 +77,8 @@ def test_fill_and_drain(node_factory, bitcoind):
     scid12 = l1.get_channel_scid(l2)
     scid23 = l2.get_channel_scid(l3)
     scid34 = l3.get_channel_scid(l4)
-    scid41 = l4.fund_channel(l1, 10**6)
+    l4.openchannel(l1, 10**6)
+    scid41 = l4.get_channel_scid(l1)
 
     # disable fees to make circular line graph tests a lot easier
     for n in nodes:
@@ -120,7 +122,8 @@ def test_setbalance(node_factory, bitcoind):
     scid12 = l1.get_channel_scid(l2)
     scid23 = l2.get_channel_scid(l3)
     scid34 = l3.get_channel_scid(l4)
-    scid41 = l4.fund_channel(l1, 10**6)
+    l4.openchannel(l1, 10**6)
+    scid41 = l4.get_channel_scid(l1)
 
     # wait for each others gossip
     bitcoind.generate_block(6)
@@ -190,11 +193,16 @@ def test_drain_chunks(node_factory, bitcoind):
     l2.connect(l4)
     l3.connect(l4)
     l4.connect(l1)
-    scid12 = l1.fund_channel(l2, 10**6)
-    scid13 = l1.fund_channel(l3, 10**6)
-    scid24 = l2.fund_channel(l4, 10**6)
-    scid34 = l3.fund_channel(l4, 10**6)
-    scid41 = l4.fund_channel(l1, 11**6)
+    l1.openchannel(l2, 10**6)
+    l1.openchannel(l3, 10**6)
+    l2.openchannel(l4, 10**6)
+    l3.openchannel(l4, 10**6)
+    l4.openchannel(l1, 11**6)
+    scid12 = l1.get_channel_scid(l2)
+    scid13 = l1.get_channel_scid(l3)
+    scid24 = l2.get_channel_scid(l4)
+    scid34 = l3.get_channel_scid(l4)
+    scid41 = l4.get_channel_scid(l1)
     nodes = [l1, l2, l3, l4]
     scids = [scid12, scid13, scid24, scid34, scid41]
 
@@ -268,11 +276,16 @@ def test_fill_chunks(node_factory, bitcoind):
     l2.connect(l4)
     l3.connect(l4)
     l4.connect(l1)
-    scid12 = l1.fund_channel(l2, 10**6)
-    scid13 = l1.fund_channel(l3, 10**6)
-    scid24 = l2.fund_channel(l4, 10**6)
-    scid34 = l3.fund_channel(l4, 10**6)
-    scid41 = l4.fund_channel(l1, 11**6)
+    l1.openchannel(l2, 10**6)
+    l1.openchannel(l3, 10**6)
+    l2.openchannel(l4, 10**6)
+    l3.openchannel(l4, 10**6)
+    l4.openchannel(l1, 11**6)
+    scid12 = l1.get_channel_scid(l2)
+    scid13 = l1.get_channel_scid(l3)
+    scid24 = l2.get_channel_scid(l4)
+    scid34 = l3.get_channel_scid(l4)
+    scid41 = l4.get_channel_scid(l1)
     nodes = [l1, l2, l3, l4]
     scids = [scid12, scid13, scid24, scid34, scid41]
 
