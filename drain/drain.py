@@ -140,7 +140,7 @@ def test_or_set_chunks(plugin, payload):
     cmd = payload['command']
     spendable, receivable = spendable_from_scid(plugin, payload)
     total = spendable + receivable
-    amount = total * 0.01 * payload['percentage']
+    amount = Millisatoshi(int(int(total) * (0.01 * payload['percentage'])))
 
     # if capacity exceeds, limit amount to full or empty channel
     if cmd == "drain" and amount > spendable:
@@ -345,7 +345,7 @@ def read_params(command: str, scid: str, percentage: float,
     if command == 'setbalance':
         spendable, receivable = spendable_from_scid(plugin, payload)
         total = spendable + receivable
-        target = total * 0.01 * payload['percentage']
+        target = Millisatoshi(int(int(total) * (0.01 * payload['percentage'])))
         if target == spendable:
             raise RpcError(payload['command'], payload, {'message': 'target already reached, nothing to do.'})
         if spendable > target:
@@ -373,7 +373,7 @@ def execute(payload: dict):
         # as fees from previous chunks affect reserves
         spendable, receivable = spendable_from_scid(plugin, payload)
         total = spendable + receivable
-        amount = total * 0.01 * payload['percentage'] / payload['chunks']
+        amount = Millisatoshi(int(int(total) * (0.01 * payload['percentage'] / payload['chunks'])))
         if amount == Millisatoshi(0):
             raise RpcError(payload['command'], payload, {'message': 'Cannot process chunk. Amount would be 0msat.'})
 
