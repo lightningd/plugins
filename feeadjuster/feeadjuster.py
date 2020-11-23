@@ -13,12 +13,53 @@ plugin.our_node_id = None
 plugin.update_threshold = 0.05
 
 
-def get_ratio(plugin: Plugin, our_percentage):
+def get_ratio_soft(our_percentage):
+    """
+    Basic algorithm: lesser difference than default
+    """
+    our_percentage = min(1, max(0, our_percentage))
+    return 10**(0.5 - our_percentage)
+
+
+def get_ratio(our_percentage):
     """
     Basic algorithm: the farther we are from the optimal case, the more we
     bump/lower.
     """
-    return plugin.ratio_base**(0.5 - our_percentage)
+    our_percentage = min(1, max(0, our_percentage))
+    return 50**(0.5 - our_percentage)
+
+
+def get_ratio_hard(our_percentage):
+    """
+    Return value is between 0 and 20: 0 -> 20; 0.5 -> 1; 1 -> 0
+    """
+    our_percentage = min(1, max(0, our_percentage))
+    return 100**(0.5 - our_percentage) * (1 - our_percentage) * 2
+
+
+def get_chan_fees(plugin: Plugin, scid: str):
+    channels = plugin.rpc.listchannels(scid)["channels"]
+    for ch in channels:
+        if ch["source"] == plugin.our_node_id:
+            return { "base_fee_millisatoshi": ch["base_fee_millisatoshi"],
+                     "fee_per_millionth": ch["fee_per_millionth"] }
+
+
+def maybe_setchannelfee(plugin: Plugin, scid: str, base = None, ppm = None):
+    base = plugin.adj_basefee if base is None else base
+    ppm = plugin.adj_ppmfee if ppm is None else ppm
+    fees = get_chan_fees(plugin, scid)
+
+    if not fees or base == fees["base_fee_millisatoshi"] and ppm == fees["fee_per_millionth"]:
+        return False
+
+    try:
+        plugin.rpc.setchannelfee(scid, base, ppm)
+        return True
+    except RpcError as e:
+        plugin.log("Could not adjust fees for channel {}: '{}'".format(scid, e), level="warn")
+    return False
 
 
 def maybe_adjust_fees(plugin: Plugin, scids: list):
@@ -29,6 +70,14 @@ def maybe_adjust_fees(plugin: Plugin, scids: list):
         percentage = our / total
         last_percentage = plugin.adj_balances[scid].get("last_percentage")
 
+        # reset to normal fees if imbalance is not high enough
+        if (percentage > plugin.imbalance and percentage < 1 - plugin.imbalance):
+            if maybe_setchannelfee(plugin, scid):  # applies default values
+                plugin.log("Set default fees as imbalance is too low: {}".format(scid))
+                plugin.adj_balances[scid]["last_percentage"] = percentage
+                channels_adjusted += 1
+            continue
+
         # Only update on substantial balance moves to avoid flooding, and add
         # some pseudo-randomness to avoid too easy channel balance probing
         update_threshold = plugin.update_threshold
@@ -38,25 +87,13 @@ def maybe_adjust_fees(plugin: Plugin, scids: list):
                 and abs(last_percentage - percentage) < update_threshold):
             continue
 
-        # reset to normal fees if imbalance is not high enough
-        if (percentage > plugin.imbalance and percentage < 1 - plugin.imbalance):
-            plugin.rpc.setchannelfee(scid)  # applies default values
-            plugin.log("Set default fees as imbalance is too low: {}".format(scid))
-            plugin.adj_balances[scid]["last_percentage"] = percentage
-            channels_adjusted += 1
-            continue
-
-        ratio = get_ratio(plugin, percentage)
-        try:
-            plugin.rpc.setchannelfee(scid, int(plugin.adj_basefee * ratio),
-                                     int(plugin.adj_ppmfee * ratio))
+        ratio = plugin.get_ratio(percentage)
+        if maybe_setchannelfee(plugin, scid, int(plugin.adj_basefee * ratio),
+                               int(plugin.adj_ppmfee * ratio)):
             plugin.log("Adjusted fees of {} with a ratio of {}"
                        .format(scid, ratio))
             plugin.adj_balances[scid]["last_percentage"] = percentage
             channels_adjusted += 1
-        except RpcError as e:
-            plugin.log("Could not adjust fees for channel {}: '{}'"
-                       .format(scid, e), level="warn")
     return channels_adjusted
 
 
@@ -108,24 +145,27 @@ def forward_event(plugin: Plugin, forward_event: dict, **kwargs):
             plugin.log("Adjusting fees: " + str(e), level="error")
 
 
-@plugin.method("forcefeeadjust")
-def forcefeeadjust(plugin: Plugin):
+@plugin.method("feeadjust")
+def feeadjust(plugin: Plugin):
     """Adjust fees for all existing channels.
 
-    Can run effectively once as an initial setup, or after a successful payment. Otherwise, the plugin keeps the fees up-to-date.
+    This method is automatically called in plugin init, or can be called manually after a successful payment.
+    Otherwise, the plugin keeps the fees up-to-date.
     """
     peers = plugin.rpc.listpeers()["peers"]
     channels_adjusted = 0
     for peer in peers:
         for chan in peer["channels"]:
             if chan["state"] == "CHANNELD_NORMAL":
-                scid = chan['short_channel_id'];
-                if scid not in plugin.adj_balances:
-                    plugin.adj_balances[scid] = {}
-                plugin.adj_balances[scid]["our"] = int(chan["to_us_msat"])
-                plugin.adj_balances[scid]["total"] = int(chan["total_msat"])
+                scid = chan["short_channel_id"];
+                plugin.adj_balances[scid] = {
+                    "our": int(chan["to_us_msat"]),
+                    "total": int(chan["total_msat"])
+                }
                 channels_adjusted += maybe_adjust_fees(plugin, [scid])
-    return "%s channels adjusted" % channels_adjusted
+    msg = "%s channels adjusted" % channels_adjusted
+    plugin.log(msg)
+    return msg
 
 
 @plugin.init()
@@ -134,7 +174,11 @@ def init(options: dict, configuration: dict, plugin: Plugin, **kwargs):
     plugin.deactivate_fuzz = options.get("feeadjuster-deactivate-fuzz", False)
     plugin.update_threshold = float(options.get("feeadjuster-threshold", "0.05"))
     plugin.imbalance = float(options.get("feeadjuster-imbalance", 0.5))
-    plugin.ratio_base = int(options.get("feeadjuster-ratio-base", "50"))
+    plugin.get_ratio = get_ratio
+    if options.get("feeadjuster-adjustment-method", "default") == "soft":
+        plugin.get_ratio = get_ratio_soft
+    if options.get("feeadjuster-adjustment-method", "default") == "hard":
+        plugin.get_ratio = get_ratio_hard
     config = plugin.rpc.listconfigs()
     plugin.adj_basefee = config["fee-base"]
     plugin.adj_ppmfee = config["fee-per-satoshi"]
@@ -146,13 +190,15 @@ def init(options: dict, configuration: dict, plugin: Plugin, **kwargs):
         plugin.imbalance = 1 - plugin.imbalance
 
     plugin.log("Plugin feeadjuster initialized ({} base / {} ppm) with an "
-               "imbalance of {}%/{}%, update_threshold: {}, deactivate_fuzz: {}, ratio_base {}".format(plugin.adj_basefee,
-                                           plugin.adj_ppmfee,
-                                           int(100*plugin.imbalance),
-                                           int(100*(1-plugin.imbalance)),
-                                           plugin.update_threshold,
-                                           plugin.deactivate_fuzz,
-                                           plugin.ratio_base))
+               "imbalance of {}%/{}%, update_threshold: {}, deactivate_fuzz: {}, adjustment_method: {}"
+               .format(plugin.adj_basefee,
+                   plugin.adj_ppmfee,
+                   int(100*plugin.imbalance),
+                   int(100*(1-plugin.imbalance)),
+                   plugin.update_threshold,
+                   plugin.deactivate_fuzz,
+                   plugin.get_ratio))
+    feeadjust(plugin)
 
 
 plugin.add_option(
@@ -169,10 +215,10 @@ plugin.add_option(
     "string"
 )
 plugin.add_option(
-    "feeadjuster-ratio-base",
-    "50",
-    "Channel fees will be adjusted by the exponent of this."
-    "New fee = <default fee> * feeadjuster-ratio-base**(0.5 - <our liquidity ratio>)"
+    "feeadjuster-adjustment-method",
+    "default",
+    "Adjustment method to calculate channel fee"
+    "Can be 'default', 'soft' for less difference or 'hard' for higher difference"
     "string"
 )
 plugin.add_option(
