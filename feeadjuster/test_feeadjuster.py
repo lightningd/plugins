@@ -33,6 +33,16 @@ def get_chan_fees(l, scid):
             return (half["base_fee_millisatoshi"], half["fee_per_millionth"])
 
 
+def wait_for_fees(l, scids, fees):
+    for scid in scids:
+        wait_for(lambda: get_chan_fees(l, scid) == fees)
+
+
+def wait_for_not_fees(l, scids, fees):
+    for scid in scids:
+        wait_for(lambda: not get_chan_fees(l, scid) == fees)
+
+
 def pay(l, ll, amount):
     label = ''.join(random.choices(string.ascii_letters, k=20))
     invoice = ll.rpc.invoice(amount, label, "desc")
@@ -41,8 +51,12 @@ def pay(l, ll, amount):
     l.rpc.waitsendpay(invoice["payment_hash"])
 
 
-def sync_gossip(l, ll, scid):
-    wait_for(lambda: l.rpc.listchannels(scid) == ll.rpc.listchannels(scid))
+def sync_gossip(nodes, scids):
+    node = nodes[0]
+    nodes = nodes[1:]
+    for scid in scids:
+        for n in nodes:
+            wait_for(lambda: node.rpc.listchannels(scid) == n.rpc.listchannels(scid))
 
 
 @unittest.skipIf(not DEVELOPER, "Too slow without fast gossip")
@@ -71,11 +85,12 @@ def test_feeadjuster_adjusts(node_factory):
     chan_B = l2.rpc.listpeers(l3.info["id"])["peers"][0]["channels"][0]
     scid_A = chan_A["short_channel_id"]
     scid_B = chan_B["short_channel_id"]
-    l2_scids = [scid_A, scid_B]
+    nodes = [l1, l2, l3]
+    scids = [scid_A, scid_B]
 
     # Fees don't get updated until there is a forwarding event!
     assert all([get_chan_fees(l2, scid) == (base_fee, ppm_fee)
-                for scid in l2_scids])
+                for scid in scids])
 
     chan_total = int(chan_A["total_msat"])
     assert chan_total == int(chan_B["total_msat"])
@@ -84,7 +99,7 @@ def test_feeadjuster_adjusts(node_factory):
     amount = int(chan_total * 0.04)
     pay(l1, l3, amount)
     wait_for(lambda: all([get_chan_fees(l2, scid) != (base_fee, ppm_fee)
-                          for scid in l2_scids]))
+                          for scid in scids]))
 
     # Send most of the balance to the other side..
     amount = int(chan_total * 0.8)
@@ -95,9 +110,7 @@ def test_feeadjuster_adjusts(node_factory):
                                          " 3.".format(scid_B)) is not None)
 
     # ..And back
-    for scid in l2_scids:
-        sync_gossip(l3, l2, scid)
-        sync_gossip(l1, l2, scid)
+    sync_gossip(nodes, scids)
     pay(l3, l1, amount)
     wait_for(lambda: l2.daemon.is_in_log("Adjusted fees of {} with a ratio of"
                                          " 6.".format(scid_A)) is not None)
@@ -106,16 +119,12 @@ def test_feeadjuster_adjusts(node_factory):
 
     # Sending a payment worth 3% of the channel balance should not trigger
     # fee adjustment
-    for scid in l2_scids:
-        sync_gossip(l3, l2, scid)
-        sync_gossip(l1, l2, scid)
+    sync_gossip(nodes, scids)
     fees_before = [get_chan_fees(l2, scid) for scid in [scid_A, scid_B]]
     amount = int(chan_total * 0.03)
     pay(l1, l3, amount)
-    for scid in l2_scids:
-        sync_gossip(l3, l2, scid)
-        sync_gossip(l1, l2, scid)
-    assert fees_before == [get_chan_fees(l2, scid) for scid in l2_scids]
+    sync_gossip(nodes, scids)
+    assert fees_before == [get_chan_fees(l2, scid) for scid in scids]
 
     # But sending another 3%-worth payment does trigger adjustment (total sent
     # since last adjustment is >5%)
@@ -153,37 +162,43 @@ def test_feeadjuster_imbalance(node_factory):
     chan_B = l2.rpc.listpeers(l3.info["id"])["peers"][0]["channels"][0]
     scid_A = chan_A["short_channel_id"]
     scid_B = chan_B["short_channel_id"]
-    l2_scids = [scid_A, scid_B]
+    nodes = [l1, l2, l3]
+    scids = [scid_A, scid_B]
+    default_fees = [(base_fee, ppm_fee), (base_fee, ppm_fee)]
 
     chan_total = int(chan_A["total_msat"])
     assert chan_total == int(chan_B["total_msat"])
     l2.daemon.wait_for_log('imbalance of 30%/70%')
 
+    # we force feeadjust initially to test this method and check if it applies
+    # default fees when balancing the channel below
+    l2.rpc.feeadjust()
+    l2.daemon.wait_for_log("Adjusted fees")
+    l2.daemon.wait_for_log("Adjusted fees")
+    log_offset = len(l2.daemon.logs)
+    wait_for_not_fees(l2, scids, default_fees[0])
+
     # First bring channel to somewhat of a blanance
     amount = int(chan_total * 0.5)
     pay(l1, l3, amount)
     l2.daemon.wait_for_log('Set default fees as imbalance is too low')
-    for scid in l2_scids:
-        sync_gossip(l3, l2, scid)
-        sync_gossip(l1, l2, scid)
-    fees_before = [get_chan_fees(l2, scid) for scid in [scid_A, scid_B]]
-    assert fees_before == [(base_fee, ppm_fee), (base_fee, ppm_fee)]
+    l2.daemon.wait_for_log('Set default fees as imbalance is too low')
+    wait_for_fees(l2, scids, default_fees[0])
 
     # Because of the 70/30 imbalance limiter, a 15% payment must not yet trigger
     # 50% + 15% = 65% .. which is < 70%
     amount = int(chan_total * 0.15)
     pay(l1, l3, amount)
-    for scid in l2_scids:
-        sync_gossip(l3, l2, scid)
-        sync_gossip(l1, l2, scid)
-    fees_before = [get_chan_fees(l2, scid) for scid in [scid_A, scid_B]]
-    assert fees_before == [get_chan_fees(l2, scid) for scid in l2_scids]
-    assert not l2.daemon.is_in_log("Adjusted fees")
+    assert not l2.daemon.is_in_log("Adjusted fees", log_offset)
 
     # Sending another 20% must now trigger because the imbalance
     pay(l1, l3, amount)
     l2.daemon.wait_for_log("Adjusted fees")
+    l2.daemon.wait_for_log("Adjusted fees")
+    wait_for_not_fees(l2, scids, default_fees[0])
 
     # Bringing it back must cause default fees
     pay(l3, l1, amount)
     l2.daemon.wait_for_log('Set default fees as imbalance is too low')
+    l2.daemon.wait_for_log('Set default fees as imbalance is too low')
+    wait_for_fees(l2, scids, default_fees[0])
