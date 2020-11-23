@@ -173,7 +173,7 @@ def test_summary_avail_leadwin():
 def test_summary_persist(node_factory):
     # in order to give the PeerThread a chance in a unit test
     # we need to give it a low interval
-    opts = {'summary-availability-interval' : 0.1}
+    opts = {'summary-availability-interval': 0.1, 'may_reconnect': True}
     opts.update(pluginopt)
     l1, l2 = node_factory.line_graph(2, opts=opts)
 
@@ -181,6 +181,7 @@ def test_summary_persist(node_factory):
     time.sleep(0.5)        # wait a bit for the PeerThread to capture data
     s1 = l1.rpc.summary()
     l1.restart()
+    l1.connect(l2)
     s2 = l1.rpc.summary()
 
     # then
