@@ -46,14 +46,10 @@ def get_chan_fees(plugin: Plugin, scid: str):
                      "fee_per_millionth": ch["fee_per_millionth"] }
 
 
-def maybe_setchannelfee(plugin: Plugin, scid: str, base = None, ppm = None):
-    base = plugin.adj_basefee if base is None else base
-    ppm = plugin.adj_ppmfee if ppm is None else ppm
+def maybe_setchannelfee(plugin: Plugin, scid: str, base: int, ppm: int):
     fees = get_chan_fees(plugin, scid)
-
-    if not fees or base == fees["base_fee_millisatoshi"] and ppm == fees["fee_per_millionth"]:
+    if fees is None or base == fees["base_fee_millisatoshi"] and ppm == fees["fee_per_millionth"]:
         return False
-
     try:
         plugin.rpc.setchannelfee(scid, base, ppm)
         return True
@@ -72,7 +68,7 @@ def maybe_adjust_fees(plugin: Plugin, scids: list):
 
         # reset to normal fees if imbalance is not high enough
         if (percentage > plugin.imbalance and percentage < 1 - plugin.imbalance):
-            if maybe_setchannelfee(plugin, scid):  # applies default values
+            if maybe_setchannelfee(plugin, scid, plugin.adj_basefee, plugin.adj_ppmfee):
                 plugin.log("Set default fees as imbalance is too low: {}".format(scid))
                 plugin.adj_balances[scid]["last_percentage"] = percentage
                 channels_adjusted += 1
@@ -163,7 +159,7 @@ def feeadjust(plugin: Plugin):
                     "total": int(chan["total_msat"])
                 }
                 channels_adjusted += maybe_adjust_fees(plugin, [scid])
-    msg = "%s channels adjusted" % channels_adjusted
+    msg = f"{channels_adjusted} channels adjusted"
     plugin.log(msg)
     return msg
 
@@ -197,7 +193,7 @@ def init(options: dict, configuration: dict, plugin: Plugin, **kwargs):
                    int(100*(1-plugin.imbalance)),
                    plugin.update_threshold,
                    plugin.deactivate_fuzz,
-                   plugin.get_ratio))
+                   plugin.get_ratio.__name__))
     feeadjust(plugin)
 
 
