@@ -172,16 +172,20 @@ def test_feeadjuster_imbalance(node_factory):
     # we force feeadjust initially to test this method and check if it applies
     # default fees when balancing the channel below
     l2.rpc.feeadjust()
-    l2.daemon.wait_for_log("Adjusted fees")
-    l2.daemon.wait_for_log("Adjusted fees")
+    l2.daemon.wait_for_logs([
+        f"Adjusted fees.*{scid_A}",
+        f"Adjusted fees.*{scid_B}"
+    ])
     log_offset = len(l2.daemon.logs)
     wait_for_not_fees(l2, scids, default_fees[0])
 
     # First bring channel to somewhat of a blanance
     amount = int(chan_total * 0.5)
     pay(l1, l3, amount)
-    l2.daemon.wait_for_log('Set default fees as imbalance is too low')
-    l2.daemon.wait_for_log('Set default fees as imbalance is too low')
+    l2.daemon.wait_for_logs([
+        f'Set default fees as imbalance is too low: {scid_A}',
+        f'Set default fees as imbalance is too low: {scid_B}'
+    ])
     wait_for_fees(l2, scids, default_fees[0])
 
     # Because of the 70/30 imbalance limiter, a 15% payment must not yet trigger
@@ -192,12 +196,16 @@ def test_feeadjuster_imbalance(node_factory):
 
     # Sending another 20% must now trigger because the imbalance
     pay(l1, l3, amount)
-    l2.daemon.wait_for_log("Adjusted fees")
-    l2.daemon.wait_for_log("Adjusted fees")
+    l2.daemon.wait_for_logs([
+        f"Adjusted fees.*{scid_A}",
+        f"Adjusted fees.*{scid_B}"
+    ])
     wait_for_not_fees(l2, scids, default_fees[0])
 
     # Bringing it back must cause default fees
     pay(l3, l1, amount)
-    l2.daemon.wait_for_log('Set default fees as imbalance is too low')
-    l2.daemon.wait_for_log('Set default fees as imbalance is too low')
+    l2.daemon.wait_for_logs([
+        f'Set default fees as imbalance is too low: {scid_A}',
+        f'Set default fees as imbalance is too low: {scid_B}'
+    ])
     wait_for_fees(l2, scids, default_fees[0])
