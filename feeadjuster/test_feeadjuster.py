@@ -25,6 +25,17 @@ def test_feeadjuster_starts(node_factory):
     l1.daemon.opts["plugin"] = plugin_path
     l1.start()
     l1.daemon.wait_for_log("Plugin feeadjuster initialized.*")
+    l1.rpc.plugin_stop(plugin_path)
+
+    # We adjust fees in init
+    l1, l2, l3 = node_factory.line_graph(3, wait_for_announce=True)
+    scid_A = l2.rpc.listpeers(
+        l1.info["id"])["peers"][0]["channels"][0]["short_channel_id"]
+    scid_B = l2.rpc.listpeers(
+        l3.info["id"])["peers"][0]["channels"][0]["short_channel_id"]
+    l2.rpc.plugin_start(plugin_path)
+    assert l2.daemon.is_in_log(f"Adjusted fees of {scid_A}.*") is not None
+    assert l2.daemon.is_in_log(f"Adjusted fees of {scid_B}.*") is not None
 
 
 def get_chan_fees(l, scid):
