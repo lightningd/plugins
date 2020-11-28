@@ -17,7 +17,6 @@ def get_ratio_soft(our_percentage):
     """
     Basic algorithm: lesser difference than default
     """
-    our_percentage = min(1, max(0, our_percentage))
     return 10**(0.5 - our_percentage)
 
 
@@ -26,7 +25,6 @@ def get_ratio(our_percentage):
     Basic algorithm: the farther we are from the optimal case, the more we
     bump/lower.
     """
-    our_percentage = min(1, max(0, our_percentage))
     return 50**(0.5 - our_percentage)
 
 
@@ -34,7 +32,6 @@ def get_ratio_hard(our_percentage):
     """
     Return value is between 0 and 20: 0 -> 20; 0.5 -> 1; 1 -> 0
     """
-    our_percentage = min(1, max(0, our_percentage))
     return 100**(0.5 - our_percentage) * (1 - our_percentage) * 2
 
 
@@ -83,6 +80,7 @@ def maybe_adjust_fees(plugin: Plugin, scids: list):
                 and abs(last_percentage - percentage) < update_threshold):
             continue
 
+        assert 0 <= percentage and percentage <= 1
         ratio = plugin.get_ratio(percentage)
         if maybe_setchannelfee(plugin, scid, int(plugin.adj_basefee * ratio),
                                int(plugin.adj_ppmfee * ratio)):
