@@ -162,7 +162,6 @@ def test_feeadjuster_imbalance(node_factory):
     chan_B = l2.rpc.listpeers(l3.info["id"])["peers"][0]["channels"][0]
     scid_A = chan_A["short_channel_id"]
     scid_B = chan_B["short_channel_id"]
-    nodes = [l1, l2, l3]
     scids = [scid_A, scid_B]
     default_fees = [(base_fee, ppm_fee), (base_fee, ppm_fee)]
 
