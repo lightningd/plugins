@@ -1,10 +1,8 @@
 import os
 import random
 import string
-import time
 
 import unittest
-from pyln.client import RpcError
 from pyln.testing.fixtures import *  # noqa: F401,F403
 from pyln.testing.utils import DEVELOPER, wait_for
 
@@ -16,15 +14,19 @@ def test_feeadjuster_starts(node_factory):
     l1 = node_factory.get_node()
     # Test dynamically
     l1.rpc.plugin_start(plugin_path)
-    assert l1.daemon.is_in_log("Plugin feeadjuster initialized.*")
+    l1.daemon.wait_for_log("Plugin feeadjuster initialized.*")
     l1.rpc.plugin_stop(plugin_path)
     l1.rpc.plugin_start(plugin_path)
-    assert l1.daemon.is_in_log("Plugin feeadjuster initialized.*")
+    l1.daemon.wait_for_log("Plugin feeadjuster initialized.*")
     l1.stop()
     # Then statically
     l1.daemon.opts["plugin"] = plugin_path
     l1.start()
-    l1.daemon.wait_for_log("Plugin feeadjuster initialized.*")
+    # Start at 0 and 're-await' the two inits above. Otherwise this is flaky.
+    l1.daemon.logsearch_start = 0
+    l1.daemon.wait_for_logs(["Plugin feeadjuster initialized.*",
+                             "Plugin feeadjuster initialized.*",
+                             "Plugin feeadjuster initialized.*"])
     l1.rpc.plugin_stop(plugin_path)
 
     # We adjust fees in init
@@ -34,8 +36,8 @@ def test_feeadjuster_starts(node_factory):
     scid_B = l2.rpc.listpeers(
         l3.info["id"])["peers"][0]["channels"][0]["short_channel_id"]
     l2.rpc.plugin_start(plugin_path)
-    assert l2.daemon.is_in_log(f"Adjusted fees of {scid_A}.*") is not None
-    assert l2.daemon.is_in_log(f"Adjusted fees of {scid_B}.*") is not None
+    l2.daemon.wait_for_logs([f"Adjusted fees of {scid_A}.*",
+                             f"Adjusted fees of {scid_B}.*"])
 
 
 def get_chan_fees(l, scid):
@@ -115,18 +117,14 @@ def test_feeadjuster_adjusts(node_factory):
     # Send most of the balance to the other side..
     amount = int(chan_total * 0.8)
     pay(l1, l3, amount)
-    wait_for(lambda: l2.daemon.is_in_log("Adjusted fees of {} with a ratio of"
-                                         " 0.2".format(scid_A)) is not None)
-    wait_for(lambda: l2.daemon.is_in_log("Adjusted fees of {} with a ratio of"
-                                         " 3.".format(scid_B)) is not None)
+    l2.daemon.wait_for_logs([f'Adjusted fees of {scid_A} with a ratio of 0.2',
+                             f'Adjusted fees of {scid_B} with a ratio of 3.'])
 
     # ..And back
     sync_gossip(nodes, scids)
     pay(l3, l1, amount)
-    wait_for(lambda: l2.daemon.is_in_log("Adjusted fees of {} with a ratio of"
-                                         " 6.".format(scid_A)) is not None)
-    wait_for(lambda: l2.daemon.is_in_log("Adjusted fees of {} with a ratio of"
-                                         " 0.1".format(scid_B)) is not None)
+    l2.daemon.wait_for_logs([f'Adjusted fees of {scid_A} with a ratio of 6.',
+                             f'Adjusted fees of {scid_B} with a ratio of 0.1'])
 
     # Sending a payment worth 3% of the channel balance should not trigger
     # fee adjustment
@@ -140,10 +138,8 @@ def test_feeadjuster_adjusts(node_factory):
     # But sending another 3%-worth payment does trigger adjustment (total sent
     # since last adjustment is >5%)
     pay(l1, l3, amount)
-    wait_for(lambda: l2.daemon.is_in_log("Adjusted fees of {} with a ratio of"
-                                         " 4.".format(scid_A)) is not None)
-    wait_for(lambda: l2.daemon.is_in_log("Adjusted fees of {} with a ratio of"
-                                         " 0.2".format(scid_B)) is not None)
+    l2.daemon.wait_for_logs([f'Adjusted fees of {scid_A} with a ratio of 4.',
+                             f'Adjusted fees of {scid_B} with a ratio of 0.2'])
 
 
 @unittest.skipIf(not DEVELOPER, "Too slow without fast gossip")
