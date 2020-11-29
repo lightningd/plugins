@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import random
 import time
-from pyln.client import Plugin, Millisatoshi, RpcError
+from pyln.client import Plugin, RpcError
 
 
 plugin = Plugin()
@@ -39,8 +39,8 @@ def get_chan_fees(plugin: Plugin, scid: str):
     channels = plugin.rpc.listchannels(scid)["channels"]
     for ch in channels:
         if ch["source"] == plugin.our_node_id:
-            return { "base_fee_millisatoshi": ch["base_fee_millisatoshi"],
-                     "fee_per_millionth": ch["fee_per_millionth"] }
+            return {"base_fee_millisatoshi": ch["base_fee_millisatoshi"],
+                    "fee_per_millionth": ch["fee_per_millionth"]}
 
 
 def maybe_setchannelfee(plugin: Plugin, scid: str, base: int, ppm: int):
@@ -186,12 +186,12 @@ def init(options: dict, configuration: dict, plugin: Plugin, **kwargs):
     plugin.log("Plugin feeadjuster initialized ({} base / {} ppm) with an "
                "imbalance of {}%/{}%, update_threshold: {}, deactivate_fuzz: {}, adjustment_method: {}"
                .format(plugin.adj_basefee,
-                   plugin.adj_ppmfee,
-                   int(100*plugin.imbalance),
-                   int(100*(1-plugin.imbalance)),
-                   plugin.update_threshold,
-                   plugin.deactivate_fuzz,
-                   plugin.get_ratio.__name__))
+                       plugin.adj_ppmfee,
+                       int(100 * plugin.imbalance),
+                       int(100 * (1 - plugin.imbalance)),
+                       plugin.update_threshold,
+                       plugin.deactivate_fuzz,
+                       plugin.get_ratio.__name__))
     feeadjust(plugin)
 
 
