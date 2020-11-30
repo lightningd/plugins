@@ -117,8 +117,12 @@ class Backend(object):
 
     def restore(self, dest: str, remove_existing: bool = False):
         """Restore the backup in this backend to its former glory.
-        """
 
+        If `dest` is a directory, we assume the default database filename:
+        lightningd.sqlite3
+        """
+        if os.path.isdir(dest):
+            dest = os.path.join(dest, "lightningd.sqlite3")
         if os.path.exists(dest):
             if not remove_existing:
                 raise ValueError(
