@@ -1,7 +1,5 @@
 from flaky import flaky
-from pyln.client import RpcError
-from pyln.testing.fixtures import *
-from pyln.client import RpcError
+from pyln.testing.fixtures import *  # noqa: F401,F403
 import os
 import pytest
 import subprocess
@@ -14,6 +12,7 @@ cli_path = os.path.join(os.path.dirname(__file__), "backup-cli")
 # For the transition period we require deprecated_apis to be true
 deprecated_apis = True
 
+
 def test_start(node_factory, directory):
     bpath = os.path.join(directory, 'lightning-1', 'regtest')
     bdest = 'file://' + os.path.join(bpath, 'backup.dbak')
@@ -22,7 +21,7 @@ def test_start(node_factory, directory):
     opts = {
         'plugin': plugin_path,
         'allow-deprecated-apis': deprecated_apis,
-        }
+    }
     l1 = node_factory.get_node(options=opts, cleandir=False)
     plugins = [os.path.basename(p['name']) for p in l1.rpc.plugin("list")['plugins']]
     assert("backup.py" in plugins)
@@ -38,7 +37,6 @@ def test_start_no_init(node_factory, directory):
     """The plugin should refuse to start if we haven't initialized the backup
     """
     bpath = os.path.join(directory, 'lightning-1', 'regtest')
-    bdest = 'file://' + os.path.join(bpath, 'backup.dbak')
     os.makedirs(bpath)
     opts = {
         'plugin': plugin_path,
@@ -94,7 +92,7 @@ def test_tx_abort(node_factory, directory):
     opts = {
         'plugin': plugin_path,
         'allow-deprecated-apis': deprecated_apis,
-        }
+    }
     l1 = node_factory.get_node(options=opts, cleandir=False)
     l1.stop()
 
@@ -124,10 +122,10 @@ def test_failing_restore(node_factory, directory):
     opts = {
         'plugin': plugin_path,
         'allow-deprecated-apis': deprecated_apis,
-        }
+    }
 
     def section(comment):
-        print("="*25, comment, "="*25)
+        print("=" * 25, comment, "=" * 25)
 
     section("Starting node for the first time")
     l1 = node_factory.get_node(options=opts, cleandir=False, may_fail=True)
@@ -157,7 +155,7 @@ def test_intermittent_backup(node_factory, directory):
     opts = {
         'plugin': plugin_path,
         'allow-deprecated-apis': deprecated_apis,
-        }
+    }
     l1 = node_factory.get_node(options=opts, cleandir=False, may_fail=True)
 
     # Now start without the plugin. This should work fine.
@@ -183,7 +181,7 @@ def test_restore(node_factory, directory):
     opts = {
         'plugin': plugin_path,
         'allow-deprecated-apis': deprecated_apis,
-        }
+    }
     l1 = node_factory.get_node(options=opts, cleandir=False)
     l1.stop()
 
@@ -199,7 +197,7 @@ def test_restore_dir(node_factory, directory):
     opts = {
         'plugin': plugin_path,
         'allow-deprecated-apis': deprecated_apis,
-        }
+    }
     l1 = node_factory.get_node(options=opts, cleandir=False)
     l1.stop()
 

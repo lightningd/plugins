@@ -231,7 +231,6 @@ class FileBackend(Backend):
             assert(version == self.version)
 
 
-
 def resolve_backend_class(backend_url):
     backend_map: Mapping[str, Type[Backend]] = {
         'file': FileBackend,
@@ -337,7 +336,6 @@ def kill(message: str):
     # Sleep forever, just in case the master doesn't die on us...
     while True:
         time.sleep(30)
-
 
 
 plugin.add_option(
