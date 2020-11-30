@@ -58,5 +58,5 @@ If things really messed up and you reinstall clightning on a new host, you can
 restore the database backup by using the `backup-cli` utility:
 
 ```bash
-./backup-cli restore file:///mnt/external/location ~/.lightning/bitcoin
+./backup-cli restore file:///mnt/external/location ~/.lightning/bitcoin/lightningd.sqlite3
 ```
