@@ -1,13 +1,15 @@
-from pyln.testing.fixtures import *
+from pyln.testing.fixtures import *  # noqa: F401,F403
 from pyln.testing.utils import DEVELOPER
-from pyln.client import RpcError, Millisatoshi
-from utils import *
+from pyln.client import RpcError
+from .utils import get_ours, get_theirs, wait_ours, wait_for_all_htlcs
 import os
 import unittest
+import pytest
 
 
 pluginopt = {'plugin': os.path.join(os.path.dirname(__file__), "drain.py")}
 EXPERIMENTAL_FEATURES = int(os.environ.get("EXPERIMENTAL_FEATURES", "0"))
+
 
 @unittest.skipIf(not DEVELOPER, "slow gossip, needs DEVELOPER=1")
 def test_drain_and_refill(node_factory, bitcoind):
@@ -37,7 +39,7 @@ def test_drain_and_refill(node_factory, bitcoind):
     # wait for each others gossip
     bitcoind.generate_block(6)
     for n in nodes:
-        for scid in [scid12,scid23,scid34,scid41]:
+        for scid in [scid12, scid23, scid34, scid41]:
             n.wait_channel_active(scid)
 
     # do some draining and filling
@@ -87,7 +89,7 @@ def test_fill_and_drain(node_factory, bitcoind):
     # wait for each others gossip
     bitcoind.generate_block(6)
     for n in nodes:
-        for scid in [scid12,scid23,scid34,scid41]:
+        for scid in [scid12, scid23, scid34, scid41]:
             n.wait_channel_active(scid)
 
     # for l2 to fill scid12, it needs to send on scid23, where its funder
@@ -128,7 +130,7 @@ def test_setbalance(node_factory, bitcoind):
     # wait for each others gossip
     bitcoind.generate_block(6)
     for n in nodes:
-        for scid in [scid12,scid23,scid34,scid41]:
+        for scid in [scid12, scid23, scid34, scid41]:
             n.wait_channel_active(scid)
 
     # test auto 50/50 balancing

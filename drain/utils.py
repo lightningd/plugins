@@ -1,6 +1,6 @@
 import time
 
-TIMEOUT=60
+TIMEOUT = 60
 
 
 def wait_for(success, timeout=TIMEOUT):
