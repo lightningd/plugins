@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import random
 import time
-from pyln.client import Plugin, RpcError
+from pyln.client import Plugin, Millisatoshi, RpcError
 
 
 plugin = Plugin()
@@ -11,6 +11,23 @@ plugin.adj_balances = {}
 plugin.our_node_id = None
 # Users can configure this
 plugin.update_threshold = 0.05
+
+
+def get_adjusted_percentage(plugin: Plugin, scid: str):
+    """
+    For big channels, there may be a wide range where the liquidity is just okay.
+    Note: if big_enough_liquidity is greater than {total} * 2
+        then percentage is actually {our} / {total}, as it was before
+    """
+    channel = plugin.adj_balances[scid]
+    min_liquidity = min(channel["total"] / 2, int(plugin.big_enough_liquidity))
+    if channel["our"] < min_liquidity:
+        percentage = channel["our"] / min_liquidity / 2
+    elif channel["total"] - channel["our"] < min_liquidity:
+        percentage = (min_liquidity + channel["our"] - channel["total"]) / min_liquidity / 2 + 0.5
+    else:
+        percentage = 0.5
+    return percentage
 
 
 def get_ratio_soft(our_percentage):
@@ -51,7 +68,28 @@ def maybe_setchannelfee(plugin: Plugin, scid: str, base: int, ppm: int):
         plugin.rpc.setchannelfee(scid, base, ppm)
         return True
     except RpcError as e:
-        plugin.log("Could not adjust fees for channel {}: '{}'".format(scid, e), level="warn")
+        plugin.log(f"Could not adjust fees for channel {scid}: '{e}'", level="warn")
+    return False
+
+
+def significant_update(plugin: Plugin, scid: str):
+    channel = plugin.adj_balances[scid]
+    last_liquidity = channel.get("last_liquidity")
+    if last_liquidity is None:
+        return True
+    # Only update on substantial balance moves to avoid flooding, and add
+    # some pseudo-randomness to avoid too easy channel balance probing
+    update_threshold = plugin.update_threshold
+    update_threshold_abs = int(plugin.update_threshold_abs)
+    if not plugin.deactivate_fuzz:
+        r = random.uniform(-0.015, 0.015)
+        update_threshold += r
+        update_threshold_abs += update_threshold_abs * r
+    last_percentage = last_liquidity / channel["total"]
+    percentage = channel["our"] / channel["total"]
+    if (abs(last_percentage - percentage) > update_threshold
+            or abs(last_liquidity - channel["our"]) > update_threshold_abs):
+        return True
     return False
 
 
@@ -61,32 +99,25 @@ def maybe_adjust_fees(plugin: Plugin, scids: list):
         our = plugin.adj_balances[scid]["our"]
         total = plugin.adj_balances[scid]["total"]
         percentage = our / total
-        last_percentage = plugin.adj_balances[scid].get("last_percentage")
 
         # reset to normal fees if imbalance is not high enough
         if (percentage > plugin.imbalance and percentage < 1 - plugin.imbalance):
             if maybe_setchannelfee(plugin, scid, plugin.adj_basefee, plugin.adj_ppmfee):
-                plugin.log("Set default fees as imbalance is too low: {}".format(scid))
-                plugin.adj_balances[scid]["last_percentage"] = percentage
+                plugin.log(f"Set default fees as imbalance is too low: {scid}")
+                plugin.adj_balances[scid]["last_liquidity"] = our
                 channels_adjusted += 1
             continue
 
-        # Only update on substantial balance moves to avoid flooding, and add
-        # some pseudo-randomness to avoid too easy channel balance probing
-        update_threshold = plugin.update_threshold
-        if not plugin.deactivate_fuzz:
-            update_threshold += random.uniform(-0.015, 0.015)
-        if (last_percentage is not None
-                and abs(last_percentage - percentage) < update_threshold):
+        if not significant_update(plugin, scid):
             continue
 
+        percentage = get_adjusted_percentage(plugin, scid)
         assert 0 <= percentage and percentage <= 1
         ratio = plugin.get_ratio(percentage)
         if maybe_setchannelfee(plugin, scid, int(plugin.adj_basefee * ratio),
                                int(plugin.adj_ppmfee * ratio)):
-            plugin.log("Adjusted fees of {} with a ratio of {}"
-                       .format(scid, ratio))
-            plugin.adj_balances[scid]["last_percentage"] = percentage
+            plugin.log(f"Adjusted fees of {scid} with a ratio of {ratio}")
+            plugin.adj_balances[scid]["last_liquidity"] = our
             channels_adjusted += 1
     return channels_adjusted
 
@@ -167,6 +198,8 @@ def init(options: dict, configuration: dict, plugin: Plugin, **kwargs):
     plugin.our_node_id = plugin.rpc.getinfo()["id"]
     plugin.deactivate_fuzz = options.get("feeadjuster-deactivate-fuzz", False)
     plugin.update_threshold = float(options.get("feeadjuster-threshold", "0.05"))
+    plugin.update_threshold_abs = Millisatoshi(options.get("feeadjuster-threshold-abs", "0.001btc"))
+    plugin.big_enough_liquidity = Millisatoshi(options.get("feeadjuster-enough-liquidity", "0.02btc"))
     plugin.imbalance = float(options.get("feeadjuster-imbalance", 0.5))
     plugin.get_ratio = get_ratio
     if options.get("feeadjuster-adjustment-method", "default") == "soft":
@@ -183,15 +216,11 @@ def init(options: dict, configuration: dict, plugin: Plugin, **kwargs):
     if plugin.imbalance > 0.5:
         plugin.imbalance = 1 - plugin.imbalance
 
-    plugin.log("Plugin feeadjuster initialized ({} base / {} ppm) with an "
-               "imbalance of {}%/{}%, update_threshold: {}, deactivate_fuzz: {}, adjustment_method: {}"
-               .format(plugin.adj_basefee,
-                       plugin.adj_ppmfee,
-                       int(100 * plugin.imbalance),
-                       int(100 * (1 - plugin.imbalance)),
-                       plugin.update_threshold,
-                       plugin.deactivate_fuzz,
-                       plugin.get_ratio.__name__))
+    plugin.log(f"Plugin feeadjuster initialized ({plugin.adj_basefee} base / {plugin.adj_ppmfee} ppm) with an "
+               f"imbalance of {int(100 * plugin.imbalance)}%/{int(100 * ( 1 - plugin.imbalance))}%, "
+               f"update_threshold: {int(100 * plugin.update_threshold)}%, update_threshold_abs: {plugin.update_threshold_abs}, "
+               f"enough_liquidity: {plugin.big_enough_liquidity}, deactivate_fuzz: {plugin.deactivate_fuzz}, "
+               f"adjustment_method: {plugin.get_ratio.__name__}")
     feeadjust(plugin)
 
 
@@ -204,8 +233,21 @@ plugin.add_option(
 plugin.add_option(
     "feeadjuster-threshold",
     "0.05",
-    "Channel balance update threshold at which to trigger an update. "
+    "Relative channel balance update threshold at which to trigger an update. "
     "Note: it's also fuzzed by 1.5%",
+    "string"
+)
+plugin.add_option(
+    "feeadjuster-threshold-abs",
+    "0.001btc",
+    "Absolute channel balance update threshold at which to trigger an update. "
+    "Note: it's also fuzzed by 1.5%",
+    "string"
+)
+plugin.add_option(
+    "feeadjuster-enough-liquidity",
+    "0.02btc",
+    "Beyond this liquidity threshold there is no need to adjusting fees",
     "string"
 )
 plugin.add_option(
