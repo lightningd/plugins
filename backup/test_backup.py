@@ -191,6 +191,27 @@ def test_restore(node_factory, directory):
     subprocess.check_call([cli_path, "restore", bdest, rdest])
 
 
+def test_restore_dir(node_factory, directory):
+    bpath = os.path.join(directory, 'lightning-1', 'regtest')
+    bdest = 'file://' + os.path.join(bpath, 'backup.dbak')
+    os.makedirs(bpath)
+    subprocess.check_call([cli_path, "init", bpath, bdest])
+    opts = {
+        'plugin': plugin_path,
+        'allow-deprecated-apis': deprecated_apis,
+        }
+    l1 = node_factory.get_node(options=opts, cleandir=False)
+    l1.stop()
+
+    # should raise error without remove_existing
+    with pytest.raises(Exception):
+        subprocess.check_call([cli_path, "restore", bdest, bpath])
+
+    # but succeed when we remove the sqlite3 dbfile before
+    os.remove(os.path.join(bpath, "lightningd.sqlite3"))
+    subprocess.check_call([cli_path, "restore", bdest, bpath])
+
+
 def test_warning(directory, node_factory):
     bpath = os.path.join(directory, 'lightning-1', 'regtest')
     bdest = 'file://' + os.path.join(bpath, 'backup.dbak')
