@@ -26,7 +26,6 @@ Community curated plugins for c-lightning.
 | [rebalance][rebalance]             | Keeps your channels balanced                                                              |
 | [reckless][reckless]               | An **experimental** plugin manager (search/install plugins)                               |
 | [sauron][sauron]                   | A Bitcoin backend relying on [Esplora][esplora]'s API                                     |
-| [sendinvoiceless][sendinvoiceless] | Sends some money without an invoice from the receiving node.                              |
 | [sitzprobe][sitzprobe]             | A Lightning Network payment rehearsal utility                                             |
 | [sparko][sparko]                   | RPC over HTTP with fine-grained permissions, SSE and spark-wallet support                 |
 | [summary][summary]                 | Print a nice summary of the node status                                                   |
@@ -152,7 +151,6 @@ your environment.
 [sitzprobe]: https://github.com/niftynei/sitzprobe
 [autopilot]: https://github.com/lightningd/plugins/tree/master/autopilot
 [rebalance]: https://github.com/lightningd/plugins/tree/master/rebalance
-[sendinvoiceless]: https://github.com/lightningd/plugins/tree/master/sendinvoiceless
 [graphql]: https://github.com/nettijoe96/c-lightning-graphql
 [graphql-spec]: https://graphql.org/
 [lightning-qt]: https://github.com/darosior/pylightning-qt
