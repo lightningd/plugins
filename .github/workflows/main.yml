@@ -1,0 +1,70 @@
+name: Test plugins against recent c-lightning
+
+on:
+  push:
+    branches: [ master ]
+
+  pull_request:
+    branches: [ master ]
+
+  schedule:
+    # Schedule a test once a day so we check compatibility with the
+    # upstream c-lightning master
+    - cron:  '0 17 * * *'
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [3.6, 3.7, 3.8]
+        developer: [0, 1]
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Checkout c-lightning@master
+      uses: actions/checkout@v2
+      with:
+        repository: 'ElementsProject/lightning'
+        path: 'lightning'
+        ref: 'master'
+        submodules: 'recursive'
+
+    - name: Download runtime dependencies
+      run: |
+        export BITCOIND_VERSION="0.20.1"
+        wget https://storage.googleapis.com/c-lightning-tests/bitcoin-${BITCOIND_VERSION}-x86_64-linux-gnu.tar.bz2
+        tar -xjf bitcoin-${BITCOIND_VERSION}-x86_64-linux-gnu.tar.bz2
+        sudo mv bitcoin-${BITCOIND_VERSION}/bin/* /usr/local/bin
+        rm -rf bitcoin-${BITCOIND_VERSION}-x86_64-linux-gnu.tar.gz bitcoin-${BITCOIND_VERSION}
+        
+    - name: Compile & install c-lightning@master
+      run: |
+        export EXPERIMENTAL_FEATURES=1
+        sudo apt-get install -y libsqlite3-dev gcc-4.8 gettext python python3 python3-mako net-tools zlib1g-dev libsodium-dev libpq-dev postgresql
+        cd lightning
+        ./configure --disable-valgrind --enable-developer
+        make -j 4
+        sudo make install
+      
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v2
+      with:
+        python-version: ${{ matrix.python-version }}
+        
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install flake8 pytest
+        pip install -U pyln-client pyln-testing pyln-proto
+        find . -name requirements.txt | xargs -L 1 pip install -r
+        
+    - name: Test with pytest
+      run: |
+        export SLOW_MACHINE=1
+        export TEST_DEBUG=1
+        export TRAVIS=1
+        export DEVELOPER=${{ matrix.developer }}
+        pytest --ignore=lightning -n 4 -vvv
