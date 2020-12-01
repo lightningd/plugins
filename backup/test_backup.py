@@ -1,3 +1,4 @@
+from backup import FileBackend
 from flaky import flaky
 from pyln.client import RpcError
 from pyln.testing.fixtures import *
@@ -207,3 +208,24 @@ def test_warning(directory, node_factory):
     assert(l1.daemon.is_in_log(
         r'The `--backup-destination` option is deprecated and will be removed in future versions of the backup plugin.'
     ))
+
+
+def test_rewrite():
+    tests = [
+        (
+            r'UPDATE outputs SET status=123, reserved_til=1891733WHERE prev_out_tx=1 AND prev_out_index=2',
+            r'UPDATE outputs SET status=123, reserved_til=1891733 WHERE prev_out_tx=1 AND prev_out_index=2',
+        ),
+    ]
+
+    b = FileBackend('destination', create=False)
+
+    for i, o in tests:
+        assert(b._rewrite_stmt(i) == o)
+
+def test_restore_pre_4090(directory):
+    """The prev-4090-backup.dbak contains faulty expansions, fix em.
+    """
+    bdest = 'file://' + os.path.join(os.path.dirname(__file__), 'tests', 'pre-4090-backup.dbak')
+    rdest = os.path.join(directory, 'lightningd.sqlite.restore')
+    subprocess.check_call([cli_path, "restore", bdest, rdest])
