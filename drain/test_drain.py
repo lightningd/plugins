@@ -1,3 +1,4 @@
+from flaky import flaky
 from pyln.testing.fixtures import *  # noqa: F401,F403
 from pyln.testing.utils import DEVELOPER
 from pyln.client import RpcError
@@ -11,6 +12,7 @@ pluginopt = {'plugin': os.path.join(os.path.dirname(__file__), "drain.py")}
 EXPERIMENTAL_FEATURES = int(os.environ.get("EXPERIMENTAL_FEATURES", "0"))
 
 
+@flaky
 @unittest.skipIf(not DEVELOPER, "slow gossip, needs DEVELOPER=1")
 def test_drain_and_refill(node_factory, bitcoind):
     # Scenario: first drain then refill
