@@ -57,6 +57,21 @@ class GossipStream:
         assert header[:3] == b"GSP"
         assert header[3] == 1
 
+    def seek(self, offset):
+        """Allow skipping to a specific point in the stream.
+
+        The offset is denoted in bytes from the start, including the
+        header, and matches the value of f.tell()
+        """
+        self.stream.seek(offset, io.SEEK_SET)
+
+    def tell(self):
+        """Returns the absolute position in the stream.
+
+        Includes the header, and matches f.seek()
+        """
+        return self.stream.tell()
+
     def __iter__(self):
         return self
 
