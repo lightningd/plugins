@@ -82,9 +82,8 @@ def significant_update(plugin: Plugin, scid: str):
     update_threshold = plugin.update_threshold
     update_threshold_abs = int(plugin.update_threshold_abs)
     if not plugin.deactivate_fuzz:
-        r = random.uniform(-0.015, 0.015)
-        update_threshold += r
-        update_threshold_abs += update_threshold_abs * r
+        update_threshold += random.uniform(-0.015, 0.015)
+        update_threshold_abs += update_threshold_abs * random.uniform(-0.015, 0.015)
     last_percentage = last_liquidity / channel["total"]
     percentage = channel["our"] / channel["total"]
     if (abs(last_percentage - percentage) > update_threshold
@@ -233,14 +232,14 @@ plugin.add_option(
 plugin.add_option(
     "feeadjuster-threshold",
     "0.05",
-    "Relative channel balance update threshold at which to trigger an update. "
+    "Relative channel balance delta at which to trigger an update. Default 0.05 means 5%. "
     "Note: it's also fuzzed by 1.5%",
     "string"
 )
 plugin.add_option(
     "feeadjuster-threshold-abs",
     "0.001btc",
-    "Absolute channel balance update threshold at which to trigger an update. "
+    "Absolute channel balance delta at which to always trigger an update. "
     "Note: it's also fuzzed by 1.5%",
     "string"
 )

@@ -186,7 +186,7 @@ def test_feeadjuster_imbalance(node_factory):
     log_offset = len(l2.daemon.logs)
     wait_for_not_fees(l2, scids, default_fees[0])
 
-    # First bring channel to somewhat of a blanance
+    # First bring channel to somewhat of a balance
     amount = int(chan_total * 0.5)
     pay(l1, l3, amount)
     l2.daemon.wait_for_logs([
@@ -216,3 +216,76 @@ def test_feeadjuster_imbalance(node_factory):
         f'Set default fees as imbalance is too low: {scid_B}'
     ])
     wait_for_fees(l2, scids, default_fees[0])
+
+
+@unittest.skipIf(not DEVELOPER, "Too slow without fast gossip")
+def test_feeadjuster_big_enough_liquidity(node_factory):
+    """
+    A rather simple network:
+
+            A                   B
+    l1  <========>   l2   <=========>  l3
+
+    l2 will adjust its configuration-set base and proportional fees for
+    channels A and B as l1 and l3 exchange payments.
+    """
+    base_fee = 5000
+    ppm_fee = 300
+    l2_opts = {
+        "fee-base": base_fee,
+        "fee-per-satoshi": ppm_fee,
+        "plugin": plugin_path,
+        "feeadjuster-deactivate-fuzz": None,
+        "feeadjuster-imbalance": 0.5,
+        "feeadjuster-enough-liquidity": "0.001btc",
+        "feeadjuster-threshold-abs": "0.0001btc",
+    }
+    # channels' size: 0.01btc
+    # between 0.001btc and 0.009btc the liquidity is big enough
+    l1, l2, l3 = node_factory.line_graph(3, fundamount=10**6, opts=[{}, l2_opts, {}],
+                                         wait_for_announce=True)
+
+    chan_A = l2.rpc.listpeers(l1.info["id"])["peers"][0]["channels"][0]
+    chan_B = l2.rpc.listpeers(l3.info["id"])["peers"][0]["channels"][0]
+    scid_A = chan_A["short_channel_id"]
+    scid_B = chan_B["short_channel_id"]
+    scids = [scid_A, scid_B]
+    default_fees = [(base_fee, ppm_fee), (base_fee, ppm_fee)]
+
+    chan_total = int(chan_A["total_msat"])
+    assert chan_total == int(chan_B["total_msat"])
+    l2.daemon.wait_for_log('enough_liquidity: 100000000msat')
+
+    # we force feeadjust initially to test this method and check if it applies
+    # default fees when balancing the channel below
+    l2.rpc.feeadjust()
+    l2.daemon.wait_for_logs([
+        f"Adjusted fees.*{scid_A}",
+        f"Adjusted fees.*{scid_B}"
+    ])
+    wait_for_not_fees(l2, scids, default_fees[0])
+
+    # Bring channels to beyond big enough liquidity with 0.003btc
+    amount = 300000000
+    pay(l1, l3, amount)
+    l2.daemon.wait_for_logs([
+        f"Adjusted fees of {scid_A} with a ratio of 1.0",
+        f"Adjusted fees of {scid_B} with a ratio of 1.0"
+    ])
+    log_offset = len(l2.daemon.logs)
+    wait_for_fees(l2, scids, default_fees[0])
+
+    # Let's move another 0.003btc -> the channels will be at 0.006btc
+    amount = 300000000
+    pay(l1, l3, amount)
+    assert not l2.daemon.is_in_log("Adjusted fees", log_offset)
+
+    # Sending another 0.0033btc will result in a channel balance of 0.0093btc
+    # It must trigger because the remaining liquidity is not big enough
+    amount = 330000000
+    pay(l1, l3, amount)
+    l2.daemon.wait_for_logs([
+        f"Adjusted fees.*{scid_A}",
+        f"Adjusted fees.*{scid_B}"
+    ])
+    wait_for_not_fees(l2, scids, default_fees[0])
