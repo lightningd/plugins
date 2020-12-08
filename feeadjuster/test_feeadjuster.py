@@ -278,6 +278,7 @@ def test_feeadjuster_big_enough_liquidity(node_factory):
     # Let's move another 0.003btc -> the channels will be at 0.006btc
     amount = 300000000
     pay(l1, l3, amount)
+    l2.wait_for_htlcs()
     assert not l2.daemon.is_in_log("Adjusted fees", log_offset)
 
     # Sending another 0.0033btc will result in a channel balance of 0.0093btc

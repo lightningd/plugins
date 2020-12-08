@@ -21,13 +21,15 @@ def get_adjusted_percentage(plugin: Plugin, scid: str):
     """
     channel = plugin.adj_balances[scid]
     min_liquidity = min(channel["total"] / 2, int(plugin.big_enough_liquidity))
+    theirs = channel["total"] - channel["our"]
+    if channel["our"] >= min_liquidity and theirs >= min_liquidity:
+        # the liquidity is just okay
+        return 0.5
     if channel["our"] < min_liquidity:
-        percentage = channel["our"] / min_liquidity / 2
-    elif channel["total"] - channel["our"] < min_liquidity:
-        percentage = (min_liquidity + channel["our"] - channel["total"]) / min_liquidity / 2 + 0.5
-    else:
-        percentage = 0.5
-    return percentage
+        # our liquidity is too low
+        return channel["our"] / min_liquidity / 2
+    # their liquidity is too low
+    return (min_liquidity - theirs) / min_liquidity / 2 + 0.5
 
 
 def get_ratio_soft(our_percentage):
