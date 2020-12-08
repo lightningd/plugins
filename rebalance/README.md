@@ -32,7 +32,7 @@ The next step is to calculate `{ideal_ratio}` for big channels. Beyond the `{eno
 
 After we know the current `{enough_liquidity}` threshold and `{ideal_ratio}`, the plugin checks every possible channel pairs to seek a proper rebalance opportunity. If it finds a matching pair, it calls the individual rebalance method for them. If the rebalance fails, the plugin tries again with a lesser amount, until it reaches the minimum rebalancable amount, or the rebalance succeeds.
 
-This process may take a while. Automatic rebalance can run for hours in the background.
+This process may take a while. Automatic rebalance can run for hours in the background, but you can stop it anytime with `lightning-cli rebalancestop`.
 
 #### Parameters for automatic rebalance
 
