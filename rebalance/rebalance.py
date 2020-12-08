@@ -174,7 +174,7 @@ def rebalance(plugin, outgoing_scid, incoming_scid, msatoshi: Millisatoshi=None,
         for channel in mychannels:
             excludes += [channel['short_channel_id'] + '/0', channel['short_channel_id'] + '/1']
 
-        while int(time.time()) - start_ts < retry_for:
+        while int(time.time()) - start_ts < retry_for and not plugin.get_option("rebalance-stop"):
             r = plugin.rpc.getroute(incoming_node_id, msatoshi, riskfactor=1, cltv=9, fromid=outgoing_node_id, exclude=excludes)
             route_mid = r['route']
             route = [route_out] + route_mid + [route_in]
@@ -365,7 +365,7 @@ def maybe_rebalance_pairs(plugin: Plugin, ch1, ch2, failed_pairs: list):
     ideal_ratio = float(plugin.get_option("ideal-ratio"))
     min_amount = int(Millisatoshi(plugin.get_option("min-amount")))
     i = 0
-    while True:
+    while not plugin.get_option("rebalance-stop"):
         amount1 = min(must_send(ch1, enough_liquidity), could_receive(ch2, enough_liquidity))
         amount2 = min(should_send(ch1, enough_liquidity, ideal_ratio), should_receive(ch2, enough_liquidity, ideal_ratio))
         amount3 = min(could_send(ch1, enough_liquidity), must_receive(ch2, enough_liquidity))
@@ -402,7 +402,7 @@ def maybe_rebalance_once(plugin: Plugin, failed_pairs: list):
     for ch1 in channels:
         for ch2 in channels:
             result = maybe_rebalance_pairs(plugin, ch1, ch2, failed_pairs)
-            if result["success"] == True:
+            if result["success"] or plugin.get_option("rebalance-stop"):
                 return result
     return {"success": False, "fee_spent": 0}
 
@@ -421,9 +421,9 @@ def rebalanceall_thread(plugin: Plugin):
         failed_pairs = []
         success = 0
         fee_spent = 0
-        while True:
+        while not plugin.get_option("rebalance-stop"):
             result = maybe_rebalance_once(plugin, failed_pairs)
-            if result["success"] == False:
+            if not result["success"]:
                 break
             success += 1
             fee_spent += result["fee_spent"]
@@ -438,19 +438,31 @@ def rebalanceall(plugin: Plugin, min_amount: Millisatoshi = Millisatoshi("50000s
     """Rebalance all unbalanced channels if possible for a very low fee.
     Default minimum rebalancable amount is 50000sat. Default feeratio = 0.5, half of our node's default fee.
     To be economical, it tries to fix the liquidity cheaper than it can be ruined by transaction forwards.
-    May run for a long time (hours) in the background.
+    It may run for a long time (hours) in the background, but can be stopped with the rebalancestop method.
     """
-    if not plugin.mutex.acquire(blocking = False):
-        return {"message" : "Rebalance is already running, this may take a while"}
+    if not plugin.mutex.acquire(blocking=False):
+        return {"message": "Rebalance is already running, this may take a while"}
     try:
         plugin.options["feeratio"]["value"] = float(feeratio)
         plugin.options["min-amount"]["value"] = Millisatoshi(min_amount)
-        t = Thread(target = rebalanceall_thread, args = (plugin, ))
+        plugin.options["rebalance-stop"]["value"] = False
+        t = Thread(target=rebalanceall_thread, args=(plugin, ))
         t.start()
     except Exception as e:
         plugin.mutex.release()
         raise e
-    return {"message" : "Rebalance started"}
+    return {"message": "Rebalance started"}
+
+
+@plugin.method("rebalancestop")
+def rebalancestop(plugin: Plugin):
+    """It stops the ongoing rebalanceall.
+    """
+    plugin.options["rebalance-stop"]["value"] = True
+    plugin.mutex.acquire(blocking=True)
+    plugin.options["rebalance-stop"]["value"] = False
+    plugin.mutex.release()
+    return {"message": "Rebalance stopped"}
 
 
 @plugin.init()
@@ -459,6 +471,7 @@ def init(options, configuration, plugin):
     plugin.options["cltv-final"]["value"] = config.get("cltv-final")
     plugin.options["fee-base"]["value"] = config.get("fee-base")
     plugin.options["fee-per-satoshi"]["value"] = config.get("fee-per-satoshi")
+    plugin.options["rebalance-stop"]["value"] = False
     plugin.mutex = Lock()
     plugin.log("Plugin rebalance.py initialized")
 
@@ -470,4 +483,5 @@ plugin.add_option("feeratio", "0.5", "Rebalance fee in the ratio of our node's d
 plugin.add_option("enough-liquidity", 0, "Above this threshold (in msat), a channel's liquidity is big enough. Will be calculated.", "int")
 plugin.add_option("ideal-ratio", "0.5", "Ideal liquidity ratio for big channels. Will be calculated.", "string")
 plugin.add_option("min-amount", "50000sat", "The minimum rebalancable amount.", "string")
+plugin.add_option("rebalance-stop", False, "It stops the ongoing rebalanceall, set by rebalancestop", "flag")
 plugin.run()
