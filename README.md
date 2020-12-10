@@ -91,9 +91,8 @@ pluginopt = {'plugin': os.path.join(os.path.dirname(__file__), "YOUR_PLUGIN.py")
 
 def test_your_plugin(node_factory, bitcoind):
     l1 = node_factory.get_node(options=pluginopt)
-    s = l1.rpc.summary()
     s = l1.rpc.getinfo()
-    assert(s['network'] == 'REGTEST')  # or whatever you want to test
+    assert(s['network'] == 'regtest')
 ```
 
 Tests are run against pull requests, all commits on `master`, as well as once
