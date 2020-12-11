@@ -125,7 +125,9 @@ Running tests locally can be done like this:
 pytest YOUR_PLUGIN/YOUR_TEST.py
 ```
 
-### Additional dependencies
+### Python plugins specifics
+
+#### Additional dependencies
 
 Additionally, some Python plugins come with a `requirements.txt` which can be
 used to install the plugin's dependencies using the `pip` tools:
@@ -136,6 +138,12 @@ pip3 install -r requirements.txt
 
 Note: You might need to also specify the `--user` command line flag depending on
 your environment.
+
+#### Minimum supported Python version
+
+The minimum supported version of Python for this repository is currently `3.6.x` (23 Dec 2016).
+Python plugins users must ensure to have a version `>= 3.6`.
+Python plugins developers must ensure their plugin to work with all Python versions `>= 3.6`.
 
 
 ## More Plugins from the Community
