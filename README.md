@@ -55,8 +55,24 @@ Notes:
 
 Alternatively, especially when you use multiple plugins, you can copy or symlink
 all plugin directories into your `~/.lightning/plugins` directory. The daemon
-will load each executeable it finds in sub-directories as a plugin. In this case
+will load each executable it finds in sub-directories as a plugin. In this case
 you don't need to manage all the `--plugin=...` parameters.
+
+### Dynamic plugin initialization
+
+Most of the plugins can be managed using the RPC interface. Use
+```
+lightning-cli plugin start /path/to/plugin/directory/plugin_file_name
+```
+to start it, and
+```
+lightning-cli plugin stop /path/to/plugin/directory/plugin_file_name
+```
+to stop it.
+
+As a plugin developer this option is configurable with all the available plugin libraries,
+and defaults to `true`.
+
 
 ### PYTHONPATH and `pyln`
 
@@ -158,7 +174,7 @@ your environment.
 [graphql-spec]: https://graphql.org/
 [lightning-qt]: https://github.com/darosior/pylightning-qt
 [cpp-api]: https://github.com/darosior/lightningcpp
-[js-api]: https://github.com/darosior/clightningjs
+[js-api]: https://github.com/lightningd/clightningjs
 [monitor]: https://github.com/renepickhardt/plugins/tree/master/monitor
 [reckless]: https://github.com/darosior/reckless
 [request-invoice]: https://github.com/lightningd/plugins/tree/master/request-invoice
