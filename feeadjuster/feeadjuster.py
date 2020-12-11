@@ -20,6 +20,8 @@ def get_adjusted_percentage(plugin: Plugin, scid: str):
         then percentage is actually {our} / {total}, as it was before
     """
     channel = plugin.adj_balances[scid]
+    if plugin.big_enough_liquidity == Millisatoshi(0):
+        return channel["our"] / channel["total"]
     min_liquidity = min(channel["total"] / 2, int(plugin.big_enough_liquidity))
     theirs = channel["total"] - channel["our"]
     if channel["our"] >= min_liquidity and theirs >= min_liquidity:
@@ -200,13 +202,14 @@ def init(options: dict, configuration: dict, plugin: Plugin, **kwargs):
     plugin.deactivate_fuzz = options.get("feeadjuster-deactivate-fuzz", False)
     plugin.update_threshold = float(options.get("feeadjuster-threshold", "0.05"))
     plugin.update_threshold_abs = Millisatoshi(options.get("feeadjuster-threshold-abs", "0.001btc"))
-    plugin.big_enough_liquidity = Millisatoshi(options.get("feeadjuster-enough-liquidity", "0.02btc"))
+    plugin.big_enough_liquidity = Millisatoshi(options.get("feeadjuster-enough-liquidity", "0msat"))
     plugin.imbalance = float(options.get("feeadjuster-imbalance", 0.5))
-    plugin.get_ratio = get_ratio
-    if options.get("feeadjuster-adjustment-method", "default") == "soft":
-        plugin.get_ratio = get_ratio_soft
-    if options.get("feeadjuster-adjustment-method", "default") == "hard":
-        plugin.get_ratio = get_ratio_hard
+    adjustment_switch = {
+        "soft": get_ratio_soft,
+        "hard": get_ratio_hard,
+        "default": get_ratio
+        }
+    plugin.get_ratio = adjustment_switch.get(options.get("feeadjuster-adjustment-method", "default"), get_ratio)
     config = plugin.rpc.listconfigs()
     plugin.adj_basefee = config["fee-base"]
     plugin.adj_ppmfee = config["fee-per-satoshi"]
@@ -247,8 +250,8 @@ plugin.add_option(
 )
 plugin.add_option(
     "feeadjuster-enough-liquidity",
-    "0.02btc",
-    "Beyond this liquidity threshold there is no need to adjusting fees",
+    "0msat",
+    "Beyond this liquidity threshold there is no need to adjusting fees, 0 means the feature is turned off",
     "string"
 )
 plugin.add_option(
