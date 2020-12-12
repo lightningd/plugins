@@ -46,8 +46,8 @@ def monitor(plugin):
             fees = "our fees"
             if int(our_funding) == 0:
                 fees = "their fees"
-            total = float(c['msatoshi_total'])
-            ours = float(c['our_channel_reserve_satoshis']) + float(c['spendable_msatoshi'])
+            total = int(c['total_msat'])
+            ours = int(c['our_reserve_msat']) + int(c['spendable_msat'])
             our_fraction = '{:4.2f}% owned by us'.format(ours * 100 / total)
             tmp = "\t".join([p['id'], connected, fees, our_fraction,
                              c['short_channel_id'] if 'short_channel_id' in c
