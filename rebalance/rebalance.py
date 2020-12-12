@@ -220,50 +220,39 @@ def rebalance(plugin, outgoing_scid, incoming_scid, msatoshi: Millisatoshi=None,
     return cleanup(plugin, label, payload, success_msg)
 
 
-def must_send(channel, enough_liquidity: int):
+def a_minus_b(a: Millisatoshi, b: Millisatoshi):
+    # a minus b, but Millisatoshi cannot be negative
+    return a - b if a > b else Millisatoshi(0)
+
+
+def must_send(liquidity):
     # liquidity is too high, must send some sats
-    min_liquidity = min(channel["msatoshi_total"] / 2, enough_liquidity)
-    their_liquidity = channel["msatoshi_total"] - channel["msatoshi_to_us"]
-    return max(0, min_liquidity - their_liquidity)
+    return a_minus_b(liquidity["min"], liquidity["their"])
 
 
-def should_send(channel, enough_liquidity: int, ideal_ratio: float):
+def should_send(liquidity):
     # liquidity is a bit high, would be good to send some sats
-    min_liquidity = min(channel["msatoshi_total"] / 2, enough_liquidity)
-    their_liquidity = channel["msatoshi_total"] - channel["msatoshi_to_us"]
-    their_ideal_liquidity = channel["msatoshi_total"] * (1 - ideal_ratio)
-    should_have = min(max(their_ideal_liquidity, min_liquidity), channel["msatoshi_total"] - min_liquidity)
-    return max(0, should_have - their_liquidity)
+    return a_minus_b(liquidity["ideal"]["their"], liquidity["their"])
 
 
-def could_send(channel, enough_liquidity: int):
+def could_send(liquidity):
     # liquidity maybe a bit low, but can send some more sats, if needed
-    min_liquidity = min(channel["msatoshi_total"] / 2, enough_liquidity)
-    our_liquidity = channel["msatoshi_to_us"]
-    return max(0, our_liquidity - min_liquidity)
+    return a_minus_b(liquidity["our"], liquidity["min"])
 
 
-def must_receive(channel, enough_liquidity: int):
+def must_receive(liquidity):
     # liquidity is too low, must receive some sats
-    min_liquidity = min(channel["msatoshi_total"] / 2, enough_liquidity)
-    our_liquidity = channel["msatoshi_to_us"]
-    return max(0, min_liquidity - our_liquidity)
+    return a_minus_b(liquidity["min"], liquidity["our"])
 
 
-def should_receive(channel, enough_liquidity: int, ideal_ratio: float):
+def should_receive(liquidity):
     # liquidity is a bit low, would be good to receive some sats
-    min_liquidity = min(channel["msatoshi_total"] / 2, enough_liquidity)
-    our_liquidity = channel["msatoshi_to_us"]
-    our_ideal_liquidity = channel["msatoshi_total"] * ideal_ratio
-    should_have = min(max(our_ideal_liquidity, min_liquidity), channel["msatoshi_total"] - min_liquidity)
-    return max(0, should_have - our_liquidity)
+    return a_minus_b(liquidity["ideal"]["our"], liquidity["our"])
 
 
-def could_receive(channel, enough_liquidity: int):
+def could_receive(liquidity):
     # liquidity maybe a bit high, but can receive some more sats, if needed
-    min_liquidity = min(channel["msatoshi_total"] / 2, enough_liquidity)
-    their_liquidity = channel["msatoshi_total"] - channel["msatoshi_to_us"]
-    return max(0, their_liquidity - min_liquidity)
+    return a_minus_b(liquidity["their"], liquidity["min"])
 
 
 def get_our_channels(plugin: Plugin):
@@ -275,20 +264,20 @@ def get_our_channels(plugin: Plugin):
     return channels
 
 
-def check_liquidity_threshold(channels: list, threshold: int):
+def check_liquidity_threshold(channels: list, threshold: Millisatoshi):
     # check if overall rebalances can be successful with this threshold
-    ours = sum(ch["msatoshi_to_us"] for ch in channels)
-    total = sum(ch["msatoshi_total"] for ch in channels)
-    required = 0
+    our = sum(ch["to_us_msat"] for ch in channels)
+    total = sum(ch["total_msat"] for ch in channels)
+    required = Millisatoshi(0)
     for ch in channels:
-        required += int(min(threshold, ch["msatoshi_total"] / 2))
-    return required < ours and required < total - ours
+        required += min(threshold, ch["total_msat"] / 2)
+    return required < our and required < total - our
 
 
-def binary_search(channels: list, low: int, high: int):
-    if high - low < 1000:
+def binary_search(channels: list, low: Millisatoshi, high: Millisatoshi):
+    if high - low < Millisatoshi("1sat"):
         return low
-    next_step = int((low + high) / 2)
+    next_step = (low + high) / 2
     if check_liquidity_threshold(channels, next_step):
         return binary_search(channels, next_step, high)
     else:
@@ -296,30 +285,31 @@ def binary_search(channels: list, low: int, high: int):
 
 
 def get_enough_liquidity_threshold(channels: list):
-    biggest_channel = max(channels, key=lambda ch: ch["msatoshi_total"])
-    max_threshold = binary_search(channels, 0, int(biggest_channel["msatoshi_total"] / 2))
-    return int(max_threshold / 2)
+    biggest_channel = max(channels, key=lambda ch: ch["total_msat"])
+    max_threshold = binary_search(channels, Millisatoshi(0), biggest_channel["total_msat"] / 2)
+    return max_threshold / 2
 
 
-def get_ideal_ratio(channels: list, enough_liquidity: int):
+def get_ideal_ratio(channels: list, enough_liquidity: Millisatoshi):
     # ideal liquidity ratio for big channels:
     # small channels should have a 50/50 liquidity ratio to be usable
     # and big channels can store the remaining liquidity above the threshold
-    ours = sum(ch["msatoshi_to_us"] for ch in channels)
-    total = sum(ch["msatoshi_total"] for ch in channels)
+    our = sum(ch["to_us_msat"] for ch in channels)
+    total = sum(ch["total_msat"] for ch in channels)
     chs = list(channels)
     while True:
-        ratio = ours / total
-        smallest_channel = min(chs, key=lambda ch: ch["msatoshi_total"])
-        if smallest_channel["msatoshi_total"] * min(ratio, 1 - ratio) > enough_liquidity:
+        ratio = int(our) / int(total)
+        smallest_channel = min(chs, key=lambda ch: ch["total_msat"])
+        if smallest_channel["total_msat"] * min(ratio, 1 - ratio) > enough_liquidity:
             break
-        min_liquidity = min(smallest_channel["msatoshi_total"] / 2, enough_liquidity)
-        diff = smallest_channel["msatoshi_total"] * ratio
+        min_liquidity = min(smallest_channel["total_msat"] / 2, enough_liquidity)
+        diff = smallest_channel["total_msat"] * ratio
         diff = max(diff, min_liquidity)
-        diff = min(diff, smallest_channel["msatoshi_total"] - min_liquidity)
-        ours -= diff
-        total -= smallest_channel["msatoshi_total"]
+        diff = min(diff, smallest_channel["total_msat"] - min_liquidity)
+        our -= diff
+        total -= smallest_channel["total_msat"]
         chs.remove(smallest_channel)
+    assert 0 <= ratio and ratio <= 1
     return ratio
 
 
@@ -332,12 +322,12 @@ def feeadjust_would_be_nice(plugin: Plugin):
 
 
 def get_max_amount(i: int, plugin: Plugin):
-    return max(plugin.min_amount, Millisatoshi(plugin.enough_liquidity) / (4**(i + 1)))
+    return max(plugin.min_amount, plugin.enough_liquidity / (4**(i + 1)))
 
 
 def get_max_fee(plugin: Plugin, msat: Millisatoshi):
     # TODO: sanity check
-    return (plugin.fee_base + msat * plugin.fee_ppm / 1000000) * plugin.feeratio
+    return (plugin.fee_base + msat * plugin.fee_ppm / 10**6) * plugin.feeratio
 
 
 def get_chan(plugin: Plugin, scid: str):
@@ -353,6 +343,19 @@ def get_chan(plugin: Plugin, scid: str):
                 return chan
 
 
+def liquidity_info(channel, enough_liquidity: Millisatoshi, ideal_ratio: float):
+    liquidity = {
+        "our": channel["to_us_msat"],
+        "their": channel["total_msat"] - channel["to_us_msat"],
+        "min": min(enough_liquidity, channel["total_msat"] / 2),
+        "max": max(a_minus_b(channel["total_msat"], enough_liquidity), channel["total_msat"] / 2),
+        "ideal": {}
+        }
+    liquidity["ideal"]["our"] = min(max(channel["total_msat"] * ideal_ratio, liquidity["min"]), liquidity["max"])
+    liquidity["ideal"]["their"] = min(max(channel["total_msat"] * (1 - ideal_ratio), liquidity["min"]), liquidity["max"])
+    return liquidity
+
+
 def maybe_rebalance_pairs(plugin: Plugin, ch1, ch2, failed_pairs: list):
     scid1 = ch1["short_channel_id"]
     scid2 = ch2["short_channel_id"]
@@ -361,13 +364,12 @@ def maybe_rebalance_pairs(plugin: Plugin, ch1, ch2, failed_pairs: list):
         return result
     i = 0
     while not plugin.rebalance_stop:
-        amount1 = min(must_send(ch1, plugin.enough_liquidity),
-                      could_receive(ch2, plugin.enough_liquidity))
-        amount2 = min(should_send(ch1, plugin.enough_liquidity, plugin.ideal_ratio),
-                      should_receive(ch2, plugin.enough_liquidity, plugin.ideal_ratio))
-        amount3 = min(could_send(ch1, plugin.enough_liquidity),
-                      must_receive(ch2, plugin.enough_liquidity))
-        amount = Millisatoshi(int(max(amount1, amount2, amount3)))
+        liquidity1 = liquidity_info(ch1, plugin.enough_liquidity, plugin.ideal_ratio)
+        liquidity2 = liquidity_info(ch2, plugin.enough_liquidity, plugin.ideal_ratio)
+        amount1 = min(must_send(liquidity1), could_receive(liquidity2))
+        amount2 = min(should_send(liquidity1), should_receive(liquidity2))
+        amount3 = min(could_send(liquidity1), must_receive(liquidity2))
+        amount = max(amount1, amount2, amount3)
         if amount < plugin.min_amount:
             return result
         amount = min(amount, get_max_amount(i, plugin))
@@ -413,7 +415,7 @@ def rebalanceall_thread(plugin: Plugin):
         channels = get_our_channels(plugin)
         plugin.enough_liquidity = get_enough_liquidity_threshold(channels)
         plugin.ideal_ratio = get_ideal_ratio(channels, plugin.enough_liquidity)
-        plugin.log(f"Automatic rebalance is running with enough liquidity threshold: {plugin.enough_liquidity}msat, "
+        plugin.log(f"Automatic rebalance is running with enough liquidity threshold: {plugin.enough_liquidity}, "
                    f"ideal liquidity ratio: {plugin.ideal_ratio * 100:.2f}%, "
                    f"min rebalancable amount: {plugin.min_amount}, "
                    f"feeratio: {plugin.feeratio}")
