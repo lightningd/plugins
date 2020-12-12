@@ -4,6 +4,7 @@ This is a quick hack and adapted plugin from the summary.py plugin (orinigally w
 This one is adapted by Rene Pickhardt and aims to help you identify inactive channels quickly
 """
 
+from packaging import version
 import pyln.client
 import json
 
@@ -11,10 +12,11 @@ plugin = pyln.client.Plugin()
 
 # __version__ was introduced in 0.0.7.1, with utf8 passthrough support.
 try:
-    if version.parse(lightning.__version__) >= version.parse("0.0.7.1"):
+    if version.parse(lightning.__version__) >= version.parse("0.0.7.1"):  # noqa F821
         have_utf8 = True
 except Exception:
     pass
+
 
 @plugin.method("monitor")
 def monitor(plugin):
@@ -64,5 +66,6 @@ def monitor(plugin):
 @plugin.init()
 def init(options, configuration, plugin):
     plugin.log("Plugin monitor.py initialized")
+
 
 plugin.run()
