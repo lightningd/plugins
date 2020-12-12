@@ -34,7 +34,7 @@ After we know the current `{enough_liquidity}` threshold and `{ideal_ratio}`, th
 
 This process may take a while. Automatic rebalance can run for hours in the background, but you can stop it anytime with `lightning-cli rebalancestop`.
 
-#### Parameters for automatic rebalance
+#### Parameters for rebalanceall
 
 - OPTIONAL: The `min_amount` parameter sets the minimum rebalancable amount in millisatoshis. The parameter also can be specified in other denominations by appending a valid suffix, i. e. '1000000sat', '0.01btc' or '10mbtc'. The default value is '50000sat'.
 - OPTIONAL: The `feeratio` sets how much the rebalance may cost as a ratio of your default fee. Its default value is `0.5`, which means it can use a maximum of half of your node's default fee.
@@ -58,7 +58,7 @@ use always the `lightning-cli -k` (key=value) syntax like this:
 lightning-cli rebalance -k outgoing_scid=1514942x51x0 incoming_scid=1515133x10x0 maxfeepercent=1
 ```
 
-#### Parameters for individual rebalance
+#### Parameters for rebalance
 
 - The `outgoing_scid` is the short_channel_id of the sending channel,
 - The `incoming_scid` is the short_channel_id of the receiving channel.
