@@ -17,6 +17,7 @@ def get_reverse_chan(scid, chan):
 
     return None
 
+
 def get_circular_route(scid, chan, amt, peer, exclusions, request):
     """Compute a circular route with `scid` as last leg.
 
@@ -131,6 +132,7 @@ def get_peer_and_channel(peers, scid):
 
     return (None, None)
 
+
 @plugin.async_hook("htlc_accepted")
 def on_htlc_accepted(htlc, onion, plugin, request, **kwargs):
     plugin.log("Got an incoming HTLC htlc={}".format(htlc))
@@ -179,7 +181,7 @@ def on_htlc_accepted(htlc, onion, plugin, request, **kwargs):
     # Need to consider who the funder is, since they are paying the fees.
     # TODO If we are the funder we need to take the cost of an HTLC into
     # account as well.
-    #funder = chan['msatoshi_to_us_max'] == chan['msatoshi_total']
+    # funder = chan['msatoshi_to_us_max'] == chan['msatoshi_total']
     forward_amt = Millisatoshi(onion['forward_amount'])
 
     # If we have enough capacity just let it through now. Otherwise the
