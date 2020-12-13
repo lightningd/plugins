@@ -9,6 +9,7 @@ import networkx as nx
 import dns.resolver
 import time
 
+
 class CLightning_autopilot(Autopilot):
 
     def __init__(self, rpc):
@@ -23,7 +24,7 @@ class CLightning_autopilot(Autopilot):
         retrieve the nodeids of the ln seed nodes from lseed.bitcoinstats.com
         """
         domain = "lseed.bitcoinstats.com"
-        srv_records = dns.resolver.query(domain,"SRV")
+        srv_records = dns.resolver.query(domain, "SRV")
         res = []
         for srv in srv_records:
             bech32 = str(srv.target).rstrip(".").split(".")[0]
@@ -41,7 +42,7 @@ class CLightning_autopilot(Autopilot):
         been connected to the lightning network.
         """
         seed_keys = self.__get_seed_keys()
-        random.shuffle(seed_keys) 
+        random.shuffle(seed_keys)
         for nodeid in seed_keys:
             try:
                 print("peering with node: {}".format(nodeid))
