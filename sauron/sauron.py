@@ -104,7 +104,7 @@ def getrawblock(plugin, height, **kwargs):
 
     blockhash_req = fetch(blockhash_url)
     block_req = fetch("{}/block/{}/raw".format(plugin.api_endpoint,
-                                                     blockhash_req.text))
+                                               blockhash_req.text))
     if blockhash_req.status_code != 200 or block_req.status_code != 200:
         return {
             "blockhash": None,

@@ -24,3 +24,5 @@ sauron_eye = """
                       :::lie.:::
 
 """
+
+# flake8: noqa W605
