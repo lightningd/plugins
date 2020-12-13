@@ -162,12 +162,12 @@ class ChannelsCollector(BaseLnCollector):
         peers = self.rpc.listpeers()['peers']
         for p in peers:
             for c in p['channels']:
-	        # append alias for human readable labels, if no label is found fill with shortid.
+                # append alias for human readable labels, if no label is found fill with shortid.
                 node = self.rpc.listnodes(p['id'])['nodes']
                 if len(node) != 0 and 'alias' in node[0]:
                     alias = node[0]['alias']
                 else:
-                    alias = c.get('short_channel_id', c.get('channel_id'))
+                    alias = 'unknown'
 
                 labels = [p['id'], c.get('short_channel_id', c.get('channel_id')), alias]
                 balance_gauge.add_metric(labels, c['to_us_msat'].to_satoshi())
