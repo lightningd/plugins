@@ -4,7 +4,6 @@ from packaging import version
 from collections import namedtuple
 from summary_avail import *
 import pyln.client
-from math import floor, log10
 import requests
 import shelve
 import threading
@@ -73,19 +72,19 @@ class PriceThread(threading.Thread):
             except Exception as ex:
                 plugin.log("[PriceThread] " + str(ex), 'warn')
             # Six hours is more than often enough for polling
-            time.sleep(6*3600)
+            time.sleep(6 * 3600)
 
 
 def to_fiatstr(msat: Millisatoshi):
     return "{}{:.2f}".format(plugin.currency_prefix,
-                              int(msat) / 10**11 * plugin.fiat_per_btc)
+                             int(msat) / 10**11 * plugin.fiat_per_btc)
 
 
 # appends an output table header that explains fields and capacity
 def append_header(table, max_msat):
     short_str = Millisatoshi(max_msat).to_approx_str()
     table.append("%c%-13sOUT/OURS %c IN/THEIRS%12s%c SCID           FLAG AVAIL ALIAS"
-            % (draw.left, short_str, draw.mid, short_str, draw.right))
+                 % (draw.left, short_str, draw.mid, short_str, draw.right))
 
 
 @plugin.method("summary", long_desc=summary_description)
@@ -174,7 +173,6 @@ def summary(plugin, exclude=''):
             # Create simple line graph, 47 chars wide.
             our_len = int(round(int(c.ours) / biggest * 23))
             their_len = int(round(int(c.theirs) / biggest * 23))
-            divided = False
 
             # We put midpoint in the middle.
             mid = draw.mid
@@ -232,10 +230,10 @@ def init(options, configuration, plugin):
     plugin.currency_prefix = options['summary-currency-prefix']
     plugin.fiat_per_btc = 0
 
-    plugin.avail_interval  = float(options['summary-availability-interval'])
-    plugin.avail_window    = 60 * 60 * int(options['summary-availability-window'])
-    plugin.persist         = shelve.open('summary.dat', writeback=True)
-    if not 'peerstate' in plugin.persist:
+    plugin.avail_interval = float(options['summary-availability-interval'])
+    plugin.avail_window = 60 * 60 * int(options['summary-availability-window'])
+    plugin.persist = shelve.open('summary.dat', writeback=True)
+    if 'peerstate' not in plugin.persist:
         plugin.persist['peerstate'] = {}
         plugin.persist['availcount'] = 0
 
@@ -246,8 +244,8 @@ def init(options, configuration, plugin):
         # Default port in 9050
         if ':' not in paddr:
             paddr += ':9050'
-        proxies = { 'https': 'socks5h://' + paddr,
-                    'http': 'socks5h://' + paddr }
+        proxies = {'https': 'socks5h://' + paddr,
+                   'http': 'socks5h://' + paddr}
     else:
         proxies = None
 
