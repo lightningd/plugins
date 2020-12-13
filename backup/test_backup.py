@@ -242,6 +242,7 @@ def test_rewrite():
     for i, o in tests:
         assert(b._rewrite_stmt(i) == o)
 
+
 def test_restore_pre_4090(directory):
     """The prev-4090-backup.dbak contains faulty expansions, fix em.
     """
