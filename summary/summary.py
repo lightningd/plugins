@@ -2,7 +2,7 @@
 from pyln.client import Plugin, Millisatoshi
 from packaging import version
 from collections import namedtuple
-from summary_avail import *
+from summary_avail import trace_availability, addpeer
 import pyln.client
 import requests
 import shelve
