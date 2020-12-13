@@ -2,6 +2,7 @@ import subprocess
 import unittest
 import time
 import re
+import os
 
 from pyln.client import Plugin
 from pyln.testing.fixtures import *  # noqa: F401,F403
@@ -15,8 +16,8 @@ pluginopt = {'plugin': os.path.join(os.path.dirname(__file__), "summary.py")}
 # returns a test plugin stub
 def get_stub():
     plugin = Plugin()
-    plugin.avail_interval  = 60
-    plugin.avail_window    = 3600
+    plugin.avail_interval = 60
+    plugin.avail_window = 3600
     plugin.persist = {}
     plugin.persist['peerstate'] = {}
     plugin.persist['availcount'] = 0
@@ -26,7 +27,7 @@ def get_stub():
 def test_summary_peer_thread(node_factory):
     # in order to give the PeerThread a chance in a unit test
     # we need to give it a low interval
-    opts = {'summary-availability-interval' : 0.1}
+    opts = {'summary-availability-interval': 0.1}
     opts.update(pluginopt)
     l1, l2 = node_factory.line_graph(2, opts=opts)
 
@@ -49,10 +50,10 @@ def test_summary_avail_101():
     # given
     plugin = get_stub()
     rpcpeers = {
-        'peers' : [
-            { 'id' : '1', 'connected' : True },
-            { 'id' : '2', 'connected' : False },
-            { 'id' : '3', 'connected' : True },
+        'peers': [
+            {'id': '1', 'connected': True},
+            {'id': '2', 'connected': False},
+            {'id': '3', 'connected': True},
         ]
     }
 
@@ -64,9 +65,9 @@ def test_summary_avail_101():
     assert(plugin.persist['peerstate']['1']['avail'] == 1.0)
     assert(plugin.persist['peerstate']['2']['avail'] == 0.0)
     assert(plugin.persist['peerstate']['3']['avail'] == 1.0)
-    assert(plugin.persist['peerstate']['1']['connected'] == True)
-    assert(plugin.persist['peerstate']['2']['connected'] == False)
-    assert(plugin.persist['peerstate']['3']['connected'] == True)
+    assert(plugin.persist['peerstate']['1']['connected'] is True)
+    assert(plugin.persist['peerstate']['2']['connected'] is False)
+    assert(plugin.persist['peerstate']['3']['connected'] is True)
 
 
 # tests for 50% downtime
@@ -74,13 +75,13 @@ def test_summary_avail_50():
     # given
     plugin = get_stub()
     rpcpeers_on = {
-        'peers' : [
-            { 'id' : '1', 'connected' : True },
+        'peers': [
+            {'id': '1', 'connected': True},
         ]
     }
     rpcpeers_off = {
-        'peers' : [
-            { 'id' : '1', 'connected' : False },
+        'peers': [
+            {'id': '1', 'connected': False},
         ]
     }
 
@@ -99,13 +100,13 @@ def test_summary_avail_33():
     # given
     plugin = get_stub()
     rpcpeers_on = {
-        'peers' : [
-            { 'id' : '1', 'connected' : True },
+        'peers': [
+            {'id': '1', 'connected': True},
         ]
     }
     rpcpeers_off = {
-        'peers' : [
-            { 'id' : '1', 'connected' : False },
+        'peers': [
+            {'id': '1', 'connected': False},
         ]
     }
 
@@ -124,13 +125,13 @@ def test_summary_avail_66():
     # given
     plugin = get_stub()
     rpcpeers_on = {
-        'peers' : [
-            { 'id' : '1', 'connected' : True },
+        'peers': [
+            {'id': '1', 'connected': True},
         ]
     }
     rpcpeers_off = {
-        'peers' : [
-            { 'id' : '1', 'connected' : False },
+        'peers': [
+            {'id': '1', 'connected': False},
         ]
     }
 
@@ -150,13 +151,13 @@ def test_summary_avail_leadwin():
     # given
     plugin = get_stub()
     rpcpeers_on = {
-        'peers' : [
-            { 'id' : '1', 'connected' : True },
+        'peers': [
+            {'id': '1', 'connected': True},
         ]
     }
     rpcpeers_off = {
-        'peers' : [
-            { 'id' : '1', 'connected' : False },
+        'peers': [
+            {'id': '1', 'connected': False},
         ]
     }
 
