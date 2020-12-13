@@ -1,16 +1,10 @@
 #!/usr/bin/env python3
-from binascii import hexlify, unhexlify
-from collections import namedtuple
-from io import BytesIO
+from binascii import hexlify
 from onion import OnionPayload
 from onion import TlvPayload
-from primitives import varint_decode, varint_encode
 from pyln.client import Plugin, RpcError
 import hashlib
 import os
-import random
-import shelve
-import string
 import struct
 import time
 import zbase32
@@ -22,6 +16,8 @@ TLV_KEYSEND_PREIMAGE = 5482373484
 TLV_NOISE_MESSAGE = 34349334
 TLV_NOISE_SIGNATURE = 34349335
 TLV_NOISE_TIMESTAMP = 34349343
+
+
 class Message(object):
     def __init__(self, sender, body, signature, payment=None, id=None):
         self.id = id
@@ -40,6 +36,7 @@ class Message(object):
             "payment": self.payment.to_dict() if self.payment is not None else None,
             "verified": self.verified,
         }
+
 
 class Payment(object):
     def __init__(self, payment_key, amount):
@@ -104,7 +101,7 @@ def deliver(node_id, payload, amt, payment_hash, max_attempts=5):
                              first_hop=first_hop,
                              payment_hash=payment_hash,
                              shared_secrets=onion['shared_secrets']
-        )
+                             )
         try:
             plugin.rpc.waitsendpay(payment_hash=payment_hash)
             return {'route': route, 'payment_hash': payment_hash, 'attempt': attempt}
@@ -112,7 +109,7 @@ def deliver(node_id, payload, amt, payment_hash, max_attempts=5):
             failcode = e.error['data']['failcode']
             failingidx = e.error['data']['erring_index']
             if failcode == 16399 or failingidx == len(hops):
-                return {'route': route, 'payment_hash': payment_hash, 'attempt': attempt+1}
+                return {'route': route, 'payment_hash': payment_hash, 'attempt': attempt + 1}
 
             plugin.log("Retrying delivery.")
 
@@ -139,7 +136,7 @@ def sendmsg(node_id, msg, plugin, request, pay=None, **kwargs):
     # the TLV payload and verification ends up with a bogus sender node_id.
     sigmsg = hexlify(payload.to_bytes()).decode('ASCII')
     sig = plugin.rpc.signmessage(sigmsg)
-    sigcheck = plugin.rpc.checkmessage(sigmsg, sig['zbase'])
+    plugin.rpc.checkmessage(sigmsg, sig['zbase'])
     sig = zbase32.decode(sig['zbase'])
     payload.add_field(TLV_NOISE_SIGNATURE, sig)
 
