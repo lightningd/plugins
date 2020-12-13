@@ -107,7 +107,7 @@ def worker(port):
                      donation_form, methods=["GET", "POST"])
     app.add_url_rule('/is_invoice_paid/<label>', 'ajax', ajax)
     Bootstrap(app)
-    app.run("0.0.0.0", port=port)
+    app.run(host="0.0.0.0", port=port)
     return
 
 
@@ -131,6 +131,7 @@ def start_server(port):
 def stop_server(port):
     if port in jobs:
         jobs[port].terminate()
+        jobs[port].join()
         del jobs[port]
         return True
     else:
@@ -195,7 +196,7 @@ plugin.add_option(
 
 plugin.add_option(
     'donation-web-port',
-    '33506',
+    '8088',
     'Which port should the donation server listen to?'
 )
 
