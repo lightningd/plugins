@@ -141,9 +141,9 @@ def traceroute(plugin, node_id, **kwargs):
         return traceroute
 
     # For each prefix length, shorten the route and attempt the payment
-    for l in range(1, len(traceroute['route']) + 1):
+    for i in range(1, len(traceroute['route']) + 1):
         probe = {
-            'route': traceroute['route'][:l],
+            'route': traceroute['route'][:i],
             'payment_hash': ''.join(random.choice(string.hexdigits) for _ in range(64)),
             'started_at': str(datetime.now()),
         }
