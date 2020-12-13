@@ -45,8 +45,8 @@ def maybe_open_channel(desired, rpc):
 
     if peers == []:
         # Need to connect first, and then open a channel
-        #if not is_connectable(rpc, desired['node_id']):
-        #    print("No address known for {}, cannot connect.".format(desired['node_id']))
+        # if not is_connectable(rpc, desired['node_id']):
+        #     print("No address known for {}, cannot connect.".format(desired['node_id']))
 
         try:
             rpc.connect(desired['node_id'])
