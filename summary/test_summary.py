@@ -8,7 +8,7 @@ from pyln.client import Plugin
 from pyln.testing.fixtures import *  # noqa: F401,F403
 from pyln.testing.utils import DEVELOPER
 
-from summary_avail import *
+from .summary_avail import trace_availability
 
 pluginopt = {'plugin': os.path.join(os.path.dirname(__file__), "summary.py")}
 
