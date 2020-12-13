@@ -40,7 +40,7 @@ class LegacyOnionPayload(OnionPayload):
     def __init__(self, amt_to_forward, outgoing_cltv_value,
                  short_channel_id=None, padding=None):
         assert(padding is None or len(padding) == 12)
-        self.padding = b'\x00'*12 if padding is None else padding
+        self.padding = b'\x00' * 12 if padding is None else padding
 
         if isinstance(amt_to_forward, str):
             self.amt_to_forward = int(amt_to_forward)

@@ -21,6 +21,7 @@ zbase32_revchars = [
     255, 255, 255, 255, 255, 255, 255
 ]
 
+
 def bitarray_to_u5(barr):
     assert len(barr) % 5 == 0
     ret = []
@@ -29,16 +30,19 @@ def bitarray_to_u5(barr):
         ret.append(s.read(5).uint)
     return ret
 
+
 def u5_to_bitarray(arr):
     ret = bitstring.BitArray()
     for a in arr:
         ret += bitstring.pack("uint:5", a)
     return ret
 
+
 def encode(b):
     uint5s = bitarray_to_u5(b)
     res = [zbase32_chars[c] for c in uint5s]
     return bytes(res)
+
 
 def decode(b):
     if isinstance(b, str):

@@ -1,12 +1,12 @@
-from binascii import hexlify
 from onion import TlvPayload
 from flaky import flaky
 from pprint import pprint
 from pyln.client import RpcError
-from pyln.testing.fixtures import *
+from pyln.testing.fixtures import *  # noqa: F401,F403
 from pyln.testing.utils import wait_for
 import hashlib
-import unittest
+import os
+import pytest
 import zbase32
 
 
@@ -29,10 +29,10 @@ def test_sendmsg_success(node_factory, executor):
     assert(m1 == m2)
 
     assert(m2['sender'] == l1.info['id'])
-    assert(m2['verified'] == True)
+    assert(m2['verified'] is True)
 
 
-@unittest.skipIf(True, "This test is flaky since we cannot force a payment to take a specific route")
+@flaky  # since we cannot force a payment to take a specific route
 def test_sendmsg_retry(node_factory, executor):
     """Fail a sendmsg using a cheap route, and check that it retries.
 
@@ -64,16 +64,16 @@ def test_sendmsg_retry(node_factory, executor):
                 return False
         return True
 
-    wait_for(lambda: [c['active'] for c in l1.rpc.listchannels()['channels']] == [True]*10)
+    wait_for(lambda: [c['active'] for c in l1.rpc.listchannels()['channels']] == [True] * 10)
 
     # Now stop l5 so the first attempt will fail.
     l5.stop()
 
-    recv = executor.submit(l4.rpc.recvmsg)
+    executor.submit(l4.rpc.recvmsg)
     send = executor.submit(l1.rpc.sendmsg, l4.info['id'], "Hello world!")
 
     # Just making sure our view didn't change since we initiated the attempt
-    assert([c['active'] for c in l1.rpc.listchannels()['channels']] == [True]*10)
+    assert([c['active'] for c in l1.rpc.listchannels()['channels']] == [True] * 10)
     pprint(l1.rpc.listchannels())
 
     l1.daemon.wait_for_log(r'Retrying delivery')
@@ -82,7 +82,7 @@ def test_sendmsg_retry(node_factory, executor):
     assert(sres['attempt'] == 2)
     pprint(sres)
 
-    msg = l4.rpc.recvmsg(last_id=-1)
+    l4.rpc.recvmsg(last_id=-1)
 
 
 def test_zbase32():
@@ -104,7 +104,7 @@ def test_msg_and_keysend(node_factory, executor):
     m = l3.rpc.recvmsg(last_id=-1)
 
     assert(m['sender'] == l1.info['id'])
-    assert(m['verified'] == True)
+    assert(m['verified'] is True)
     p = m['payment']
     assert(p is not None)
     assert(p['payment_key'] is not None)
@@ -121,7 +121,7 @@ def test_forward_ok(node_factory, executor):
     https://github.com/lightningd/plugins/pull/68#issuecomment-577251902
 
     """
-    opts = [{'plugin': plugin}]*3
+    opts = [{'plugin': plugin}] * 3
     l1, l2, l3 = node_factory.line_graph(3, wait_for_announce=True, opts=opts)
 
     recv = executor.submit(l3.rpc.recvmsg)
@@ -136,21 +136,21 @@ def test_forward_ok(node_factory, executor):
     assert(m1 == m2)
 
     assert(m2['sender'] == l1.info['id'])
-    assert(m2['verified'] == True)
+    assert(m2['verified'] is True)
 
 
 def test_missing_tlv_fields(node_factory):
     """If we're missing a field we should not crash
     """
-    opts = [{'plugin': plugin}]*2
-    l1, l2  = node_factory.line_graph(2, wait_for_announce=True, opts=opts)
+    opts = [{'plugin': plugin}] * 2
+    l1, l2 = node_factory.line_graph(2, wait_for_announce=True, opts=opts)
     payment_key = os.urandom(32)
     payment_hash = hashlib.sha256(payment_key).hexdigest()
 
     route = l1.rpc.getroute(l2.info['id'], 10, 10)['route']
 
     def send(key, value):
-        hops = [{"type":"tlv", "pubkey": l2.info['id'], "payload": None}]
+        hops = [{"type": "tlv", "pubkey": l2.info['id'], "payload": None}]
 
         payload = TlvPayload()
         payload.add_field(key, value)
@@ -169,5 +169,5 @@ def test_missing_tlv_fields(node_factory):
     send(34349334, b'Message body')
     assert(l2.daemon.wait_for_log(r'Missing message body or signature'))
 
-    send(34349335, b'00'*32)
+    send(34349335, b'00' * 32)
     assert(l2.daemon.wait_for_log(r'Missing message body or signature'))
