@@ -11,6 +11,7 @@ Community curated plugins for c-lightning.
 | [autopilot][autopilot]             | An autopilot that suggests channels that should be established                            |
 | [boltz-channel-creation][boltz]    | A c-lightning plugin for Boltz Channel Creation Swaps                                     |
 | [csvexportpays][csvexportpays]     | A plugin that exports all payments to a CSV file                                          |
+| [currencyrate][currencyrate]      | A plugin to convert other currencies to BTC using web requests
 | [donations][donations]             | A simple donations page to accept donations from the web                                  |
 | [drain][drain]                     | Draining, filling and balancing channels with automatic chunks.                           |
 | [event-websocket][event-websocket] | Exposes notifications over a Websocket                                                    |
@@ -146,6 +147,7 @@ your environment.
 [drain]: https://github.com/lightningd/plugins/tree/master/drain
 [plugin-docs]: https://lightning.readthedocs.io/PLUGINS.html
 [c-api]: https://github.com/ElementsProject/lightning/blob/master/plugins/libplugin.h
+[currencyrate]: https://github.com/lightningd/plugins/tree/master/currencyrate
 [python-api]: https://github.com/ElementsProject/lightning/tree/master/contrib/pylightning
 [python-api-pypi]: https://pypi.org/project/pylightning/
 [go-api]: https://github.com/niftynei/glightning
