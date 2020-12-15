@@ -510,15 +510,17 @@ node!  Be prepared to lose your funds (but please report a bug if you do!)
     read_config(configfile_global, config)
     read_config(configfile_network, config)
 
+    plugins = plugin.rpc.listconfigs()['plugins']
+
     if len(config) == 0:
         r += "No config file.  Try 'helpme bling'"
     elif 'alias' not in config and 'rgb' not in config:
         r += "You have not customized alias or color.  Try 'helpme bling'"
-    # They pretty much need this plugin and the pay plugin.
-    elif len(config['plugin']) <= 2:
+    # They pretty much need this plugin. pay, bcli, ... are in 'important-plugins'
+    elif len(plugins) <= 1:
         r += "You have not added plugins.  Try 'helpme plugins'"
     else:
-        r += "COMPLETE ({} plugins)".format(len(config['plugin']))
+        r += "COMPLETE ({} plugins)".format(len(plugins))
         stages['plugins'] = True
 
     if all(v for v in stages.values()):
