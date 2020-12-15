@@ -95,7 +95,10 @@ def currencyrate(plugin, currency):
 @plugin.method("currencyconvert")
 def currencyconvert(plugin, amount, currency):
     """Converts currency using given APIs."""
-    val = statistics.median([m.millisatoshis for m in get_rates(plugin, currency.upper()).values()]) * float(amount)
+    rates = get_rates(plugin, currency.upper())
+    if len(rates) == 0:
+        raise Exception("No values available for currency {}".format(currency.upper()))
+    val = statistics.median([m.millisatoshis for m in rates.values()]) * float(amount)
     return {"msat": Millisatoshi(round(val))}
 
 
