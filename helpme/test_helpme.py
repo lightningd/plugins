@@ -14,3 +14,9 @@ def test_helpme_starts(node_factory):
     # Then statically
     l1.daemon.opts["plugin"] = plugin_path
     l1.start()
+
+
+def test_main(node_factory):
+    pluginopt = {'plugin': plugin_path}
+    l1, l2 = node_factory.line_graph(2, opts=pluginopt)
+    assert l1.rpc.helpme()
