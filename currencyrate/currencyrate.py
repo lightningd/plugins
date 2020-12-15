@@ -104,16 +104,30 @@ def init(options, configuration, plugin):
     set_proxies(plugin)
 
     if options['add-source'] != '':
-        parts = options['add-source'].split(',')
-        sources.append(Source(parts[0], parts[1], parts[2:]))
+        sourceopts = options['add-source']
+        # Prior to 0.9.3, 'multi' was unsupported.
+        if type(sourceopts) is not list:
+            sourceopts = [sourceopts]
+        for s in sourceopts:
+            parts = s.split(',')
+            sources.append(Source(parts[0], parts[1], parts[2:]))
 
     if options['disable-source'] != '':
+        disableopts = options['disable-source']
+        # Prior to 0.9.3, 'multi' was unsupported.
+        if type(disableopts) is not list:
+            disableopts = [disableopts]
         for s in sources[:]:
-            if s.name == options['disable-source']:
+            if s.name in disableopts:
                 sources.remove(s)
 
 
 # As a bad example: binance,https://api.binance.com/api/v3/ticker/price?symbol=BTC{currency}T,price
 plugin.add_option(name='add-source', default='', description='Add source name,urlformat,resultmembers...')
 plugin.add_option(name='disable-source', default='', description='Disable source by name')
+
+# This has an effect only for recent pyln versions (0.9.3+).
+plugin.options['add-source']['multi'] = True
+plugin.options['disable-source']['multi'] = True
+
 plugin.run()

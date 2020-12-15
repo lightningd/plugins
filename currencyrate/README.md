@@ -17,6 +17,9 @@ For general plugin installation instructions see the repos main
   would be "USD,last_trade".
 * --disable-source: Disable the source with this name.
 
+For c-lightning versions 0.9.3 and above, you can specify these
+options multiple times to add or disable multiple sources.
+
 ## Commands
 
 `currencyrate` returns the number of msats per unit from every backend, eg:
