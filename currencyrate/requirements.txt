@@ -1,0 +1,5 @@
+pyln-client>=0.7.3
+requests>=2.10.0
+requests[socks]>=2.10.0
+packaging>=14.1
+cachetools
