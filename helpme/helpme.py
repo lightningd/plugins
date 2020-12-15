@@ -503,21 +503,12 @@ node!  Be prepared to lose your funds (but please report a bug if you do!)
         stages['invoices'] = True
 
     r += "\nSTAGE 6 (adding bling): "
-    # We assume default config location
-    configfile = path.join(plugin.lightning_dir, "config")
+    # We assume default config locations
     config = defaultdict(list)
-    try:
-        with open(configfile, encoding="utf-8") as f:
-            for line in f:
-                l2 = line.strip()
-                if l2.startswith('#') or l2 == '':
-                    continue
-                parts = l2.split('=', 1)
-                if len(parts) == 1:
-                    parts.append(None)
-                config[parts[0]].append(parts[1])
-    except FileNotFoundError:
-        pass
+    configfile_global = path.join(path.dirname(plugin.lightning_dir), "config")
+    configfile_network = path.join(plugin.lightning_dir, "config")
+    read_config(configfile_global, config)
+    read_config(configfile_network, config)
 
     if len(config) == 0:
         r += "No config file.  Try 'helpme bling'"
@@ -544,6 +535,21 @@ You can do anything from here!  Look up your node on an explorer, like:
         r += "\nYou can also try 'helpme history' to learn more about the lightning network"
 
     return r
+
+
+def read_config(configfile, config):
+    try:
+        with open(configfile, encoding="utf-8") as f:
+            for line in f:
+                l2 = line.strip()
+                if l2.startswith('#') or l2 == '':
+                    continue
+                parts = l2.split('=', 1)
+                if len(parts) == 1:
+                    parts.append(None)
+                config[parts[0]].append(parts[1])
+    except FileNotFoundError:
+        pass
 
 
 def color_dist(c1, c2):
