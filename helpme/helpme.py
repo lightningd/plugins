@@ -436,6 +436,7 @@ node!  Be prepared to lose your funds (but please report a bug if you do!)
     funds = plugin.rpc.listfunds()['outputs']
     payments = plugin.rpc.listpays()['pays']
     invoices = plugin.rpc.listinvoices()['invoices']
+    channels = get_channel_list(peers, None)
 
     if info['network'] != 'bitcoin':
         r += "\n*** You are on TESTNET, not real bitcoin!  See 'helpme mainnet'"
@@ -448,12 +449,14 @@ node!  Be prepared to lose your funds (but please report a bug if you do!)
               'bling': False}
 
     r += "\nSTAGE 1 (funds): "
-    if len(funds) == 0:
+    if len(funds) == 0 and len(channels) == 0:
         r += "INCOMPLETE: No bitcoins yet.  Try 'helpme funds'"
+    elif len(funds) == 0 and len(channels) > 0:
+        r += "COMPLETE (all funds used for channels)"
     else:
         funds = Millisatoshi(1000 * sum([f['value'] for f in funds
                              if f['status'] == 'confirmed']))
-        r += "COMPLETE ({} a.k.a {})".format(funds, funds.to_btc_str())
+        r += "COMPLETE ({} a.k.a. {})".format(funds, funds.to_btc_str())
         stages['funds'] = True
 
     r += "\nSTAGE 2 (peers): "
@@ -464,7 +467,6 @@ node!  Be prepared to lose your funds (but please report a bug if you do!)
         stages['peers'] = True
 
     r += "\nSTAGE 3 (channels): "
-    channels = get_channel_list(peers, None)
     starting = [c['total_msat'] for c in channels
                 if c['state'] == 'CHANNELD_AWAITING_LOCKIN']
     normal = [c['total_msat'] for c in channels
