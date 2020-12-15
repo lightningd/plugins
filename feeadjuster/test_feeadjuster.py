@@ -254,6 +254,7 @@ def test_feeadjuster_big_enough_liquidity(node_factory):
 
     chan_total = int(chan_A["total_msat"])
     assert chan_total == int(chan_B["total_msat"])
+    l2.daemon.logsearch_start = 0
     l2.daemon.wait_for_log('enough_liquidity: 100000000msat')
 
     # we force feeadjust initially to test this method and check if it applies

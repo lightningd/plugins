@@ -17,7 +17,7 @@ def get_adjusted_percentage(plugin: Plugin, scid: str):
     """
     For big channels, there may be a wide range where the liquidity is just okay.
     Note: if big_enough_liquidity is greater than {total} * 2
-        then percentage is actually {our} / {total}, as it was before
+          then percentage is actually {our} / {total}, as it was before
     """
     channel = plugin.adj_balances[scid]
     if plugin.big_enough_liquidity == Millisatoshi(0):
@@ -72,7 +72,7 @@ def maybe_setchannelfee(plugin: Plugin, scid: str, base: int, ppm: int):
         plugin.rpc.setchannelfee(scid, base, ppm)
         return True
     except RpcError as e:
-        plugin.log(f"Could not adjust fees for channel {scid}: '{e}'", level="warn")
+        plugin.log(f"Could not adjust fees for channel {scid}: '{e}'", level="error")
     return False
 
 
@@ -199,17 +199,17 @@ def feeadjust(plugin: Plugin):
 @plugin.init()
 def init(options: dict, configuration: dict, plugin: Plugin, **kwargs):
     plugin.our_node_id = plugin.rpc.getinfo()["id"]
-    plugin.deactivate_fuzz = options.get("feeadjuster-deactivate-fuzz", False)
-    plugin.update_threshold = float(options.get("feeadjuster-threshold", "0.05"))
-    plugin.update_threshold_abs = Millisatoshi(options.get("feeadjuster-threshold-abs", "0.001btc"))
-    plugin.big_enough_liquidity = Millisatoshi(options.get("feeadjuster-enough-liquidity", "0msat"))
-    plugin.imbalance = float(options.get("feeadjuster-imbalance", 0.5))
+    plugin.deactivate_fuzz = options.get("feeadjuster-deactivate-fuzz")
+    plugin.update_threshold = float(options.get("feeadjuster-threshold"))
+    plugin.update_threshold_abs = Millisatoshi(options.get("feeadjuster-threshold-abs"))
+    plugin.big_enough_liquidity = Millisatoshi(options.get("feeadjuster-enough-liquidity"))
+    plugin.imbalance = float(options.get("feeadjuster-imbalance"))
     adjustment_switch = {
         "soft": get_ratio_soft,
         "hard": get_ratio_hard,
         "default": get_ratio
-        }
-    plugin.get_ratio = adjustment_switch.get(options.get("feeadjuster-adjustment-method", "default"), get_ratio)
+    }
+    plugin.get_ratio = adjustment_switch.get(options.get("feeadjuster-adjustment-method"), get_ratio)
     config = plugin.rpc.listconfigs()
     plugin.adj_basefee = config["fee-base"]
     plugin.adj_ppmfee = config["fee-per-satoshi"]
@@ -251,7 +251,9 @@ plugin.add_option(
 plugin.add_option(
     "feeadjuster-enough-liquidity",
     "0msat",
-    "Beyond this liquidity threshold there is no need to adjusting fees, 0 means the feature is turned off",
+    "Beyond this liquidity do not adjust fees. "
+    "This also modifies the fee curve to achieve having this amount of liquidity. "
+    "Default: '0msat' (turned off).",
     "string"
 )
 plugin.add_option(
