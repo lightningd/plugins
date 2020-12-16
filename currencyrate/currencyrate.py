@@ -106,20 +106,20 @@ def currencyconvert(plugin, amount, currency):
 def init(options, configuration, plugin):
     set_proxies(plugin)
 
-    if options['add-source'] != '':
-        sourceopts = options['add-source']
-        # Prior to 0.9.3, 'multi' was unsupported.
-        if type(sourceopts) is not list:
-            sourceopts = [sourceopts]
+    sourceopts = options['add-source']
+    # Prior to 0.9.3, 'multi' was unsupported.
+    if type(sourceopts) is not list:
+        sourceopts = [sourceopts]
+    if sourceopts != ['']:
         for s in sourceopts:
             parts = s.split(',')
             sources.append(Source(parts[0], parts[1], parts[2:]))
 
-    if options['disable-source'] != '':
-        disableopts = options['disable-source']
-        # Prior to 0.9.3, 'multi' was unsupported.
-        if type(disableopts) is not list:
-            disableopts = [disableopts]
+    disableopts = options['disable-source']
+    # Prior to 0.9.3, 'multi' was unsupported.
+    if type(disableopts) is not list:
+        disableopts = [disableopts]
+    if disableopts != ['']:
         for s in sources[:]:
             if s.name in disableopts:
                 sources.remove(s)
