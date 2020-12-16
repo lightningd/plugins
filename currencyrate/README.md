@@ -42,3 +42,15 @@ $ lightning-cli currencyconvert 100 USD
    "msat": "515941800msat"
 }
 ```
+
+## Default Currency Sources
+
+Thanks to those services who provide this information.  Coindesk require
+a blurb, so I did that for everyone (quoting from their front page):
+
+* localbitcoins.com: "Buy and Sell Bitcoin Everywhere"
+* www.bitstamp.net: "The original global crypto exchange."
+* api.coingecko.com: "The world's most comprehensive cryptocurrency API"
+* api.coindesk.com: "Powered by CoinDesk: https://www.coindesk.com/price/bitcoin"
+* api.coinbase.com: "The easiest place to buy, sell, and manage your cryptocurrency portfolio."
+* blockchain.info: "The World's Most Popular Way to Buy, Hold, and Use Crypto"
