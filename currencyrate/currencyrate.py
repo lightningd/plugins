@@ -26,6 +26,18 @@ sources = [
     Source('coingecko',
            'https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies={currency_lc}',
            ['bitcoin', '{currency_lc}']),
+    # e.g. {"time":{"updated":"Dec 16, 2020 00:58:00 UTC","updatedISO":"2020-12-16T00:58:00+00:00","updateduk":"Dec 16, 2020 at 00:58 GMT"},"disclaimer":"This data was produced from the CoinDesk Bitcoin Price Index (USD). Non-USD currency data converted using hourly conversion rate from openexchangerates.org","bpi":{"USD":{"code":"USD","rate":"19,395.1400","description":"United States Dollar","rate_float":19395.14},"AUD":{"code":"AUD","rate":"25,663.5329","description":"Australian Dollar","rate_float":25663.5329}}}
+    Source('coindesk',
+           'https://api.coindesk.com/v1/bpi/currentprice/{currency}.json',
+           ['bpi', '{currency}', 'rate_float']),
+    # e.g. {"data":{"base":"BTC","currency":"USD","amount":"19414.63"}}
+    Source('coinbase',
+           'https://api.coinbase.com/v2/prices/spot?currency={currency}',
+           ['data', 'amount']),
+    # e.g. {  "USD" : {"15m" : 6650.3, "last" : 6650.3, "buy" : 6650.3, "sell" : 6650.3, "symbol" : "$"},  "AUD" : {"15m" : 10857.19, "last" : 10857.19, "buy" : 10857.19, "sell" : 10857.19, "symbol" : "$"},...
+    Source('blockchain.info',
+           'https://blockchain.info/ticker',
+           ['{currency}', 'last']),
 ]
 
 
