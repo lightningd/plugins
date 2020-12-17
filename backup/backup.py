@@ -207,6 +207,7 @@ class FileBackend(Backend):
             self.prev_version, self.offsets[1] = self.version, self.offsets[0]
             self.version = entry.version
             self.offsets[0] += 9 + len(payload)
+            self.version_count += 1
         self.write_metadata()
 
         return True
