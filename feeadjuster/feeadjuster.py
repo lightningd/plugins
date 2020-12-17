@@ -2,6 +2,7 @@
 import random
 import time
 from pyln.client import Plugin, Millisatoshi, RpcError
+from threading import Lock
 
 
 plugin = Plugin()
@@ -11,6 +12,9 @@ plugin.adj_balances = {}
 plugin.our_node_id = None
 # Users can configure this
 plugin.update_threshold = 0.05
+# forward_event must wait for init
+plugin.mutex = Lock()
+plugin.mutex.acquire()
 
 
 def get_adjusted_percentage(plugin: Plugin, scid: str):
@@ -157,6 +161,7 @@ def maybe_add_new_balances(plugin: Plugin, scids: list):
 
 @plugin.subscribe("forward_event")
 def forward_event(plugin: Plugin, forward_event: dict, **kwargs):
+    plugin.mutex.acquire(blocking=True)
     if forward_event["status"] == "settled":
         in_scid = forward_event["in_channel"]
         out_scid = forward_event["out_channel"]
@@ -171,6 +176,7 @@ def forward_event(plugin: Plugin, forward_event: dict, **kwargs):
             maybe_adjust_fees(plugin, [in_scid, out_scid])
         except Exception as e:
             plugin.log("Adjusting fees: " + str(e), level="error")
+    plugin.mutex.release()
 
 
 @plugin.method("feeadjust")
@@ -180,6 +186,7 @@ def feeadjust(plugin: Plugin):
     This method is automatically called in plugin init, or can be called manually after a successful payment.
     Otherwise, the plugin keeps the fees up-to-date.
     """
+    plugin.mutex.acquire(blocking=True)
     peers = plugin.rpc.listpeers()["peers"]
     channels_adjusted = 0
     for peer in peers:
@@ -193,6 +200,7 @@ def feeadjust(plugin: Plugin):
                 channels_adjusted += maybe_adjust_fees(plugin, [scid])
     msg = f"{channels_adjusted} channels adjusted"
     plugin.log(msg)
+    plugin.mutex.release()
     return msg
 
 
@@ -225,6 +233,7 @@ def init(options: dict, configuration: dict, plugin: Plugin, **kwargs):
                f"update_threshold: {int(100 * plugin.update_threshold)}%, update_threshold_abs: {plugin.update_threshold_abs}, "
                f"enough_liquidity: {plugin.big_enough_liquidity}, deactivate_fuzz: {plugin.deactivate_fuzz}, "
                f"adjustment_method: {plugin.get_ratio.__name__}")
+    plugin.mutex.release()
     feeadjust(plugin)
 
 
