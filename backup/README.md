@@ -27,8 +27,12 @@ internal state, and which makes sure no instances are using the same backup.
 ```
 
 Notes:
- - Make sure to adjust the `~/.lightning/bitcoin` directory to your needs.
- - You should use some non-local SSH or NFS mount as destination.
+ - If you are not using the default lightning directory you'll need to
+   change `~/.lightning/bitcoin` in the command line to point to that
+   directory instead.
+ - You should use some non-local SSH or NFS mount as destination,
+   otherwise any failure of the disk may result in both the original
+   as well as the backup being corrupted.
  - Currently only the `file:///` URL scheme is supported.
 
 ## IMPORTANT note about hsm_secret
