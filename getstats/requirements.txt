@@ -1,0 +1,2 @@
+schedule>=0.6.0
+pysqlite3>=0.4.5
