@@ -7,6 +7,7 @@ from urllib.parse import urlparse
 import json
 import logging
 import os
+import re
 import struct
 import sys
 import sqlite3
@@ -17,7 +18,7 @@ import psutil
 plugin = Plugin()
 
 root = logging.getLogger()
-root.setLevel(logging.DEBUG)
+root.setLevel(logging.INFO)
 
 handler = logging.StreamHandler(sys.stdout)
 handler.setLevel(logging.DEBUG)
@@ -94,17 +95,34 @@ class Backend(object):
             f.write(snapshot)
         self.db = self._db_open(dest)
 
+    def _rewrite_stmt(self, stmt: bytes) -> bytes:
+        """We had a stmt expansion bug in c-lightning, this replicates the fix.
+
+        We were expanding statements incorrectly, missing some
+        whitespace between a param and the `WHERE` keyword. This
+        re-inserts the space.
+
+        """
+        stmt = re.sub(r'reserved_til=([0-9]+)WHERE', r'reserved_til=\1 WHERE', stmt)
+        stmt = re.sub(r'peer_id=([0-9]+)WHERE channels.id=', r'peer_id=\1 WHERE channels.id=', stmt)
+        return stmt
+
     def _restore_transaction(self, tx: Iterator[bytes]):
         assert(self.db)
         cur = self.db.cursor()
         for q in tx:
-            cur.execute(q.decode('UTF-8'))
+            q = self._rewrite_stmt(q.decode('UTF-8'))
+            cur.execute(q)
         self.db.commit()
 
     def restore(self, dest: str, remove_existing: bool = False):
         """Restore the backup in this backend to its former glory.
-        """
 
+        If `dest` is a directory, we assume the default database filename:
+        lightningd.sqlite3
+        """
+        if os.path.isdir(dest):
+            dest = os.path.join(dest, "lightningd.sqlite3")
         if os.path.exists(dest):
             if not remove_existing:
                 raise ValueError(
@@ -189,6 +207,7 @@ class FileBackend(Backend):
             self.prev_version, self.offsets[1] = self.version, self.offsets[0]
             self.version = entry.version
             self.offsets[0] += 9 + len(payload)
+            self.version_count += 1
         self.write_metadata()
 
         return True
@@ -225,7 +244,6 @@ class FileBackend(Backend):
             if version != self.version:
                 raise ValueError("Versions do not match up: restored version {}, backend version {}".format(version, self.version))
             assert(version == self.version)
-
 
 
 def resolve_backend_class(backend_url):
@@ -289,56 +307,31 @@ def check_first_write(plugin, data_version):
 @plugin.hook('db_write')
 def on_db_write(writes, data_version, plugin, **kwargs):
     change = Change(data_version, None, writes)
-    if not hasattr(plugin, 'backend'):
-        plugin.early_writes.append(change)
-        return {"result": "continue"}
-    else:
-        return apply_write(plugin, change)
-
-
-def apply_write(plugin, change):
     if not plugin.initialized:
         assert(check_first_write(plugin, change.version))
         plugin.initialized = True
 
     if plugin.backend.add_change(change):
         return {"result": "continue"}
+    else:
+        kill("Could not append DB change to the backup. Need to shutdown!")
 
 
 @plugin.init()
-def on_init(options: Mapping[str, str], plugin: Plugin, **kwargs):
-    # Reach into the DB and
-    configs = plugin.rpc.listconfigs()
-    plugin.db_path = configs['wallet']
-    destination = options['backup-destination']
-
-    # Ensure that we don't inadventently switch the destination
-    if not os.path.exists("backup.lock"):
-        print("Files in the current directory {}".format(", ".join(os.listdir("."))))
-        kill("Could not find backup.lock in the lightning-dir, have you initialized using the backup-cli utility?")
-
-    d = json.load(open("backup.lock", 'r'))
-    if destination is None or destination == 'null':
-        destination = d['backend_url']
-    elif destination != d['backend_url']:
-        kill(
-            "The destination specified as option does not match the one "
-            "specified in backup.lock. Please check your settings"
+def on_init(options, **kwargs):
+    dest = options.get('backup-destination', 'null')
+    if dest != 'null':
+        plugin.log(
+            "The `--backup-destination` option is deprecated and will be "
+            "removed in future versions of the backup plugin. Please remove "
+            "it from your configuration. The destination is now determined by "
+            "the `backup.lock` file in the lightning directory",
+            level="warn"
         )
 
-    if not plugin.db_path.startswith('sqlite3'):
+    configs = plugin.rpc.listconfigs()
+    if not configs['wallet'].startswith('sqlite3'):
         kill("The backup plugin only works with the sqlite3 database.")
-
-    plugin.backend = get_backend(destination, require_init=True)
-
-    for c in plugin.early_writes:
-        apply_write(plugin, c)
-
-
-plugin.add_option(
-    'backup-destination', None,
-    'Destination of the database backups (file:///filename/on/another/disk/).'
-)
 
 
 def kill(message: str):
@@ -360,15 +353,19 @@ def kill(message: str):
         time.sleep(30)
 
 
-def preflight(plugin: Plugin):
-    """Perform some preflight checks.
-    """
+plugin.add_option(
+    'backup-destination', None,
+    'UNUSED. Kept for backward compatibility only. Please update your configuration to remove this option.'
+)
+
+
+if __name__ == "__main__":
+    # Did we perform the first write check?
+    plugin.initialized = False
     if not os.path.exists("backup.lock"):
         kill("Could not find backup.lock in the lightning-dir")
 
-if __name__ == "__main__":
-    preflight(plugin)
-    # Did we perform the version check of backend versus the first write?
-    plugin.initialized = False
-    plugin.early_writes = []
+    d = json.load(open("backup.lock", 'r'))
+    destination = d['backend_url']
+    plugin.backend = get_backend(destination, require_init=True)
     plugin.run()

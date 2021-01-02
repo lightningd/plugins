@@ -436,6 +436,7 @@ node!  Be prepared to lose your funds (but please report a bug if you do!)
     funds = plugin.rpc.listfunds()['outputs']
     payments = plugin.rpc.listpays()['pays']
     invoices = plugin.rpc.listinvoices()['invoices']
+    channels = get_channel_list(peers, None)
 
     if info['network'] != 'bitcoin':
         r += "\n*** You are on TESTNET, not real bitcoin!  See 'helpme mainnet'"
@@ -448,12 +449,14 @@ node!  Be prepared to lose your funds (but please report a bug if you do!)
               'bling': False}
 
     r += "\nSTAGE 1 (funds): "
-    if len(funds) == 0:
+    if len(funds) == 0 and len(channels) == 0:
         r += "INCOMPLETE: No bitcoins yet.  Try 'helpme funds'"
+    elif len(funds) == 0 and len(channels) > 0:
+        r += "COMPLETE (all funds used for channels)"
     else:
         funds = Millisatoshi(1000 * sum([f['value'] for f in funds
-                                  if f['status'] == 'confirmed']))
-        r += "COMPLETE ({} a.k.a {})".format(funds, funds.to_btc_str())
+                             if f['status'] == 'confirmed']))
+        r += "COMPLETE ({} a.k.a. {})".format(funds, funds.to_btc_str())
         stages['funds'] = True
 
     r += "\nSTAGE 2 (peers): "
@@ -464,7 +467,6 @@ node!  Be prepared to lose your funds (but please report a bug if you do!)
         stages['peers'] = True
 
     r += "\nSTAGE 3 (channels): "
-    channels = get_channel_list(peers, None)
     starting = [c['total_msat'] for c in channels
                 if c['state'] == 'CHANNELD_AWAITING_LOCKIN']
     normal = [c['total_msat'] for c in channels
@@ -501,31 +503,24 @@ node!  Be prepared to lose your funds (but please report a bug if you do!)
         stages['invoices'] = True
 
     r += "\nSTAGE 6 (adding bling): "
-    # We assume default config location
-    configfile = path.join(plugin.lightning_dir, "config")
+    # We assume default config locations
     config = defaultdict(list)
-    try:
-        with open(configfile, encoding="utf-8") as f:
-            for line in f:
-                l2 = line.strip()
-                if l2.startswith('#') or l2 == '':
-                    continue
-                parts = l2.split('=', 1)
-                if len(parts) == 1:
-                    parts.append(None)
-                config[parts[0]].append(parts[1])
-    except FileNotFoundError:
-        pass
+    configfile_global = path.join(path.dirname(plugin.lightning_dir), "config")
+    configfile_network = path.join(plugin.lightning_dir, "config")
+    read_config(configfile_global, config)
+    read_config(configfile_network, config)
+
+    plugins = plugin.rpc.listconfigs()['plugins']
 
     if len(config) == 0:
         r += "No config file.  Try 'helpme bling'"
     elif 'alias' not in config and 'rgb' not in config:
         r += "You have not customized alias or color.  Try 'helpme bling'"
-    # They pretty much need this plugin and the pay plugin.
-    elif len(config['plugin']) <= 2:
+    # They pretty much need this plugin. pay, bcli, ... are in 'important-plugins'
+    elif len(plugins) <= 1:
         r += "You have not added plugins.  Try 'helpme plugins'"
     else:
-        r += "COMPLETE ({} plugins)".format(len(config['plugin']))
+        r += "COMPLETE ({} plugins)".format(len(plugins))
         stages['plugins'] = True
 
     if all(v for v in stages.values()):
@@ -542,6 +537,21 @@ You can do anything from here!  Look up your node on an explorer, like:
         r += "\nYou can also try 'helpme history' to learn more about the lightning network"
 
     return r
+
+
+def read_config(configfile, config):
+    try:
+        with open(configfile, encoding="utf-8") as f:
+            for line in f:
+                l2 = line.strip()
+                if l2.startswith('#') or l2 == '':
+                    continue
+                parts = l2.split('=', 1)
+                if len(parts) == 1:
+                    parts.append(None)
+                config[parts[0]].append(parts[1])
+    except FileNotFoundError:
+        pass
 
 
 def color_dist(c1, c2):
@@ -715,6 +725,8 @@ Note that the default expiry is 7 days, but you can change it: see 'man lightnin
 def give_channel_advice(plugin, *args):
     if len(args) > 1:
         raise ValueError("Sorry, I can only give channel advice for one invoice at a time")
+    elif len(args) < 1:
+        raise ValueError("I can only give channel advice if you specify an invoice")
 
     offline_funds = plugin.rpc.listfunds()['outputs']
     tot_off_funds = sum([f['amount_msat'] for f in offline_funds

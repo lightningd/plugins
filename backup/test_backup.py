@@ -1,7 +1,6 @@
+from backup import FileBackend
 from flaky import flaky
-from pyln.client import RpcError
-from pyln.testing.fixtures import *
-from pyln.client import RpcError
+from pyln.testing.fixtures import *  # noqa: F401,F403
 import os
 import pytest
 import subprocess
@@ -11,92 +10,39 @@ plugin_dir = os.path.dirname(__file__)
 plugin_path = os.path.join(plugin_dir, "backup.py")
 cli_path = os.path.join(os.path.dirname(__file__), "backup-cli")
 
-
-class NodeFactoryWrapper(NodeFactory):
-    def get_node(self, node_id=None, options=None, dbfile=None,
-                 feerates=(15000, 11000, 7500, 3750), start=True,
-                 wait_for_bitcoind_sync=True, expect_fail=False,
-                 cleandir=True, **kwargs):
-
-        node_id = self.get_node_id() if not node_id else node_id
-        port = self.get_next_port()
-
-        lightning_dir = os.path.join(
-            self.directory, "lightning-{}/".format(node_id))
-
-        if cleandir and os.path.exists(lightning_dir):
-            shutil.rmtree(lightning_dir)
-
-        # Get the DB backend DSN we should be using for this test and this
-        # node.
-        db = self.db_provider.get_db(os.path.join(lightning_dir, 'regtest'), self.testname, node_id)
-        node = self.node_cls(
-            node_id, lightning_dir, self.bitcoind, self.executor, db=db,
-            port=port, options=options, **kwargs
-        )
-
-        # Regtest estimatefee are unusable, so override.
-        node.set_feerates(feerates, False)
-
-        self.nodes.append(node)
-        if start:
-            try:
-                node.start(wait_for_bitcoind_sync)
-            except Exception:
-                if expect_fail:
-                    return node
-                node.daemon.stop()
-                raise
-        return node
+# For the transition period we require deprecated_apis to be true
+deprecated_apis = True
 
 
-@pytest.fixture
-def nf(request, directory, test_name, bitcoind, executor, db_provider, node_cls):
-    """Temporarily patch the node_factory to not always clean the node directory.
-    """
-    nf = NodeFactoryWrapper(
-        test_name,
-        bitcoind,
-        executor,
-        directory=directory,
-        db_provider=db_provider,
-        node_cls=node_cls
-    )
-
-    yield nf
-    ok, errs = nf.killall([not n.may_fail for n in nf.nodes])
-
-
-def test_start(nf, directory):
+def test_start(node_factory, directory):
     bpath = os.path.join(directory, 'lightning-1', 'regtest')
     bdest = 'file://' + os.path.join(bpath, 'backup.dbak')
     os.makedirs(bpath)
     subprocess.check_call([cli_path, "init", bpath, bdest])
     opts = {
         'plugin': plugin_path,
-        'backup-destination': bdest,
-        }
-    l1 = nf.get_node(options=opts, cleandir=False)
-
-    l1.daemon.wait_for_log(r'backup.py')
+        'allow-deprecated-apis': deprecated_apis,
+    }
+    l1 = node_factory.get_node(options=opts, cleandir=False)
+    plugins = [os.path.basename(p['name']) for p in l1.rpc.plugin("list")['plugins']]
+    assert("backup.py" in plugins)
 
     # Restart the node a couple of times, to check that we can resume normally
     for i in range(5):
         l1.restart()
-        l1.daemon.wait_for_log(r'Versions match up')
+        plugins = [os.path.basename(p['name']) for p in l1.rpc.plugin("list")['plugins']]
+        assert("backup.py" in plugins)
 
 
-def test_start_no_init(nf, directory):
+def test_start_no_init(node_factory, directory):
     """The plugin should refuse to start if we haven't initialized the backup
     """
     bpath = os.path.join(directory, 'lightning-1', 'regtest')
-    bdest = 'file://' + os.path.join(bpath, 'backup.dbak')
     os.makedirs(bpath)
     opts = {
         'plugin': plugin_path,
-        'backup-destination': bdest,
     }
-    l1 = nf.get_node(
+    l1 = node_factory.get_node(
         options=opts, cleandir=False, may_fail=True, start=False
     )
 
@@ -109,14 +55,14 @@ def test_start_no_init(nf, directory):
     ))
 
 
-def test_init_not_empty(nf, directory):
+def test_init_not_empty(node_factory, directory):
     """We want to add backups to an existing lightning node.
 
     backup-cli init should start the backup with an initial snapshot.
     """
     bpath = os.path.join(directory, 'lightning-1', 'regtest')
     bdest = 'file://' + os.path.join(bpath, 'backup.dbak')
-    l1 = nf.get_node()
+    l1 = node_factory.get_node()
     l1.stop()
 
     out = subprocess.check_output([cli_path, "init", bpath, bdest])
@@ -125,11 +71,12 @@ def test_init_not_empty(nf, directory):
 
     # Now restart and add the plugin
     l1.daemon.opts['plugin'] = plugin_path
+    l1.daemon.opts['allow-deprecated-apis'] = deprecated_apis
     l1.start()
-    l1.daemon.wait_for_log(r'plugin-backup.py: Versions match up')
+    assert(l1.daemon.is_in_log(r'plugin-backup.py: Versions match up'))
 
 
-def test_tx_abort(nf, directory):
+def test_tx_abort(node_factory, directory):
     """Simulate a crash between hook call and DB commit.
 
     We simulate this by updating the data_version var in the database before
@@ -145,9 +92,9 @@ def test_tx_abort(nf, directory):
     subprocess.check_call([cli_path, "init", bpath, bdest])
     opts = {
         'plugin': plugin_path,
-        'backup-destination': bdest,
-        }
-    l1 = nf.get_node(options=opts, cleandir=False)
+        'allow-deprecated-apis': deprecated_apis,
+    }
+    l1 = node_factory.get_node(options=opts, cleandir=False)
     l1.stop()
 
     print(l1.db.query("SELECT * FROM vars;"))
@@ -158,11 +105,11 @@ def test_tx_abort(nf, directory):
     print(l1.db.query("SELECT * FROM vars;"))
 
     l1.restart()
-    l1.daemon.wait_for_log(r'Last changes not applied')
+    assert(l1.daemon.is_in_log(r'Last changes not applied'))
 
 
 @flaky
-def test_failing_restore(nf, directory):
+def test_failing_restore(node_factory, directory):
     """The node database is having memory loss, make sure we abort.
 
     We simulate a loss of transactions by manually resetting the data_version
@@ -175,14 +122,14 @@ def test_failing_restore(nf, directory):
     subprocess.check_call([cli_path, "init", bpath, bdest])
     opts = {
         'plugin': plugin_path,
-        'backup-destination': bdest,
-        }
+        'allow-deprecated-apis': deprecated_apis,
+    }
 
     def section(comment):
-        print("="*25, comment, "="*25)
+        print("=" * 25, comment, "=" * 25)
 
     section("Starting node for the first time")
-    l1 = nf.get_node(options=opts, cleandir=False)
+    l1 = node_factory.get_node(options=opts, cleandir=False, may_fail=True)
     l1.stop()
 
     # Now fudge the data_version:
@@ -198,7 +145,7 @@ def test_failing_restore(nf, directory):
     assert(l1.daemon.is_in_log(r'lost some state') is not None)
 
 
-def test_intermittent_backup(nf, directory):
+def test_intermittent_backup(node_factory, directory):
     """Simulate intermittent use of the backup, or an old file backup.
 
     """
@@ -208,13 +155,12 @@ def test_intermittent_backup(nf, directory):
     subprocess.check_call([cli_path, "init", bpath, bdest])
     opts = {
         'plugin': plugin_path,
-        'backup-destination': bdest,
-        }
-    l1 = nf.get_node(options=opts, cleandir=False)
+        'allow-deprecated-apis': deprecated_apis,
+    }
+    l1 = node_factory.get_node(options=opts, cleandir=False, may_fail=True)
 
     # Now start without the plugin. This should work fine.
     del l1.daemon.opts['plugin']
-    del l1.daemon.opts['backup-destination']
     l1.restart()
 
     # Now restart adding the plugin again, and it should fail due to gaps in
@@ -228,17 +174,78 @@ def test_intermittent_backup(nf, directory):
     assert(l1.daemon.is_in_log(r'Backup is out of date') is not None)
 
 
-def test_restore(nf, directory):
+def test_restore(node_factory, directory):
     bpath = os.path.join(directory, 'lightning-1', 'regtest')
     bdest = 'file://' + os.path.join(bpath, 'backup.dbak')
     os.makedirs(bpath)
     subprocess.check_call([cli_path, "init", bpath, bdest])
     opts = {
         'plugin': plugin_path,
-        'backup-destination': bdest,
-        }
-    l1 = nf.get_node(options=opts, cleandir=False)
+        'allow-deprecated-apis': deprecated_apis,
+    }
+    l1 = node_factory.get_node(options=opts, cleandir=False)
     l1.stop()
 
     rdest = os.path.join(bpath, 'lightningd.sqlite.restore')
+    subprocess.check_call([cli_path, "restore", bdest, rdest])
+
+
+def test_restore_dir(node_factory, directory):
+    bpath = os.path.join(directory, 'lightning-1', 'regtest')
+    bdest = 'file://' + os.path.join(bpath, 'backup.dbak')
+    os.makedirs(bpath)
+    subprocess.check_call([cli_path, "init", bpath, bdest])
+    opts = {
+        'plugin': plugin_path,
+        'allow-deprecated-apis': deprecated_apis,
+    }
+    l1 = node_factory.get_node(options=opts, cleandir=False)
+    l1.stop()
+
+    # should raise error without remove_existing
+    with pytest.raises(Exception):
+        subprocess.check_call([cli_path, "restore", bdest, bpath])
+
+    # but succeed when we remove the sqlite3 dbfile before
+    os.remove(os.path.join(bpath, "lightningd.sqlite3"))
+    subprocess.check_call([cli_path, "restore", bdest, bpath])
+
+
+def test_warning(directory, node_factory):
+    bpath = os.path.join(directory, 'lightning-1', 'regtest')
+    bdest = 'file://' + os.path.join(bpath, 'backup.dbak')
+    os.makedirs(bpath)
+    subprocess.check_call([cli_path, "init", bpath, bdest])
+    opts = {
+        'plugin': plugin_path,
+        'allow-deprecated-apis': deprecated_apis,
+        'backup-destination': 'somewhere/over/the/rainbox',
+    }
+    l1 = node_factory.get_node(options=opts, cleandir=False)
+    l1.stop()
+
+    assert(l1.daemon.is_in_log(
+        r'The `--backup-destination` option is deprecated and will be removed in future versions of the backup plugin.'
+    ))
+
+
+def test_rewrite():
+    tests = [
+        (
+            r'UPDATE outputs SET status=123, reserved_til=1891733WHERE prev_out_tx=1 AND prev_out_index=2',
+            r'UPDATE outputs SET status=123, reserved_til=1891733 WHERE prev_out_tx=1 AND prev_out_index=2',
+        ),
+    ]
+
+    b = FileBackend('destination', create=False)
+
+    for i, o in tests:
+        assert(b._rewrite_stmt(i) == o)
+
+
+def test_restore_pre_4090(directory):
+    """The prev-4090-backup.dbak contains faulty expansions, fix em.
+    """
+    bdest = 'file://' + os.path.join(os.path.dirname(__file__), 'tests', 'pre-4090-backup.dbak')
+    rdest = os.path.join(directory, 'lightningd.sqlite.restore')
     subprocess.check_call([cli_path, "restore", bdest, rdest])

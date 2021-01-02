@@ -17,6 +17,7 @@ def get_reverse_chan(scid, chan):
 
     return None
 
+
 def get_circular_route(scid, chan, amt, peer, exclusions, request):
     """Compute a circular route with `scid` as last leg.
 
@@ -122,6 +123,16 @@ def try_rebalance(scid, chan, amt, peer, request):
     request.set_result({"result": "continue"})
 
 
+def get_peer_and_channel(peers, scid):
+    """Look for the channel identified by {scid} in our list of {peers}"""
+    for peer in peers:
+        for channel in peer["channels"]:
+            if channel.get("short_channel_id") == scid:
+                return (peer, channel)
+
+    return (None, None)
+
+
 @plugin.async_hook("htlc_accepted")
 def on_htlc_accepted(htlc, onion, plugin, request, **kwargs):
     plugin.log("Got an incoming HTLC htlc={}".format(htlc))
@@ -157,13 +168,9 @@ def on_htlc_accepted(htlc, onion, plugin, request, **kwargs):
     # Locate the channel + direction that would be the next in the path
     peers = plugin.rpc.listpeers()['peers']
 
-    chan = None
-    peer = None
-    for p in peers:
-        for c in p['channels']:
-            if 'short_channel_id' in c and c['short_channel_id'] == scid:
-                chan = c
-                peer = p
+    peer, chan = get_peer_and_channel(peers, scid)
+    if peer is None or chan is None:
+        return
 
     # Check if the channel is active and routable, otherwise there's little
     # point in even trying
@@ -174,7 +181,7 @@ def on_htlc_accepted(htlc, onion, plugin, request, **kwargs):
     # Need to consider who the funder is, since they are paying the fees.
     # TODO If we are the funder we need to take the cost of an HTLC into
     # account as well.
-    #funder = chan['msatoshi_to_us_max'] == chan['msatoshi_total']
+    # funder = chan['msatoshi_to_us_max'] == chan['msatoshi_total']
     forward_amt = Millisatoshi(onion['forward_amount'])
 
     # If we have enough capacity just let it through now. Otherwise the

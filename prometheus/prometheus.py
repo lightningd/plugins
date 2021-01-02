@@ -97,72 +97,79 @@ class ChannelsCollector(BaseLnCollector):
         balance_gauge = GaugeMetricFamily(
             'lightning_channel_balance',
             'How many funds are at our disposal?',
-            labels=['id', 'scid'],
+            labels=['id', 'scid', 'alias'],
         )
         spendable_gauge = GaugeMetricFamily(
             'lightning_channel_spendable',
             'How much can we currently send over this channel?',
-            labels=['id', 'scid']
+            labels=['id', 'scid', 'alias'],
         )
         total_gauge = GaugeMetricFamily(
             'lightning_channel_capacity',
             'How many funds are in this channel in total?',
-            labels=['id', 'scid'],
+            labels=['id', 'scid', 'alias'],
         )
         htlc_gauge = GaugeMetricFamily(
             'lightning_channel_htlcs',
             'How many HTLCs are currently active on this channel?',
-            labels=['id', 'scid'],
+            labels=['id', 'scid', 'alias'],
         )
 
         # Incoming routing statistics
         in_payments_offered_gauge = GaugeMetricFamily(
             'lightning_channel_in_payments_offered',
             'How many incoming payments did we try to forward?',
-            labels=['id', 'scid'],
+            labels=['id', 'scid', 'alias'],
         )
         in_payments_fulfilled_gauge = GaugeMetricFamily(
             'lightning_channel_in_payments_fulfilled',
             'How many incoming payments did we succeed to forward?',
-            labels=['id', 'scid'],
+            labels=['id', 'scid', 'alias'],
         )
         in_msatoshi_offered_gauge = GaugeMetricFamily(
             'lightning_channel_in_msatoshi_offered',
             'How many incoming msats did we try to forward?',
-            labels=['id', 'scid'],
+            labels=['id', 'scid', 'alias'],
         )
         in_msatoshi_fulfilled_gauge = GaugeMetricFamily(
             'lightning_channel_in_msatoshi_fulfilled',
             'How many incoming msats did we succeed to forward?',
-            labels=['id', 'scid'],
+            labels=['id', 'scid', 'alias'],
         )
 
         # Outgoing routing statistics
         out_payments_offered_gauge = GaugeMetricFamily(
             'lightning_channel_out_payments_offered',
             'How many outgoing payments did we try to forward?',
-            labels=['id', 'scid'],
+            labels=['id', 'scid', 'alias'],
         )
         out_payments_fulfilled_gauge = GaugeMetricFamily(
             'lightning_channel_out_payments_fulfilled',
             'How many outgoing payments did we succeed to forward?',
-            labels=['id', 'scid'],
+            labels=['id', 'scid', 'alias'],
         )
         out_msatoshi_offered_gauge = GaugeMetricFamily(
             'lightning_channel_out_msatoshi_offered',
             'How many outgoing msats did we try to forward?',
-            labels=['id', 'scid'],
+            labels=['id', 'scid', 'alias'],
         )
         out_msatoshi_fulfilled_gauge = GaugeMetricFamily(
             'lightning_channel_out_msatoshi_fulfilled',
             'How many outgoing msats did we succeed to forward?',
-            labels=['id', 'scid'],
+            labels=['id', 'scid', 'alias'],
         )
 
         peers = self.rpc.listpeers()['peers']
         for p in peers:
             for c in p['channels']:
-                labels = [p['id'], c.get('short_channel_id', c.get('channel_id'))]
+                # append alias for human readable labels, if no label is found fill with shortid.
+                node = self.rpc.listnodes(p['id'])['nodes']
+                if len(node) != 0 and 'alias' in node[0]:
+                    alias = node[0]['alias']
+                else:
+                    alias = 'unknown'
+
+                labels = [p['id'], c.get('short_channel_id', c.get('channel_id')), alias]
                 balance_gauge.add_metric(labels, c['to_us_msat'].to_satoshi())
                 spendable_gauge.add_metric(labels,
                                            c['spendable_msat'].to_satoshi())
@@ -213,7 +220,7 @@ def init(options, configuration, plugin):
 
 plugin.add_option(
     'prometheus-listen',
-    '0.0.0.0:9900',
+    '0.0.0.0:9750',
     'Address and port to bind to'
 )
 

@@ -13,3 +13,12 @@
 [submodule "csvexportpays"]
 	path = csvexportpays
 	url = https://github.com/0xB10C/c-lightning-plugin-csvexportpays.git
+[submodule "sparko"]
+	path = sparko
+	url = https://github.com/fiatjaf/sparko.git
+[submodule "trustedcoin"]
+	path = trustedcoin
+	url = https://github.com/fiatjaf/trustedcoin.git
+[submodule "webhook"]
+	path = webhook
+	url = https://github.com/fiatjaf/lightningd-webhook.git

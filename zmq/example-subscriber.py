@@ -35,7 +35,6 @@ import json
 import argparse
 
 from twisted.internet import reactor
-from twisted.internet.task import LoopingCall
 
 from txzmq import ZmqEndpoint, ZmqEndpointType
 from txzmq import ZmqFactory
@@ -52,6 +51,7 @@ NOTIFICATION_TYPE_NAMES = ['channel_opened',
                            'sendpay_success',
                            'sendpay_failure']
 
+
 class NotificationType():
     def __init__(self, notification_type_name):
         self.notification_type_name = notification_type_name
@@ -65,9 +65,11 @@ class NotificationType():
     def argparse_namespace_attribute(self):
         return "zmq_sub_{}".format((self))
 
+
 NOTIFICATION_TYPES = [NotificationType(n) for n in NOTIFICATION_TYPE_NAMES]
 
 ###############################################################################
+
 
 class Subscriber():
     def __init__(self):
@@ -76,7 +78,7 @@ class Subscriber():
     def _log_message(self, message, tag):
         tag = tag.decode("utf8")
         message = json.dumps(json.loads(message.decode("utf8")), indent=1,
-                              sort_keys=True)
+                             sort_keys=True)
         current_time = time.strftime('%X %x %Z')
         print("{} - {}\n{}".format(current_time, tag, message))
 

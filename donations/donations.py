@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 """ A small donation service so that users can request ln invoices
 
-This plugin spins up a small flask server that provides a form to 
+This plugin spins up a small flask server that provides a form to
 users who wish to donate some money to the owner of the lightning
-node. The server can run on an arbitrary port and returns an invoice. 
+node. The server can run on an arbitrary port and returns an invoice.
 Also a list of previously paid invoices (only those that used this
 service) will be displayed. Displaying paid invoices could be made
-optionally in a future version. 
+optionally in a future version.
 
 Author: Rene Pickhardt (https://ln.rene-pickhardt.de)
 
@@ -16,21 +16,17 @@ you can see a demo of the plugin (and leave a tip) directly at:
 LICENSE: MIT / APACHE
 """
 import base64
-import json
 import multiprocessing
 import qrcode
-import sys
 
 
 from flask import Flask, render_template
 from flask_bootstrap import Bootstrap
 from flask_wtf import FlaskForm
 from io import BytesIO
-from pyln.client import LightningRpc, Plugin
-from os.path import join
+from pyln.client import Plugin
 from random import random
-from time import time
-from wtforms import StringField,  SubmitField, IntegerField
+from wtforms import StringField, SubmitField, IntegerField
 from wtforms.validators import Required, NumberRange
 
 
@@ -81,8 +77,7 @@ def donation_form():
         amount = form.amount.data
         description = form.description.data
         label = "ln-plugin-donation-{}".format(random())
-        invoice = plugin.rpc.invoice(
-            int(amount)*1000, label, description)
+        invoice = plugin.rpc.invoice(int(amount) * 1000, label, description)
         b11 = invoice["bolt11"]
         qr = make_base64_qr_code(b11)
 
@@ -93,7 +88,7 @@ def donation_form():
             # FIXME: change to paid after debugging
             if invoice["status"] == "paid":
                 bolt11 = plugin.rpc.decodepay(invoice["bolt11"])
-                satoshis = int(bolt11["msatoshi"])//1000
+                satoshis = int(bolt11["msatoshi"]) // 1000
                 description = bolt11["description"]
                 ts = bolt11["created_at"]
                 donations.append((ts, satoshis, description))
@@ -111,8 +106,8 @@ def worker(port):
     app.add_url_rule('/donation', 'donation',
                      donation_form, methods=["GET", "POST"])
     app.add_url_rule('/is_invoice_paid/<label>', 'ajax', ajax)
-    bootstrap = Bootstrap(app)
-    app.run("0.0.0.0", port=port)
+    Bootstrap(app)
+    app.run(host="0.0.0.0", port=port)
     return
 
 
@@ -136,6 +131,7 @@ def start_server(port):
 def stop_server(port):
     if port in jobs:
         jobs[port].terminate()
+        jobs[port].join()
         del jobs[port]
         return True
     else:
@@ -162,7 +158,7 @@ def donationserver(request, command="start", port=8088):
     # if port not an integer make 8088 as default
     try:
         port = int(port)
-    except:
+    except Exception:
         port = int(plugin.options['donation-web-port']['value'])
 
     if command == "list":
@@ -179,7 +175,7 @@ def donationserver(request, command="start", port=8088):
 
     if command == "stop":
         if stop_server(port):
-            return "stopped server on port{}".format(port)
+            return "stopped server on port {}".format(port)
         else:
             return "could not stop the server"
 
@@ -191,6 +187,7 @@ def donationserver(request, command="start", port=8088):
         else:
             return "Could not start server on port {}".format(port)
 
+
 plugin.add_option(
     'donation-autostart',
     'true',
@@ -199,7 +196,7 @@ plugin.add_option(
 
 plugin.add_option(
     'donation-web-port',
-    '33506',
+    '8088',
     'Which port should the donation server listen to?'
 )
 

@@ -9,6 +9,7 @@ import networkx as nx
 import dns.resolver
 import time
 
+
 class CLightning_autopilot(Autopilot):
 
     def __init__(self, rpc):
@@ -23,7 +24,7 @@ class CLightning_autopilot(Autopilot):
         retrieve the nodeids of the ln seed nodes from lseed.bitcoinstats.com
         """
         domain = "lseed.bitcoinstats.com"
-        srv_records = dns.resolver.query(domain,"SRV")
+        srv_records = dns.resolver.query(domain, "SRV")
         res = []
         for srv in srv_records:
             bech32 = str(srv.target).rstrip(".").split(".")[0]
@@ -41,7 +42,7 @@ class CLightning_autopilot(Autopilot):
         been connected to the lightning network.
         """
         seed_keys = self.__get_seed_keys()
-        random.shuffle(seed_keys) 
+        random.shuffle(seed_keys)
         for nodeid in seed_keys:
             try:
                 print("peering with node: {}".format(nodeid))
@@ -133,13 +134,23 @@ def init(configuration, options, plugin):
 def run_once(plugin, dryrun=False):
     # Let's start by inspecting the current state of the node
     funds = plugin.rpc.listfunds()
-    output_funds = sum([o['value'] for o in funds['outputs'] if o['status'] == 'confirmed'])
+    awaiting_lockin_funds = sum([o['channel_sat'] for o in funds['channels'] if o['state'] == 'CHANNELD_AWAITING_LOCKIN'])
+    output_funds = sum([o['value'] for o in funds['outputs'] if o['status'] == 'confirmed']) - awaiting_lockin_funds
     channels = funds['channels']
     available_funds = output_funds / 100.0 * plugin.percent
 
     # Now we can look whether and how we'd like to open new channels. This
     # depends on available funds and the number of channels we were configured
     # to open
+
+    if available_funds < plugin.min_capacity_sat:
+        print("Too low available funds: {} < {}".format(available_funds, plugin.min_capacity_sat))
+        return False
+
+    if len(channels) >= plugin.num_channels:
+        print("Already have {} channels. Aim is for {}.".format(len(channels), plugin.num_channels))
+        return False
+
     num_channels = min(
         int(available_funds / plugin.min_capacity_sat),
         plugin.num_channels - len(channels)

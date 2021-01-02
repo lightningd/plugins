@@ -1,2 +1,2 @@
 pyln-client>=0.7.3
-requests>=2.0.0
+requests[socks]>=2.23.0

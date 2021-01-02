@@ -2,23 +2,57 @@
 import sys
 import requests
 
+from requests.packages.urllib3.util.retry import Retry
+from requests.adapters import HTTPAdapter
 from art import sauron_eye
 from pyln.client import Plugin
 
 
-plugin = Plugin()
+plugin = Plugin(dynamic=False)
+plugin.sauron_socks_proxies = None
+plugin.sauron_network = "test"
 
 
 class SauronError(Exception):
     pass
 
 
+def fetch(url):
+    """Fetch this {url}, maybe through a pre-defined proxy."""
+    # FIXME: Maybe try to be smart and renew circuit to broadcast different
+    # transactions ? Hint: lightningd will agressively send us the same
+    # transaction a certain amount of times.
+    session = requests.session()
+    session.proxies = plugin.sauron_socks_proxies
+    retry_strategy = Retry(
+        backoff_factor=1,
+        total=10,
+        status_forcelist=[429, 500, 502, 503, 504],
+        method_whitelist=["HEAD", "GET", "OPTIONS"]
+    )
+    adapter = HTTPAdapter(max_retries=retry_strategy)
+
+    session.mount("https://", adapter)
+    session.mount("http://", adapter)
+
+    return session.get(url)
+
+
 @plugin.init()
 def init(plugin, options, configuration, **kwargs):
-    plugin.api_endpoint = options.get("sauron-api-endpoint")
+    plugin.api_endpoint = options["sauron-api-endpoint"]
     if not plugin.api_endpoint:
         raise SauronError("You need to specify the sauron-api-endpoint option.")
         sys.exit(1)
+
+    if options["sauron-tor-proxy"]:
+        address, port = options["sauron-tor-proxy"].split(":")
+        socks5_proxy = "socks5h://{}:{}".format(address, port)
+        plugin.sauron_socks_proxies = {
+            "http": socks5_proxy,
+            "https": socks5_proxy,
+        }
+        plugin.log("Using proxy {} for requests".format(socks5_proxy))
 
     plugin.log("Sauron plugin initialized")
     plugin.log(sauron_eye)
@@ -37,14 +71,14 @@ def getchaininfo(plugin, **kwargs):
         "regtest"
     }
 
-    genesis_req = requests.get(blockhash_url)
+    genesis_req = fetch(blockhash_url)
     if not genesis_req.status_code == 200:
         raise SauronError("Endpoint at {} returned {} ({}) when trying to "
                           "get genesis block hash."
                           .format(blockhash_url, genesis_req.status_code,
                                   genesis_req.text))
 
-    blockcount_req = requests.get(blockcount_url)
+    blockcount_req = fetch(blockcount_url)
     if not blockcount_req.status_code == 200:
         raise SauronError("Endpoint at {} returned {} ({}) when trying to "
                           "get blockcount.".format(blockcount_url,
@@ -52,11 +86,12 @@ def getchaininfo(plugin, **kwargs):
                                                    blockcount_req.text))
     if genesis_req.text not in chains.keys():
         raise SauronError("Unsupported network")
+    plugin.sauron_network = chains[genesis_req.text]
 
     # We wouldn't be able to hit it if its bitcoind wasn't synced, so
     # ibd = false and headercount = blockcount
     return {
-        "chain": chains[genesis_req.text],
+        "chain": plugin.sauron_network,
         "blockcount": blockcount_req.text,
         "headercount": blockcount_req.text,
         "ibd": False,
@@ -67,9 +102,9 @@ def getchaininfo(plugin, **kwargs):
 def getrawblock(plugin, height, **kwargs):
     blockhash_url = "{}/block-height/{}".format(plugin.api_endpoint, height)
 
-    blockhash_req = requests.get(blockhash_url)
-    block_req = requests.get("{}/block/{}/raw".format(plugin.api_endpoint,
-                                                      blockhash_req.text))
+    blockhash_req = fetch(blockhash_url)
+    block_req = fetch("{}/block/{}/raw".format(plugin.api_endpoint,
+                                               blockhash_req.text))
     if blockhash_req.status_code != 200 or block_req.status_code != 200:
         return {
             "blockhash": None,
@@ -104,13 +139,13 @@ def getutxout(plugin, txid, vout, **kwargs):
     gettx_url = "{}/tx/{}".format(plugin.api_endpoint, txid)
     status_url = "{}/tx/{}/outspend/{}".format(plugin.api_endpoint, txid, vout)
 
-    gettx_req = requests.get(gettx_url)
+    gettx_req = fetch(gettx_url)
     if not gettx_req.status_code == 200:
         raise SauronError("Endpoint at {} returned {} ({}) when trying to "
                           "get transaction.".format(gettx_url,
                                                     gettx_req.status_code,
                                                     gettx_req.text))
-    status_req = requests.get(status_url)
+    status_req = fetch(status_url)
     if not status_req.status_code == 200:
         raise SauronError("Endpoint at {} returned {} ({}) when trying to "
                           "get utxo status.".format(status_url,
@@ -131,17 +166,22 @@ def getutxout(plugin, txid, vout, **kwargs):
 
 
 @plugin.method("estimatefees")
-def getfeerate(plugin, **kwargs):
+def estimatefees(plugin, **kwargs):
     feerate_url = "{}/fee-estimates".format(plugin.api_endpoint)
 
-    feerate_req = requests.get(feerate_url)
+    feerate_req = fetch(feerate_url)
     assert feerate_req.status_code == 200
     feerates = feerate_req.json()
-    # It renders sat/vB, we want sat/kVB, so multiply everything by 10**3
-    slow = int(feerates["144"] * 10**3)
-    normal = int(feerates["5"] * 10**3)
-    urgent = int(feerates["3"] * 10**3)
-    very_urgent = int(feerates["2"] * 10**3)
+    if plugin.sauron_network == "test":
+        # FIXME: remove the hack if the test API is "fixed"
+        feerate = feerates.get("144", 1)
+        slow = normal = urgent = very_urgent = int(feerate * 10**3)
+    else:
+        # It returns sat/vB, we want sat/kVB, so multiply everything by 10**3
+        slow = int(feerates["144"] * 10**3)
+        normal = int(feerates["5"] * 10**3)
+        urgent = int(feerates["3"] * 10**3)
+        very_urgent = int(feerates["2"] * 10**3)
 
     return {
         "opening": normal,
@@ -160,5 +200,14 @@ plugin.add_option(
     "",
     "The URL of the esplora instance to hit (including '/api')."
 )
+
+plugin.add_option(
+    "sauron-tor-proxy",
+    "",
+    "Tor's SocksPort address in the form address:port, don't specify the"
+    " protocol.  If you didn't modify your torrc you want to put"
+    "'localhost:9050' here."
+)
+
 
 plugin.run()

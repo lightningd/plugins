@@ -2,10 +2,10 @@
 from pyln.client import Plugin, Millisatoshi
 from packaging import version
 from collections import namedtuple
+from summary_avail import trace_availability, addpeer
 import pyln.client
-import json
-from math import floor, log10
 import requests
+import shelve
 import threading
 import time
 
@@ -20,6 +20,7 @@ try:
 except Exception:
     pass
 
+Channel = namedtuple('Channel', ['total', 'ours', 'theirs', 'pid', 'private', 'connected', 'scid', 'avail'])
 Charset = namedtuple('Charset', ['double_left', 'left', 'bar', 'mid', 'right', 'double_right', 'empty'])
 if have_utf8:
     draw = Charset('╟', '├', '─', '┼', '┤', '╢', '║')
@@ -30,66 +31,60 @@ summary_description = "Gets summary information about this node.\n"\
                       "Pass a list of scids to the {exclude} parameter"\
                       " to exclude some channels from the outputs."
 
-class PriceThread(threading.Thread):
+
+class PeerThread(threading.Thread):
     def __init__(self):
         super().__init__()
         self.daemon = True
-        self.start()
 
     def run(self):
-        try:
-            r = requests.get('https://apiv2.bitcoinaverage.com/convert/global'
-                             '?from=BTC&to={}&amount=1'.format(plugin.currency))
-            plugin.fiat_per_btc = json.loads(r.content.decode('UTF-8'))['price']
-        except Exception:
-            pass
-        # Six hours is more than often enough for polling
-        time.sleep(6*3600)
+        # delay initial execution, so peers have a chance to connect on startup
+        time.sleep(plugin.avail_interval)
+
+        while True:
+            try:
+                rpcpeers = plugin.rpc.listpeers()
+                trace_availability(plugin, rpcpeers)
+                plugin.persist.sync()
+                time.sleep(plugin.avail_interval)
+            except Exception as ex:
+                plugin.log("[PeerThread] " + str(ex), 'warn')
+
+
+class PriceThread(threading.Thread):
+    def __init__(self, proxies):
+        super().__init__()
+        self.daemon = True
+        self.proxies = proxies
+
+    def run(self):
+        while True:
+            try:
+                # NOTE: Bitstamp has a DNS/Proxy issues that can return 404
+                # Workaround: retry up to 5 times with a delay
+                for _ in range(5):
+                    r = requests.get('https://www.bitstamp.net/api/v2/ticker/BTC{}'.format(plugin.currency), proxies=self.proxies)
+                    if not r.status_code == 200:
+                        time.sleep(1)
+                        continue
+                    break
+                plugin.fiat_per_btc = float(r.json()['last'])
+            except Exception as ex:
+                plugin.log("[PriceThread] " + str(ex), 'warn')
+            # Six hours is more than often enough for polling
+            time.sleep(6 * 3600)
 
 
 def to_fiatstr(msat: Millisatoshi):
     return "{}{:.2f}".format(plugin.currency_prefix,
-                              int(msat) / 10**11 * plugin.fiat_per_btc)
+                             int(msat) / 10**11 * plugin.fiat_per_btc)
 
-
-# This is part of pylightning, but its just merged,
-# so old releases wont have it yet.
-def msat_to_approx_str(msat, digits: int = 3):
-    """Returns the shortmost string using common units representation.
-
-    Rounds to significant `digits`. Default: 3
-    """
-    round_to_n = lambda x, n: round(x, -int(floor(log10(x))) + (n - 1))
-    result = None
-
-    # we try to increase digits to check if we did loose out on precision
-    # without gaining a shorter string, since this is a rarely used UI
-    # function, performance is not an issue. Adds at least one iteration.
-    while True:
-        # first round everything down to effective digits
-        amount_rounded = round_to_n(msat.millisatoshis, digits)
-        # try different units and take shortest resulting normalized string
-        amounts_str = [
-            "%gbtc" % (amount_rounded / 1000 / 10**8),
-            "%gsat" % (amount_rounded / 1000),
-            "%gmsat" % (amount_rounded),
-        ]
-        test_result = min(amounts_str, key=len)
-
-        # check result and do another run if necessary
-        if test_result == result:
-            return result
-        elif not result or len(test_result) <= len(result):
-            digits = digits + 1
-            result = test_result
-        else:
-            return result
 
 # appends an output table header that explains fields and capacity
 def append_header(table, max_msat):
-    short_str = msat_to_approx_str(Millisatoshi(max_msat))
-    table.append("%c%-13sOUT/OURS %c IN/THEIRS%12s%c SCID           FLAG ALIAS"
-            % (draw.left, short_str, draw.mid, short_str, draw.right))
+    short_str = Millisatoshi(max_msat).to_approx_str()
+    table.append("%c%-13sOUT/OURS %c IN/THEIRS%12s%c SCID           FLAG AVAIL ALIAS"
+                 % (draw.left, short_str, draw.mid, short_str, draw.right))
 
 
 @plugin.method("summary", long_desc=summary_description)
@@ -105,10 +100,10 @@ def summary(plugin, exclude=''):
     if info['network'] != 'bitcoin':
         reply['network'] = info['network'].upper()
 
-    if not plugin.my_address:
-        reply['warning_no_address'] = "NO PUBLIC ADDRESSES"
-    else:
+    if hasattr(plugin, 'my_address') and plugin.my_address:
         reply['my_address'] = plugin.my_address
+    else:
+        reply['warning_no_address'] = "NO PUBLIC ADDRESSES"
 
     utxos = [int(f['amount_msat']) for f in funds['outputs']
              if f['status'] == 'confirmed']
@@ -123,6 +118,8 @@ def summary(plugin, exclude=''):
     reply['num_connected'] = 0
     reply['num_gossipers'] = 0
     for p in peers['peers']:
+        pid = p['id']
+        addpeer(plugin, p)
         active_channel = False
         for c in p['channels']:
             if c['state'] != 'CHANNELD_NORMAL':
@@ -146,7 +143,15 @@ def summary(plugin, exclude=''):
                 to_them = Millisatoshi(0)
             avail_in += to_them
             reply['num_channels'] += 1
-            chans.append((c['total_msat'], to_us, to_them, p['id'], c['private'], p['connected'], c['short_channel_id']))
+            chans.append(Channel(
+                c['total_msat'],
+                to_us, to_them,
+                pid,
+                c['private'],
+                p['connected'],
+                c['short_channel_id'],
+                plugin.persist['peerstate'][pid]['avail']
+            ))
 
         if not active_channel and p['connected']:
             reply['num_gossipers'] += 1
@@ -162,13 +167,12 @@ def summary(plugin, exclude=''):
     if chans != []:
         reply['channels_flags'] = 'P:private O:offline'
         reply['channels'] = ["\n"]
-        biggest = max(max(int(c[1]), int(c[2])) for c in chans)
+        biggest = max(max(int(c.ours), int(c.theirs)) for c in chans)
         append_header(reply['channels'], biggest)
         for c in chans:
             # Create simple line graph, 47 chars wide.
-            our_len = int(round(int(c[1]) / biggest * 23))
-            their_len = int(round(int(c[2]) / biggest * 23))
-            divided = False
+            our_len = int(round(int(c.ours) / biggest * 23))
+            their_len = int(round(int(c.theirs) / biggest * 23))
 
             # We put midpoint in the middle.
             mid = draw.mid
@@ -191,24 +195,28 @@ def summary(plugin, exclude=''):
             s = left + mid + right
 
             # output short channel id, so things can be copyNpasted easily
-            s += " {:14} ".format(c[6])
+            s += " {:14} ".format(c.scid)
 
             extra = ''
-            if c[4]:
+            if c.private:
                 extra += 'P'
             else:
                 extra += '_'
-            if not c[5]:
+            if not c.connected:
                 extra += 'O'
             else:
                 extra += '_'
             s += '[{}] '.format(extra)
 
-            node = plugin.rpc.listnodes(c[3])['nodes']
+            # append 24hr availability
+            s += '{:4.0%}  '.format(c.avail)
+
+            # append alias or id
+            node = plugin.rpc.listnodes(c.pid)['nodes']
             if len(node) != 0 and 'alias' in node[0]:
                 s += node[0]['alias']
             else:
-                s += c[3][0:32]
+                s += c.pid[0:32]
             reply['channels'].append(s)
 
     # Make modern lightning-cli format this human-readble by default!
@@ -221,10 +229,30 @@ def init(options, configuration, plugin):
     plugin.currency = options['summary-currency']
     plugin.currency_prefix = options['summary-currency-prefix']
     plugin.fiat_per_btc = 0
-    info = plugin.rpc.getinfo()
 
+    plugin.avail_interval = float(options['summary-availability-interval'])
+    plugin.avail_window = 60 * 60 * int(options['summary-availability-window'])
+    plugin.persist = shelve.open('summary.dat', writeback=True)
+    if 'peerstate' not in plugin.persist:
+        plugin.persist['peerstate'] = {}
+        plugin.persist['availcount'] = 0
+
+    info = plugin.rpc.getinfo()
+    config = plugin.rpc.listconfigs()
+    if 'always-use-proxy' in config and config['always-use-proxy']:
+        paddr = config['proxy']
+        # Default port in 9050
+        if ':' not in paddr:
+            paddr += ':9050'
+        proxies = {'https': 'socks5h://' + paddr,
+                   'http': 'socks5h://' + paddr}
+    else:
+        proxies = None
+
+    # Measure availability
+    PeerThread().start()
     # Try to grab conversion price
-    PriceThread()
+    PriceThread(proxies).start()
 
     # Prefer IPv4, otherwise take any to give out address.
     best_address = None
@@ -253,5 +281,15 @@ plugin.add_option(
     'summary-currency-prefix',
     'USD $',
     'What prefix to use for currency'
+)
+plugin.add_option(
+    'summary-availability-interval',
+    300,
+    'How often in seconds the availability should be calculated.'
+)
+plugin.add_option(
+    'summary-availability-window',
+    72,
+    'How many hours the availability should be averaged over.'
 )
 plugin.run()

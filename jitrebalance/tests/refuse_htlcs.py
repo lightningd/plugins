@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 """Plugin that refuses all HTLCs."""
 from pyln.client import Plugin
-import time
 
 plugin = Plugin()
 

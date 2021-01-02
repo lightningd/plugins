@@ -1,0 +1,7 @@
+[run]
+branch = True
+data_file = /tmp/.coverage
+parallel = True
+omit = 
+	*.direnv*
+debug = multiproc
