@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 from pyln.client import Plugin, Millisatoshi, RpcError
+from pyln.client.plugin import Request
 from threading import Thread, Lock
 import time
 import uuid
@@ -122,7 +123,7 @@ def calc_optimal_amount(out_ours, out_total, in_ours, in_total, payload):
 
 
 @plugin.method("rebalance")
-def rebalance(plugin, outgoing_scid, incoming_scid, msatoshi: Millisatoshi=None,
+def rebalance(request: Request, plugin, outgoing_scid, incoming_scid, msatoshi: Millisatoshi=None,
               maxfeepercent: float=0.5, retry_for: int=60, exemptfee: Millisatoshi=Millisatoshi(5000)):
     """Rebalancing channel liquidity with circular payments.
 
@@ -141,6 +142,12 @@ def rebalance(plugin, outgoing_scid, incoming_scid, msatoshi: Millisatoshi=None,
         "retry_for": retry_for,
         "exemptfee": exemptfee
     }
+
+    def notify(message, progress, **kwargs):
+        plugin.log(message)
+        if hasattr(request, "notify"):
+            request.notify(message)
+
     my_node_id = plugin.rpc.getinfo().get('id')
     outgoing_node_id = peer_from_scid(plugin, outgoing_scid, my_node_id, payload)
     incoming_node_id = peer_from_scid(plugin, incoming_scid, my_node_id, payload)
@@ -148,8 +155,8 @@ def rebalance(plugin, outgoing_scid, incoming_scid, msatoshi: Millisatoshi=None,
     get_channel(plugin, payload, incoming_node_id, incoming_scid, True)
     out_ours, out_total = amounts_from_scid(plugin, outgoing_scid)
     in_ours, in_total = amounts_from_scid(plugin, incoming_scid)
-    plugin.log("Outgoing node: %s, channel: %s" % (outgoing_node_id, outgoing_scid), 'debug')
-    plugin.log("Incoming node: %s, channel: %s" % (incoming_node_id, incoming_scid), 'debug')
+    notify("Outgoing node: %s, channel: %s" % (outgoing_node_id, outgoing_scid), 'debug')
+    notify("Incoming node: %s, channel: %s" % (incoming_node_id, incoming_scid), 'debug')
 
     # If amount was not given, calculate a suitable 50/50 rebalance amount
     if msatoshi is None:
@@ -194,9 +201,9 @@ def rebalance(plugin, outgoing_scid, incoming_scid, msatoshi: Millisatoshi=None,
             success_msg = {"sent": msatoshi + fees, "received": msatoshi, "fee": fees, "hops": len(route),
                            "outgoing_scid": outgoing_scid, "incoming_scid": incoming_scid, "status": "settled",
                            "message": f"{msatoshi + fees} sent over {len(route)} hops to rebalance {msatoshi}"}
-            plugin.log("Sending %s over %d hops to rebalance %s" % (msatoshi + fees, len(route), msatoshi), 'debug')
+            notify("Sending %s over %d hops to rebalance %s" % (msatoshi + fees, len(route), msatoshi), 'debug')
             for r in route:
-                plugin.log("    - %s  %14s  %s" % (r['id'], r['channel'], r['amount_msat']), 'debug')
+                notify("    - %s  %14s  %s" % (r['id'], r['channel'], r['amount_msat']), 'debug')
 
             try:
                 plugin.rpc.sendpay(route, payment_hash)
@@ -204,7 +211,7 @@ def rebalance(plugin, outgoing_scid, incoming_scid, msatoshi: Millisatoshi=None,
                 return success_msg
 
             except RpcError as e:
-                plugin.log("RpcError: " + str(e), 'debug')
+                notify("RpcError: " + str(e), 'debug')
                 erring_channel = e.error.get('data', {}).get('erring_channel')
                 if erring_channel == incoming_scid:
                     raise RpcError("rebalance", payload, {'message': 'Error with incoming channel'})
