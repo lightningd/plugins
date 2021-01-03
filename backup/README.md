@@ -19,11 +19,12 @@ pip3 install --user -r requirements.txt
 ## Setup
 
 Before the backup plugin can be used it has to be initialized once. The following
-command will create a `backup.lock` in the lightning directory that stores the
-internal state, and which makes sure no instances are using the same backup.
+command will create /mnt/external/location/file.sql as backup file and reference it 
+in `backup.lock` in the lightning directory that stores the internal state, and 
+which makes sure no two instances are using the same backup.
 
 ```bash
-./backup-cli init ~/.lightning/bitcoin file:///mnt/external/location
+./backup-cli init ~/.lightning/bitcoin file:///mnt/external/location/file.sqlite
 ```
 
 Notes:
