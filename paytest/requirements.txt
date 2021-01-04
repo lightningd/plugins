@@ -1,0 +1,2 @@
+pyln-client ~= 0.9.2
+pyln-proto ~= 0.9.2
