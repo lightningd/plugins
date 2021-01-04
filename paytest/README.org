@@ -1,0 +1,60 @@
+#+TITLE: Paytest Plugin
+
+A plugin to benchmark the performance of the ~pay~ plugin. It can
+generate mock invoices for remote nodes, and it can hold on to
+incoming test multi-part payments as if they were real payments.
+
+🚧 This plugin is intended for LN developers. Use it at your own risk 👷
+
+The plugin consists of three parts:
+
+ - ~testinvoice~: An RPC method to generate a fake invoice which
+   forces any payer to go through a specific node as penultimate hop
+   in the route. That node can then decode the onion and pretend it is
+   the real destination. The invoice is valid, however the
+   ~payment_hash~ has no known preimage and can therefore not be
+   settled.
+
+ - An ~htlc_accepted~ hook that intercepts any HTLC resulting from a
+   remote ~testpay~ call, decodes the payload and pretends to be the
+   recipient, exercising the MPP aggregation logic.
+
+ - ~testpay~: A wrapper RPC method that takes generates a
+   ~testinvoice~ and calls ~pay~ on it, triggering the
+   benchmarking. Upon receiving the result it re-interprets it
+   according to what we expect to happen
+
+
+* Protocol
+The protocol consists of a couple of conventions in order to correctly
+test the pay process.
+
+The sender always creates a test invoice, with a ~payment_hash~ that
+it knows has no known preimage, and destined for a non-existent
+~node_id~, but which includes a route-hint from the real destination
+to the fake destination. The route-hint MUST use the short channel ID
+~1x1x1~ for the channel, as this is how the recipient identifies that
+this is a test-payment. In addition the other parameters in the route
+hint SHOULD use minimal values in order not to interfere with the
+testing (CLTV delta ~9~, base fee ~1~, proportional fee ~1~).
+
+Since we are creating fake invoices for nodes that do not exist, and
+with a ~payment_hash~ that the destination cannot settle we
+re-interpret the following failure codes:
+
+ - ~16399~ / ~0x400f~ (~incorrect_or_unknown_payment_details~) is
+   considered to be a successful payment attempt, i.e., the
+   destination understood that this is a test payment, has held onto
+   incoming parts for up to 60 seconds, allowing them to accumulate, and
+   ultimately all parts reached the destination.
+   
+ - ~23~ / ~0x0017~ (~mpp_timeout~) is considered a failed payment
+   attempt, i.e., the destination understood this is a test payment,
+   has helpd on to incoming parts for 60 seconds, but ultimately
+   failed to accumulate all parts of the payment.
+
+ - ~16394~ / ~0x400a~ (~unknown_next_peer~) signifies that the
+   destination did not understand the protocol, and the test
+   failed. This is the default behavior that nodes implement if this
+   plugin is not active.
+
