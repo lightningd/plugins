@@ -24,7 +24,7 @@ in `backup.lock` in the lightning directory that stores the internal state, and
 which makes sure no two instances are using the same backup.
 
 ```bash
-./backup-cli init ~/.lightning/bitcoin file:///mnt/external/location/file.bkp
+./backup-cli init --lightning-dir ~/.lightning/bitcoin file:///mnt/external/location/file.bkp
 ```
 
 Notes:
