@@ -19,7 +19,7 @@ def test_start(node_factory, directory):
     bpath = os.path.join(directory, 'lightning-1', 'regtest')
     bdest = 'file://' + os.path.join(bpath, 'backup.dbak')
     os.makedirs(bpath)
-    subprocess.check_call([cli_path, "init", bpath, bdest])
+    subprocess.check_call([cli_path, "init", "--lightning-dir", bpath, bdest])
     opts = {
         'plugin': plugin_path,
         'allow-deprecated-apis': deprecated_apis,
@@ -66,7 +66,7 @@ def test_init_not_empty(node_factory, directory):
     l1 = node_factory.get_node()
     l1.stop()
 
-    out = subprocess.check_output([cli_path, "init", bpath, bdest])
+    out = subprocess.check_output([cli_path, "init", "--lightning-dir", bpath, bdest])
     assert(b'Found an existing database' in out)
     assert(b'Successfully written initial snapshot' in out)
 
@@ -91,7 +91,7 @@ def test_tx_abort(node_factory, directory):
     bpath = os.path.join(directory, 'lightning-1', 'regtest')
     bdest = 'file://' + os.path.join(bpath, 'backup.dbak')
     os.makedirs(bpath)
-    subprocess.check_call([cli_path, "init", bpath, bdest])
+    subprocess.check_call([cli_path, "init", "--lightning-dir", bpath, bdest])
     opts = {
         'plugin': plugin_path,
         'allow-deprecated-apis': deprecated_apis,
@@ -121,7 +121,7 @@ def test_failing_restore(node_factory, directory):
     bpath = os.path.join(directory, 'lightning-1', 'regtest')
     bdest = 'file://' + os.path.join(bpath, 'backup.dbak')
     os.makedirs(bpath)
-    subprocess.check_call([cli_path, "init", bpath, bdest])
+    subprocess.check_call([cli_path, "init", "--lightning-dir", bpath, bdest])
     opts = {
         'plugin': plugin_path,
         'allow-deprecated-apis': deprecated_apis,
@@ -154,7 +154,7 @@ def test_intermittent_backup(node_factory, directory):
     bpath = os.path.join(directory, 'lightning-1', 'regtest')
     bdest = 'file://' + os.path.join(bpath, 'backup.dbak')
     os.makedirs(bpath)
-    subprocess.check_call([cli_path, "init", bpath, bdest])
+    subprocess.check_call([cli_path, "init", "--lightning-dir", bpath, bdest])
     opts = {
         'plugin': plugin_path,
         'allow-deprecated-apis': deprecated_apis,
@@ -180,7 +180,7 @@ def test_restore(node_factory, directory):
     bpath = os.path.join(directory, 'lightning-1', 'regtest')
     bdest = 'file://' + os.path.join(bpath, 'backup.dbak')
     os.makedirs(bpath)
-    subprocess.check_call([cli_path, "init", bpath, bdest])
+    subprocess.check_call([cli_path, "init", "--lightning-dir", bpath, bdest])
     opts = {
         'plugin': plugin_path,
         'allow-deprecated-apis': deprecated_apis,
@@ -196,7 +196,7 @@ def test_restore_dir(node_factory, directory):
     bpath = os.path.join(directory, 'lightning-1', 'regtest')
     bdest = 'file://' + os.path.join(bpath, 'backup.dbak')
     os.makedirs(bpath)
-    subprocess.check_call([cli_path, "init", bpath, bdest])
+    subprocess.check_call([cli_path, "init", "--lightning-dir", bpath, bdest])
     opts = {
         'plugin': plugin_path,
         'allow-deprecated-apis': deprecated_apis,
@@ -217,7 +217,7 @@ def test_warning(directory, node_factory):
     bpath = os.path.join(directory, 'lightning-1', 'regtest')
     bdest = 'file://' + os.path.join(bpath, 'backup.dbak')
     os.makedirs(bpath)
-    subprocess.check_call([cli_path, "init", bpath, bdest])
+    subprocess.check_call([cli_path, "init", "--lightning-dir", bpath, bdest])
     opts = {
         'plugin': plugin_path,
         'allow-deprecated-apis': deprecated_apis,
@@ -257,7 +257,7 @@ def test_compact(bitcoind, directory, node_factory):
     bpath = os.path.join(directory, 'lightning-1', 'regtest')
     bdest = 'file://' + os.path.join(bpath, 'backup.dbak')
     os.makedirs(bpath)
-    subprocess.check_call([cli_path, "init", bpath, bdest])
+    subprocess.check_call([cli_path, "init", "--lightning-dir", bpath, bdest])
     opts = {
         'plugin': plugin_path,
         'allow-deprecated-apis': deprecated_apis,
