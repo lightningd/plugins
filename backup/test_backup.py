@@ -1,3 +1,4 @@
+from backend import Backend
 from filebackend import FileBackend
 from flaky import flaky
 from pyln.testing.fixtures import *  # noqa: F401,F403
@@ -230,6 +231,9 @@ def test_warning(directory, node_factory):
         r'The `--backup-destination` option is deprecated and will be removed in future versions of the backup plugin.'
     ))
 
+class DummyBackend(Backend):
+    def __init__(self):
+        pass
 
 def test_rewrite():
     tests = [
@@ -239,7 +243,7 @@ def test_rewrite():
         ),
     ]
 
-    b = FileBackend('destination', create=False)
+    b = DummyBackend()
 
     for i, o in tests:
         assert(b._rewrite_stmt(i) == o)
