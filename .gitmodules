@@ -22,3 +22,6 @@
 [submodule "webhook"]
 	path = webhook
 	url = https://github.com/fiatjaf/lightningd-webhook.git
+[submodule "python-teos"]
+	path = python-teos
+	url = https://github.com/talaia-labs/python-teos/

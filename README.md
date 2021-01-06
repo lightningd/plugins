@@ -32,6 +32,7 @@ Community curated plugins for c-lightning.
 | [summary][summary]                 | Print a nice summary of the node status                                                   |
 | [trustedcoin][trustedcoin]         | Replace your Bitcoin Core with data from public block explorers                           |
 | [webhook][webhook]                 | Dispatches webhooks based from [event notifications][event-notifications]                 |
+| [watchtower][teos-client]          | Watchtower client for The Eye of Satoshi                                                  |
 | [zmq][zmq]                         | Publishes notifications via [ZeroMQ][zmq-home] to configured endpoints                    |
 
 ## Installation
@@ -172,3 +173,4 @@ your environment.
 [invoice-queue]: https://github.com/rbndg/Lightning-Invoice-Queue
 [boltz]: https://github.com/BoltzExchange/channel-creation-plugin
 [feeadjuster]: https://github.com/lightningd/plugins/tree/master/feeadjuster
+[teos-client]: https://github.com/talaia-labs/python-teos/tree/master/watchtower-plugin
