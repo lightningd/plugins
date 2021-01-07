@@ -8,9 +8,11 @@ import json
 import logging
 import os
 import re
+import shutil
 import struct
 import sys
 import sqlite3
+import tempfile
 import time
 import psutil
 
@@ -254,6 +256,94 @@ class FileBackend(Backend):
             if version != self.version:
                 raise ValueError("Versions do not match up: restored version {}, backend version {}".format(version, self.version))
             assert(version == self.version)
+
+    def compact(self):
+        stop = self.version  # Stop one version short of the head when compacting
+        tmp = tempfile.TemporaryDirectory()
+        backupdir, clonename = os.path.split(self.url.path)
+
+        # Path of the backup clone that we're trying to build up. We
+        # are trying to put this right next to the original backup, to
+        # maximize the chances of both being on the same FS, which
+        # makes the move below atomic.
+        clonepath = os.path.join(backupdir, clonename + ".compacting")
+
+        # Location we extract the snapshot to and then apply
+        # incremental changes.
+        snapshotpath = os.path.join(tmp.name, "lightningd.sqlite3")
+
+        stats = {
+            'before': {
+                'backupsize': os.stat(self.url.path).st_size,
+                'version_count': self.version_count,
+            },
+        }
+
+        print("Starting compaction: stats={}".format(stats))
+        self.db = self._db_open(snapshotpath)
+
+        for change in self.stream_changes():
+            if change.version == stop:
+                break
+
+            if change.snapshot is not None:
+                self._restore_snapshot(change.snapshot, snapshotpath)
+
+            if change.transaction is not None:
+                self._restore_transaction(change.transaction)
+
+        # If this assertion fails we are in a degenerate state: we
+        # have less than two changes in the backup (starting
+        # c-lightning alone produces 6 changes), and compacting an
+        # almost empty backup is not useful.
+        assert change is not None
+
+        # Remember `change`, it's the rewindable change we need to
+        # stash on top of the new snapshot.
+        clone = FileBackend(clonepath, create=True)
+        clone.offsets = [512, 0]
+
+        # We are about to add the snapshot n-1 on top of n-2 (init),
+        # followed by the last change for n on top of
+        # n-1. prev_version trails that by one.
+        clone.version = change.version - 2
+        clone.prev_version = clone.version - 1
+        clone.version_count = 0
+        clone.write_metadata()
+
+        snapshot = Change(
+            version=change.version - 1,
+            snapshot=open(snapshotpath, 'rb').read(),
+            transaction=None
+        )
+        print("Adding intial snapshot with {} bytes for version {}".format(
+            len(snapshot.snapshot),
+            snapshot.version
+        ))
+        clone.add_change(snapshot)
+
+        assert clone.version == change.version - 1
+        assert clone.prev_version == change.version - 2
+        clone.add_change(change)
+
+        assert self.version == clone.version
+        assert self.prev_version == clone.prev_version
+
+        stats['after'] = {
+            'version_count': clone.version_count,
+            'backupsize': os.stat(clonepath).st_size,
+        }
+
+        print("Compacted {} changes, saving {} bytes, swapping backups".format(
+            stats['before']['version_count'] - stats['after']['version_count'],
+            stats['before']['backupsize'] - stats['after']['backupsize'],
+        ))
+        shutil.move(clonepath, self.url.path)
+
+        # Re-initialize ourselves so we have the correct metadata
+        self.read_metadata()
+
+        return stats
 
 
 def resolve_backend_class(backend_url):
