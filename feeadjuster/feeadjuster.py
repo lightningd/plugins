@@ -161,6 +161,8 @@ def maybe_add_new_balances(plugin: Plugin, scids: list):
 
 @plugin.subscribe("forward_event")
 def forward_event(plugin: Plugin, forward_event: dict, **kwargs):
+    if not plugin.forward_event_subscription:
+        return
     plugin.mutex.acquire(blocking=True)
     if forward_event["status"] == "settled":
         in_scid = forward_event["in_channel"]
@@ -204,10 +206,26 @@ def feeadjust(plugin: Plugin):
     return msg
 
 
+@plugin.method("feeadjuster_toggle")
+def feeadjuster_toggle(plugin: Plugin, new_value: bool = None):
+    """Activates/Deactivates automatic fee updates for forward events.
+
+    The status will be set to new_value.
+    """
+    msg = {"forward_event_subscription": {"previous": plugin.forward_event_subscription}}
+    if new_value is None:
+        plugin.forward_event_subscription = not plugin.forward_event_subscription
+    else:
+        plugin.forward_event_subscription = bool(new_value)
+    msg["forward_event_subscription"]["current"] = plugin.forward_event_subscription
+    return msg
+
+
 @plugin.init()
 def init(options: dict, configuration: dict, plugin: Plugin, **kwargs):
     plugin.our_node_id = plugin.rpc.getinfo()["id"]
     plugin.deactivate_fuzz = options.get("feeadjuster-deactivate-fuzz")
+    plugin.forward_event_subscription = not options.get("feeadjuster-deactivate-fee-update")
     plugin.update_threshold = float(options.get("feeadjuster-threshold"))
     plugin.update_threshold_abs = Millisatoshi(options.get("feeadjuster-threshold-abs"))
     plugin.big_enough_liquidity = Millisatoshi(options.get("feeadjuster-enough-liquidity"))
@@ -232,7 +250,7 @@ def init(options: dict, configuration: dict, plugin: Plugin, **kwargs):
                f"imbalance of {int(100 * plugin.imbalance)}%/{int(100 * ( 1 - plugin.imbalance))}%, "
                f"update_threshold: {int(100 * plugin.update_threshold)}%, update_threshold_abs: {plugin.update_threshold_abs}, "
                f"enough_liquidity: {plugin.big_enough_liquidity}, deactivate_fuzz: {plugin.deactivate_fuzz}, "
-               f"adjustment_method: {plugin.get_ratio.__name__}")
+               f"forward_event_subscription: {plugin.forward_event_subscription}, adjustment_method: {plugin.get_ratio.__name__}")
     plugin.mutex.release()
     feeadjust(plugin)
 
@@ -241,6 +259,12 @@ plugin.add_option(
     "feeadjuster-deactivate-fuzz",
     False,
     "Deactivate update threshold randomization and hysterisis.",
+    "flag"
+)
+plugin.add_option(
+    "feeadjuster-deactivate-fee-update",
+    False,
+    "Deactivate automatic fee updates for forward events.",
     "flag"
 )
 plugin.add_option(
