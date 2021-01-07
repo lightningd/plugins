@@ -83,6 +83,11 @@ class Backend(object):
         """
         raise NotImplementedError
 
+    def compact(self):
+        """Apply some incremental changes to the snapshot to reduce our size.
+        """
+        raise NotImplementedError
+
     def _db_open(self, dest: str) -> sqlite3.Connection:
         db = sqlite3.connect(dest)
         db.execute("PRAGMA foreign_keys = 1")
@@ -236,7 +241,11 @@ class FileBackend(Backend):
                 length, version, typ = struct.unpack("!IIb", f.read(9))
                 payload = f.read(length)
                 if typ == 1:
-                    yield Change(version=version, snapshot=None, transaction=payload.split(b'\x00'))
+                    yield Change(
+                        version=version,
+                        snapshot=None,
+                        transaction=payload.split(b'\x00')
+                    )
                 elif typ == 2:
                     yield Change(version=version, snapshot=payload, transaction=None)
                 else:
@@ -316,6 +325,20 @@ def on_db_write(writes, data_version, plugin, **kwargs):
         return {"result": "continue"}
     else:
         kill("Could not append DB change to the backup. Need to shutdown!")
+
+
+@plugin.method("backup-compact")
+def compact(plugin):
+    """Perform a backup compaction.
+
+    Synchronously restores the DB from the backup, initializes a new
+    backup from the restored DB, and then swaps out the backup
+    file. This can be used to reduce the backup file's size as well as
+    speeding up an eventual recovery by rolling in the incremental
+    changes into the snapshot.
+
+    """
+    return plugin.backend.compact()
 
 
 @plugin.init()
