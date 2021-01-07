@@ -192,7 +192,8 @@ class FileBackend(Backend):
     def add_change(self, entry: Change) -> bool:
         typ = b'\x01' if entry.snapshot is None else b'\x02'
         if typ == b'\x01':
-            payload = b'\x00'.join([t.encode('UTF-8') for t in entry.transaction])
+            stmts = [t.encode('UTF-8') if isinstance(t, str) else t for t in entry.transaction]
+            payload = b'\x00'.join(stmts)
         elif typ == b'\x02':
             payload = entry.snapshot
 
