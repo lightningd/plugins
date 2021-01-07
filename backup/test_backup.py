@@ -1,6 +1,7 @@
 from backup import FileBackend
 from flaky import flaky
 from pyln.testing.fixtures import *  # noqa: F401,F403
+from pyln.testing.utils import sync_blockheight
 import os
 import pytest
 import subprocess
@@ -249,3 +250,27 @@ def test_restore_pre_4090(directory):
     bdest = 'file://' + os.path.join(os.path.dirname(__file__), 'tests', 'pre-4090-backup.dbak')
     rdest = os.path.join(directory, 'lightningd.sqlite.restore')
     subprocess.check_call([cli_path, "restore", bdest, rdest])
+
+
+def test_compact(bitcoind, directory, node_factory):
+    bpath = os.path.join(directory, 'lightning-1', 'regtest')
+    bdest = 'file://' + os.path.join(bpath, 'backup.dbak')
+    os.makedirs(bpath)
+    subprocess.check_call([cli_path, "init", bpath, bdest])
+    opts = {
+        'plugin': plugin_path,
+        'allow-deprecated-apis': deprecated_apis,
+    }
+    l1 = node_factory.get_node(options=opts, cleandir=False)
+    l1.rpc.backup_compact()
+
+    tmp = tempfile.TemporaryDirectory()
+    subprocess.check_call([cli_path, "restore", bdest, tmp.name])
+
+    # Trigger a couple more changes and the compact again.
+    bitcoind.generate_block(100)
+    sync_blockheight(bitcoind, [l1])
+
+    l1.rpc.backup_compact()
+    tmp = tempfile.TemporaryDirectory()
+    subprocess.check_call([cli_path, "restore", bdest, tmp.name])
