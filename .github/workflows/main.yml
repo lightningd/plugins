@@ -68,4 +68,5 @@ jobs:
         export TEST_DEBUG=1
         export TRAVIS=1
         export DEVELOPER=${{ matrix.developer }}
-        pytest --ignore=lightning -n 4 -vvv
+        pip3 install -U virtualenv pip
+        python3 .ci/test.py
