@@ -55,13 +55,6 @@ jobs:
       with:
         python-version: ${{ matrix.python-version }}
         
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install flake8 pytest
-        pip install -U pyln-client pyln-testing pyln-proto
-        find . -name requirements.txt | xargs -L 1 pip install -r
-        
     - name: Test with pytest
       run: |
         export SLOW_MACHINE=1
