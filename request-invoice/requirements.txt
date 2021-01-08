@@ -1,5 +1,5 @@
 python-dotenv>=0.13.0
-flask
+flask==1.1.1
 flask-limiter
 tornado
 pyln-client
