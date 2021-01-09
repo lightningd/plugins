@@ -11,7 +11,7 @@ on:
     - cron:  '0 17 * * *'
 
 jobs:
-  build:
+  build-and-test:
     runs-on: ubuntu-latest
     timeout-minutes: 45
     strategy:
