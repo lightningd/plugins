@@ -10,7 +10,12 @@ import os
 
 
 # Directories that are not plugins
-exclude = ['.ci', '.git', '.github']
+exclude = [
+    '.ci',
+    '.git',
+    '.github',
+    'lightning',
+]
 global_dependencies = [
     'pytest==5.*',
     'pytest-xdist==1.34.0',
@@ -59,7 +64,7 @@ def run_one(p: Plugin) -> bool:
     pip_path = vpath / 'bin' / 'pip3'
     python_path = vpath / 'bin' / 'python'
     pytest_path = vpath / 'bin' / 'pytest'
-    pip_opts = ['--use-feature=2020-resolver', '-q']
+    pip_opts = ['-q']
 
     # Install pytest (eventually we'd want plugin authors to include
     # it in their requirements-dev.txt, but for now let's help them a
