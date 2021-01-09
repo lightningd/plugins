@@ -101,7 +101,14 @@ def run_one(p: Plugin) -> bool:
             'PATH': "{}:{}".format(bin_path, os.environ['PATH']),
         }
         subprocess.check_call(
-            [pytest_path, p.path, '-vvv', '-n 5', '--timeout=90'],
+            [
+                pytest_path,
+                p.path,
+                '-vvv',
+                '-n 5',
+                '--timeout=300',
+                '--junitxml=/tmp/report-{}.xml'.format(p.name)
+            ],
             stderr=subprocess.STDOUT,
             env=env,
         )
