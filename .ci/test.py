@@ -15,6 +15,7 @@ exclude = [
     '.git',
     '.github',
     'lightning',
+    'feeadjuster'
 ]
 global_dependencies = [
     'pytest==5.*',
