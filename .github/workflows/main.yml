@@ -67,21 +67,21 @@ jobs:
         name: Unit Test Results (Python ${{ matrix.python-version }})
         path: report-*.xml
   report:
-    - name: "Publish Unit Tests Results"
-      needs: build-and-test
-      runs-on: ubuntu-latest
-      # the build-and-test job might be skipped, we don't need to run this job then
-      if: success() || failure()
+    name: "Publish Unit Tests Results"
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    # the build-and-test job might be skipped, we don't need to run this job then
+    if: success() || failure()
 
-      steps:
-        - name: Download Artifacts
-          uses: actions/download-artifact@v2
-          with:
-            path: artifacts
+    steps:
+      - name: Download Artifacts
+        uses: actions/download-artifact@v2
+        with:
+          path: artifacts
 
-        - name: Publish Unit Test Results
-          uses: EnricoMi/publish-unit-test-result-action@v1.6
-          with:
-            check_name: Unit Test Results
-            github_token: ${{ secrets.GITHUB_TOKEN }}
-            files: report-*.xml
+      - name: Publish Unit Test Results
+        uses: EnricoMi/publish-unit-test-result-action@v1.6
+        with:
+          check_name: Unit Test Results
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          files: report-*.xml
