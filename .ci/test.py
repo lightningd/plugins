@@ -101,10 +101,14 @@ def run_one(p: Plugin) -> bool:
 
     print("Running tests")
     try:
-        env = env={
+        env = os.environ.copy()
+        env.update({
             # Need to customize PATH so lightningd can find the correct python3
             'PATH': "{}:{}".format(bin_path, os.environ['PATH']),
-        }
+            # Some plugins require a valid locale to be set
+            'LC_ALL': 'C.UTF-8',
+            'LANG': 'C.UTF-8',
+        })
         subprocess.check_call(
             [
                 pytest_path,
