@@ -11,9 +11,9 @@ on:
     - cron:  '0 17 * * *'
 
 jobs:
-  build:
-
+  build-and-test:
     runs-on: ubuntu-latest
+    timeout-minutes: 45
     strategy:
       fail-fast: false
       matrix:
@@ -61,3 +61,28 @@ jobs:
         export DEVELOPER=${{ matrix.developer }}
         pip3 install -U virtualenv pip
         python3 .ci/test.py
+    - name: Upload Unit Test Results
+      if: always()
+      uses: actions/upload-artifact@v2
+      with:
+        name: reports-${{ matrix.python-version }}
+        path: report-*.xml
+  report:
+    name: "Publish Unit Tests Results"
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    # the build-and-test job might be skipped, we don't need to run this job then
+    if: success() || failure()
+
+    steps:
+      - name: Download Artifacts
+        uses: actions/download-artifact@v2
+        with:
+          path: artifacts
+
+      - name: Publish Unit Test Results
+        uses: EnricoMi/publish-unit-test-result-action@v1.6
+        with:
+          check_name: Unit Test Results
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          files: artifacts/reports-*/report-*.xml
