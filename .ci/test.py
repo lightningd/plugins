@@ -117,7 +117,7 @@ def run_one(p: Plugin) -> bool:
                 '-vvv',
                 '-n 5',
                 '--timeout=300',
-                '--junitxml=/tmp/report-{}.xml'.format(p.name)
+                '--junitxml=report-{}.xml'.format(p.name)
             ],
             stderr=subprocess.STDOUT,
             env=env,
