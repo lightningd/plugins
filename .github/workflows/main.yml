@@ -65,7 +65,7 @@ jobs:
       if: always()
       uses: actions/upload-artifact@v2
       with:
-        name: reports-${{ matrix.python-version }}
+        name: reports/${{ matrix.python-version }}
         path: report-*.xml
   report:
     name: "Publish Unit Tests Results"
