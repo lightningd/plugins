@@ -65,7 +65,7 @@ jobs:
       if: always()
       uses: actions/upload-artifact@v2
       with:
-        name: Unit Test Results (Python ${{ matrix.python-version }})
+        name: reports-${{ matrix.python-version }}
         path: report-*.xml
   report:
     name: "Publish Unit Tests Results"
@@ -85,4 +85,4 @@ jobs:
         with:
           check_name: Unit Test Results
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          files: report-*.xml
+          files: reports/**/report-*.xml
