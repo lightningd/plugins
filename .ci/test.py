@@ -116,7 +116,6 @@ def run_one(p: Plugin) -> bool:
                 pytest_path,
                 p.path,
                 '-vvv',
-                '-n 5',
                 '--timeout=300',
                 '--junitxml=report-{}.xml'.format(p.name),
                 '--reruns=2',
