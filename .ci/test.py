@@ -121,6 +121,7 @@ def run_one(p: Plugin) -> bool:
                 '--junitxml=report-{}.xml'.format(p.name),
                 '--reruns=2',
                 '--color=no',
+                '-o', 'junit_family=xunit2',
             ],
             stderr=subprocess.STDOUT,
             env=env,
