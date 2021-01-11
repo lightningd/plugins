@@ -21,7 +21,8 @@ global_dependencies = [
     'pytest==5.*',
     'pytest-xdist==1.34.0',
     'pytest-timeout',
-    'pyln-testing'
+    'pyln-testing',
+    'pytest-rerunfailures',
 ]
 
 Plugin = namedtuple('Plugin', ['name', 'path', 'requirements', 'devrequirements'])
@@ -118,6 +119,8 @@ def run_one(p: Plugin) -> bool:
                 '-n 5',
                 '--timeout=300',
                 '--junitxml=report-{}.xml'.format(p.name),
+                '--reruns=2',
+                '--color=no',
             ],
             stderr=subprocess.STDOUT,
             env=env,
