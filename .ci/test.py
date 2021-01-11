@@ -19,7 +19,7 @@ exclude = [
 ]
 global_dependencies = [
     'pytest==5.*',
-    'pytest-xdist==1.34.0',
+    'pytest-parallel',
     'pytest-timeout',
     'pyln-testing',
     'pytest-rerunfailures',
@@ -117,10 +117,12 @@ def run_one(p: Plugin) -> bool:
                 p.path,
                 '-vvv',
                 '--timeout=300',
+                '--timeout-method=thread',
                 '--junitxml=report-{}.xml'.format(p.name),
                 '--reruns=2',
                 '--color=no',
                 '-o', 'junit_family=xunit2',
+                '--workers=10',
             ],
             stderr=subprocess.STDOUT,
             env=env,
