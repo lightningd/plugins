@@ -19,6 +19,8 @@ jobs:
       matrix:
         python-version: [3.6, 3.7, 3.8]
         developer: [0,1]
+        experimental: [1]
+        deprecated: [0]
 
     steps:
     - uses: actions/checkout@v2
@@ -41,11 +43,14 @@ jobs:
         
     - name: Compile & install c-lightning@master
       run: |
-        export EXPERIMENTAL_FEATURES=1
+        export EXPERIMENTAL_FEATURES=${{ matrix.experimental }}
+        export DEVELOPER=${{ matrix.developer }}
+        export COMPAT=${{ matrix.deprecated }}
+        export VALGRIND=0
         sudo apt-get install -y libsqlite3-dev gcc-4.8 gettext python python3 python3-mako net-tools zlib1g-dev libsodium-dev libpq-dev postgresql
         cd lightning
-        ./configure --disable-valgrind --enable-developer
-        make -j 4
+        ./configure --disable-valgrind
+        make -j 16
         sudo make install
       
     - name: Set up Python ${{ matrix.python-version }}
@@ -55,10 +60,12 @@ jobs:
         
     - name: Test with pytest
       run: |
+        export EXPERIMENTAL_FEATURES=${{ matrix.experimental }}
+        export DEVELOPER=${{ matrix.developer }}
+        export COMPAT=${{ matrix.deprecated }}
         export SLOW_MACHINE=1
         export TEST_DEBUG=1
         export TRAVIS=1
-        export DEVELOPER=${{ matrix.developer }}
         pip3 install -U virtualenv pip
         python3 .ci/test.py
     - name: Upload Unit Test Results
