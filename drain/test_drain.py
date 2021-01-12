@@ -171,6 +171,7 @@ def balance(node, node_a, scid_a, node_b, scid_b, node_c):
     wait_for_all_htlcs([node, node_a, node_b])
 
 
+@unittest.skipIf(not DEVELOPER, "slow gossip, needs DEVELOPER=1")
 def test_drain_chunks(node_factory, bitcoind):
     # SETUP: a small mesh that enables testing chunks
     #
