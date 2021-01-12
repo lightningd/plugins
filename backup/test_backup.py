@@ -76,6 +76,7 @@ def test_init_not_empty(node_factory, directory):
     assert(l1.daemon.is_in_log(r'plugin-backup.py: Versions match up'))
 
 
+@flaky
 def test_tx_abort(node_factory, directory):
     """Simulate a crash between hook call and DB commit.
 
