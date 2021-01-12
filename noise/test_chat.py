@@ -7,6 +7,7 @@ from pyln.testing.utils import wait_for
 import hashlib
 import os
 import pytest
+import unittest
 import zbase32
 
 
@@ -33,6 +34,7 @@ def test_sendmsg_success(node_factory, executor):
 
 
 @flaky  # since we cannot force a payment to take a specific route
+@unittest.skipIf(not DEVELOPER, "Fails often")
 def test_sendmsg_retry(node_factory, executor):
     """Fail a sendmsg using a cheap route, and check that it retries.
 
