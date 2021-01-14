@@ -3,9 +3,10 @@ from pyln.client import Plugin
 from collections import namedtuple
 from pyln.client import Millisatoshi
 from cachetools import cached, TTLCache
+from requests.adapters import HTTPAdapter
+from requests.packages.urllib3.util.retry import Retry
 import requests
 import statistics
-import time
 
 plugin = Plugin()
 
@@ -41,24 +42,40 @@ sources = [
 ]
 
 
-def get_currencyrate(plugin, currency, req_template, response_members):
+# Stolen from https://www.peterbe.com/plog/best-practice-with-retries-with-requests
+def requests_retry_session(
+    retries=3,
+    backoff_factor=0.3,
+    status_forcelist=(500, 502, 504),
+    session=None,
+):
+    session = session or requests.Session()
+    retry = Retry(
+        total=retries,
+        read=retries,
+        connect=retries,
+        backoff_factor=backoff_factor,
+        status_forcelist=status_forcelist,
+    )
+    adapter = HTTPAdapter(max_retries=retry)
+    session.mount('http://', adapter)
+    session.mount('https://', adapter)
+    return session
+
+
+def get_currencyrate(plugin, currency, urlformat, replymembers):
     # NOTE: Bitstamp has a DNS/Proxy issues that can return 404
     # Workaround: retry up to 5 times with a delay
     currency_lc = currency.lower()
-    url = req_template.format(currency_lc=currency_lc, currency=currency)
-    for _ in range(5):
-        r = requests.get(url, proxies=plugin.proxies)
-        if r.status_code != 200:
-            time.sleep(1)
-            continue
-        break
+    url = urlformat.format(currency_lc=currency_lc, currency=currency)
+    r = requests_retry_session(retries=5, status_forcelist=(404)).get(url, proxies=plugin.proxies)
 
     if r.status_code != 200:
         plugin.log(level='info', message='{}: bad response {}'.format(url, r.status_code))
         return None
 
     json = r.json()
-    for m in response_members:
+    for m in replymembers:
         expanded = m.format(currency_lc=currency_lc, currency=currency)
         if expanded not in json:
             plugin.log(level='debug', message='{}: {} not in {}'.format(url, expanded, json))
@@ -85,7 +102,7 @@ def set_proxies(plugin):
         plugin.proxies = None
 
 
-# Don't grab these more than once per hour.                        
+# Don't grab these more than once per hour.
 @cached(cache=TTLCache(maxsize=1024, ttl=3600))
 def get_rates(plugin, currency):
     rates = {}
@@ -97,8 +114,8 @@ def get_rates(plugin, currency):
     return rates
 
 
-@plugin.method("currencyrate")
-def currencyrate(plugin, currency):
+@plugin.method("currencyrates")
+def currencyrates(plugin, currency):
     """Gets currency from given APIs."""
 
     return get_rates(plugin, currency.upper())
