@@ -20,7 +20,7 @@ class ChannelAnnouncement(object):
         return "{}x{}x{}".format(
             (self.num_short_channel_id >> 40) & 0xFFFFFF,
             (self.num_short_channel_id >> 16) & 0xFFFFFF,
-            (self.num_short_channel_id >> 00) & 0xFF
+            (self.num_short_channel_id >> 00) & 0xFFFF
         )
 
     def __eq__(self, other):
@@ -61,7 +61,7 @@ class ChannelUpdate(object):
         return "{}x{}x{}".format(
             (self.num_short_channel_id >> 40) & 0xFFFFFF,
             (self.num_short_channel_id >> 16) & 0xFFFFFF,
-            (self.num_short_channel_id >> 00) & 0xFF
+            (self.num_short_channel_id >> 00) & 0xFFFF
         )
 
     @property
