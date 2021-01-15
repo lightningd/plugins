@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 from pyln.client import Plugin, Millisatoshi, RpcError
 from threading import Thread, Lock
+from datetime import timedelta
 import time
 import uuid
 
@@ -314,10 +315,11 @@ def get_ideal_ratio(channels: list, enough_liquidity: Millisatoshi):
 
 
 def feeadjust_would_be_nice(plugin: Plugin):
-    try:
+    commands = [c for c in plugin.rpc.help().get("help") if c["command"].split()[0] == "feeadjust"]
+    if len(commands) == 1:
         msg = plugin.rpc.feeadjust()
         plugin.log(f"Feeadjust succeeded: {msg}")
-    except Exception:
+    else:
         plugin.log("The feeadjuster plugin would be useful here")
 
 
@@ -375,6 +377,7 @@ def maybe_rebalance_pairs(plugin: Plugin, ch1, ch2, failed_pairs: list):
         amount = min(amount, get_max_amount(i, plugin))
         maxfee = get_max_fee(plugin, amount)
         plugin.log(f"Try to rebalance: {scid1} -> {scid2}; amount={amount}; maxfee={maxfee}")
+        start_ts = time.time()
         try:
             res = rebalance(plugin, outgoing_scid=scid1, incoming_scid=scid2, msatoshi=amount, maxfeepercent=0, retry_for=1200, exemptfee=maxfee)
         except Exception:
@@ -386,6 +389,8 @@ def maybe_rebalance_pairs(plugin: Plugin, ch1, ch2, failed_pairs: list):
             if amount > get_max_amount(i, plugin):
                 continue
             return result
+        elapsed_time = timedelta(seconds=time.time() - start_ts)
+        res["elapsed_time"] = str(elapsed_time)[:-3]
         plugin.log(f"Rebalance succeeded: {res}")
         result["success"] = True
         result["fee_spent"] += res["fee"]
@@ -408,10 +413,21 @@ def maybe_rebalance_once(plugin: Plugin, failed_pairs: list):
     return {"success": False, "fee_spent": Millisatoshi(0)}
 
 
+def feeadjuster_toggle(plugin: Plugin, new_value: bool):
+    commands = [c for c in plugin.rpc.help().get("help") if c["command"].split()[0] == "feeadjustertoggle"]
+    if len(commands) == 1:
+        msg = plugin.rpc.feeadjustertoggle(new_value)
+        return msg["forward_event_subscription"]["previous"]
+    else:
+        return True
+
+
 def rebalanceall_thread(plugin: Plugin):
     if not plugin.mutex.acquire(blocking=False):
         return
     try:
+        start_ts = time.time()
+        feeadjuster_state = feeadjuster_toggle(plugin, False)
         channels = get_our_channels(plugin)
         plugin.enough_liquidity = get_enough_liquidity_threshold(channels)
         plugin.ideal_ratio = get_ideal_ratio(channels, plugin.enough_liquidity)
@@ -428,8 +444,10 @@ def rebalanceall_thread(plugin: Plugin):
                 break
             success += 1
             fee_spent += result["fee_spent"]
-            feeadjust_would_be_nice(plugin)
-        plugin.log(f"Automatic rebalance finished: {success} successful rebalance, {fee_spent} fee spent")
+        feeadjust_would_be_nice(plugin)
+        feeadjuster_toggle(plugin, feeadjuster_state)
+        elapsed_time = timedelta(seconds=time.time() - start_ts)
+        plugin.log(f"Automatic rebalance finished: {success} successful rebalance, {fee_spent} fee spent, it took {str(elapsed_time)[:-3]}")
     finally:
         plugin.mutex.release()
 
@@ -447,7 +465,7 @@ def rebalanceall(plugin: Plugin, min_amount: Millisatoshi = Millisatoshi("50000s
     plugin.min_amount = Millisatoshi(min_amount)
     t = Thread(target=rebalanceall_thread, args=(plugin, ))
     t.start()
-    return {"message": "Rebalance started"}
+    return {"message": f"Rebalance started with min rebalancable amount: {plugin.min_amount}, feeratio: {plugin.feeratio}"}
 
 
 @plugin.method("rebalancestop")
@@ -470,7 +488,8 @@ def init(options, configuration, plugin):
     plugin.fee_base = Millisatoshi(config.get("fee-base"))
     plugin.fee_ppm = config.get("fee-per-satoshi")
     plugin.mutex = Lock()
-    plugin.log("Plugin rebalance.py initialized")
+    plugin.log(f"Plugin rebalance initialized with {plugin.fee_base} base / {plugin.fee_ppm} ppm fee, "
+               f"cltv_final: {plugin.cltv_final}")
 
 
 plugin.run()
