@@ -206,17 +206,17 @@ def feeadjust(plugin: Plugin):
     return msg
 
 
-@plugin.method("feeadjuster_toggle")
-def feeadjuster_toggle(plugin: Plugin, new_value: bool = None):
+@plugin.method("feeadjustertoggle")
+def feeadjustertoggle(plugin: Plugin, value: bool = None):
     """Activates/Deactivates automatic fee updates for forward events.
 
-    The status will be set to new_value.
+    The status will be set to value.
     """
     msg = {"forward_event_subscription": {"previous": plugin.forward_event_subscription}}
-    if new_value is None:
+    if value is None:
         plugin.forward_event_subscription = not plugin.forward_event_subscription
     else:
-        plugin.forward_event_subscription = bool(new_value)
+        plugin.forward_event_subscription = bool(value)
     msg["forward_event_subscription"]["current"] = plugin.forward_event_subscription
     return msg
 
