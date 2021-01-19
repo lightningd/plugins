@@ -315,8 +315,7 @@ def get_ideal_ratio(channels: list, enough_liquidity: Millisatoshi):
 
 
 def feeadjust_would_be_nice(plugin: Plugin):
-    commands = [c for c in plugin.rpc.help().get("help") if c["command"].split()[0] == "feeadjust"]
-    if len(commands) == 1:
+    if callable(getattr(plugin.rpc, "feeadjust")):
         msg = plugin.rpc.feeadjust()
         plugin.log(f"Feeadjust succeeded: {msg}")
     else:
@@ -414,8 +413,7 @@ def maybe_rebalance_once(plugin: Plugin, failed_pairs: list):
 
 
 def feeadjuster_toggle(plugin: Plugin, new_value: bool):
-    commands = [c for c in plugin.rpc.help().get("help") if c["command"].split()[0] == "feeadjustertoggle"]
-    if len(commands) == 1:
+    if callable(getattr(plugin.rpc, "feeadjustertoggle")):
         msg = plugin.rpc.feeadjustertoggle(new_value)
         return msg["forward_event_subscription"]["previous"]
     else:
