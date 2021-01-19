@@ -414,9 +414,9 @@ def maybe_rebalance_once(plugin: Plugin, failed_pairs: list):
 
 
 def feeadjuster_toggle(plugin: Plugin, new_value: bool):
-    commands = [c for c in plugin.rpc.help().get("help") if c["command"].split()[0] == "feeadjustertoggle"]
+    commands = [c for c in plugin.rpc.help().get("help") if c["command"].split()[0] == "feeadjuster-toggle"]
     if len(commands) == 1:
-        msg = plugin.rpc.feeadjustertoggle(new_value)
+        msg = plugin.rpc.feeadjuster_toggle(new_value)
         return msg["forward_event_subscription"]["previous"]
     else:
         return True
