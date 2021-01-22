@@ -5,7 +5,7 @@ import os
 from common import Base
 import io
 from pyln.proto.primitives import varint_decode
-from parser import parse
+from gossipd import parse
 import click
 import bz2
 

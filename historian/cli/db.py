@@ -1,7 +1,7 @@
 import click
 from common import NodeAnnouncement, ChannelAnnouncement, ChannelUpdate
 from tqdm import tqdm
-from parser import parse
+from gossipd import parse
 from cli.common import db_session, default_db
 
 
