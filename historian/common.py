@@ -2,7 +2,7 @@ from binascii import hexlify
 from datetime import datetime
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import Column, BigInteger, SmallInteger, DateTime, LargeBinary
-import parser
+import gossipd
 from contextlib import contextmanager
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
@@ -27,7 +27,7 @@ class ChannelUpdate(Base):
     raw = Column(LargeBinary)
 
     @classmethod
-    def from_gossip(cls, gcu: parser.ChannelUpdate,
+    def from_gossip(cls, gcu: gossipd.ChannelUpdate,
                     raw: bytes) -> 'ChannelUpdate':
         assert(raw[:2] == b'\x01\x02')
         self = ChannelUpdate()
@@ -53,7 +53,7 @@ class ChannelAnnouncement(Base):
     raw = Column(LargeBinary)
 
     @classmethod
-    def from_gossip(cls, gca: parser.ChannelAnnouncement,
+    def from_gossip(cls, gca: gossipd.ChannelAnnouncement,
                     raw: bytes) -> 'ChannelAnnouncement':
         assert(raw[:2] == b'\x01\x00')
         self = ChannelAnnouncement()
@@ -76,7 +76,7 @@ class NodeAnnouncement(Base):
     raw = Column(LargeBinary)
 
     @classmethod
-    def from_gossip(cls, gna: parser.NodeAnnouncement,
+    def from_gossip(cls, gna: gossipd.NodeAnnouncement,
                     raw: bytes) -> 'NodeAnnouncement':
         assert(raw[:2] == b'\x01\x01')
         self = NodeAnnouncement()

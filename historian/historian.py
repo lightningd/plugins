@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 from inotify import constants
 from inotify.adapters import Inotify
-from parser import parse
 from pyln.client import Plugin
 from sqlalchemy import create_engine
 from sqlalchemy import desc
@@ -9,7 +8,7 @@ from sqlalchemy.orm import sessionmaker
 from threading import Thread
 from common import Base, ChannelAnnouncement, ChannelUpdate, NodeAnnouncement
 import logging
-import parser
+import gossipd
 import struct
 import time
 
@@ -152,7 +151,7 @@ class Flusher(Thread):
 
     def store(self, raw: bytes) -> None:
         try:
-            msg = parse(raw)
+            msg = gossipd.parse(raw)
             cls = None
             if isinstance(msg, parser.ChannelUpdate):
                 cls = ChannelUpdate
