@@ -153,13 +153,13 @@ class Flusher(Thread):
         try:
             msg = gossipd.parse(raw)
             cls = None
-            if isinstance(msg, parser.ChannelUpdate):
+            if isinstance(msg, gossipd.ChannelUpdate):
                 cls = ChannelUpdate
 
-            elif isinstance(msg, parser.ChannelAnnouncement):
+            elif isinstance(msg, gossipd.ChannelAnnouncement):
                 cls = ChannelAnnouncement
 
-            elif isinstance(msg, parser.NodeAnnouncement):
+            elif isinstance(msg, gossipd.NodeAnnouncement):
                 cls = NodeAnnouncement
 
             self.session.merge(cls.from_gossip(msg, raw))
