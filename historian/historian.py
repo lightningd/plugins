@@ -186,8 +186,8 @@ def stats(plugin):
         'channel_announcements': session.query(ChannelAnnouncement).count(),
         'channel_updates': session.query(ChannelUpdate).count(),
         'node_announcements': session.query(NodeAnnouncement).count(),
-        'latest_node_announcement': session.query(NodeAnnouncement).order_by(desc(NodeAnnouncement.timestamp)).limit(1)[0],
-        'latest_channel_update': session.query(ChannelUpdate).order_by(desc(ChannelUpdate.timestamp)).limit(1)[0],
+        'latest_node_announcement': session.query(NodeAnnouncement).order_by(desc(NodeAnnouncement.timestamp)).limit(1).first(),
+        'latest_channel_update': session.query(ChannelUpdate).order_by(desc(ChannelUpdate.timestamp)).limit(1).first(),
     }
 
 
