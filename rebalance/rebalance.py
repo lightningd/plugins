@@ -256,7 +256,7 @@ def could_receive(liquidity):
     return a_minus_b(liquidity["their"], liquidity["min"])
 
 
-def get_our_channels(plugin: Plugin):
+def get_open_channels(plugin: Plugin):
     channels = []
     for peer in plugin.rpc.listpeers()["peers"]:
         for ch in peer["channels"]:
@@ -295,9 +295,10 @@ def get_ideal_ratio(channels: list, enough_liquidity: Millisatoshi):
     # ideal liquidity ratio for big channels:
     # small channels should have a 50/50 liquidity ratio to be usable
     # and big channels can store the remaining liquidity above the threshold
+    assert len(channels) > 0
     our = sum(ch["to_us_msat"] for ch in channels)
     total = sum(ch["total_msat"] for ch in channels)
-    chs = list(channels)
+    chs = list(channels)  # get a copy!
     while True:
         ratio = int(our) / int(total)
         smallest_channel = min(chs, key=lambda ch: ch["total_msat"])
@@ -404,7 +405,7 @@ def maybe_rebalance_pairs(plugin: Plugin, ch1, ch2, failed_pairs: list):
 
 
 def maybe_rebalance_once(plugin: Plugin, failed_pairs: list):
-    channels = get_our_channels(plugin)
+    channels = get_open_channels(plugin)
     for ch1 in channels:
         for ch2 in channels:
             result = maybe_rebalance_pairs(plugin, ch1, ch2, failed_pairs)
@@ -428,7 +429,7 @@ def rebalanceall_thread(plugin: Plugin):
     try:
         start_ts = time.time()
         feeadjuster_state = feeadjuster_toggle(plugin, False)
-        channels = get_our_channels(plugin)
+        channels = get_open_channels(plugin)
         plugin.enough_liquidity = get_enough_liquidity_threshold(channels)
         plugin.ideal_ratio = get_ideal_ratio(channels, plugin.enough_liquidity)
         plugin.log(f"Automatic rebalance is running with enough liquidity threshold: {plugin.enough_liquidity}, "
@@ -461,6 +462,8 @@ def rebalanceall(plugin: Plugin, min_amount: Millisatoshi = Millisatoshi("50000s
     """
     if plugin.mutex.locked():
         return {"message": "Rebalance is already running, this may take a while. To stop it use the cli method 'rebalancestop'."}
+    if len(get_open_channels(plugin)) <= 1:
+        return {"message": "Error: Not enough open channels to balance anything"}
     plugin.feeratio = float(feeratio)
     plugin.min_amount = Millisatoshi(min_amount)
     t = Thread(target=rebalanceall_thread, args=(plugin, ))
