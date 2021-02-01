@@ -443,9 +443,12 @@ def on_init(options, **kwargs):
             level="warn"
         )
 
-    configs = plugin.rpc.listconfigs()
-    if not configs['wallet'].startswith('sqlite3'):
-        kill("The backup plugin only works with the sqlite3 database.")
+    # IMPORTANT NOTE
+    # Putting RPC stuff in init() like the following can cause deadlocks!
+    # See: https://github.com/lightningd/plugins/issues/209
+    #configs = plugin.rpc.listconfigs()
+    #if not configs['wallet'].startswith('sqlite3'):
+    #    kill("The backup plugin only works with the sqlite3 database.")
 
 
 def kill(message: str):
