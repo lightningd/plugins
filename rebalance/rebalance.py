@@ -19,17 +19,17 @@ def setup_routing_fees(plugin, route, msatoshi):
         ch = next(c for c in channels.get('channels') if c['destination'] == r['id'])
         fee = Millisatoshi(ch['base_fee_millisatoshi'])
         # BOLT #7 requires fee >= fee_base_msat + ( amount_to_forward * fee_proportional_millionths / 1000000 )
-        fee += (msatoshi * ch['fee_per_millionth'] + 10**6 - 1) // 10**6 # integer math trick to round up
+        fee += (msatoshi * ch['fee_per_millionth'] + 10**6 - 1) // 10**6  # integer math trick to round up
         msatoshi += fee
         delay += ch['delay']
 
 
-def get_channel(plugin, payload, peer_id, scid, check_state: bool=False):
+def get_channel(plugin, payload, peer_id, scid, check_state: bool = False):
     peer = plugin.rpc.listpeers(peer_id).get('peers')[0]
     channel = next(c for c in peer['channels'] if 'short_channel_id' in c and c['short_channel_id'] == scid)
     if check_state:
         if channel['state'] != "CHANNELD_NORMAL":
-            raise RpcError('rebalance', payload, {'message': 'Channel %s not in state CHANNELD_NORMAL, but: %s' % (scid, channel['state']) })
+            raise RpcError('rebalance', payload, {'message': 'Channel %s not in state CHANNELD_NORMAL, but: %s' % (scid, channel['state'])})
         if not peer['connected']:
             raise RpcError('rebalance', payload, {'message': 'Channel %s peer is not connected.' % scid})
     return channel
@@ -100,8 +100,8 @@ def calc_optimal_amount(out_ours, out_total, in_ours, in_total, payload):
     in_ours, in_total = int(in_ours), int(in_total)
 
     in_theirs = in_total - in_ours
-    vo = int(out_ours - (out_total/2))
-    vi = int((in_total/2) - in_ours)
+    vo = int(out_ours - (out_total / 2))
+    vi = int((in_total / 2) - in_ours)
 
     # cases where one option can be eliminated because it exceeds other capacity
     if vo > in_theirs and vi > 0 and vi < out_ours:
@@ -123,8 +123,8 @@ def calc_optimal_amount(out_ours, out_total, in_ours, in_total, payload):
 
 
 @plugin.method("rebalance")
-def rebalance(plugin, outgoing_scid, incoming_scid, msatoshi: Millisatoshi=None,
-              maxfeepercent: float=0.5, retry_for: int=60, exemptfee: Millisatoshi=Millisatoshi(5000)):
+def rebalance(plugin, outgoing_scid, incoming_scid, msatoshi: Millisatoshi = None,
+              maxfeepercent: float = 0.5, retry_for: int = 60, exemptfee: Millisatoshi = Millisatoshi(5000)):
     """Rebalancing channel liquidity with circular payments.
 
     This tool helps to move some msatoshis between your channels.
@@ -353,7 +353,7 @@ def liquidity_info(channel, enough_liquidity: Millisatoshi, ideal_ratio: float):
         "min": min(enough_liquidity, channel["total_msat"] / 2),
         "max": max(a_minus_b(channel["total_msat"], enough_liquidity), channel["total_msat"] / 2),
         "ideal": {}
-        }
+    }
     liquidity["ideal"]["our"] = min(max(channel["total_msat"] * ideal_ratio, liquidity["min"]), liquidity["max"])
     liquidity["ideal"]["their"] = min(max(channel["total_msat"] * (1 - ideal_ratio), liquidity["min"]), liquidity["max"])
     return liquidity
