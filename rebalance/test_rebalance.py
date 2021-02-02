@@ -12,6 +12,13 @@ def wait_for_all_htlcs(nodes):
         n.wait_for_htlcs()
 
 
+# waits for all nodes to have all scids gossip active
+def wait_for_all_active(nodes, scids):
+    for n in nodes:
+        for scid in scids:
+            n.wait_channel_active(scid)
+
+
 def test_rebalance_starts(node_factory):
     l1 = node_factory.get_node()
     # Test dynamically
@@ -78,3 +85,21 @@ def test_rebalance_all(node_factory, bitcoind):
     # check we get an error if theres just one channel
     result = l1.rpc.rebalanceall()
     assert result['message'] == 'Error: Not enough open channels to balance anything'
+
+    # now we form a circle so we can do rebalanceall
+    l3.connect(l1)
+    l3.fundchannel(l1)
+
+    # get scids
+    scid12 = l1.get_channel_scid(l2)
+    scid23 = l2.get_channel_scid(l3)
+    scid31 = l3.get_channel_scid(l1)
+    scids = [scid12, scid23, scid31]
+
+    # wait for each others gossip
+    bitcoind.generate_block(6)
+    wait_for_all_active(nodes, scids)
+
+    # check the rebalanceall starts
+    result = l1.rpc.rebalanceall()
+    assert result['message'].startswith('Rebalance started')
