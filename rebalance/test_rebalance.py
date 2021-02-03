@@ -85,9 +85,21 @@ def test_rebalance_all(node_factory, bitcoind):
 
     # check we get an error if theres just one channel
     result = l1.rpc.rebalanceall()
-    assert result['message'] == 'Error: Not enough open channels to balance anything'
+    assert result['message'] == 'Error: Not enough open channels to rebalance anything'
 
-    # now we form a circle so we can do rebalanceall
+    # now we add another 100% outgoing liquidity to l1 which does not help
+    l4 = node_factory.get_node()
+    l1.connect(l4)
+    l1.fundchannel(l4)
+
+    # test this is still not possible
+    result = l1.rpc.rebalanceall()
+    assert result['message'] == 'Error: Not enough liquidity to rebalance anything'
+
+    # remove l4 it does not distort further testing
+    l1.rpc.close(l1.get_channel_scid(l4))
+
+    # now we form a circle so we can do actually rebalanceall
     l3.connect(l1)
     l3.fundchannel(l1)
 
