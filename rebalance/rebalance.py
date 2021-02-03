@@ -490,12 +490,23 @@ def rebalanceall(plugin: Plugin, min_amount: Millisatoshi = Millisatoshi("50000s
     To be economical, it tries to fix the liquidity cheaper than it can be ruined by transaction forwards.
     It may run for a long time (hours) in the background, but can be stopped with the rebalancestop method.
     """
+    # some early checks before we start the async thread
     if plugin.mutex.locked():
         return {"message": "Rebalance is already running, this may take a while. To stop it use the cli method 'rebalancestop'."}
-    if len(get_open_channels(plugin)) <= 1:
-        return {"message": "Error: Not enough open channels to balance anything"}
+    channels = get_open_channels(plugin)
+    if len(channels) <= 1:
+        return {"message": "Error: Not enough open channels to rebalance anything"}
+    our = sum(ch["to_us_msat"] for ch in channels)
+    total = sum(ch["total_msat"] for ch in channels)
+    min_amount = Millisatoshi(min_amount)
+    if total - our < min_amount or our < min_amount:
+        return {"message": "Error: Not enough liquidity to rebalance anything"}
+
+    # param parsing ensure correct type
     plugin.feeratio = float(feeratio)
-    plugin.min_amount = Millisatoshi(min_amount)
+    plugin.min_amount = min_amount
+
+    # run the job
     t = Thread(target=rebalanceall_thread, args=(plugin, ))
     t.start()
     return {"message": f"Rebalance started with min rebalancable amount: {plugin.min_amount}, feeratio: {plugin.feeratio}"}
