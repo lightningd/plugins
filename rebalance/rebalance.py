@@ -299,7 +299,7 @@ def get_ideal_ratio(channels: list, enough_liquidity: Millisatoshi):
     our = sum(ch["to_us_msat"] for ch in channels)
     total = sum(ch["total_msat"] for ch in channels)
     chs = list(channels)  # get a copy!
-    while True:
+    while len(chs) > 0:
         ratio = int(our) / int(total)
         smallest_channel = min(chs, key=lambda ch: ch["total_msat"])
         if smallest_channel["total_msat"] * min(ratio, 1 - ratio) > enough_liquidity:
@@ -408,6 +408,8 @@ def maybe_rebalance_once(plugin: Plugin, failed_pairs: list):
     channels = get_open_channels(plugin)
     for ch1 in channels:
         for ch2 in channels:
+            if ch1 == ch2:
+                continue
             result = maybe_rebalance_pairs(plugin, ch1, ch2, failed_pairs)
             if result["success"] or plugin.rebalance_stop:
                 return result
