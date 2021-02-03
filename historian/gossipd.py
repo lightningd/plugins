@@ -162,6 +162,7 @@ def parse(b):
         257: parse_node_announcement,
         258: parse_channel_update,
         3503: parse_ignore,
+        4103: parse_ignore,
     }
 
     if typ not in parsers:
