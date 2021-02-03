@@ -359,6 +359,34 @@ def liquidity_info(channel, enough_liquidity: Millisatoshi, ideal_ratio: float):
     return liquidity
 
 
+def wait_for(success, timeout: int = 60):
+    # cyclical lambda helper
+    # taken and modified from pyln-testing/pyln/testing/utils.py
+    start_time = time.time()
+    interval = 0.25
+    while not success():
+        time_left = start_time + timeout - time.time()
+        if time_left <= 0:
+            raise ValueError("Timeout error while waiting for {}", success)
+        time.sleep(min(interval, time_left))
+        interval *= 2
+        if interval > 5:
+            interval = 5
+
+
+def wait_for_htlcs(plugin, scids: list = None):
+    # HTLC settlement helper
+    # taken and modified from pyln-testing/pyln/testing/utils.py
+    peers = plugin.rpc.listpeers()['peers']
+    for p, peer in enumerate(peers):
+        if 'channels' in peer:
+            for c, channel in enumerate(peer['channels']):
+                if scids is not None and channel['short_channel_id'] not in scids:
+                    continue
+                if 'htlcs' in channel:
+                    wait_for(lambda: len(plugin.rpc.listpeers()['peers'][p]['channels'][c]['htlcs']) == 0)
+
+
 def maybe_rebalance_pairs(plugin: Plugin, ch1, ch2, failed_pairs: list):
     scid1 = ch1["short_channel_id"]
     scid2 = ch2["short_channel_id"]
@@ -395,8 +423,8 @@ def maybe_rebalance_pairs(plugin: Plugin, ch1, ch2, failed_pairs: list):
         plugin.log(f"Rebalance succeeded: {res}")
         result["success"] = True
         result["fee_spent"] += res["fee"]
-        # refresh channels
-        time.sleep(10)
+        # wait for settlement
+        wait_for_htlcs(plugin, [scid1, scid2])
         ch1 = get_chan(plugin, scid1)
         assert ch1 is not None
         ch2 = get_chan(plugin, scid2)
