@@ -167,7 +167,7 @@ class Flusher(Thread):
 
             self.session.merge(cls.from_gossip(msg, raw))
         except Exception as e:
-            logging.warn("Exception parsing gossip message:", e)
+            logging.warn(f"Exception parsing gossip message: {e}")
 
 
 @plugin.init()
