@@ -161,10 +161,13 @@ class Flusher(Thread):
 
             elif isinstance(msg, gossipd.NodeAnnouncement):
                 cls = NodeAnnouncement
+                
+            else:
+                return;
 
             self.session.merge(cls.from_gossip(msg, raw))
         except Exception as e:
-            print("Exception parsing gossip message:", e)
+            logging.warn("Exception parsing gossip message:", e)
 
 
 @plugin.init()
