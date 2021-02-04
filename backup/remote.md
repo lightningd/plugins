@@ -15,7 +15,8 @@ The remote backup system consists of two parts:
 - A server daemon that receives changes from the backup backend and communicates with a local backup backend
   to store them. The server side does not need to be running c-lightning, nor have it installed.
 
-The backend URL format is `socket:<host>:<port>`. For example `socket:127.0.0.1:1234`.
+The backend URL format is `socket:<host>:<port>`. For example `socket:127.0.0.1:1234`. To supply a IPv6
+address use the bracketed syntax `socket:[::1]:1234`.
 
 To run the server against a local backend use `backup-cli server file://.../ 127.0.0.1:1234`.
 

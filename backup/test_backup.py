@@ -1,5 +1,6 @@
 from backend import Backend
 from filebackend import FileBackend
+import socketbackend
 from flaky import flaky
 from pyln.testing.fixtures import *  # noqa: F401,F403
 from pyln.testing.utils import sync_blockheight
@@ -279,3 +280,38 @@ def test_compact(bitcoind, directory, node_factory):
     l1.rpc.backup_compact()
     tmp = tempfile.TemporaryDirectory()
     subprocess.check_call([cli_path, "restore", bdest, tmp.name])
+
+def test_parse_socket_url():
+    with pytest.raises(ValueError):
+        # fail: invalid url scheme
+        socketbackend.parse_socket_url('none')
+        # fail: no port number
+        socketbackend.parse_socket_url('socket:127.0.0.1')
+        socketbackend.parse_socket_url('socket:127.0.0.1:')
+        # fail: unbracketed IPv6
+        socketbackend.parse_socket_url('socket:::1:1234')
+        # fail: no port number IPv6
+        socketbackend.parse_socket_url('socket:[::1]')
+        socketbackend.parse_socket_url('socket:[::1]:')
+        # fail: invalid port number
+        socketbackend.parse_socket_url('socket:127.0.0.1:12bla')
+        # fail: unrecognized query string key
+        socketbackend.parse_socket_url('socket:127.0.0.1:1234?dummy=value')
+
+    # IPv4
+    s = socketbackend.parse_socket_url('socket:127.0.0.1:1234')
+    assert(s.host == '127.0.0.1')
+    assert(s.port == 1234)
+    assert(s.addrtype == socketbackend.AddrType.IPv4)
+
+    # IPv6
+    s = socketbackend.parse_socket_url('socket:[::1]:1235')
+    assert(s.host == '::1')
+    assert(s.port == 1235)
+    assert(s.addrtype == socketbackend.AddrType.IPv6)
+
+    # Hostname
+    s = socketbackend.parse_socket_url('socket:backup.local:1236')
+    assert(s.host == 'backup.local')
+    assert(s.port == 1236)
+    assert(s.addrtype == socketbackend.AddrType.NAME)
