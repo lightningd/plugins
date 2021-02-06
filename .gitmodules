@@ -31,3 +31,7 @@
 [submodule "go-lnmetrics.reporter"]
 	path = go-lnmetrics.reporter
 	url = https://github.com/LNOpenMetrics/go-lnmetrics.reporter.git
+[submodule "boltz-channel-creation"]
+	path = boltz-channel-creation
+	url = https://github.com/BoltzExchange/channel-creation-plugin
+
