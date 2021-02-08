@@ -15,10 +15,12 @@ The remote backup system consists of two parts:
 - A server daemon that receives changes from the backup backend and communicates with a local backup backend
   to store them. The server side does not need to be running c-lightning, nor have it installed.
 
-The backend URL format is `socket:<host>:<port>`. For example `socket:127.0.0.1:1234`. To supply a IPv6
+### URL scheme
+
+The backend URL format is `socket:<host>:<port>[?<param>=<value>[&...]]`. For example `socket:127.0.0.1:1234`. To supply a IPv6
 address use the bracketed syntax `socket:[::1]:1234`.
 
-To run the server against a local backend use `backup-cli server file://.../ 127.0.0.1:1234`.
+The only currently accepted `<param>` is `proxy`. This can be used to connect to the backup server through a proxy. See [Usage with Tor](#usage-with-tor).
 
 Usage
 -----
@@ -42,6 +44,9 @@ lightningd ... \
     --important-plugin /path/to/plugins/backup/backup.py
 ```
 
+Usage with SSH
+--------------
+
 The easiest way to connect the server and client if they are not running on the same host is with a ssh
 forward. For example, when connecting from another machine to the one running c-lightning use:
 
@@ -53,6 +58,25 @@ Or when it is the other way around:
 
 ```bash
 ssh backupserver -L 8700:127.0.0.1:8700
+```
+
+Usage with Tor
+--------------
+
+To use the backup plugin with Tor the Python module PySocks needs to be installed (`pip install --user pysocks`).
+
+Assuming Tor's `SocksPort` is 9050, the following URL can be used to connect the backup plugin to a backup server over an onion service:
+
+```
+socket:axz53......onion:8700?proxy=socks5:127.0.0.1:9050
+```
+
+On the server side, manually define an onion service in `torrc` that forwards incoming connections to the local port, e.g.:
+
+```
+HiddenServiceDir /var/lib/tor/lightning/
+HiddenServiceVersion 3
+HiddenServicePort 8700 127.0.0.1:8700
 ```
 
 Goals
