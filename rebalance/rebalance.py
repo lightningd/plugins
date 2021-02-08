@@ -418,13 +418,15 @@ def maybe_rebalance_pairs(plugin: Plugin, ch1, ch2, failed_pairs: list):
             if amount > get_max_amount(i, plugin):
                 continue
             return result
-        elapsed_time = timedelta(seconds=time.time() - start_ts)
-        res["elapsed_time"] = str(elapsed_time)[:-3]
-        plugin.log(f"Rebalance succeeded: {res}")
         result["success"] = True
         result["fee_spent"] += res["fee"]
+        htlc_start_ts = time.time()
         # wait for settlement
         wait_for_htlcs(plugin, [scid1, scid2])
+        current_ts = time.time()
+        res["elapsed_time"] = str(timedelta(seconds=current_ts - start_ts))[:-3]
+        res["htlc_time"] = str(timedelta(seconds=current_ts - htlc_start_ts))[:-3]
+        plugin.log(f"Rebalance succeeded: {res}")
         ch1 = get_chan(plugin, scid1)
         assert ch1 is not None
         ch2 = get_chan(plugin, scid2)
