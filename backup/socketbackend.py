@@ -6,34 +6,37 @@ from urllib.parse import urlparse, parse_qs
 from backend import Backend, Change
 from protocol import PacketType, recvall, PKT_CHANGE_TYPES, change_from_packet, packet_from_change, send_packet, recv_packet
 
-SocketURLInfo = namedtuple('SocketURLInfo', ['host', 'port', 'addrtype'])
+HostPortInfo = namedtuple('HostPortInfo', ['host', 'port', 'addrtype'])
+SocketURLInfo = namedtuple('SocketURLInfo', ['target', 'proxytype', 'proxytarget'])
 
+# Network address type.
 class AddrType:
     IPv4 = 0
     IPv6 = 1
     NAME = 2
 
-def parse_socket_url(destination: str) -> SocketURLInfo:
-    '''Parse a socket: URL to extract the information contained in it.'''
-    url = urlparse(destination)
-    if url.scheme != 'socket':
-        raise ValueError('Scheme for socket backend must be socket:...')
+# Proxy type. Only SOCKS5 supported at the moment as this is sufficient for Tor.
+class ProxyType:
+    DIRECT = 0
+    SOCKS5 = 1
 
-    if url.path.startswith('['): # bracketed IPv6 address
-        eidx = url.path.find(']')
+def parse_host_port(path: str) -> HostPortInfo:
+    '''Parse a host:port pair.'''
+    if path.startswith('['): # bracketed IPv6 address
+        eidx = path.find(']')
         if eidx == -1:
             raise ValueError('Unterminated bracketed host address.')
-        host = url.path[1:eidx]
+        host = path[1:eidx]
         addrtype = AddrType.IPv6
         eidx += 1
-        if eidx >= len(url.path) or url.path[eidx] != ':':
+        if eidx >= len(path) or path[eidx] != ':':
             raise ValueError('Port number missing.')
         eidx += 1
     else:
-        eidx = url.path.find(':')
+        eidx = path.find(':')
         if eidx == -1:
             raise ValueError('Port number missing.')
-        host = url.path[0:eidx]
+        host = path[0:eidx]
         if re.match('\d+\.\d+\.\d+\.\d+$', host): # matches IPv4 address format
             addrtype = AddrType.IPv4
         else:
@@ -41,17 +44,40 @@ def parse_socket_url(destination: str) -> SocketURLInfo:
         eidx += 1
 
     try:
-        port = int(url.path[eidx:])
+        port = int(path[eidx:])
     except ValueError:
         raise ValueError('Invalid port number')
 
+    return HostPortInfo(host=host, port=port, addrtype=addrtype)
+
+def parse_socket_url(destination: str) -> SocketURLInfo:
+    '''Parse a socket: URL to extract the information contained in it.'''
+    url = urlparse(destination)
+    if url.scheme != 'socket':
+        raise ValueError('Scheme for socket backend must be socket:...')
+
+    target = parse_host_port(url.path)
+
+    proxytype = ProxyType.DIRECT
+    proxytarget = None
     # parse query parameters
     # reject unknown parameters (currently all of them)
     qs = parse_qs(url.query)
-    if len(qs):
-        raise ValueError('Invalid query string')
+    for (key, values) in qs.items():
+        if key == 'proxy': # proxy=socks5:127.0.0.1:9050
+            if len(values) != 1:
+                raise ValueError('Proxy can only have one value')
 
-    return SocketURLInfo(host=host, port=port, addrtype=addrtype)
+            (ptype, ptarget) = values[0].split(':', 1)
+            if ptype != 'socks5':
+                raise ValueError('Unknown proxy type ' + ptype)
+
+            proxytype = ProxyType.SOCKS5
+            proxytarget = parse_host_port(ptarget)
+        else:
+            raise ValueError('Unknown query string parameter ' + key)
+
+    return SocketURLInfo(target=target, proxytype=proxytype, proxytarget=proxytarget)
 
 class SocketBackend(Backend):
     def __init__(self, destination: str, create: bool):
@@ -59,13 +85,22 @@ class SocketBackend(Backend):
         self.prev_version = None
         self.destination = destination
         self.url = parse_socket_url(destination)
-        if self.url.addrtype == AddrType.IPv6:
-            self.sock = socket.socket(socket.AF_INET6, socket.SOCK_STREAM)
-        else: # TODO NAME is assumed to be IPv4 for now
-            self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        logging.info('Initialized socket backend, connecting to {}:{} (addrtype {})...'.format(
-                self.url.host, self.url.port, self.url.addrtype))
-        self.sock.connect((self.url.host, self.url.port))
+
+        if self.url.proxytype == ProxyType.DIRECT:
+            if self.url.target.addrtype == AddrType.IPv6:
+                self.sock = socket.socket(socket.AF_INET6, socket.SOCK_STREAM)
+            else: # TODO NAME is assumed to be IPv4 for now
+                self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        else:
+            assert(self.url.proxytype == ProxyType.SOCKS5)
+            import socks
+            self.sock = socks.socksocket()
+            self.sock.set_proxy(socks.SOCKS5, self.url.proxytarget.host, self.url.proxytarget.port)
+
+        logging.info('Initialized socket backend, connecting to {}:{} (addrtype {}, proxytype {}, proxytarget {})...'.format(
+                self.url.target.host, self.url.target.port, self.url.target.addrtype,
+                self.url.proxytype, self.url.proxytarget))
+        self.sock.connect((self.url.target.host, self.url.target.port))
         logging.info('Connected to {}'.format(destination))
 
     def _send_packet(self, typ: int, payload: bytes) -> None:

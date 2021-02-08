@@ -297,21 +297,40 @@ def test_parse_socket_url():
         socketbackend.parse_socket_url('socket:127.0.0.1:12bla')
         # fail: unrecognized query string key
         socketbackend.parse_socket_url('socket:127.0.0.1:1234?dummy=value')
+        # fail: incomplete proxy spec
+        socketbackend.parse_socket_url('socket:127.0.0.1:1234?proxy=socks5')
+        socketbackend.parse_socket_url('socket:127.0.0.1:1234?proxy=socks5:')
+        socketbackend.parse_socket_url('socket:127.0.0.1:1234?proxy=socks5:127.0.0.1:')
+        # fail: unknown proxy scheme
+        socketbackend.parse_socket_url('socket:127.0.0.1:1234?proxy=socks6:127.0.0.1:9050')
 
     # IPv4
     s = socketbackend.parse_socket_url('socket:127.0.0.1:1234')
-    assert(s.host == '127.0.0.1')
-    assert(s.port == 1234)
-    assert(s.addrtype == socketbackend.AddrType.IPv4)
+    assert(s.target.host == '127.0.0.1')
+    assert(s.target.port == 1234)
+    assert(s.target.addrtype == socketbackend.AddrType.IPv4)
+    assert(s.proxytype == socketbackend.ProxyType.DIRECT)
 
     # IPv6
     s = socketbackend.parse_socket_url('socket:[::1]:1235')
-    assert(s.host == '::1')
-    assert(s.port == 1235)
-    assert(s.addrtype == socketbackend.AddrType.IPv6)
+    assert(s.target.host == '::1')
+    assert(s.target.port == 1235)
+    assert(s.target.addrtype == socketbackend.AddrType.IPv6)
+    assert(s.proxytype == socketbackend.ProxyType.DIRECT)
 
     # Hostname
     s = socketbackend.parse_socket_url('socket:backup.local:1236')
-    assert(s.host == 'backup.local')
-    assert(s.port == 1236)
-    assert(s.addrtype == socketbackend.AddrType.NAME)
+    assert(s.target.host == 'backup.local')
+    assert(s.target.port == 1236)
+    assert(s.target.addrtype == socketbackend.AddrType.NAME)
+    assert(s.proxytype == socketbackend.ProxyType.DIRECT)
+
+    # Tor
+    s = socketbackend.parse_socket_url('socket:backupserver.onion:1234?proxy=socks5:127.0.0.1:9050')
+    assert(s.target.host == 'backupserver.onion')
+    assert(s.target.port == 1234)
+    assert(s.target.addrtype == socketbackend.AddrType.NAME)
+    assert(s.proxytype == socketbackend.ProxyType.SOCKS5)
+    assert(s.proxytarget.host == '127.0.0.1')
+    assert(s.proxytarget.port == 9050)
+    assert(s.proxytarget.addrtype == socketbackend.AddrType.IPv4)
