@@ -42,7 +42,6 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 from time import sleep, time
 import heapq
-import json
 import os
 import random
 import string
@@ -87,7 +86,7 @@ def start_probe(plugin):
 
 
 @plugin.async_method('probe')
-def probe(plugin, request, node_id=None, **kwargs):
+def probe(plugin, request, node_id=None, amount=None, **kwargs):
     res = None
     if node_id is None:
         nodes = plugin.rpc.listnodes()['nodes']
@@ -99,27 +98,54 @@ def probe(plugin, request, node_id=None, **kwargs):
     try:
         route = plugin.rpc.getroute(
             node_id,
-            msatoshi=10000,
+            msatoshi=amount if amount is not None else 10000,
             riskfactor=1,
             exclude=exclusions + list(temporary_exclusions.keys())
         )['route']
         p.route = ','.join([r['channel'] for r in route])
-        p.payment_hash = ''.join(choice(string.hexdigits) for _ in range(64))
+        p.payment_hash = ''.join(choice(string.hexdigits) for _ in range(64)).lower()
     except RpcError:
         p.failcode = -1
+        plugin.probe_results[p.failcode] = plugin.probe_results.get(p.failcode, 0) + 1
         res = p.jsdict()
         s.commit()
-        return request.set_result(res) if request else None
+        request.set_result(res)
+        return
 
     s.commit()
     plugin.rpc.sendpay(route, p.payment_hash)
     plugin.pending_probes.append({
         'request': request,
         'probe_id': p.id,
-        'payment_hash': p.payment_hash,
+        'payment_hash': p.payment_hash.lower(),
         'callback': complete_probe,
         'plugin': plugin,
     })
+
+
+@plugin.subscribe("sendpay_failure")
+def on_sendpay_failure(sendpay_failure, plugin):
+    if 'amount_msat' in sendpay_failure:
+        del sendpay_failure['amount_msat']
+    if 'amount_sent_msat' in sendpay_failure:
+        del sendpay_failure['amount_sent_msat']
+    print("Sendpay failed:", sendpay_failure)
+
+    payment_hash = sendpay_failure['data']['payment_hash']
+
+    probe = None
+    for r in plugin.pending_probes:
+        print(r)
+        if r['payment_hash'] == payment_hash:
+            probe = r
+            break
+
+    if probe is None:
+        print("Pending probe not found")
+        return
+
+    plugin.pending_probes.remove(probe)
+    complete_probe(plugin, r['request'], r['probe_id'], payment_hash)
 
 
 @plugin.method('traceroute')
@@ -171,21 +197,27 @@ def traceroute(plugin, node_id, **kwargs):
 def stats(plugin):
     return {
         'pending_probes': len(plugin.pending_probes),
-        'exclusions': len(exclusions),
-        'temporary_exclusions': len(temporary_exclusions),
+        'exclusions_count': len(exclusions),
+        'exclusions': exclusions,
+        'temporary_exclusions_count': len(temporary_exclusions),
+        'temporary_exclusions': list(temporary_exclusions.keys()),
+        'results': plugin.probe_results,
     }
 
 
 def complete_probe(plugin, request, probe_id, payment_hash):
     s = plugin.Session()
     p = s.query(Probe).get(probe_id)
+
     try:
         plugin.rpc.waitsendpay(p.payment_hash)
     except RpcError as e:
         error = e.error['data']
         p.erring_channel = e.error['data']['erring_channel']
         p.failcode = e.error['data']['failcode']
-        p.error = json.dumps(error)
+        p.error = repr(error)
+
+    plugin.probe_results[p.failcode] = plugin.probe_results.get(p.failcode, 0) + 1
 
     if p.failcode in [16392, 16394]:
         exclusion = "{erring_channel}/{erring_direction}".format(**error)
@@ -238,7 +270,7 @@ def schedule(plugin):
     next_runs = [
         (time() + 300, clear_temporary_exclusion, 300),
         (time() + plugin.probe_interval, start_probe, plugin.probe_interval),
-        (time() + 1, poll_payments, 1),
+        #(time() + 1, poll_payments, 1),
     ]
     heapq.heapify(next_runs)
 
@@ -258,6 +290,7 @@ def schedule(plugin):
 def init(configuration, options, plugin):
     plugin.probe_interval = int(options['probe-interval'])
     plugin.probe_exclusion_duration = int(options['probe-exclusion-duration'])
+    plugin.probe_results = {}
 
     db_filename = 'sqlite:///' + os.path.join(
         configuration['lightning-dir'],
