@@ -57,6 +57,19 @@ On daemon startup the plugin will check the integrity of the existing backup
 and complain if there is a version mismatch.
 
 
+## Performing backup compaction
+
+A backup compaction incorporates incremental updates into a single snapshot.
+This will reduce the size of the backup file and reduce the time needed to
+restore the backup. This can be done through the plugin command `backup-compact`:
+
+```
+lightning-cli backup-compact
+```
+
+Be aware that this can take a long time depending on the size of the backup
+and I/O speeds, during which the daemon will not be reachable.
+
 ## Restoring a backup
 
 If things really messed up and you need to reinstall clightning, you can
