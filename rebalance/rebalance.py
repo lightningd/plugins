@@ -26,7 +26,7 @@ def setup_routing_fees(plugin, route, msatoshi):
 
 def get_channel(plugin, payload, peer_id, scid, check_state: bool = False):
     peer = plugin.rpc.listpeers(peer_id).get('peers')[0]
-    channel = next(c for c in peer['channels'] if 'short_channel_id' in c and c['short_channel_id'] == scid)
+    channel = next(c for c in peer['channels'] if c.get('short_channel_id') == scid)
     if check_state:
         if channel['state'] != "CHANNELD_NORMAL":
             raise RpcError('rebalance', payload, {'message': 'Channel %s not in state CHANNELD_NORMAL, but: %s' % (scid, channel['state'])})
@@ -37,7 +37,7 @@ def get_channel(plugin, payload, peer_id, scid, check_state: bool = False):
 
 def amounts_from_scid(plugin, scid):
     channels = plugin.rpc.listfunds().get('channels')
-    channel = next(c for c in channels if 'short_channel_id' in c and c['short_channel_id'] == scid)
+    channel = next(c for c in channels if c.get('short_channel_id') == scid)
     our_msat = Millisatoshi(channel['our_amount_msat'])
     total_msat = Millisatoshi(channel['amount_msat'])
     return our_msat, total_msat
@@ -340,9 +340,7 @@ def get_chan(plugin: Plugin, scid: str):
         # We might have multiple channel entries ! Eg if one was just closed
         # and reopened.
         for chan in peer["channels"]:
-            if "short_channel_id" not in chan:
-                continue
-            if chan["short_channel_id"] == scid:
+            if chan.get("short_channel_id") == scid:
                 return chan
 
 
@@ -381,7 +379,7 @@ def wait_for_htlcs(plugin, scids: list = None):
     for p, peer in enumerate(peers):
         if 'channels' in peer:
             for c, channel in enumerate(peer['channels']):
-                if scids is not None and channel['short_channel_id'] not in scids:
+                if scids is not None and channel.get('short_channel_id') not in scids:
                     continue
                 if 'htlcs' in channel:
                     wait_for(lambda: len(plugin.rpc.listpeers()['peers'][p]['channels'][c]['htlcs']) == 0)
