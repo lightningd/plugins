@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 from backends import get_backend
 from backend import Change
-from server import SocketServer
+from server import SocketServer, setup_server_logging
 
 import os
 import click
@@ -74,10 +74,15 @@ def restore(backend_url, restore_destination):
 @click.command()
 @click.argument("backend-url")
 @click.argument("addr")
-def server(backend_url, addr):
+@click.option('--log-mode', type=click.Choice(['plain', 'systemd'], case_sensitive=False), default='plain', help='Debug log mode, defaults to plain')
+@click.option('--log-level', type=click.Choice(['debug', 'info', 'notice', 'warning', 'error', 'critical'], case_sensitive=False), default='info', help='Debug log level, defaults to info')
+def server(backend_url, addr, log_mode, log_level):
     backend = get_backend(backend_url)
     addr, port = addr.split(':')
     port = int(port)
+
+    setup_server_logging(log_mode, log_level)
+
     server = SocketServer((addr, port), backend)
     server.run()
 

@@ -1,9 +1,46 @@
 import logging, socket, struct
 import json
+import sys
 from typing import Tuple
 
 from backend import Backend
 from protocol import PacketType, recvall, PKT_CHANGE_TYPES, change_from_packet, packet_from_change, send_packet, recv_packet
+
+class SystemdHandler(logging.Handler):
+    PREFIX = {
+        # EMERG <0>
+        # ALERT <1>
+        logging.CRITICAL: "<2>",
+        logging.ERROR: "<3>",
+        logging.WARNING: "<4>",
+        # NOTICE <5>
+        logging.INFO: "<6>",
+        logging.DEBUG: "<7>",
+        logging.NOTSET: "<7>"
+    }
+
+    def __init__(self, stream=sys.stdout):
+        self.stream = stream
+        logging.Handler.__init__(self)
+
+    def emit(self, record):
+        try:
+            msg = self.PREFIX[record.levelno] + self.format(record) + "\n"
+            self.stream.write(msg)
+            self.stream.flush()
+        except Exception:
+            self.handleError(record)
+
+def setup_server_logging(mode, level):
+    root_logger = logging.getLogger()
+    root_logger.setLevel(level.upper())
+    mode = mode.lower()
+    if mode == 'systemd':
+        # replace handler with systemd one
+        root_logger.handlers = []
+        root_logger.addHandler(SystemdHandler())
+    else:
+        assert(mode == 'plain')
 
 class SocketServer:
     def __init__(self, addr: Tuple[str, int], backend: Backend) -> None:
@@ -32,7 +69,7 @@ class SocketServer:
             if typ in PKT_CHANGE_TYPES:
                 change = change_from_packet(typ, payload)
                 if typ == PacketType.CHANGE:
-                    logging.info('Received CHANGE {}'.format(change.version))
+                    logging.debug('Received CHANGE {}'.format(change.version))
                 else:
                     logging.info('Received SNAPSHOT {}'.format(change.version))
                 self.backend.add_change(change)
@@ -47,7 +84,7 @@ class SocketServer:
                     self.backend.rewind()
                     self._send_packet(PacketType.ACK, struct.pack("!I", self.backend.version))
             elif typ == PacketType.REQ_METADATA:
-                logging.info('Received REQ_METADATA')
+                logging.debug('Received REQ_METADATA')
                 blob = struct.pack("!IIIQ", 0x01, self.backend.version,
                            self.backend.prev_version,
                            self.backend.version_count)
@@ -63,13 +100,13 @@ class SocketServer:
                 stats = self.backend.compact()
                 self._send_packet(PacketType.COMPACT_RES, json.dumps(stats).encode())
             elif typ == PacketType.ACK:
-                logging.info('Received ACK')
+                logging.debug('Received ACK')
             elif typ == PacketType.NACK:
-                logging.info('Received NACK')
+                logging.debug('Received NACK')
             elif typ == PacketType.METADATA:
-                logging.info('Received METADATA')
+                logging.debug('Received METADATA')
             elif typ == PacketType.COMPACT_RES:
-                logging.info('Received COMPACT_RES')
+                logging.debug('Received COMPACT_RES')
             else:
                 raise Exception('Unknown or unexpected packet type {}'.format(typ))
         self.conn = None
