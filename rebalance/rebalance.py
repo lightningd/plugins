@@ -365,31 +365,43 @@ def wait_for(success, timeout: int = 60):
     while not success():
         time_left = start_time + timeout - time.time()
         if time_left <= 0:
-            raise ValueError("Timeout error while waiting for {}", success)
+            return False
         time.sleep(min(interval, time_left))
         interval *= 2
         if interval > 5:
             interval = 5
+    return True
 
 
-def wait_for_htlcs(plugin, scids: list = None):
+def wait_for_htlcs(plugin, failed_channels: list, scids: list = None):
     # HTLC settlement helper
     # taken and modified from pyln-testing/pyln/testing/utils.py
+    result = True
     peers = plugin.rpc.listpeers()['peers']
     for p, peer in enumerate(peers):
         if 'channels' in peer:
             for c, channel in enumerate(peer['channels']):
                 if scids is not None and channel.get('short_channel_id') not in scids:
                     continue
+                if channel.get('short_channel_id') in failed_channels:
+                    result = False
+                    continue
                 if 'htlcs' in channel:
-                    wait_for(lambda: len(plugin.rpc.listpeers()['peers'][p]['channels'][c]['htlcs']) == 0)
+                    if not wait_for(lambda: len(plugin.rpc.listpeers()['peers'][p]['channels'][c]['htlcs']) == 0):
+                        failed_channels.append(channel.get('short_channel_id'))
+                        plugin.log(f"Timeout while waiting for htlc settlement in channel {channel.get('short_channel_id')}")
+                        result = False
+    return result
 
 
-def maybe_rebalance_pairs(plugin: Plugin, ch1, ch2, failed_pairs: list):
+def maybe_rebalance_pairs(plugin: Plugin, ch1, ch2, failed_channels: list):
     scid1 = ch1["short_channel_id"]
     scid2 = ch2["short_channel_id"]
     result = {"success": False, "fee_spent": Millisatoshi(0)}
-    if scid1 + ":" + scid2 in failed_pairs:
+    if scid1 + ":" + scid2 in failed_channels:
+        return result
+    # check if HTLCs are settled
+    if not wait_for_htlcs(plugin, failed_channels, [scid1, scid2]):
         return result
     i = 0
     while not plugin.rebalance_stop:
@@ -408,7 +420,7 @@ def maybe_rebalance_pairs(plugin: Plugin, ch1, ch2, failed_pairs: list):
         try:
             res = rebalance(plugin, outgoing_scid=scid1, incoming_scid=scid2, msatoshi=amount, maxfeepercent=0, retry_for=1200, exemptfee=maxfee)
         except Exception:
-            failed_pairs.append(scid1 + ":" + scid2)
+            failed_channels.append(scid1 + ":" + scid2)
             # rebalance failed, let's try with a smaller amount
             while (get_max_amount(i, plugin) >= amount and
                    get_max_amount(i, plugin) != get_max_amount(i + 1, plugin)):
@@ -420,11 +432,13 @@ def maybe_rebalance_pairs(plugin: Plugin, ch1, ch2, failed_pairs: list):
         result["fee_spent"] += res["fee"]
         htlc_start_ts = time.time()
         # wait for settlement
-        wait_for_htlcs(plugin, [scid1, scid2])
+        htlc_success = wait_for_htlcs(plugin, failed_channels, [scid1, scid2])
         current_ts = time.time()
         res["elapsed_time"] = str(timedelta(seconds=current_ts - start_ts))[:-3]
         res["htlc_time"] = str(timedelta(seconds=current_ts - htlc_start_ts))[:-3]
         plugin.log(f"Rebalance succeeded: {res}")
+        if not htlc_success:
+            return result
         ch1 = get_chan(plugin, scid1)
         assert ch1 is not None
         ch2 = get_chan(plugin, scid2)
@@ -432,13 +446,13 @@ def maybe_rebalance_pairs(plugin: Plugin, ch1, ch2, failed_pairs: list):
     return result
 
 
-def maybe_rebalance_once(plugin: Plugin, failed_pairs: list):
+def maybe_rebalance_once(plugin: Plugin, failed_channels: list):
     channels = get_open_channels(plugin)
     for ch1 in channels:
         for ch2 in channels:
             if ch1 == ch2:
                 continue
-            result = maybe_rebalance_pairs(plugin, ch1, ch2, failed_pairs)
+            result = maybe_rebalance_pairs(plugin, ch1, ch2, failed_channels)
             if result["success"] or plugin.rebalance_stop:
                 return result
     return {"success": False, "fee_spent": Millisatoshi(0)}
@@ -466,11 +480,11 @@ def rebalanceall_thread(plugin: Plugin):
                    f"ideal liquidity ratio: {plugin.ideal_ratio * 100:.2f}%, "
                    f"min rebalancable amount: {plugin.min_amount}, "
                    f"feeratio: {plugin.feeratio}")
-        failed_pairs = []
+        failed_channels = []
         success = 0
         fee_spent = Millisatoshi(0)
         while not plugin.rebalance_stop:
-            result = maybe_rebalance_once(plugin, failed_pairs)
+            result = maybe_rebalance_once(plugin, failed_channels)
             if not result["success"]:
                 break
             success += 1
