@@ -68,7 +68,7 @@ def get_currencyrate(plugin, currency, urlformat, replymembers):
     # Workaround: retry up to 5 times with a delay
     currency_lc = currency.lower()
     url = urlformat.format(currency_lc=currency_lc, currency=currency)
-    r = requests_retry_session(retries=5, status_forcelist=(404)).get(url, proxies=plugin.proxies)
+    r = requests_retry_session(retries=5, status_forcelist=[404]).get(url, proxies=plugin.proxies)
 
     if r.status_code != 200:
         plugin.log(level='info', message='{}: bad response {}'.format(url, r.status_code))
