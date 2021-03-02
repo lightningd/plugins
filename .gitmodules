@@ -25,3 +25,7 @@
 [submodule "python-teos"]
 	path = python-teos
 	url = https://github.com/talaia-labs/python-teos/
+[submodule "boltz-channel-creation"]
+	path = boltz-channel-creation
+	url = https://github.com/BoltzExchange/channel-creation-plugin
+

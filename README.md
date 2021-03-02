@@ -11,7 +11,7 @@ Community curated plugins for c-lightning.
 | [autopilot][autopilot]             | An autopilot that suggests channels that should be established                            |
 | [boltz-channel-creation][boltz]    | A c-lightning plugin for Boltz Channel Creation Swaps                                     |
 | [csvexportpays][csvexportpays]     | A plugin that exports all payments to a CSV file                                          |
-| [currencyrate][currencyrate]      | A plugin to convert other currencies to BTC using web requests
+| [currencyrate][currencyrate]       | A plugin to convert other currencies to BTC using web requests                            |
 | [donations][donations]             | A simple donations page to accept donations from the web                                  |
 | [drain][drain]                     | Draining, filling and balancing channels with automatic chunks.                           |
 | [event-websocket][event-websocket] | Exposes notifications over a Websocket                                                    |
@@ -26,7 +26,7 @@ Community curated plugins for c-lightning.
 | [pruning][pruning]                 | This plugin manages pruning of bitcoind such that it can always sync                      |
 | [rebalance][rebalance]             | Keeps your channels balanced                                                              |
 | [reckless][reckless]               | An **experimental** plugin manager (search/install plugins)                               |
-| [requestinvoice][request-invoice]  | Http server to request invoices                                            |
+| [requestinvoice][request-invoice]  | Http server to request invoices                                                           |
 | [sauron][sauron]                   | A Bitcoin backend relying on [Esplora][esplora]'s API                                     |
 | [sitzprobe][sitzprobe]             | A Lightning Network payment rehearsal utility                                             |
 | [sparko][sparko]                   | RPC over HTTP with fine-grained permissions, SSE and spark-wallet support                 |
