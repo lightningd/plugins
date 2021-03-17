@@ -2,6 +2,7 @@
 from pyln.client import Plugin, Millisatoshi, RpcError
 from threading import Thread, Lock
 from datetime import timedelta
+from functools import reduce
 import time
 import uuid
 
@@ -50,6 +51,14 @@ def peer_from_scid(plugin, short_channel_id, my_node_id, payload):
             return ch['destination']
     raise RpcError("rebalance", payload, {'message': 'Cannot find peer for channel: ' + short_channel_id})
 
+def get_node_alias(node_id):
+    node = plugin.rpc.listnodes(node_id)['nodes']
+    s = ""
+    if len(node) != 0 and 'alias' in node[0]:
+        s += node[0]['alias']
+    else:
+        s += node_id[0:7]
+    return s
 
 def find_worst_channel(route):
     if len(route) < 4:
@@ -295,10 +304,20 @@ def rebalance(plugin, outgoing_scid, incoming_scid, msatoshi: Millisatoshi = Non
                 excludes.append(worst_channel['channel'] + '/' + str(worst_channel['direction']))
                 continue
 
-            rpc_result = {"sent": msatoshi + fees, "received": msatoshi, "fee": fees, "hops": len(route),
-                          "outgoing_scid": outgoing_scid, "incoming_scid": incoming_scid, "status": "complete",
-                          "message": f"{msatoshi + fees} sent over {len(route)} hops to rebalance {msatoshi}"}
-            plugin.log("Sending %s over %d hops to rebalance %s" % (msatoshi + fees, len(route), msatoshi), 'debug')
+
+            rpc_result = {
+                "sent": msatoshi + fees,
+                "received": msatoshi,
+                "fee": fees,
+                "hops": len(route),
+                "outgoing_scid": outgoing_scid,
+                "incoming_scid": incoming_scid,
+                "status": "complete",
+                "message": f"{msatoshi + fees} sent over {len(route)} hops to rebalance {msatoshi}",
+            }
+            midroute_str = reduce(lambda x,y: x + " -> " + y, map(lambda r: get_node_alias(r['id']), route_mid))
+            full_route_str = "%s -> %s -> %s -> %s" % (get_node_alias(my_node_id), get_node_alias(outgoing_node_id), midroute_str, get_node_alias(my_node_id))
+            plugin.log("%d hops and %s fees for %s along route: %s" % (len(route), fees.to_satoshi_str(), msatoshi.to_satoshi_str(), full_route_str))
             for r in route:
                 plugin.log("    - %s  %14s  %s" % (r['id'], r['channel'], r['amount_msat']), 'debug')
 
