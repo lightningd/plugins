@@ -48,7 +48,7 @@ jobs:
         export DEVELOPER=${{ matrix.developer }}
         export COMPAT=${{ matrix.deprecated }}
         export VALGRIND=0
-        sudo apt-get install -y libsqlite3-dev gcc-4.8 gettext python python3 python3-mako net-tools zlib1g-dev libsodium-dev libpq-dev postgresql
+        sudo apt-get install -y libsqlite3-dev build-essential gettext python python3 python3-mako net-tools zlib1g-dev libsodium-dev libpq-dev postgresql
         cd lightning
         ./configure --disable-valgrind
         make -j 16
