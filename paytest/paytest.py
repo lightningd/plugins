@@ -246,7 +246,7 @@ def on_htlc_accepted(onion, htlc, request, plugin, *args, **kwargs):
         )
     )
     # If this is not a test payment, pass it on
-    if onion["short_channel_id"] != "1x1x1":
+    if 'short_channel_id' not in onion or onion["short_channel_id"] != "1x1x1":
         return request.set_result({"result": "continue"})
 
     # Decode the onion so we get the details the virtual recipient

@@ -57,7 +57,6 @@ def test_mpp_pay(node_factory):
     assert len(is16399) >= 1
 
 
-@pytest.mark.xfail(strict=True)
 def test_incoming_payment(node_factory):
     """Ensure that we don't fail if the payment is not a paytest.
     """
