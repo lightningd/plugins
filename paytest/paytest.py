@@ -252,7 +252,10 @@ def on_htlc_accepted(onion, htlc, request, plugin, *args, **kwargs):
     # Decode the onion so we get the details the virtual recipient
     # would get.
     ro = RoutingOnion.from_hex(onion["next_onion"])
-    payload, next_onion = ro.unwrap(PRIVKEY, unhexlify(PAYMENT_HASH))
+    try:
+        payload, next_onion = ro.unwrap(PRIVKEY, unhexlify(PAYMENT_HASH))
+    except Exception:
+        return request.set_result({"result": "continue"})
 
     if next_onion is not None:
         # Whoops, apparently the virtual node isn't the last hop, fail
