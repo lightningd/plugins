@@ -43,9 +43,6 @@ def test_mpp_pay(node_factory):
     l1, l2 = node_factory.line_graph(2, opts=pluginopt, wait_for_announce=True)
     res = l1.rpc.paytest(l2.info['id'], 10**8)
 
-    from pprint import pprint
-    #pprint(res)
-
     l2.daemon.wait_for_log(r'Received 100000000/100000000 with [0-9]+ parts')
 
     parts = res['status']['attempts']
@@ -58,3 +55,18 @@ def test_mpp_pay(node_factory):
     is16399 = [p == 16399 for p in outcomes]
     assert all(is16399)
     assert len(is16399) >= 1
+
+
+@pytest.mark.xfail(strict=True)
+def test_incoming_payment(node_factory):
+    """Ensure that we don't fail if the payment is not a paytest.
+    """
+    l1, l2 = node_factory.line_graph(2, opts=pluginopt, wait_for_announce=True)
+    inv = l2.rpc.invoice(42, 'lbl', 'desc')['bolt11']
+    l1.rpc.pay(inv)
+
+    plugins = [p['name'] for p in l2.rpc.listconfigs()['plugins']]
+    assert 'paytest.py' in plugins
+
+    plugins = [p['name'] for p in l1.rpc.listconfigs()['plugins']]
+    assert 'paytest.py' in plugins
