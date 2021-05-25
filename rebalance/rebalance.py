@@ -197,8 +197,9 @@ def rebalance(plugin, outgoing_scid, incoming_scid, msatoshi: Millisatoshi = Non
 
             try:
                 plugin.rpc.sendpay(route, payment_hash)
-                plugin.rpc.waitsendpay(payment_hash, retry_for + start_ts - int(time.time()))
-                return success_msg
+                running_for = int(time.time()) - start_ts
+                plugin.rpc.waitsendpay(payment_hash, max(retry_for - running_for, 0))
+                break
 
             except RpcError as e:
                 plugin.log("RpcError: " + str(e), 'debug')
