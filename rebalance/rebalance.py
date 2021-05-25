@@ -65,16 +65,22 @@ def find_worst_channel(route):
     return worst
 
 
-def cleanup(plugin, label, payload, success_msg, error=None):
+def cleanup(plugin, label, payload, rpc_result, error=None):
     try:
         plugin.rpc.delinvoice(label, 'unpaid')
     except RpcError as e:
         # race condition: waitsendpay timed out, but invoice get paid
         if 'status is paid' in e.error.get('message', ""):
-            return success_msg
-    if error is None:
-        error = RpcError("rebalance", payload, {'message': 'Rebalance failed'})
-    raise error
+            return rpc_result
+
+    if error is not None and isinstance(error, RpcError):
+        # unwrap rebalance errors as 'normal' RPC result
+        if error.method == "rebalance":
+            return {"status": "exception",
+                    "message": error.error.get('message', "error not given")}
+        raise error
+
+    return rpc_result
 
 
 # This function calculates the optimal rebalance amount
@@ -168,7 +174,8 @@ def rebalance(plugin, outgoing_scid, incoming_scid, msatoshi: Millisatoshi = Non
     description = "%s to %s" % (outgoing_scid, incoming_scid)
     invoice = plugin.rpc.invoice(msatoshi, label, description, retry_for + 60)
     payment_hash = invoice['payment_hash']
-    success_msg = ""
+    rpc_result = None
+
     try:
         excludes = [my_node_id]  # excude all own channels to prevent shortcuts
 
@@ -188,7 +195,7 @@ def rebalance(plugin, outgoing_scid, incoming_scid, msatoshi: Millisatoshi = Non
                 excludes.append(worst_channel['channel'] + '/' + str(worst_channel['direction']))
                 continue
 
-            success_msg = {"sent": msatoshi + fees, "received": msatoshi, "fee": fees, "hops": len(route),
+            rpc_result = {"sent": msatoshi + fees, "received": msatoshi, "fee": fees, "hops": len(route),
                            "outgoing_scid": outgoing_scid, "incoming_scid": incoming_scid, "status": "settled",
                            "message": f"{msatoshi + fees} sent over {len(route)} hops to rebalance {msatoshi}"}
             plugin.log("Sending %s over %d hops to rebalance %s" % (msatoshi + fees, len(route), msatoshi), 'debug')
@@ -198,24 +205,30 @@ def rebalance(plugin, outgoing_scid, incoming_scid, msatoshi: Millisatoshi = Non
             try:
                 plugin.rpc.sendpay(route, payment_hash)
                 running_for = int(time.time()) - start_ts
-                plugin.rpc.waitsendpay(payment_hash, max(retry_for - running_for, 0))
-                break
+                result = plugin.rpc.waitsendpay(payment_hash, max(retry_for - running_for, 0))
+                if result.get('status') == "complete":
+                    return cleanup(plugin, label, payload, rpc_result)
 
             except RpcError as e:
-                plugin.log("RpcError: " + str(e), 'debug')
+                #plugin.log("RpcError: " + str(e), 'debug')
+                # check if we ran into the `rpc.waitsendpay` timeout
+                if e.method == "waitsendpay" and e.error.get('code') == 200:
+                    raise RpcError("rebalance", payload, {'message': 'Timeout reached'})
+                # check if we have problems with our own channels
                 erring_channel = e.error.get('data', {}).get('erring_channel')
                 if erring_channel == incoming_scid:
                     raise RpcError("rebalance", payload, {'message': 'Error with incoming channel'})
                 if erring_channel == outgoing_scid:
                     raise RpcError("rebalance", payload, {'message': 'Error with outgoing channel'})
+                # exclude other erroring channels
                 erring_direction = e.error.get('data', {}).get('erring_direction')
                 if erring_channel is not None and erring_direction is not None:
                     excludes.append(erring_channel + '/' + str(erring_direction))
 
     except Exception as e:
-        plugin.log("Exception: " + str(e), 'debug')
-        return cleanup(plugin, label, payload, success_msg, e)
-    return cleanup(plugin, label, payload, success_msg)
+        return cleanup(plugin, label, payload, rpc_result, e)
+    rpc_result = {'status': 'error', 'message': 'Timeout reached'}
+    return cleanup(plugin, label, payload, rpc_result)
 
 
 def a_minus_b(a: Millisatoshi, b: Millisatoshi):
@@ -416,6 +429,8 @@ def maybe_rebalance_pairs(plugin: Plugin, ch1, ch2, failed_channels: list):
         start_ts = time.time()
         try:
             res = rebalance(plugin, outgoing_scid=scid1, incoming_scid=scid2, msatoshi=amount, maxfeepercent=0, retry_for=1200, exemptfee=maxfee)
+            if not res.get('status') == 'complete':
+                raise Exception  # fall into exception handler below
         except Exception:
             failed_channels.append(scid1 + ":" + scid2)
             # rebalance failed, let's try with a smaller amount
