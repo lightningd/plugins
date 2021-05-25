@@ -173,7 +173,7 @@ def rebalance(plugin, outgoing_scid, incoming_scid, msatoshi: Millisatoshi = Non
         excludes = [my_node_id]  # excude all own channels to prevent shortcuts
 
         while int(time.time()) - start_ts < retry_for and not plugin.rebalance_stop:
-            r = plugin.rpc.getroute(incoming_node_id, msatoshi, riskfactor=1, cltv=9, fromid=outgoing_node_id, exclude=excludes)
+            r = plugin.rpc.getroute(incoming_node_id, msatoshi, riskfactor=10, cltv=9, fromid=outgoing_node_id, exclude=excludes, maxhops=5)
             route_mid = r['route']
             route = [route_out] + route_mid + [route_in]
             setup_routing_fees(plugin, route, msatoshi)
