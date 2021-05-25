@@ -12,7 +12,7 @@ can be started with `lightningd` by adding the following `--plugin` option
 lightningd --plugin=/path/to/plugins/donations.py
 ```
 
-By default the plugin will automatically start a webserver serving the donations page on port `33506`.
+By default the plugin will automatically start a webserver serving the donations page on port `8088`.
 
 
 The following command line options are registered by the plugin and can be used to customize its behavior:
@@ -20,7 +20,7 @@ The following command line options are registered by the plugin and can be used 
 | Command line option    | Description                                                         |
 |------------------------|---------------------------------------------------------------------|
 | `--donation-autostart` | Should the donation server start automatically? (default: `true`)   |
-| `--donation-web-port`  | Which port should the donation server listen to? (default: `33506`) |
+| `--donation-web-port`  | Which port should the donation server listen to? (default: `8088`) |
 
 
 Once the plugin is active you can run `lightning-cli help donationserver` to
@@ -35,7 +35,7 @@ server on port 8088. This can however be changed with the port argument.
 
 This means after starting `lightningd` together with the plugin you can run:
 `lightning-cli donationserver start` and access the server at
-http://localhost:33506/donation (in case you run your lightning node at
+http://localhost:8088/donation (in case you run your lightning node at
 `localhost`)
 
 ## About the plugin
