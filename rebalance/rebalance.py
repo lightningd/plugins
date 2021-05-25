@@ -54,13 +54,13 @@ def peer_from_scid(plugin, short_channel_id, my_node_id, payload):
 def find_worst_channel(route):
     if len(route) < 4:
         return None
-    start_id = 2
-    worst = route[start_id]['channel']
-    worst_val = route[start_id - 1]['msatoshi'] - route[start_id]['msatoshi']
-    for i in range(start_id + 1, len(route) - 1):
+    start_idx = 2
+    worst = route[start_idx]
+    worst_val = route[start_idx - 1]['msatoshi'] - route[start_idx]['msatoshi']
+    for i in range(start_idx + 1, len(route) - 1):
         val = route[i - 1]['msatoshi'] - route[i]['msatoshi']
         if val > worst_val:
-            worst = route[i]['channel']
+            worst = route[i]
             worst_val = val
     return worst
 
@@ -170,11 +170,7 @@ def rebalance(plugin, outgoing_scid, incoming_scid, msatoshi: Millisatoshi = Non
     payment_hash = invoice['payment_hash']
     success_msg = ""
     try:
-        excludes = []
-        # excude all own channels to prevent unwanted shortcuts [out,mid,in]
-        mychannels = plugin.rpc.listchannels(source=my_node_id)['channels']
-        for channel in mychannels:
-            excludes += [channel['short_channel_id'] + '/0', channel['short_channel_id'] + '/1']
+        excludes = [my_node_id]  # excude all own channels to prevent shortcuts
 
         while int(time.time()) - start_ts < retry_for and not plugin.rebalance_stop:
             r = plugin.rpc.getroute(incoming_node_id, msatoshi, riskfactor=1, cltv=9, fromid=outgoing_node_id, exclude=excludes)
@@ -186,10 +182,10 @@ def rebalance(plugin, outgoing_scid, incoming_scid, msatoshi: Millisatoshi = Non
             # check fee and exclude worst channel the next time
             # NOTE: the int(msat) casts are just a workaround for outdated pylightning versions
             if fees > exemptfee and int(fees) > int(msatoshi) * maxfeepercent / 100:
-                worst_channel_id = find_worst_channel(route)
-                if worst_channel_id is None:
+                worst_channel = find_worst_channel(route)
+                if worst_channel is None:
                     raise RpcError("rebalance", payload, {'message': 'Insufficient fee'})
-                excludes += [worst_channel_id + '/0', worst_channel_id + '/1']
+                excludes.append(worst_channel['channel'] + '/' + str(worst_channel['direction']))
                 continue
 
             success_msg = {"sent": msatoshi + fees, "received": msatoshi, "fee": fees, "hops": len(route),
