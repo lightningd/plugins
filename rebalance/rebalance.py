@@ -174,13 +174,45 @@ def rebalance(plugin, outgoing_scid, incoming_scid, msatoshi: Millisatoshi = Non
     description = "%s to %s" % (outgoing_scid, incoming_scid)
     invoice = plugin.rpc.invoice(msatoshi, label, description, retry_for + 60)
     payment_hash = invoice['payment_hash']
+
     rpc_result = None
+    count = 0
+    excludes = [my_node_id]  # excude all own channels to prevent shortcuts
+    nodes = {}               # here we store erring node counts
+    maxhops = 1              # start with short routes and increase
+    msat_factor = 4          # start with high msatoshi factor to reuce
+                             # WIRE_TEMPORARY failures because of imbalances
 
     try:
-        excludes = [my_node_id]  # excude all own channels to prevent shortcuts
-
         while int(time.time()) - start_ts < retry_for and not plugin.rebalance_stop:
-            r = plugin.rpc.getroute(incoming_node_id, msatoshi, riskfactor=10, cltv=9, fromid=outgoing_node_id, exclude=excludes, maxhops=5)
+            count += 1
+            try:
+                r = plugin.rpc.getroute(incoming_node_id,
+                                        fromid=outgoing_node_id,
+                                        exclude=excludes,
+                                        msatoshi=msatoshi * msat_factor,
+                                        maxhops=maxhops,
+                                        riskfactor=10, cltv=9)
+            except RpcError as e:
+                # could not find route -> change params and restart loop
+                if e.method == "getroute" and e.error.get('code') == 205:
+                    # reducce msatoshi factor to look for smaller channels now
+                    msat_factor -= 1
+                    if msat_factor == 0:
+                        # when we reached neutral msat factor:
+                        # increase maxhops and restart with high msatoshi factor
+                        maxhops = maxhops + 1
+                        msat_factor = 4
+                        continue
+                    # we observed that we only have a ~3% success rate on routes that
+                    # are 8 hops or longer. Hence we cut at 6 (+2 in/out).
+                    if maxhops == 6:
+                        rpc_result = {'status': 'error', 'message': 'No suitable routes found'}
+                        return cleanup(plugin, label, payload, rpc_result)
+                    continue
+                else:
+                    raise e
+
             route_mid = r['route']
             route = [route_out] + route_mid + [route_in]
             setup_routing_fees(plugin, route, msatoshi)
@@ -196,8 +228,8 @@ def rebalance(plugin, outgoing_scid, incoming_scid, msatoshi: Millisatoshi = Non
                 continue
 
             rpc_result = {"sent": msatoshi + fees, "received": msatoshi, "fee": fees, "hops": len(route),
-                           "outgoing_scid": outgoing_scid, "incoming_scid": incoming_scid, "status": "settled",
-                           "message": f"{msatoshi + fees} sent over {len(route)} hops to rebalance {msatoshi}"}
+                          "outgoing_scid": outgoing_scid, "incoming_scid": incoming_scid, "status": "complete",
+                          "message": f"{msatoshi + fees} sent over {len(route)} hops to rebalance {msatoshi}"}
             plugin.log("Sending %s over %d hops to rebalance %s" % (msatoshi + fees, len(route), msatoshi), 'debug')
             for r in route:
                 plugin.log("    - %s  %14s  %s" % (r['id'], r['channel'], r['amount_msat']), 'debug')
@@ -210,20 +242,28 @@ def rebalance(plugin, outgoing_scid, incoming_scid, msatoshi: Millisatoshi = Non
                     return cleanup(plugin, label, payload, rpc_result)
 
             except RpcError as e:
-                #plugin.log("RpcError: " + str(e), 'debug')
+                plugin.log(f"count:{count} maxhops:{maxhops} msat_factor:{msat_factor} RpcError: {str(e)}", 'debug')
                 # check if we ran into the `rpc.waitsendpay` timeout
                 if e.method == "waitsendpay" and e.error.get('code') == 200:
                     raise RpcError("rebalance", payload, {'message': 'Timeout reached'})
                 # check if we have problems with our own channels
+                erring_node = e.error.get('data', {}).get('erring_node')
                 erring_channel = e.error.get('data', {}).get('erring_channel')
+                erring_direction = e.error.get('data', {}).get('erring_direction')
                 if erring_channel == incoming_scid:
                     raise RpcError("rebalance", payload, {'message': 'Error with incoming channel'})
                 if erring_channel == outgoing_scid:
                     raise RpcError("rebalance", payload, {'message': 'Error with outgoing channel'})
                 # exclude other erroring channels
-                erring_direction = e.error.get('data', {}).get('erring_direction')
                 if erring_channel is not None and erring_direction is not None:
                     excludes.append(erring_channel + '/' + str(erring_direction))
+                # count and exclude nodes that produce a lot of errors
+                if erring_node:
+                    if nodes.get(erring_node) is None:
+                        nodes[erring_node] = 0
+                    nodes[erring_node] += 1
+                    if nodes[erring_node] > 3:
+                        excludes.append(erring_node)
 
     except Exception as e:
         return cleanup(plugin, label, payload, rpc_result, e)

@@ -55,7 +55,7 @@ def test_rebalance_manual(node_factory, bitcoind):
     # check we can do an auto amount rebalance
     result = l1.rpc.rebalance(scid12, scid31)
     print(result)
-    assert result['status'] == 'settled'
+    assert result['status'] == 'complete'
     assert result['outgoing_scid'] == scid12
     assert result['incoming_scid'] == scid31
     assert result['hops'] == 3
@@ -72,7 +72,7 @@ def test_rebalance_manual(node_factory, bitcoind):
 
     # check we can do a manual amount rebalance in the other direction
     result = l1.rpc.rebalance(scid31, scid12, '250000000msat')
-    assert result['status'] == 'settled'
+    assert result['status'] == 'complete'
     assert result['outgoing_scid'] == scid31
     assert result['incoming_scid'] == scid12
     assert result['hops'] == 3
