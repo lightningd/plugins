@@ -179,8 +179,12 @@ def rebalance(plugin, outgoing_scid, incoming_scid, msatoshi: Millisatoshi = Non
     excludes = [my_node_id]  # excude all own channels to prevent shortcuts
     nodes = {}               # here we store erring node counts
     maxhops = 1              # start with short routes and increase
-    msat_factor = 4          # start with high msatoshi factor to reuce
+    msat_factor = plugin.msat_factor # start with high msatoshi factor to reduce
                              # WIRE_TEMPORARY failures because of imbalances
+
+    # 'disable' maxhops filter if set to <= 0
+    if plugin.maxhops <= 0:
+        maxhops = 20
 
     # trace stats
     count = 0
@@ -207,13 +211,13 @@ def rebalance(plugin, outgoing_scid, incoming_scid, msatoshi: Millisatoshi = Non
                     msat_factor -= 1
                     if msat_factor == 0:
                         # when we reached neutral msat factor:
-                        # increase maxhops and restart with high msatoshi factor
+                        # increase maxhops and restart with msat_factor
                         maxhops = maxhops + 1
-                        msat_factor = 4
+                        msat_factor = plugin.msat_factor
                         continue
                     # we observed that we only have a ~3% success rate on routes that
                     # are 8 hops or longer. Hence we cut at 6 (+2 in/out).
-                    if maxhops == 6:
+                    if plugin.maxhops > 0 and maxhops > plugin.maxhops:
                         rpc_result = {'status': 'error', 'message': 'No suitable routes found'}
                         return cleanup(plugin, label, payload, rpc_result)
                     continue
@@ -611,8 +615,28 @@ def init(options, configuration, plugin):
     plugin.fee_base = Millisatoshi(config.get("fee-base"))
     plugin.fee_ppm = config.get("fee-per-satoshi")
     plugin.mutex = Lock()
-    plugin.log(f"Plugin rebalance initialized with {plugin.fee_base} base / {plugin.fee_ppm} ppm fee, "
-               f"cltv_final: {plugin.cltv_final}")
+    plugin.maxhops = int(options.get("rebalance-maxhops"))
+    plugin.msat_factor = float(options.get("rebalance-msat_factor"))
+    plugin.log(f"Plugin rebalance initialized with {plugin.fee_base} base / {plugin.fee_ppm} ppm fee  "
+               f"cltv_final:{plugin.cltv_final}  "
+               f"maxhops:{plugin.maxhops}  "
+               f"msat_factor:{plugin.msat_factor}")
 
 
+plugin.add_option(
+    "rebalance-maxhops",
+    "5",
+    "Maximum number of hops for `getroute` call. Set to 0 to disable. "
+    "Note: Two hops are added for own nodes input and output channel. "
+    "Note: Routes with a total of 8 or hops have less than 3% success rate.",
+    "string"
+)
+
+plugin.add_option(
+    "rebalance-msat_factor",
+    "4",
+    "Will instruct `getroute` call to use higher requested capacity first. "
+    "Note: This will decrease to 1 when no routes can be found.",
+    "string"
+)
 plugin.run()
