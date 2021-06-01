@@ -155,8 +155,6 @@ def rebalance(plugin, outgoing_scid, incoming_scid, msatoshi: Millisatoshi = Non
     get_channel(plugin, payload, incoming_node_id, incoming_scid, True)
     out_ours, out_total = amounts_from_scid(plugin, outgoing_scid)
     in_ours, in_total = amounts_from_scid(plugin, incoming_scid)
-    plugin.log("Outgoing node: %s, channel: %s" % (outgoing_node_id, outgoing_scid), 'debug')
-    plugin.log("Incoming node: %s, channel: %s" % (incoming_node_id, incoming_scid), 'debug')
 
     # If amount was not given, calculate a suitable 50/50 rebalance amount
     if msatoshi is None:
@@ -166,6 +164,8 @@ def rebalance(plugin, outgoing_scid, incoming_scid, msatoshi: Millisatoshi = Non
     # Check requested amounts are selected channels
     if msatoshi > out_ours or msatoshi > in_total - in_ours:
         raise RpcError("rebalance", payload, {'message': 'Channel capacities too low'})
+
+    plugin.log(f"starting rebalance out_scid:{outgoing_scid} in_scid:{incoming_scid} amount:{msatoshi}", 'debug')
 
     route_out = {'id': outgoing_node_id, 'channel': outgoing_scid, 'direction': int(not my_node_id < outgoing_node_id)}
     route_in = {'id': my_node_id, 'channel': incoming_scid, 'direction': int(not incoming_node_id < my_node_id)}
