@@ -176,23 +176,30 @@ def rebalance(plugin, outgoing_scid, incoming_scid, msatoshi: Millisatoshi = Non
     payment_hash = invoice['payment_hash']
 
     rpc_result = None
-    count = 0
     excludes = [my_node_id]  # excude all own channels to prevent shortcuts
     nodes = {}               # here we store erring node counts
     maxhops = 1              # start with short routes and increase
     msat_factor = 4          # start with high msatoshi factor to reuce
                              # WIRE_TEMPORARY failures because of imbalances
 
+    # trace stats
+    count = 0
+    count_sendpay = 0
+    time_getroute = 0
+    time_sendpay = 0
+
     try:
         while int(time.time()) - start_ts < retry_for and not plugin.rebalance_stop:
             count += 1
             try:
+                time_start = time.time()
                 r = plugin.rpc.getroute(incoming_node_id,
                                         fromid=outgoing_node_id,
                                         exclude=excludes,
                                         msatoshi=msatoshi * msat_factor,
                                         maxhops=maxhops,
                                         riskfactor=10, cltv=9)
+                time_getroute += time.time() - time_start
             except RpcError as e:
                 # could not find route -> change params and restart loop
                 if e.method == "getroute" and e.error.get('code') == 205:
@@ -234,15 +241,21 @@ def rebalance(plugin, outgoing_scid, incoming_scid, msatoshi: Millisatoshi = Non
             for r in route:
                 plugin.log("    - %s  %14s  %s" % (r['id'], r['channel'], r['amount_msat']), 'debug')
 
+            time_start = time.time()
+            count_sendpay += 1
             try:
                 plugin.rpc.sendpay(route, payment_hash)
                 running_for = int(time.time()) - start_ts
                 result = plugin.rpc.waitsendpay(payment_hash, max(retry_for - running_for, 0))
+                time_sendpay += time.time() - time_start
                 if result.get('status') == "complete":
+                    rpc_result["stats"] = f"running_for:{int(time.time()) - start_ts}  count_getroute:{count}  time_getroute:{time_getroute}  time_getroute_avg:{time_getroute / count}  count_sendpay:{count_sendpay}  time_sendpay:{time_sendpay}  time_sendpay_avg:{time_sendpay / count_sendpay}"
                     return cleanup(plugin, label, payload, rpc_result)
 
             except RpcError as e:
-                plugin.log(f"count:{count} maxhops:{maxhops} msat_factor:{msat_factor} RpcError: {str(e)}", 'debug')
+                time_sendpay += time.time() - time_start
+                plugin.log(f"maxhops:{maxhops}  msat_factor:{msat_factor}  running_for:{int(time.time()) - start_ts}  count_getroute:{count}  time_getroute:{time_getroute}  time_getroute_avg:{time_getroute / count}  count_sendpay:{count_sendpay}  time_sendpay:{time_sendpay}  time_sendpay_avg:{time_sendpay / count_sendpay}", 'debug')
+                #plugin.log(f"RpcError: {str(e)}", 'debug')
                 # check if we ran into the `rpc.waitsendpay` timeout
                 if e.method == "waitsendpay" and e.error.get('code') == 200:
                     raise RpcError("rebalance", payload, {'message': 'Timeout reached'})
