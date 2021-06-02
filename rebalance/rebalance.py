@@ -179,7 +179,7 @@ def rebalance(plugin, outgoing_scid, incoming_scid, msatoshi: Millisatoshi = Non
     excludes = [my_node_id]  # excude all own channels to prevent shortcuts
     nodes = {}               # here we store erring node counts
     maxhops = 1              # start with short routes and increase
-    msat_factor = plugin.msat_factor # start with high msatoshi factor to reduce
+    msatfactor = plugin.msatfactor # start with high msatoshi factor to reduce
                              # WIRE_TEMPORARY failures because of imbalances
 
     # 'disable' maxhops filter if set to <= 0
@@ -200,20 +200,20 @@ def rebalance(plugin, outgoing_scid, incoming_scid, msatoshi: Millisatoshi = Non
                 r = plugin.rpc.getroute(incoming_node_id,
                                         fromid=outgoing_node_id,
                                         exclude=excludes,
-                                        msatoshi=msatoshi * msat_factor,
+                                        msatoshi=msatoshi * msatfactor,
                                         maxhops=maxhops,
                                         riskfactor=10, cltv=9)
                 time_getroute += time.time() - time_start
             except RpcError as e:
                 # could not find route -> change params and restart loop
                 if e.method == "getroute" and e.error.get('code') == 205:
-                    # reducce msatoshi factor to look for smaller channels now
-                    msat_factor -= 1
-                    if msat_factor == 0:
+                    # reduce msatfactor to look for smaller channels now
+                    msatfactor -= 1
+                    if msatfactor == 0:
                         # when we reached neutral msat factor:
-                        # increase maxhops and restart with msat_factor
+                        # increase maxhops and restart with msatfactor
                         maxhops = maxhops + 1
-                        msat_factor = plugin.msat_factor
+                        msatfactor = plugin.msatfactor
                         continue
                     # we observed that we only have a ~3% success rate on routes that
                     # are 8 hops or longer. Hence we cut at 6 (+2 in/out).
@@ -258,7 +258,7 @@ def rebalance(plugin, outgoing_scid, incoming_scid, msatoshi: Millisatoshi = Non
 
             except RpcError as e:
                 time_sendpay += time.time() - time_start
-                plugin.log(f"maxhops:{maxhops}  msat_factor:{msat_factor}  running_for:{int(time.time()) - start_ts}  count_getroute:{count}  time_getroute:{time_getroute}  time_getroute_avg:{time_getroute / count}  count_sendpay:{count_sendpay}  time_sendpay:{time_sendpay}  time_sendpay_avg:{time_sendpay / count_sendpay}", 'debug')
+                plugin.log(f"maxhops:{maxhops}  msatfactor:{msatfactor}  running_for:{int(time.time()) - start_ts}  count_getroute:{count}  time_getroute:{time_getroute}  time_getroute_avg:{time_getroute / count}  count_sendpay:{count_sendpay}  time_sendpay:{time_sendpay}  time_sendpay_avg:{time_sendpay / count_sendpay}", 'debug')
                 #plugin.log(f"RpcError: {str(e)}", 'debug')
                 # check if we ran into the `rpc.waitsendpay` timeout
                 if e.method == "waitsendpay" and e.error.get('code') == 200:
@@ -616,11 +616,11 @@ def init(options, configuration, plugin):
     plugin.fee_ppm = config.get("fee-per-satoshi")
     plugin.mutex = Lock()
     plugin.maxhops = int(options.get("rebalance-maxhops"))
-    plugin.msat_factor = float(options.get("rebalance-msat_factor"))
+    plugin.msatfactor = float(options.get("rebalance-msatfactor"))
     plugin.log(f"Plugin rebalance initialized with {plugin.fee_base} base / {plugin.fee_ppm} ppm fee  "
                f"cltv_final:{plugin.cltv_final}  "
                f"maxhops:{plugin.maxhops}  "
-               f"msat_factor:{plugin.msat_factor}")
+               f"msatfactor:{plugin.msatfactor}")
 
 
 plugin.add_option(
@@ -633,7 +633,7 @@ plugin.add_option(
 )
 
 plugin.add_option(
-    "rebalance-msat_factor",
+    "rebalance-msatfactor",
     "4",
     "Will instruct `getroute` call to use higher requested capacity first. "
     "Note: This will decrease to 1 when no routes can be found.",
