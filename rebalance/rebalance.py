@@ -209,14 +209,12 @@ def rebalance(plugin, outgoing_scid, incoming_scid, msatoshi: Millisatoshi = Non
                 if e.method == "getroute" and e.error.get('code') == 205:
                     # reduce msatfactor to look for smaller channels now
                     msatfactor -= 1
-                    if msatfactor == 0:
+                    if msatfactor < 1:
                         # when we reached neutral msat factor:
                         # increase maxhops and restart with msatfactor
                         maxhops = maxhops + 1
                         msatfactor = plugin.msatfactor
-                        continue
-                    # we observed that we only have a ~3% success rate on routes that
-                    # are 8 hops or longer. Hence we cut at 6 (+2 in/out).
+                    # abort if we reached maxhop limit
                     if plugin.maxhops > 0 and maxhops > plugin.maxhops:
                         rpc_result = {'status': 'error', 'message': 'No suitable routes found'}
                         return cleanup(plugin, label, payload, rpc_result)
