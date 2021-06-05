@@ -10,6 +10,7 @@ Community curated plugins for c-lightning.
 |------------------------------------|-------------------------------------------------------------------------------------------|
 | [autopilot][autopilot]             | An autopilot that suggests channels that should be established                            |
 | [boltz-channel-creation][boltz]    | A c-lightning plugin for Boltz Channel Creation Swaps                                     |
+| [btcli4j][btcli4j]                 | A Bitcoin Backend to enable safely the pruning mode, and support also rest APIs.          |
 | [csvexportpays][csvexportpays]     | A plugin that exports all payments to a CSV file                                          |
 | [currencyrate][currencyrate]      | A plugin to convert other currencies to BTC using web requests
 | [donations][donations]             | A simple donations page to accept donations from the web                                  |
@@ -161,6 +162,7 @@ Python plugins developers must ensure their plugin to work with all Python versi
  - [Go Plugin API & RPC Client][go-api] by @niftynei
  - [C++ Plugin API & RPC Client][cpp-api] by @darosior
  - [Javascript Plugin API & RPC Client][js-api] by @darosior
+ - [Java Plugin API & RPC Client][java-api] by @vincenzopalazzo
 
 [esplora]: https://github.com/Blockstream/esplora
 [pers-chans]: https://github.com/lightningd/plugins/tree/master/persistent-channels
@@ -200,3 +202,5 @@ Python plugins developers must ensure their plugin to work with all Python versi
 [boltz]: https://github.com/BoltzExchange/channel-creation-plugin
 [feeadjuster]: https://github.com/lightningd/plugins/tree/master/feeadjuster
 [teos-client]: https://github.com/talaia-labs/python-teos/tree/master/watchtower-plugin
+[java-api]: https://github.com/clightning4j/JRPClightning
+[btcli4j]: https://github.com/clightning4j/btcli4j 
