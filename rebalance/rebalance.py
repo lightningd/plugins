@@ -130,7 +130,7 @@ def calc_optimal_amount(out_ours, out_total, in_ours, in_total, payload):
 
 @plugin.method("rebalance")
 def rebalance(plugin, outgoing_scid, incoming_scid, msatoshi: Millisatoshi = None,
-              maxfeepercent: float = 0.5, retry_for: int = 60,
+              retry_for: int = 60, maxfeepercent: float = 0.5,
               exemptfee: Millisatoshi = Millisatoshi(5000),
               maxhops: int = None, msatfactor: float = None):
     """Rebalancing channel liquidity with circular payments.
@@ -139,8 +139,8 @@ def rebalance(plugin, outgoing_scid, incoming_scid, msatoshi: Millisatoshi = Non
     """
     if msatoshi:
         msatoshi = Millisatoshi(msatoshi)
-    maxfeepercent = float(maxfeepercent)
     retry_for = int(retry_for)
+    maxfeepercent = float(maxfeepercent)
     if maxhops is None:
         maxhops = plugin.maxhops
     if msatfactor is None:
@@ -150,8 +150,8 @@ def rebalance(plugin, outgoing_scid, incoming_scid, msatoshi: Millisatoshi = Non
         "outgoing_scid": outgoing_scid,
         "incoming_scid": incoming_scid,
         "msatoshi": msatoshi,
-        "maxfeepercent": maxfeepercent,
         "retry_for": retry_for,
+        "maxfeepercent": maxfeepercent,
         "exemptfee": exemptfee
     }
     my_node_id = plugin.rpc.getinfo().get('id')
@@ -491,7 +491,7 @@ def maybe_rebalance_pairs(plugin: Plugin, ch1, ch2, failed_channels: list):
         start_ts = time.time()
         try:
             res = rebalance(plugin, outgoing_scid=scid1, incoming_scid=scid2,
-                    msatoshi=amount, maxfeepercent=0, retry_for=1200,
+                    msatoshi=amount, retry_for=1200, maxfeepercent=0,
                     exemptfee=maxfee, maxhops=6, msatfactor=1)
             if not res.get('status') == 'complete':
                 raise Exception  # fall into exception handler below
