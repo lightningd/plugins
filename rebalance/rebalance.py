@@ -182,11 +182,11 @@ def rebalance(plugin, outgoing_scid, incoming_scid, msatoshi: Millisatoshi = Non
     payment_hash = invoice['payment_hash']
 
     rpc_result = None
-    excludes = [my_node_id]  # excude all own channels to prevent shortcuts
-    nodes = {}               # here we store erring node counts
-    _maxhops = 1             # start with short routes and increase
-    _msatfactor = msatfactor # start with high msatoshi factor to reduce
-                             # WIRE_TEMPORARY failures because of imbalances
+    excludes = [my_node_id]   # excude all own channels to prevent shortcuts
+    nodes = {}                # here we store erring node counts
+    _maxhops = 1              # start with short routes and increase
+    _msatfactor = msatfactor  # start with high msatoshi factor to reduce
+                              # WIRE_TEMPORARY failures because of imbalances
 
     # 'disable' maxhops filter if set to <= 0
     # I know this is ugly, but we don't ruin the rest of the code this way
@@ -491,8 +491,8 @@ def maybe_rebalance_pairs(plugin: Plugin, ch1, ch2, failed_channels: list):
         start_ts = time.time()
         try:
             res = rebalance(plugin, outgoing_scid=scid1, incoming_scid=scid2,
-                    msatoshi=amount, retry_for=1200, maxfeepercent=0,
-                    exemptfee=maxfee, maxhops=6, msatfactor=1)
+                            msatoshi=amount, retry_for=1200, maxfeepercent=0,
+                            exemptfee=maxfee, maxhops=6, msatfactor=1)
             if not res.get('status') == 'complete':
                 raise Exception  # fall into exception handler below
         except Exception:
