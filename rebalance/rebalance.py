@@ -280,11 +280,11 @@ def rebalance(plugin, outgoing_scid, incoming_scid, msatoshi: Millisatoshi = Non
                 if erring_channel is not None and erring_direction is not None:
                     excludes.append(erring_channel + '/' + str(erring_direction))
                 # count and exclude nodes that produce a lot of errors
-                if erring_node:
+                if erring_node and plugin.erringnodes > 0:
                     if nodes.get(erring_node) is None:
                         nodes[erring_node] = 0
                     nodes[erring_node] += 1
-                    if nodes[erring_node] > 3:
+                    if nodes[erring_node] >= plugin.erringnodes:
                         excludes.append(erring_node)
 
     except Exception as e:
@@ -624,10 +624,13 @@ def init(options, configuration, plugin):
     plugin.mutex = Lock()
     plugin.maxhops = int(options.get("rebalance-maxhops"))
     plugin.msatfactor = float(options.get("rebalance-msatfactor"))
+    plugin.erringnodes = int(options.get("rebalance-erringnodes"))
+
     plugin.log(f"Plugin rebalance initialized with {plugin.fee_base} base / {plugin.fee_ppm} ppm fee  "
                f"cltv_final:{plugin.cltv_final}  "
                f"maxhops:{plugin.maxhops}  "
-               f"msatfactor:{plugin.msatfactor}")
+               f"msatfactor:{plugin.msatfactor} "
+               f"erringnodes:{plugin.erringnodes}")
 
 
 plugin.add_option(
@@ -646,4 +649,13 @@ plugin.add_option(
     "Note: This will decrease to 1 when no routes can be found.",
     "string"
 )
+
+plugin.add_option(
+    "rebalance-erringnodes",
+    "5",
+    "Exclude nodes from routing that raised N or more errors. "
+    "Note: Use 0 to disable.",
+    "string"
+)
+
 plugin.run()
