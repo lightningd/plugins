@@ -128,6 +128,49 @@ def calc_optimal_amount(out_ours, out_total, in_ours, in_total, payload):
     raise RpcError("rebalance", payload, {'message': 'rebalancing these channels will make things worse'})
 
 
+class NoRouteException(Exception):
+    pass
+
+
+def getroute_basic(plugin: Plugin, targetid, fromid, excludes, msatoshi: Millisatoshi):
+    try:
+        return plugin.rpc.getroute(targetid,
+                                   fromid=fromid,
+                                   exclude=excludes,
+                                   msatoshi=msatoshi,
+                                   maxhops=plugin.maxhops_effective,
+                                   riskfactor=10, cltv=9)
+    except RpcError as e:
+        # could not find route -> change params and restart loop
+        if e.method == "getroute" and e.error.get('code') == 205:
+            raise NoRouteException
+        raise e
+
+
+def getroute_default(plugin: Plugin, targetid, fromid, excludes, msatoshi: Millisatoshi):
+    try:
+        return plugin.rpc.getroute(targetid,
+                                   fromid=fromid,
+                                   exclude=excludes,
+                                   msatoshi=msatoshi * plugin.msatfactoridx,
+                                   maxhops=plugin.maxhopidx,
+                                   riskfactor=10, cltv=9)
+    except RpcError as e:
+        # could not find route -> change params and restart loop
+        if e.method == "getroute" and e.error.get('code') == 205:
+            # reduce _msatfactor to look for smaller channels now
+            plugin.msatfactoridx -= 1
+            if plugin.msatfactoridx < 1:
+                # when we reached neutral msat factor:
+                # increase _maxhops and restart with msatfactor
+                plugin.maxhopidx += 1
+                plugin.msatfactoridx = plugin.msatfactor_effective
+            # abort if we reached maxhop limit
+            if plugin.maxhops_effective > 0 and plugin.maxhopidx > plugin.maxhops_effective:
+                raise NoRouteException
+        raise e
+
+
 @plugin.method("rebalance")
 def rebalance(plugin, outgoing_scid, incoming_scid, msatoshi: Millisatoshi = None,
               retry_for: int = 60, maxfeepercent: float = 0.5,
@@ -142,9 +185,13 @@ def rebalance(plugin, outgoing_scid, incoming_scid, msatoshi: Millisatoshi = Non
     retry_for = int(retry_for)
     maxfeepercent = float(maxfeepercent)
     if maxhops is None:
-        maxhops = plugin.maxhops
+        plugin.maxhops_effective = plugin.maxhops
+    else:
+        plugin.maxhops_effective = int(maxhops)
     if msatfactor is None:
-        msatfactor = plugin.msatfactor
+        plugin.msatfactor_effective = plugin.msatfactor
+    else:
+        plugin.msatfactor_effective = float(msatfactor)
     exemptfee = Millisatoshi(exemptfee)
     payload = {
         "outgoing_scid": outgoing_scid,
@@ -184,14 +231,14 @@ def rebalance(plugin, outgoing_scid, incoming_scid, msatoshi: Millisatoshi = Non
     rpc_result = None
     excludes = [my_node_id]   # excude all own channels to prevent shortcuts
     nodes = {}                # here we store erring node counts
-    _maxhops = 1              # start with short routes and increase
-    _msatfactor = msatfactor  # start with high msatoshi factor to reduce
+    plugin.maxhopidx = 1      # start with short routes and increase
+    plugin.msatfactoridx = msatfactor   # start with high msatoshi factor to reduce
                               # WIRE_TEMPORARY failures because of imbalances
 
     # 'disable' maxhops filter if set to <= 0
     # I know this is ugly, but we don't ruin the rest of the code this way
-    if plugin.maxhops <= 0:
-        _maxhops = 20
+    if plugin.maxhops_effective <= 0:
+        plugin.maxhopidx = 20
 
     # trace stats
     count = 0
@@ -204,27 +251,19 @@ def rebalance(plugin, outgoing_scid, incoming_scid, msatoshi: Millisatoshi = Non
             count += 1
             try:
                 time_start = time.time()
-                r = plugin.rpc.getroute(incoming_node_id,
-                                        fromid=outgoing_node_id,
-                                        exclude=excludes,
-                                        msatoshi=msatoshi * _msatfactor,
-                                        maxhops=_maxhops,
-                                        riskfactor=10, cltv=9)
+                r = plugin.getroute(plugin,
+                                    targetid=incoming_node_id,
+                                    fromid=outgoing_node_id,
+                                    excludes=excludes,
+                                    msatoshi=msatoshi)
                 time_getroute += time.time() - time_start
+            except NoRouteException:
+                # no more chance for a successful getroute
+                rpc_result = {'status': 'error', 'message': 'No suitable routes found'}
+                return cleanup(plugin, label, payload, rpc_result)
             except RpcError as e:
-                # could not find route -> change params and restart loop
+                # getroute can be successful next time with different parameters
                 if e.method == "getroute" and e.error.get('code') == 205:
-                    # reduce _msatfactor to look for smaller channels now
-                    _msatfactor -= 1
-                    if _msatfactor < 1:
-                        # when we reached neutral msat factor:
-                        # increase _maxhops and restart with msatfactor
-                        _maxhops = _maxhops + 1
-                        _msatfactor = msatfactor
-                    # abort if we reached maxhop limit
-                    if maxhops > 0 and _maxhops > maxhops:
-                        rpc_result = {'status': 'error', 'message': 'No suitable routes found'}
-                        return cleanup(plugin, label, payload, rpc_result)
                     continue
                 else:
                     raise e
@@ -263,7 +302,7 @@ def rebalance(plugin, outgoing_scid, incoming_scid, msatoshi: Millisatoshi = Non
 
             except RpcError as e:
                 time_sendpay += time.time() - time_start
-                plugin.log(f"maxhops:{_maxhops}  msatfactor:{_msatfactor}  running_for:{int(time.time()) - start_ts}  count_getroute:{count}  time_getroute:{time_getroute}  time_getroute_avg:{time_getroute / count}  count_sendpay:{count_sendpay}  time_sendpay:{time_sendpay}  time_sendpay_avg:{time_sendpay / count_sendpay}", 'debug')
+                plugin.log(f"maxhops:{plugin.maxhopidx}  msatfactor:{plugin.msatfactoridx}  running_for:{int(time.time()) - start_ts}  count_getroute:{count}  time_getroute:{time_getroute}  time_getroute_avg:{time_getroute / count}  count_sendpay:{count_sendpay}  time_sendpay:{time_sendpay}  time_sendpay_avg:{time_sendpay / count_sendpay}", 'debug')
                 #plugin.log(f"RpcError: {str(e)}", 'debug')
                 # check if we ran into the `rpc.waitsendpay` timeout
                 if e.method == "waitsendpay" and e.error.get('code') == 200:
@@ -625,14 +664,27 @@ def init(options, configuration, plugin):
     plugin.maxhops = int(options.get("rebalance-maxhops"))
     plugin.msatfactor = float(options.get("rebalance-msatfactor"))
     plugin.erringnodes = int(options.get("rebalance-erringnodes"))
+    getroute_switch = {
+        "basic": getroute_basic,
+        "default": getroute_default
+    }
+    plugin.getroute = getroute_switch.get(options.get("rebalance-getroute"), getroute_default)
 
     plugin.log(f"Plugin rebalance initialized with {plugin.fee_base} base / {plugin.fee_ppm} ppm fee  "
                f"cltv_final:{plugin.cltv_final}  "
                f"maxhops:{plugin.maxhops}  "
                f"msatfactor:{plugin.msatfactor} "
-               f"erringnodes:{plugin.erringnodes}")
+               f"erringnodes:{plugin.erringnodes} "
+               f"getroute: {plugin.getroute.__name__}")
 
 
+plugin.add_option(
+    "rebalance-getroute",
+    "default",
+    "Getroute method for route search"
+    "Can be 'default' or 'basic' for simple search"
+    "string"
+)
 plugin.add_option(
     "rebalance-maxhops",
     "5",
