@@ -147,7 +147,7 @@ def getroute_basic(plugin: Plugin, targetid, fromid, excludes, msatoshi: Millisa
         raise e
 
 
-def getroute_default(plugin: Plugin, targetid, fromid, excludes, msatoshi: Millisatoshi):
+def getroute_iterative(plugin: Plugin, targetid, fromid, excludes, msatoshi: Millisatoshi):
     try:
         return plugin.rpc.getroute(targetid,
                                    fromid=fromid,
@@ -666,9 +666,9 @@ def init(options, configuration, plugin):
     plugin.erringnodes = int(options.get("rebalance-erringnodes"))
     getroute_switch = {
         "basic": getroute_basic,
-        "default": getroute_default
+        "iterative": getroute_iterative
     }
-    plugin.getroute = getroute_switch.get(options.get("rebalance-getroute"), getroute_default)
+    plugin.getroute = getroute_switch.get(options.get("rebalance-getroute"), getroute_iterative)
 
     plugin.log(f"Plugin rebalance initialized with {plugin.fee_base} base / {plugin.fee_ppm} ppm fee  "
                f"cltv_final:{plugin.cltv_final}  "
@@ -680,9 +680,11 @@ def init(options, configuration, plugin):
 
 plugin.add_option(
     "rebalance-getroute",
-    "default",
+    "iterative",
     "Getroute method for route search"
-    "Can be 'default' or 'basic' for simple search"
+    "Can be 'basic' or 'iterative'"
+    "'basic': Tries all routes sequentially."
+    "'iterative': Tries shorter and bigger routes first."
     "string"
 )
 plugin.add_option(
