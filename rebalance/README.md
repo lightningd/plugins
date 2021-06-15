@@ -11,9 +11,11 @@ For general plugin installation instructions see the repos main
 
 ## Usage
 
-Once the plugin is installed and active, there are two additional methods to rebalance channels:
+Once the plugin is installed and active, there are four additional methods for helping to rebalance channels:
 1) Either you can call `lightning-cli rebalanceall` to automatically fix all of your channels' liquidity.
-2) Or you can call `lightning-cli rebalance outgoing_scid incoming_scid` to rebalance individual channels.
+2) `lightning-cli rebalancestop` stops the ongoing `rebalanceall`.
+3) Or you can call `lightning-cli rebalance outgoing_scid incoming_scid` to rebalance individual channels.
+4) `lightning-cli rebalancereport` shows information: plugin settings, past rebalance stats, etc.
 
 ## Automatic rebalance
 
@@ -48,7 +50,7 @@ This process may take a while. Automatic rebalance can run for hours in the back
 You can use the `lightning-cli` to rebalance channels like this:
 
 ```
-lightning-cli rebalance outgoing_scid incoming_scid [msatoshi] [maxfeepercent] [retry_for] [exemptfee]
+lightning-cli rebalance outgoing_scid incoming_scid [msatoshi] [maxfeepercent] [retry_for] [exemptfee] [getroute_method]
 ```
 
 If you want to skip/default certain optional parameters but use others, you can
@@ -74,6 +76,10 @@ lightning-cli rebalance -k outgoing_scid=1514942x51x0 incoming_scid=1515133x10x0
   dominated by the fee leveraged by forwarding nodes. Setting `exemptfee`
   allows the `maxfeepercent` check to be skipped on fees that are smaller than
   exemptfee (default: 5000 millisatoshi).
+- OPTIONAL: The `getroute_method` option can be for route search can be 'basic'
+  or 'iterative'.  
+  'basic': Tries all routes sequentially.  
+  'iterative': Tries shorter and bigger routes first.
 
 
 #### Tips and Tricks for individual rebalance
