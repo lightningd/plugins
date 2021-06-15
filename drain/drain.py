@@ -280,7 +280,8 @@ def try_for_htlc_fee(plugin, payload, peer_id, amount, chunk, spendable_before):
         try:
             ours = get_ours(plugin, payload['scid'])
             plugin.rpc.sendpay(route, payment_hash, label)
-            result = plugin.rpc.waitsendpay(payment_hash, payload['retry_for'] + start_ts - int(time.time()))
+            running_for = int(time.time()) - start_ts
+            result = plugin.rpc.waitsendpay(payment_hash, max(payload['retry_for'] - running_for, 0))
             if result.get('status') == 'complete':
                 payload['success_msg'] += ["%dmsat sent over %d hops to %s %dmsat [%d/%d]" % (amount + fees, len(route), payload['command'], amount, chunk + 1, payload['chunks'])]
                 # we need to wait for HTLC to resolve, so remaining amounts
