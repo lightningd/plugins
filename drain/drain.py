@@ -250,14 +250,14 @@ def try_for_htlc_fee(plugin, payload, peer_id, amount, chunk, spendable_before):
 
     while int(time.time()) - start_ts < payload['retry_for']:
         if payload['command'] == 'drain':
-            r = plugin.rpc.getroute(my_id, amount, riskfactor=0,
-                                    cltv=9, fromid=peer_id, fuzzpercent=0, exclude=excludes)
+            r = plugin.rpc.getroute(my_id, amount, fromid=peer_id, exclude=excludes,
+                                    maxhops=6, riskfactor=10, cltv=9, fuzzpercent=0)
             route_out = {'id': peer_id, 'channel': payload['scid'], 'direction': int(my_id >= peer_id)}
             route = [route_out] + r['route']
             setup_routing_fees(plugin, payload, route, amount, True)
         if payload['command'] == 'fill':
-            r = plugin.rpc.getroute(peer_id, amount, riskfactor=0,
-                                    cltv=9, fromid=my_id, fuzzpercent=0, exclude=excludes)
+            r = plugin.rpc.getroute(peer_id, amount, fromid=my_id, exclude=excludes,
+                                    maxhops=6, riskfactor=10, cltv=9, fuzzpercent=0)
             route_in = {'id': my_id, 'channel': payload['scid'], 'direction': int(peer_id >= my_id)}
             route = r['route'] + [route_in]
             setup_routing_fees(plugin, payload, route, amount, False)
