@@ -611,7 +611,8 @@ def rebalanceall_thread(plugin: Plugin):
         feeadjust_would_be_nice(plugin)
         feeadjuster_toggle(plugin, feeadjuster_state)
         elapsed_time = timedelta(seconds=time.time() - start_ts)
-        plugin.log(f"Automatic rebalance finished: {success} successful rebalance, {fee_spent} fee spent, it took {str(elapsed_time)[:-3]}")
+        plugin.rebalanceall_msg = f"Automatic rebalance finished: {success} successful rebalance, {fee_spent} fee spent, it took {str(elapsed_time)[:-3]}"
+        plugin.log(plugin.rebalanceall_msg)
     finally:
         plugin.mutex.release()
 
@@ -655,7 +656,7 @@ def rebalancestop(plugin: Plugin):
     plugin.mutex.acquire(blocking=True)
     plugin.rebalance_stop = False
     plugin.mutex.release()
-    return {"message": "Rebalance stopped"}
+    return {"message": plugin.rebalanceall_msg}
 
 
 @plugin.init()
