@@ -95,6 +95,9 @@ def run_one(p: Plugin) -> bool:
 
     assert pytest_path.exists()
 
+    # Update pyln-testing to master since we're running against c-lightning master.
+    install_pyln_testing(pip_path)
+
     print("Current environment packages:")
     subprocess.check_call(
         [pip_path, 'freeze'],
@@ -134,6 +137,24 @@ def run_one(p: Plugin) -> bool:
         print("##[endgroup]")
 
 
+def install_pyln_testing(pip_path):
+    # Update pyln-testing to master since we're running against c-lightning master.
+    dest = Path('/tmp/lightning')
+    repo = 'https://github.com/ElementsProject/lightning.git'
+    if not dest.exists():
+        subprocess.check_call([
+            'git', 'clone', repo, dest
+        ])
+
+    subprocess.check_call([
+        pip_path, 'install', '-U', f'{dest}/contrib/pyln-testing'
+    ])
+
+    subprocess.check_call([
+        pip_path, 'install', '-U', f'{dest}/contrib/pyln-client'
+    ])
+
+
 def run_all(args):
     root_path = subprocess.check_output([
         'git',
@@ -143,10 +164,14 @@ def run_all(args):
 
     root = Path(root_path)
 
-    print("Testing all plugins in {root}".format(root=root))
+    plugins = list(enumerate_plugins(root))
+    if args != []:
+        plugins = [p for p in plugins if p.name in args]
+        print("Testing the following plugins: {names}".format(names=[p.name for p in plugins]))
+    else:
+        print("Testing all plugins in {root}".format(root=root))
 
-
-    results = [(p, run_one(p)) for p in enumerate_plugins(root)]
+    results = [(p, run_one(p)) for p in plugins]
     success = all([t[1] for t in results])
 
     if not success:
