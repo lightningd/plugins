@@ -318,8 +318,8 @@ def try_for_htlc_fee(plugin, payload, peer_id, amount, chunk, spendable_before):
                 excludes.append(f"{erring_channel}/{erring_direction}")
 
 
-def read_params(command: str, scid: str, percentage: float,
-                chunks: int, maxfeepercent: float, retry_for: int, exemptfee: Millisatoshi):
+def read_params(command: str, scid: str, percentage: float, chunks: int,
+                retry_for: int, maxfeepercent: float, exemptfee: Millisatoshi):
 
     # check parameters
     if command != 'drain' and command != 'fill' and command != 'setbalance':
@@ -336,8 +336,8 @@ def read_params(command: str, scid: str, percentage: float,
         "scid": scid,
         "percentage": percentage,
         "chunks": chunks,
-        "maxfeepercent": maxfeepercent,
         "retry_for": retry_for,
+        "maxfeepercent": maxfeepercent,
         "exemptfee": exemptfee,
         "labels": [],
         "success_msg": [],
@@ -431,41 +431,41 @@ def execute(payload: dict):
 
 
 @plugin.method("drain")
-def drain(plugin, scid: str, percentage: float = 100, chunks: int = 0, maxfeepercent: float = 0.5,
-          retry_for: int = 60, exemptfee: Millisatoshi = Millisatoshi(5000)):
+def drain(plugin, scid: str, percentage: float = 100, chunks: int = 0, retry_for: int = 60,
+          maxfeepercent: float = 0.5, exemptfee: Millisatoshi = Millisatoshi(5000)):
     """Draining channel liquidity with circular payments.
 
     Percentage defaults to 100, resulting in an empty channel.
     Chunks defaults to 0 (auto-detect).
     Use 'drain 10' to decrease a channels total balance by 10%.
     """
-    payload = read_params('drain', scid, percentage, chunks, maxfeepercent, retry_for, exemptfee)
+    payload = read_params('drain', scid, percentage, chunks, retry_for, maxfeepercent, exemptfee)
     return execute(payload)
 
 
 @plugin.method("fill")
-def fill(plugin, scid: str, percentage: float = 100, chunks: int = 0, maxfeepercent: float = 0.5,
-         retry_for: int = 60, exemptfee: Millisatoshi = Millisatoshi(5000)):
+def fill(plugin, scid: str, percentage: float = 100, chunks: int = 0, retry_for: int = 60,
+         maxfeepercent: float = 0.5, exemptfee: Millisatoshi = Millisatoshi(5000)):
     """Filling channel liquidity with circular payments.
 
     Percentage defaults to 100, resulting in a full channel.
     Chunks defaults to 0 (auto-detect).
     Use 'fill 10' to incease a channels total balance by 10%.
     """
-    payload = read_params('fill', scid, percentage, chunks, maxfeepercent, retry_for, exemptfee)
+    payload = read_params('fill', scid, percentage, chunks, retry_for, maxfeepercent, exemptfee)
     return execute(payload)
 
 
 @plugin.method("setbalance")
-def setbalance(plugin, scid: str, percentage: float = 50, chunks: int = 0, maxfeepercent: float = 0.5,
-               retry_for: int = 60, exemptfee: Millisatoshi = Millisatoshi(5000)):
+def setbalance(plugin, scid: str, percentage: float = 50, chunks: int = 0, retry_for: int = 60,
+               maxfeepercent: float = 0.5, exemptfee: Millisatoshi = Millisatoshi(5000)):
     """Brings a channels own liquidity to X percent using circular payments.
 
     Percentage defaults to 50, resulting in a balanced channel.
     Chunks defaults to 0 (auto-detect).
     Use 'setbalance 100' to fill a channel. Use 'setbalance 0' to drain a channel.
     """
-    payload = read_params('setbalance', scid, percentage, chunks, maxfeepercent, retry_for, exemptfee)
+    payload = read_params('setbalance', scid, percentage, chunks, retry_for, maxfeepercent, exemptfee)
     return execute(payload)
 
 
