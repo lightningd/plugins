@@ -41,9 +41,9 @@ def test_mpp_pay(node_factory):
     """ l1 send a payment that is going to be split.
     """
     l1, l2 = node_factory.line_graph(2, opts=pluginopt, wait_for_announce=True)
-    res = l1.rpc.paytest(l2.info['id'], 10**8)
+    res = l1.rpc.paytest(l2.info['id'], 2*10**8)
 
-    l2.daemon.wait_for_log(r'Received 100000000/100000000 with [0-9]+ parts')
+    l2.daemon.wait_for_log(r'Received 200000000/200000000 with [0-9]+ parts')
 
     parts = res['status']['attempts']
     assert len(parts) > 2  # Initial split + >1 part
