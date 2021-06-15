@@ -666,6 +666,36 @@ def rebalancestop(plugin: Plugin):
     return {"message": plugin.rebalanceall_msg}
 
 
+@plugin.method("rebalancereport")
+def rebalancereport(plugin: Plugin):
+    """Show information about rebalance
+    """
+    res = {}
+    res["rebalanceall_is_running"] = plugin.mutex.locked()
+    res["getroute_method"] = plugin.getroute.__name__
+    res["maxhops_threshold"] = plugin.maxhops
+    res["msatfactor_threshold"] = plugin.msatfactor
+    res["erringnodes_threshold"] = plugin.erringnodes
+    channels = get_open_channels(plugin)
+    if len(channels) > 1:
+        enough_liquidity = get_enough_liquidity_threshold(channels)
+        ideal_ratio = get_ideal_ratio(channels, enough_liquidity)
+        res["enough_liquidity_threshold"] = enough_liquidity
+        res["ideal_liquidity_ratio"] = f"{ideal_ratio * 100:.2f}%"
+    invoices = plugin.rpc.listinvoices()['invoices']
+    rebalances = [i for i in invoices if i.get('status') == 'paid' and i.get('label').startswith("Rebalance")]
+    total_fee = Millisatoshi(0)
+    total_amount = Millisatoshi(0)
+    for r in rebalances:
+        pay = plugin.rpc.listpays(r["bolt11"])["pays"][0]
+        total_amount += pay["amount_msat"]
+        total_fee += pay["amount_sent_msat"] - pay["amount_msat"]
+    res["total_successful_rebalances"] = len(rebalances)
+    res["total_rebalanced_amount"] = total_amount
+    res["total_rebalance_fee"] = total_fee
+    return res
+
+
 @plugin.init()
 def init(options, configuration, plugin):
     config = plugin.rpc.listconfigs()
