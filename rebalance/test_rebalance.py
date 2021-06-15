@@ -119,7 +119,7 @@ def test_rebalance_all(node_factory, bitcoind):
     l1.daemon.wait_for_log(f"Try to rebalance: {scid12} -> {scid31}")
     wait_for(lambda: not l1.rpc.rebalanceall()['message'].startswith("Rebalance is already running"))
     result = l1.rpc.rebalancestop()
-    assert result['message'] == "Rebalance stopped"
+    assert result['message'].startswith("Automatic rebalance finished")
 
     # wait until listpeers is up2date
     wait_for_all_htlcs(nodes)
