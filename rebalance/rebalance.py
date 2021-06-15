@@ -134,6 +134,9 @@ class NoRouteException(Exception):
 
 def getroute_basic(plugin: Plugin, targetid, fromid, excludes, msatoshi: Millisatoshi):
     try:
+        """ This does not make special assumptions and tries all routes
+            it gets. Uses less CPU and does not filter any routes.
+        """
         return plugin.rpc.getroute(targetid,
                                    fromid=fromid,
                                    exclude=excludes,
@@ -148,6 +151,10 @@ def getroute_basic(plugin: Plugin, targetid, fromid, excludes, msatoshi: Millisa
 
 
 def getroute_iterative(plugin: Plugin, targetid, fromid, excludes, msatoshi: Millisatoshi):
+    """ This searches for 'shorter and bigger pipes' first in order
+        to increase likelyhood of success on short timeout.
+        Can be useful for manual `rebalance`.
+    """
     try:
         return plugin.rpc.getroute(targetid,
                                    fromid=fromid,
@@ -682,10 +689,9 @@ def init(options, configuration, plugin):
 plugin.add_option(
     "rebalance-getroute",
     "iterative",
-    "Getroute method for route search"
-    "Can be 'basic' or 'iterative'"
-    "'basic': Tries all routes sequentially."
-    "'iterative': Tries shorter and bigger routes first."
+    "Getroute method for route search can be 'basic' or 'iterative'."
+    "'basic': Tries all routes sequentially. "
+    "'iterative': Tries shorter and bigger routes first.",
     "string"
 )
 plugin.add_option(
