@@ -124,13 +124,13 @@ def peer_from_scid(plugin, payload, scid=None):
 def find_worst_channel(route):
     if len(route) < 4:
         return None
-    start_id = 2
-    worst = route[start_id]['channel']
-    worst_val = route[start_id - 1]['msatoshi'] - route[start_id]['msatoshi']
-    for i in range(start_id + 1, len(route) - 1):
+    start_idx = 2
+    worst = route[start_idx]
+    worst_val = route[start_idx - 1]['msatoshi'] - worst['msatoshi']
+    for i in range(start_idx + 1, len(route) - 1):
         val = route[i - 1]['msatoshi'] - route[i]['msatoshi']
         if val > worst_val:
-            worst = route[i]['channel']
+            worst = route[i]
             worst_val = val
     return worst
 
@@ -241,14 +241,11 @@ def try_for_htlc_fee(plugin, payload, peer_id, amount, chunk, spendable_before):
     excludes = [payload['scid'] + '/0', payload['scid'] + '/1']
     mychannels = plugin.rpc.listchannels(source=my_id).get('channels')
     # exclude local channels known to have too little capacity.
-    # getroute currently does not do this.
     for channel in mychannels:
         if channel['short_channel_id'] == payload['scid']:
             continue  # already added few lines above
         spend, recv = spendable_from_scid(plugin, payload, channel['short_channel_id'])
-        if payload['command'] == 'drain' and recv < amount:
-            excludes += [channel['short_channel_id'] + '/0', channel['short_channel_id'] + '/1']
-        if payload['command'] == 'fill' and spend < amount:
+        if payload['command'] == 'drain' and recv < amount or payload['command'] == 'fill' and spend < amount:
             excludes += [channel['short_channel_id'] + '/0', channel['short_channel_id'] + '/1']
 
     while int(time.time()) - start_ts < payload['retry_for']:
@@ -270,10 +267,10 @@ def try_for_htlc_fee(plugin, payload, peer_id, amount, chunk, spendable_before):
         # check fee and exclude worst channel the next time
         # NOTE: the int(msat) casts are just a workaround for outdated pylightning versions
         if fees > payload['exemptfee'] and int(fees) > int(amount) * payload['maxfeepercent'] / 100:
-            worst_channel_id = find_worst_channel(route)
-            if worst_channel_id is None:
+            worst_channel = find_worst_channel(route)
+            if worst_channel is None:
                 raise RpcError(payload['command'], payload, {'message': 'Insufficient fee'})
-            excludes += [worst_channel_id + '/0', worst_channel_id + '/1']
+            excludes.append(worst_channel['channel'] + '/' + str(worst_channel['direction']))
             continue
 
         plugin.log("[%d/%d] Sending over %d hops to %s %s using %s fees" % (chunk + 1, payload['chunks'], len(route), payload['command'], amount, fees), 'debug')
