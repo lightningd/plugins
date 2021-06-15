@@ -230,7 +230,7 @@ def cleanup(plugin, payload, error=None):
 def try_for_htlc_fee(plugin, payload, peer_id, amount, chunk, spendable_before):
     start_ts = int(time.time())
     my_id = payload['my_id']
-    label = payload['command'] + "-" + str(uuid.uuid4())
+    label = f"{payload['command']}-{uuid.uuid4()}"
     payload['labels'] += [label]
     description = "%s %s %s%s [%d/%d]" % (payload['command'], payload['scid'], payload['percentage'], '%', chunk + 1, payload['chunks'])
     invoice = plugin.rpc.invoice("any", label, description, payload['retry_for'] + 60)
@@ -238,7 +238,7 @@ def try_for_htlc_fee(plugin, payload, peer_id, amount, chunk, spendable_before):
     plugin.log("Invoice payment_hash: %s" % payment_hash)
 
     # exclude selected channel to prevent unwanted shortcuts
-    excludes = [payload['scid'] + '/0', payload['scid'] + '/1']
+    excludes = [f"{payload['scid']}/0", f"{payload['scid']}/1"]
     mychannels = plugin.rpc.listchannels(source=my_id).get('channels')
     # exclude local channels known to have too little capacity.
     for channel in mychannels:
@@ -246,7 +246,8 @@ def try_for_htlc_fee(plugin, payload, peer_id, amount, chunk, spendable_before):
             continue  # already added few lines above
         spend, recv = spendable_from_scid(plugin, payload, channel['short_channel_id'])
         if payload['command'] == 'drain' and recv < amount or payload['command'] == 'fill' and spend < amount:
-            excludes += [channel['short_channel_id'] + '/0', channel['short_channel_id'] + '/1']
+            excludes.append(f"{channel['short_channel_id']}/0")
+            excludes.append(f"{channel['short_channel_id']}/1")
 
     while int(time.time()) - start_ts < payload['retry_for']:
         if payload['command'] == 'drain':
@@ -262,18 +263,19 @@ def try_for_htlc_fee(plugin, payload, peer_id, amount, chunk, spendable_before):
             route = r['route'] + [route_in]
             setup_routing_fees(plugin, payload, route, amount, False)
 
-        fees = route[0]['amount_msat'] - route[-1]['amount_msat']
-
         # check fee and exclude worst channel the next time
         # NOTE: the int(msat) casts are just a workaround for outdated pylightning versions
+        fees = route[0]['amount_msat'] - route[-1]['amount_msat']
         if fees > payload['exemptfee'] and int(fees) > int(amount) * payload['maxfeepercent'] / 100:
             worst_channel = find_worst_channel(route)
             if worst_channel is None:
                 raise RpcError(payload['command'], payload, {'message': 'Insufficient fee'})
-            excludes.append(worst_channel['channel'] + '/' + str(worst_channel['direction']))
+            excludes.append(f"{worst_channel['channel']}/{worst_channel['direction']}")
             continue
 
-        plugin.log("[%d/%d] Sending over %d hops to %s %s using %s fees" % (chunk + 1, payload['chunks'], len(route), payload['command'], amount, fees), 'debug')
+        plugin.log(f"[{chunk + 1}/{payload['chunks']}] Sending over "
+                    "{len(route)} hops to {payload['command']} {amount} using "
+                    "{fees} fees", 'debug')
         for r in route:
             plugin.log("    - %s  %14s  %s" % (r['id'], r['channel'], r['amount_msat']), 'debug')
 
@@ -282,13 +284,15 @@ def try_for_htlc_fee(plugin, payload, peer_id, amount, chunk, spendable_before):
             plugin.rpc.sendpay(route, payment_hash, label)
             running_for = int(time.time()) - start_ts
             result = plugin.rpc.waitsendpay(payment_hash, max(payload['retry_for'] - running_for, 0))
-            if result.get('status') == 'complete':
-                payload['success_msg'] += ["%dmsat sent over %d hops to %s %dmsat [%d/%d]" % (amount + fees, len(route), payload['command'], amount, chunk + 1, payload['chunks'])]
-                # we need to wait for HTLC to resolve, so remaining amounts
-                # can be calculated correctly for the next chunk
-                wait_ours(plugin, payload['scid'], ours)
-                return True
-            return False
+            if not result.get('status') == 'complete':
+                return False
+            payload['success_msg'].append(f"{amount + fees}msat sent over {len(route)} "
+                                           "hops to {payload['command']} {amount}msat "
+                                           "[{chunk + 1}/{payload['chunks']}")
+            # we need to wait for HTLC to resolve, so remaining amounts
+            # can be calculated correctly for the next chunk
+            wait_ours(plugin, payload['scid'], ours)
+            return True
 
         except RpcError as e:
             erring_message = e.error.get('message', '')
@@ -308,7 +312,7 @@ def try_for_htlc_fee(plugin, payload, peer_id, amount, chunk, spendable_before):
 
             plugin.log("RpcError: " + str(e))
             if erring_channel is not None and erring_direction is not None:
-                excludes.append(erring_channel + '/' + str(erring_direction))
+                excludes.append(f"{erring_channel}/{erring_direction}")
 
 
 def read_params(command: str, scid: str, percentage: float,
