@@ -699,7 +699,7 @@ plugin.add_option(
     "5",
     "Maximum number of hops for `getroute` call. Set to 0 to disable. "
     "Note: Two hops are added for own nodes input and output channel. "
-    "Note: Routes with a total of 8 or hops have less than 3% success rate.",
+    "Note: Routes with a 8 or more hops have less than 3% success rate.",
     "string"
 )
 
