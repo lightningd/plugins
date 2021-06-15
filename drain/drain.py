@@ -229,11 +229,14 @@ def cleanup(plugin, payload, error=None):
 
 def try_for_htlc_fee(plugin, payload, peer_id, amount, chunk, spendable_before):
     start_ts = int(time.time())
+    remaining_secs = max(0, payload['start_ts'] + payload['retry_for'] - start_ts)
+    remaining_chunks = payload['chunks'] - chunk
+    retry_for = int(remaining_secs / remaining_chunks)
     my_id = payload['my_id']
     label = f"{payload['command']}-{uuid.uuid4()}"
     payload['labels'] += [label]
     description = "%s %s %s%s [%d/%d]" % (payload['command'], payload['scid'], payload['percentage'], '%', chunk + 1, payload['chunks'])
-    invoice = plugin.rpc.invoice("any", label, description, payload['retry_for'] + 60)
+    invoice = plugin.rpc.invoice("any", label, description, retry_for + 60)
     payment_hash = invoice['payment_hash']
     plugin.log("Invoice payment_hash: %s" % payment_hash)
 
@@ -249,7 +252,7 @@ def try_for_htlc_fee(plugin, payload, peer_id, amount, chunk, spendable_before):
             excludes.append(f"{channel['short_channel_id']}/0")
             excludes.append(f"{channel['short_channel_id']}/1")
 
-    while int(time.time()) - start_ts < payload['retry_for']:
+    while int(time.time()) - start_ts < retry_for:
         if payload['command'] == 'drain':
             r = plugin.rpc.getroute(my_id, amount, fromid=peer_id, exclude=excludes,
                                     maxhops=6, riskfactor=10, cltv=9, fuzzpercent=0)
@@ -283,9 +286,9 @@ def try_for_htlc_fee(plugin, payload, peer_id, amount, chunk, spendable_before):
             ours = get_ours(plugin, payload['scid'])
             plugin.rpc.sendpay(route, payment_hash, label)
             running_for = int(time.time()) - start_ts
-            result = plugin.rpc.waitsendpay(payment_hash, max(payload['retry_for'] - running_for, 0))
+            result = plugin.rpc.waitsendpay(payment_hash, max(retry_for - running_for, 0))
             if not result.get('status') == 'complete':
-                return False
+                return False  # should not happen, but maybe API changes
             payload['success_msg'].append(f"{amount + fees}msat sent over {len(route)} "
                                            "hops to {payload['command']} {amount}msat "
                                            "[{chunk + 1}/{payload['chunks']}")
@@ -342,6 +345,7 @@ def read_params(command: str, scid: str, percentage: float,
 
     # cache some often required data
     payload['my_id'] = plugin.rpc.getinfo().get('id')
+    payload['start_ts'] = int(time.time())
 
     # translate a 'setbalance' into respective drain or fill
     if command == 'setbalance':
