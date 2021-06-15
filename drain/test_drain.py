@@ -8,8 +8,21 @@ import unittest
 import pytest
 
 
-pluginopt = {'plugin': os.path.join(os.path.dirname(__file__), "drain.py")}
+plugin_path = os.path.join(os.path.dirname(__file__), "drain.py")
+pluginopt = {'plugin': plugin_path}
 EXPERIMENTAL_FEATURES = int(os.environ.get("EXPERIMENTAL_FEATURES", "0"))
+
+
+def test_plugin_starts(node_factory):
+    l1 = node_factory.get_node()
+    # Test dynamically
+    l1.rpc.plugin_start(plugin_path)
+    l1.rpc.plugin_stop(plugin_path)
+    l1.rpc.plugin_start(plugin_path)
+    l1.stop()
+    # Then statically
+    l1.daemon.opts["plugin"] = plugin_path
+    l1.start()
 
 
 @flaky
