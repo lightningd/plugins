@@ -682,17 +682,27 @@ def rebalancereport(plugin: Plugin):
         ideal_ratio = get_ideal_ratio(channels, enough_liquidity)
         res["enough_liquidity_threshold"] = enough_liquidity
         res["ideal_liquidity_ratio"] = f"{ideal_ratio * 100:.2f}%"
+    else:
+        res["enough_liquidity_threshold"] = Millisatoshi(0)
+        res["ideal_liquidity_ratio"] = "0%"
     invoices = plugin.rpc.listinvoices()['invoices']
     rebalances = [i for i in invoices if i.get('status') == 'paid' and i.get('label').startswith("Rebalance")]
     total_fee = Millisatoshi(0)
     total_amount = Millisatoshi(0)
-    for r in rebalances:
-        pay = plugin.rpc.listpays(r["bolt11"])["pays"][0]
-        total_amount += pay["amount_msat"]
-        total_fee += pay["amount_sent_msat"] - pay["amount_msat"]
     res["total_successful_rebalances"] = len(rebalances)
+    for r in rebalances:
+        try:
+            pay = plugin.rpc.listpays(r["bolt11"])["pays"][0]
+            total_amount += pay["amount_msat"]
+            total_fee += pay["amount_sent_msat"] - pay["amount_msat"]
+        except Exception:
+            res["total_successful_rebalances"] -= 1
     res["total_rebalanced_amount"] = total_amount
     res["total_rebalance_fee"] = total_fee
+    if total_amount > Millisatoshi(0):
+        res["average_rebalance_fee_ppm"] = round(total_fee/total_amount*10**6, 2)
+    else:
+        res["average_rebalance_fee_ppm"] = 0
     return res
 
 
