@@ -674,7 +674,7 @@ def rebalancereport(plugin: Plugin):
     res["rebalanceall_is_running"] = plugin.mutex.locked()
     res["getroute_method"] = plugin.getroute.__name__
     res["maxhops_threshold"] = plugin.maxhops
-    res["msatfactor_threshold"] = plugin.msatfactor
+    res["msatfactor"] = plugin.msatfactor
     res["erringnodes_threshold"] = plugin.erringnodes
     channels = get_open_channels(plugin)
     if len(channels) > 1:
