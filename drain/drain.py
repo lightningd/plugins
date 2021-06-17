@@ -277,8 +277,8 @@ def try_for_htlc_fee(plugin, payload, peer_id, amount, chunk, spendable_before):
             continue
 
         plugin.log(f"[{chunk + 1}/{payload['chunks']}] Sending over "
-                    "{len(route)} hops to {payload['command']} {amount} using "
-                    "{fees} fees", 'debug')
+                   "{len(route)} hops to {payload['command']} {amount} using "
+                   "{fees} fees", 'debug')
         for r in route:
             plugin.log("    - %s  %14s  %s" % (r['id'], r['channel'], r['amount_msat']), 'debug')
 
@@ -290,8 +290,8 @@ def try_for_htlc_fee(plugin, payload, peer_id, amount, chunk, spendable_before):
             if not result.get('status') == 'complete':
                 return False  # should not happen, but maybe API changes
             payload['success_msg'].append(f"{amount + fees}msat sent over {len(route)} "
-                                           "hops to {payload['command']} {amount}msat "
-                                           "[{chunk + 1}/{payload['chunks']}")
+                                          "hops to {payload['command']} {amount}msat "
+                                          "[{chunk + 1}/{payload['chunks']}")
             # we need to wait for HTLC to resolve, so remaining amounts
             # can be calculated correctly for the next chunk
             wait_ours(plugin, payload['scid'], ours)
@@ -328,7 +328,8 @@ def read_params(command: str, scid: str, percentage: float, chunks: int,
     if percentage < 0 or percentage > 100 or command != 'setbalance' and percentage == 0.0:
         raise RpcError(command, {}, {'message': 'Percentage must be between 0 and 100'})
     if chunks < 0:
-        raise RpcError(command, {}, {'message': 'Negative chunks do not make sense. Try a positive value or use 0 (default) for auto-detection.'})
+        raise RpcError(command, {}, {'message': 'Negative chunks do not make sense. Try a positive '
+                                                'value or use 0 (default) for auto-detection.'})
 
     # forge operation payload
     payload = {
