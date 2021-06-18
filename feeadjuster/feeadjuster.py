@@ -64,13 +64,12 @@ def get_chan_fees(plugin: Plugin, scid: str):
     channels = plugin.rpc.listchannels(scid)["channels"]
     for ch in channels:
         if ch["source"] == plugin.our_node_id:
-            return {"base_fee_millisatoshi": ch["base_fee_millisatoshi"],
-                    "fee_per_millionth": ch["fee_per_millionth"]}
+            return {"base": ch["base_fee_millisatoshi"], "ppm": ch["fee_per_millionth"]}
 
 
-def maybe_setchannelfee(plugin: Plugin, scid: str, base: int, ppm: int):
+def setchannelfee(plugin: Plugin, scid: str, base: int, ppm: int):
     fees = get_chan_fees(plugin, scid)
-    if fees is None or base == fees["base_fee_millisatoshi"] and ppm == fees["fee_per_millionth"]:
+    if fees is None or base == fees['base'] and ppm == fees['ppm']:
         return False
     try:
         plugin.rpc.setchannelfee(scid, base, ppm)
@@ -106,10 +105,12 @@ def maybe_adjust_fees(plugin: Plugin, scids: list):
         our = plugin.adj_balances[scid]["our"]
         total = plugin.adj_balances[scid]["total"]
         percentage = our / total
+        base = plugin.adj_basefee
+        ppm = plugin.adj_ppmfee
 
         # reset to normal fees if imbalance is not high enough
         if (percentage > plugin.imbalance and percentage < 1 - plugin.imbalance):
-            if maybe_setchannelfee(plugin, scid, plugin.adj_basefee, plugin.adj_ppmfee):
+            if setchannelfee(plugin, scid, base, ppm):
                 plugin.log(f"Set default fees as imbalance is too low: {scid}")
                 plugin.adj_balances[scid]["last_liquidity"] = our
                 channels_adjusted += 1
@@ -121,8 +122,7 @@ def maybe_adjust_fees(plugin: Plugin, scids: list):
         percentage = get_adjusted_percentage(plugin, scid)
         assert 0 <= percentage and percentage <= 1
         ratio = plugin.get_ratio(percentage)
-        if maybe_setchannelfee(plugin, scid, int(plugin.adj_basefee * ratio),
-                               int(plugin.adj_ppmfee * ratio)):
+        if setchannelfee(plugin, scid, int(base * ratio), int(ppm * ratio)):
             plugin.log(f"Adjusted fees of {scid} with a ratio of {ratio}")
             plugin.adj_balances[scid]["last_liquidity"] = our
             channels_adjusted += 1
@@ -145,14 +145,8 @@ def get_chan(plugin: Plugin, scid: str):
 def maybe_add_new_balances(plugin: Plugin, scids: list):
     for scid in scids:
         if scid not in plugin.adj_balances:
-            # At this point we could call listchannels and pass the scid as
-            # argument, and deduce the peer id (!our_id). But -as unlikely as
-            # it is- we may not find it in our gossip (eg some corruption of
-            # the gossip_store occured just before the forwarding event).
-            # However, it MUST be present in a listpeers() entry.
             chan = get_chan(plugin, scid)
             assert chan is not None
-
             plugin.adj_balances[scid] = {
                 "our": int(chan["to_us_msat"]),
                 "total": int(chan["total_msat"])
