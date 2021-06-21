@@ -8,8 +8,9 @@ from threading import Lock
 plugin = Plugin()
 # Our amount and the total amount in each of our channel, indexed by scid
 plugin.adj_balances = {}
-# Cache to avoid loads of calls to getinfo
+# Cache to avoid loads of RPC calls
 plugin.our_node_id = None
+plugin.peers = None
 # Users can configure this
 plugin.update_threshold = 0.05
 # forward_event must wait for init
@@ -60,11 +61,26 @@ def get_ratio_hard(our_percentage):
     return 100**(0.5 - our_percentage) * (1 - our_percentage) * 2
 
 
+def get_peer_id_for_scid(plugin: Plugin, scid: str):
+    for peer in plugin.peers:
+        for ch in peer['channels']:
+            if ch['short_channel_id'] == scid:
+                return peer['id']
+    return None
+
+
+def get_local_channel_for_scid(plugin: Plugin, scid: str):
+    for peer in plugin.peers:
+        for ch in peer['channels']:
+            if ch['short_channel_id'] == scid:
+                return ch
+    return None
+
+
 def get_chan_fees(plugin: Plugin, scid: str):
-    channels = plugin.rpc.listchannels(scid)["channels"]
-    for ch in channels:
-        if ch["source"] == plugin.our_node_id:
-            return {"base": ch["base_fee_millisatoshi"], "ppm": ch["fee_per_millionth"]}
+    channel = get_local_channel_for_scid(plugin, scid)
+    assert channel is not None
+    return {"base": channel["fee_base_msat"], "ppm": channel["fee_proportional_millionths"]}
 
 
 def setchannelfee(plugin: Plugin, scid: str, base: int, ppm: int):
@@ -130,7 +146,7 @@ def maybe_adjust_fees(plugin: Plugin, scids: list):
 
 
 def get_chan(plugin: Plugin, scid: str):
-    for peer in plugin.rpc.listpeers()["peers"]:
+    for peer in plugin.peers:
         if len(peer["channels"]) == 0:
             continue
         # We might have multiple channel entries ! Eg if one was just closed
@@ -158,6 +174,7 @@ def forward_event(plugin: Plugin, forward_event: dict, **kwargs):
     if not plugin.forward_event_subscription:
         return
     plugin.mutex.acquire(blocking=True)
+    plugin.peers = plugin.rpc.listpeers()["peers"]
     if forward_event["status"] == "settled":
         in_scid = forward_event["in_channel"]
         out_scid = forward_event["out_channel"]
@@ -183,9 +200,9 @@ def feeadjust(plugin: Plugin):
     Otherwise, the plugin keeps the fees up-to-date.
     """
     plugin.mutex.acquire(blocking=True)
-    peers = plugin.rpc.listpeers()["peers"]
+    plugin.peers = plugin.rpc.listpeers()["peers"]
     channels_adjusted = 0
-    for peer in peers:
+    for peer in plugin.peers:
         for chan in peer["channels"]:
             if chan["state"] == "CHANNELD_NORMAL":
                 scid = chan["short_channel_id"]
