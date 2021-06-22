@@ -147,14 +147,8 @@ def maybe_adjust_fees(plugin: Plugin, scids: list):
 
 def get_chan(plugin: Plugin, scid: str):
     for peer in plugin.peers:
-        if len(peer["channels"]) == 0:
-            continue
-        # We might have multiple channel entries ! Eg if one was just closed
-        # and reopened.
         for chan in peer["channels"]:
-            if "short_channel_id" not in chan:
-                continue
-            if chan["short_channel_id"] == scid:
+            if chan.get("short_channel_id") == scid:
                 return chan
 
 
