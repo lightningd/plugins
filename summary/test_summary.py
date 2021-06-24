@@ -25,16 +25,16 @@ def get_stub():
 
 
 def test_summary_peer_thread(node_factory):
-    # in order to give the PeerThread a chance in a unit test
-    # we need to give it a low interval
-    opts = {'summary-availability-interval': 0.1}
+    # Set a low PeerThread interval so we can test quickly.
+    opts = {'summary-availability-interval': 0.5}
     opts.update(pluginopt)
     l1, l2 = node_factory.line_graph(2, opts=opts)
 
     # when
     s1 = l1.rpc.summary()
     l2.stop()        # we stop l2 and
-    time.sleep(0.5)  # wait a bit for the PeerThread to see it
+    l1.daemon.logsearch_start = len(l1.daemon.logs)
+    l1.daemon.wait_for_log(r".*availability persisted and synced.*")
     s2 = l1.rpc.summary()
 
     # then
@@ -172,17 +172,18 @@ def test_summary_avail_leadwin():
 
 # checks whether the peerstate is persistent
 def test_summary_persist(node_factory):
-    # in order to give the PeerThread a chance in a unit test
-    # we need to give it a low interval
-    opts = {'summary-availability-interval': 0.1, 'may_reconnect': True}
+    # Set a low PeerThread interval so we can test quickly.
+    opts = {'summary-availability-interval': 0.5, 'may_reconnect': True}
     opts.update(pluginopt)
     l1, l2 = node_factory.line_graph(2, opts=opts)
 
     # when
-    time.sleep(0.5)        # wait a bit for the PeerThread to capture data
+    l1.daemon.wait_for_log(r".*availability persisted and synced.*")
     s1 = l1.rpc.summary()
     l1.restart()
     l1.connect(l2)
+    l1.daemon.logsearch_start = len(l1.daemon.logs)
+    l1.daemon.wait_for_log(r".*availability persisted and synced.*")
     s2 = l1.rpc.summary()
 
     # then

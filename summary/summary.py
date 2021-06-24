@@ -46,6 +46,7 @@ class PeerThread(threading.Thread):
                 rpcpeers = plugin.rpc.listpeers()
                 trace_availability(plugin, rpcpeers)
                 plugin.persist.sync()
+                plugin.log("[PeerThread] Peerstate availability persisted and synced. Sleeping now..." , 'debug')
                 time.sleep(plugin.avail_interval)
             except Exception as ex:
                 plugin.log("[PeerThread] " + str(ex), 'warn')
