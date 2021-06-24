@@ -348,11 +348,6 @@ def a_minus_b(a: Millisatoshi, b: Millisatoshi):
     return a - b if a > b else Millisatoshi(0)
 
 
-def a_div_b(a: Millisatoshi, b: Millisatoshi):
-    # a divided by b, but don't divide by 0
-    return int(a) / int(b) if int(b) > 0 else 1
-
-
 def must_send(liquidity):
     # liquidity is too high, must send some sats
     return a_minus_b(liquidity["min"], liquidity["their"])
@@ -402,20 +397,19 @@ def check_liquidity_threshold(channels: list, threshold: Millisatoshi):
     return required < our and required < total - our
 
 
-def binary_search(channels: list, low: Millisatoshi, high: Millisatoshi):
-    next_step = (low + high) / 2
-    if high - low < Millisatoshi("1sat"):
-        return next_step
-    if check_liquidity_threshold(channels, next_step):
-        return binary_search(channels, next_step, high)
-    else:
-        return binary_search(channels, low, next_step)
-
-
 def get_enough_liquidity_threshold(channels: list):
+    low = Millisatoshi(0)
     biggest_channel = max(channels, key=lambda ch: ch["total_msat"])
-    max_threshold = binary_search(channels, Millisatoshi(0), biggest_channel["total_msat"] / 2)
-    return max_threshold / 2
+    high = biggest_channel["total_msat"] / 2
+    while True:
+        mid = (low + high) / 2
+        if high - low < Millisatoshi("1sat"):
+            break
+        if check_liquidity_threshold(channels, mid):
+            low = mid
+        else:
+            high = mid
+    return mid / 2
 
 
 def get_ideal_ratio(channels: list, enough_liquidity: Millisatoshi):
@@ -672,12 +666,14 @@ def rebalancestop(plugin: Plugin):
 
 
 def health_score(liquidity):
-    score_our = a_div_b(liquidity["our"], liquidity["ideal"]["our"])
-    score_their = a_div_b(liquidity["their"], liquidity["ideal"]["their"])
+    if int(liquidity["ideal"]["our"]) == 0 or int(liquidity["ideal"]["their"]) == 0 or int(liquidity["min"]) == 0:
+        return 0
+    score_our = int(liquidity["our"]) / int(liquidity["ideal"]["our"])
+    score_their = int(liquidity["their"]) / int(liquidity["ideal"]["their"])
     # distance from ideal liquidity (between 50 and 100)
     score = min(score_our, score_their) * 50 + 50
-    coefficient_our = a_div_b(liquidity["our"], liquidity["min"])
-    coefficient_their = a_div_b(liquidity["their"], liquidity["min"])
+    coefficient_our = int(liquidity["our"]) / int(liquidity["min"])
+    coefficient_their = int(liquidity["their"]) / int(liquidity["min"])
     # distance from minimal liquidity as a coefficient (between 0 and 1)
     coefficient = min(coefficient_our, coefficient_their, 1)
     return score * coefficient
