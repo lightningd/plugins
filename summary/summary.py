@@ -236,8 +236,12 @@ def init(options, configuration, plugin):
     plugin.avail_window = 60 * 60 * int(options['summary-availability-window'])
     plugin.persist = shelve.open('summary.dat', writeback=True)
     if 'peerstate' not in plugin.persist:
+        plugin.log("Creating a new summary.dat shelve", 'debug')
         plugin.persist['peerstate'] = {}
         plugin.persist['availcount'] = 0
+    else:
+        plugin.log(f"Reopened summary.dat shelve with {plugin.persist['availcount']} "
+                   f"runs and {len(plugin.persist['peerstate'])} entries", 'debug')
 
     info = plugin.rpc.getinfo()
     config = plugin.rpc.listconfigs()
