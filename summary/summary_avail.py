@@ -1,8 +1,7 @@
 from datetime import datetime
 
+
 # ensure an rpc peer is added
-
-
 def addpeer(p, rpcpeer):
     pid = rpcpeer['id']
     if pid not in p.persist['peerstate']:
