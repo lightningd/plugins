@@ -1,6 +1,5 @@
 import subprocess
 import unittest
-import time
 import re
 import os
 
