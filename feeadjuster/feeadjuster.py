@@ -96,9 +96,12 @@ def get_fees_median(plugin: Plugin, scid: str):
     """
     peer_id = get_peer_id_for_scid(plugin, scid)
     assert peer_id is not None
+    if plugin.listchannels_by_dst:
+        plugin.channels = plugin.rpc.call("listchannels",
+                                          {"destination": peer_id})['channels']
     channels_to_peer = [ch for ch in plugin.channels
-            if ch['destination'] == peer_id
-            and ch['source'] != plugin.our_node_id]
+                        if ch['destination'] == peer_id
+                        and ch['source'] != plugin.our_node_id]
     if len(channels_to_peer) == 0:
         return None
     fees_base = [ch['base_fee_millisatoshi'] for ch in channels_to_peer]
@@ -198,7 +201,7 @@ def forward_event(plugin: Plugin, forward_event: dict, **kwargs):
         return
     plugin.mutex.acquire(blocking=True)
     plugin.peers = plugin.rpc.listpeers()["peers"]
-    if plugin.fee_strategy == get_fees_median:
+    if plugin.fee_strategy == get_fees_median and not plugin.listchannels_by_dst:
         plugin.channels = plugin.rpc.listchannels()['channels']
     if forward_event["status"] == "settled":
         in_scid = forward_event["in_channel"]
@@ -226,7 +229,7 @@ def feeadjust(plugin: Plugin):
     """
     plugin.mutex.acquire(blocking=True)
     plugin.peers = plugin.rpc.listpeers()["peers"]
-    if plugin.fee_strategy == get_fees_median:
+    if plugin.fee_strategy == get_fees_median and not plugin.listchannels_by_dst:
         plugin.channels = plugin.rpc.listchannels()['channels']
     channels_adjusted = 0
     for peer in plugin.peers:
@@ -289,6 +292,13 @@ def init(options: dict, configuration: dict, plugin: Plugin, **kwargs):
     if plugin.imbalance > 0.5:
         plugin.imbalance = 1 - plugin.imbalance
 
+    # detect if server supports the new listchannels by `destination` (#4614)
+    plugin.listchannels_by_dst = False
+    rpchelp = plugin.rpc.help().get('help')
+    if len([c for c in rpchelp if c["command"].startswith("listchannels ")
+            and "destination" in c["command"]]) == 1:
+        plugin.listchannels_by_dst = True
+
     plugin.log(f"Plugin feeadjuster initialized "
                f"({plugin.adj_basefee} base / {plugin.adj_ppmfee} ppm) with an "
                f"imbalance of {int(100 * plugin.imbalance)}%/{int(100 * ( 1 - plugin.imbalance))}%, "
@@ -298,7 +308,8 @@ def init(options: dict, configuration: dict, plugin: Plugin, **kwargs):
                f"deactivate_fuzz: {plugin.deactivate_fuzz}, "
                f"forward_event_subscription: {plugin.forward_event_subscription}, "
                f"adjustment_method: {plugin.get_ratio.__name__}, "
-               f"fee_strategy: {plugin.fee_strategy.__name__}")
+               f"fee_strategy: {plugin.fee_strategy.__name__}, "
+               f"listchannels_by_dst: {plugin.listchannels_by_dst}")
     plugin.mutex.release()
     feeadjust(plugin)
 
