@@ -397,20 +397,19 @@ def check_liquidity_threshold(channels: list, threshold: Millisatoshi):
     return required < our and required < total - our
 
 
-def binary_search(channels: list, low: Millisatoshi, high: Millisatoshi):
-    if high - low < Millisatoshi("1sat"):
-        return low
-    next_step = (low + high) / 2
-    if check_liquidity_threshold(channels, next_step):
-        return binary_search(channels, next_step, high)
-    else:
-        return binary_search(channels, low, next_step)
-
-
 def get_enough_liquidity_threshold(channels: list):
+    low = Millisatoshi(0)
     biggest_channel = max(channels, key=lambda ch: ch["total_msat"])
-    max_threshold = binary_search(channels, Millisatoshi(0), biggest_channel["total_msat"] / 2)
-    return max_threshold / 2
+    high = biggest_channel["total_msat"] / 2
+    while True:
+        mid = (low + high) / 2
+        if high - low < Millisatoshi("1sat"):
+            break
+        if check_liquidity_threshold(channels, mid):
+            low = mid
+        else:
+            high = mid
+    return mid / 2
 
 
 def get_ideal_ratio(channels: list, enough_liquidity: Millisatoshi):
@@ -666,6 +665,20 @@ def rebalancestop(plugin: Plugin):
     return {"message": plugin.rebalanceall_msg}
 
 
+def health_score(liquidity):
+    if int(liquidity["ideal"]["our"]) == 0 or int(liquidity["ideal"]["their"]) == 0 or int(liquidity["min"]) == 0:
+        return 0
+    score_our = int(liquidity["our"]) / int(liquidity["ideal"]["our"])
+    score_their = int(liquidity["their"]) / int(liquidity["ideal"]["their"])
+    # distance from ideal liquidity (between 50 and 100)
+    score = min(score_our, score_their) * 50 + 50
+    coefficient_our = int(liquidity["our"]) / int(liquidity["min"])
+    coefficient_their = int(liquidity["their"]) / int(liquidity["min"])
+    # distance from minimal liquidity as a coefficient (between 0 and 1)
+    coefficient = min(coefficient_our, coefficient_their, 1)
+    return score * coefficient
+
+
 @plugin.method("rebalancereport")
 def rebalancereport(plugin: Plugin):
     """Show information about rebalance
@@ -677,14 +690,20 @@ def rebalancereport(plugin: Plugin):
     res["msatfactor"] = plugin.msatfactor
     res["erringnodes_threshold"] = plugin.erringnodes
     channels = get_open_channels(plugin)
+    health_percent = 0.0
     if len(channels) > 1:
         enough_liquidity = get_enough_liquidity_threshold(channels)
         ideal_ratio = get_ideal_ratio(channels, enough_liquidity)
         res["enough_liquidity_threshold"] = enough_liquidity
         res["ideal_liquidity_ratio"] = f"{ideal_ratio * 100:.2f}%"
+        for ch in channels:
+            liquidity = liquidity_info(ch, enough_liquidity, ideal_ratio)
+            health_percent += health_score(liquidity) * int(ch["total_msat"])
+        health_percent /= int(sum(ch["total_msat"] for ch in channels))
     else:
         res["enough_liquidity_threshold"] = Millisatoshi(0)
         res["ideal_liquidity_ratio"] = "0%"
+    res["liquidity_health"] = f"{health_percent:.2f}%"
     invoices = plugin.rpc.listinvoices()['invoices']
     rebalances = [i for i in invoices if i.get('status') == 'paid' and i.get('label').startswith("Rebalance")]
     total_fee = Millisatoshi(0)
