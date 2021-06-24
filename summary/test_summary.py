@@ -180,8 +180,9 @@ def test_summary_persist(node_factory):
     # when
     l1.daemon.wait_for_log(r".*availability persisted and synced.*")
     s1 = l1.rpc.summary()
+    l2.stop()
     l1.restart()
-    l1.connect(l2)
+    assert l1.daemon.is_in_log(r".*Reopened summary.dat shelve.*")
     l1.daemon.logsearch_start = len(l1.daemon.logs)
     l1.daemon.wait_for_log(r".*availability persisted and synced.*")
     s2 = l1.rpc.summary()
@@ -190,7 +191,7 @@ def test_summary_persist(node_factory):
     avail1 = int(re.search(' ([0-9]*)% ', s1['channels'][2]).group(1))
     avail2 = int(re.search(' ([0-9]*)% ', s2['channels'][2]).group(1))
     assert(avail1 == 100)
-    assert(avail2 > 0)
+    assert(0 < avail2 < 100)
 
 
 def test_summary_start(node_factory):
