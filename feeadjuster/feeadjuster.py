@@ -289,11 +289,16 @@ def init(options: dict, configuration: dict, plugin: Plugin, **kwargs):
     if plugin.imbalance > 0.5:
         plugin.imbalance = 1 - plugin.imbalance
 
-    plugin.log(f"Plugin feeadjuster initialized ({plugin.adj_basefee} base / {plugin.adj_ppmfee} ppm) with an "
+    plugin.log(f"Plugin feeadjuster initialized "
+               f"({plugin.adj_basefee} base / {plugin.adj_ppmfee} ppm) with an "
                f"imbalance of {int(100 * plugin.imbalance)}%/{int(100 * ( 1 - plugin.imbalance))}%, "
-               f"update_threshold: {int(100 * plugin.update_threshold)}%, update_threshold_abs: {plugin.update_threshold_abs}, "
-               f"enough_liquidity: {plugin.big_enough_liquidity}, deactivate_fuzz: {plugin.deactivate_fuzz}, "
-               f"forward_event_subscription: {plugin.forward_event_subscription}, adjustment_method: {plugin.get_ratio.__name__}")
+               f"update_threshold: {int(100 * plugin.update_threshold)}%, "
+               f"update_threshold_abs: {plugin.update_threshold_abs}, "
+               f"enough_liquidity: {plugin.big_enough_liquidity}, "
+               f"deactivate_fuzz: {plugin.deactivate_fuzz}, "
+               f"forward_event_subscription: {plugin.forward_event_subscription}, "
+               f"adjustment_method: {plugin.get_ratio.__name__}, "
+               f"fee_strategy: {plugin.fee_strategy.__name__}")
     plugin.mutex.release()
     feeadjust(plugin)
 
