@@ -41,11 +41,17 @@ def monitor(plugin):
             else:
                 states[state] = 1
             connected = 'connected' if p['connected'] else 'disconnected'
-            funding = c['funding_allocation_msat']
-            our_funding = funding[nid]
-            fees = "our fees"
-            if int(our_funding) == 0:
-                fees = "their fees"
+            fees = "unknown onchain fees"
+            funding = c.get('funding_msat', None)
+            if funding is not None:
+                our_funding = funding[nid]
+                their_funding = funding[p['id']]
+                if int(our_funding) == 0:
+                    fees = "their onchain fees"
+                elif int(their_funding) == 0:
+                    fees = "our onchain fees"
+                else:
+                    fees = "shared onchain fees"
             total = int(c['total_msat'])
             ours = int(c['our_reserve_msat']) + int(c['spendable_msat'])
             our_fraction = '{:4.2f}% owned by us'.format(ours * 100 / total)
