@@ -2,6 +2,7 @@ import subprocess
 import unittest
 import re
 import os
+import time
 
 from pyln.client import Plugin
 from pyln.testing.fixtures import *  # noqa: F401,F403
@@ -10,6 +11,19 @@ from pyln.testing.utils import DEVELOPER
 from .summary_avail import trace_availability
 
 pluginopt = {'plugin': os.path.join(os.path.dirname(__file__), "summary.py")}
+TIMEOUT = 60
+
+
+def wait_for(success, timeout=TIMEOUT):
+    start_time = time.time()
+    interval = 0.25
+    while not success() and time.time() < start_time + timeout:
+        time.sleep(interval)
+        interval *= 2
+        if interval > 5:
+            interval = 5
+    if time.time() > start_time + timeout:
+        raise ValueError("Timeout waiting for {}", success)
 
 
 # returns a test plugin stub
@@ -28,10 +42,12 @@ def test_summary_peer_thread(node_factory):
     opts = {'summary-availability-interval': 0.5}
     opts.update(pluginopt)
     l1, l2 = node_factory.line_graph(2, opts=opts)
+    l2id = l2.info['id']
 
     # when
     s1 = l1.rpc.summary()
-    l2.stop()        # we stop l2 and
+    l2.stop()  # we stop l2 and wait for l1 to see that
+    wait_for(lambda: l1.rpc.listpeers(l2id)['peers'][0]['connected'] is False)
     l1.daemon.logsearch_start = len(l1.daemon.logs)
     l1.daemon.wait_for_log(r".*availability persisted and synced.*")
     s2 = l1.rpc.summary()
