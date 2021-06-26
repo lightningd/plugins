@@ -1,8 +1,9 @@
 import os
 import random
+import pytest
 import string
-
 import unittest
+
 from pyln.testing.fixtures import *  # noqa: F401,F403
 from pyln.testing.utils import DEVELOPER, wait_for
 
@@ -291,3 +292,56 @@ def test_feeadjuster_big_enough_liquidity(node_factory):
         f"Adjusted fees.*{scid_B}"
     ])
     wait_for_not_fees(l2, scids, default_fees[0])
+
+
+@pytest.mark.xfail
+@unittest.skipIf(not DEVELOPER, "Too slow without fast gossip")
+def test_initial_updates(node_factory):
+    """
+            A                   B
+    l1  <========>   l2   <=========>  l3
+
+    - Bring the channel to some mixed balance.
+    - Check it did its regular feeadjust updates
+    - Restart l2 and check if those updates are skipped in the initial loop
+      as they should be insignificant because balance didn't change.
+
+    This will currently fail for two reasons:
+     1. The initial fee update on the newly created, 100% distorted, channels
+       is missing. The first time the plugin comes up, it adjusts 0 channels,
+       even though the channels need to be adjusted.
+     2. After usage and expected adjustments, stop and restart should not
+        do the same channel fee update again, but it does (unnecessarily).
+    """
+    # setup and fetch infos
+    l2_opts = {"plugin": plugin_path, "feeadjuster-deactivate-fuzz": None}
+    l1, l2, l3 = node_factory.line_graph(3, opts=[{}, l2_opts, {}],
+                                         wait_for_announce=True)
+    chan_A = l2.rpc.listpeers(l1.info["id"])["peers"][0]["channels"][0]
+    chan_B = l2.rpc.listpeers(l3.info["id"])["peers"][0]["channels"][0]
+    scid_A = chan_A["short_channel_id"]
+    scid_B = chan_B["short_channel_id"]
+    chan_total = chan_A["total_msat"]
+
+    # wait for expected initial updates after channel creation
+    # because these channels are totally distorted
+    l2.daemon.logsearch_start = 0
+    l2.daemon.wait_for_logs([   # WILL FAIL HERE (does no updates)
+        f"Adjusted fees.*{scid_A}",
+        f"Adjusted fees.*{scid_B}"
+    ])
+
+    # bring channels to some not totally distorted balance
+    pay(l1, l3, chan_total * 0.25)
+    l2.daemon.wait_for_logs([
+        f"Adjusted fees.*{scid_A}",
+        f"Adjusted fees.*{scid_B}"
+    ])
+
+    logsearch = l2.daemon.logsearch_start
+    l2.stop()
+    l2.start()
+    l2.daemon.wait_for_log("Plugin feeadjuster initialized.*")
+    # WILL FAIL HERE (does updates, even though balance didnt change)
+    assert not l2.daemon.is_in_log(f"Adjusted fees.*{scid_A}", logsearch)
+    assert not l2.daemon.is_in_log(f"Adjusted fees.*{scid_B}", logsearch)
