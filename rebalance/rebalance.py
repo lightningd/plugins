@@ -243,8 +243,8 @@ def rebalance(plugin, outgoing_scid, incoming_scid, msatoshi: Millisatoshi = Non
     excludes = [my_node_id]   # excude all own channels to prevent shortcuts
     nodes = {}                # here we store erring node counts
     plugin.maxhopidx = 1      # start with short routes and increase
-    plugin.msatfactoridx = plugin.msatfactor  # start with high msatoshi factor to reduce
-                              # WIRE_TEMPORARY failures because of imbalances
+    plugin.msatfactoridx = plugin.msatfactor  # start with high capacity factor
+    # and decrease to reduce WIRE_TEMPORARY failures because of imbalances
 
     # 'disable' maxhops filter if set to <= 0
     # I know this is ugly, but we don't ruin the rest of the code this way
@@ -314,7 +314,7 @@ def rebalance(plugin, outgoing_scid, incoming_scid, msatoshi: Millisatoshi = Non
             except RpcError as e:
                 time_sendpay += time.time() - time_start
                 plugin.log(f"maxhops:{plugin.maxhopidx}  msatfactor:{plugin.msatfactoridx}  running_for:{int(time.time()) - start_ts}  count_getroute:{count}  time_getroute:{time_getroute}  time_getroute_avg:{time_getroute / count}  count_sendpay:{count_sendpay}  time_sendpay:{time_sendpay}  time_sendpay_avg:{time_sendpay / count_sendpay}", 'debug')
-                #plugin.log(f"RpcError: {str(e)}", 'debug')
+                # plugin.log(f"RpcError: {str(e)}", 'debug')
                 # check if we ran into the `rpc.waitsendpay` timeout
                 if e.method == "waitsendpay" and e.error.get('code') == 200:
                     raise RpcError("rebalance", payload, {'message': 'Timeout reached'})
@@ -719,7 +719,7 @@ def rebalancereport(plugin: Plugin):
     res["total_rebalanced_amount"] = total_amount
     res["total_rebalance_fee"] = total_fee
     if total_amount > Millisatoshi(0):
-        res["average_rebalance_fee_ppm"] = round(total_fee/total_amount*10**6, 2)
+        res["average_rebalance_fee_ppm"] = round(total_fee / total_amount * 10**6, 2)
     else:
         res["average_rebalance_fee_ppm"] = 0
     return res
