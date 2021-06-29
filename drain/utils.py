@@ -3,6 +3,8 @@ import time
 TIMEOUT = 60
 
 
+# we need to have this pyln.testing.utils code duplication
+# as this also needs to be run without testing libs
 def wait_for(success, timeout=TIMEOUT):
     start_time = time.time()
     interval = 0.25
