@@ -657,7 +657,10 @@ def rebalancestop(plugin: Plugin):
     """It stops the ongoing rebalanceall.
     """
     if not plugin.mutex.locked():
-        return {"message": "No rebalance is running, nothing to stop"}
+        if plugin.rebalanceall_msg is None:
+            return {"message": "No rebalance is running, nothing to stop."}
+        return {"message": f"No rebalance is running, nothing to stop. "
+                           f"Last 'rebalanceall' gave: {plugin.rebalanceall_msg}"}
     plugin.rebalance_stop = True
     plugin.mutex.acquire(blocking=True)
     plugin.rebalance_stop = False
@@ -736,6 +739,7 @@ def init(options, configuration, plugin):
     plugin.msatfactor = float(options.get("rebalance-msatfactor"))
     plugin.erringnodes = int(options.get("rebalance-erringnodes"))
     plugin.getroute = getroute_switch(options.get("rebalance-getroute"))
+    plugin.rebalanceall_msg = None
 
     plugin.log(f"Plugin rebalance initialized with {plugin.fee_base} base / {plugin.fee_ppm} ppm fee  "
                f"cltv_final:{plugin.cltv_final}  "
