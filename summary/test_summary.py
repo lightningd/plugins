@@ -2,28 +2,14 @@ import subprocess
 import unittest
 import re
 import os
-import time
 
 from pyln.client import Plugin
 from pyln.testing.fixtures import *  # noqa: F401,F403
-from pyln.testing.utils import DEVELOPER
+from pyln.testing.utils import DEVELOPER, wait_for
 
 from .summary_avail import trace_availability
 
 pluginopt = {'plugin': os.path.join(os.path.dirname(__file__), "summary.py")}
-TIMEOUT = 60
-
-
-def wait_for(success, timeout=TIMEOUT):
-    start_time = time.time()
-    interval = 0.25
-    while not success() and time.time() < start_time + timeout:
-        time.sleep(interval)
-        interval *= 2
-        if interval > 5:
-            interval = 5
-    if time.time() > start_time + timeout:
-        raise ValueError("Timeout waiting for {}", success)
 
 
 # returns a test plugin stub
