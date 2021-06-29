@@ -1,6 +1,5 @@
 import os
 from pyln.testing.fixtures import *  # noqa: F401,F403
-from pyln.testing.utils import wait_for
 from pyln.client import Millisatoshi
 
 plugin_path = os.path.join(os.path.dirname(__file__), "rebalance.py")
@@ -113,13 +112,20 @@ def test_rebalance_all(node_factory, bitcoind):
     bitcoind.generate_block(6)
     wait_for_all_active(nodes, scids)
 
+    # check that theres nothing to stop when theres nothing to stop
+    result = l1.rpc.rebalancestop()
+    assert result['message'] == "No rebalance is running, nothing to stop."
+
     # check the rebalanceall starts
     result = l1.rpc.rebalanceall(feeratio=5.0)  # we need high fees to work
     assert result['message'].startswith('Rebalance started')
-    l1.daemon.wait_for_log(f"Try to rebalance: {scid12} -> {scid31}")
-    wait_for(lambda: not l1.rpc.rebalanceall()['message'].startswith("Rebalance is already running"))
-    result = l1.rpc.rebalancestop()
-    assert result['message'].startswith("Automatic rebalance finished")
+    l1.daemon.wait_for_logs([f"Try to rebalance: {scid12} -> {scid31}",
+                             f"Automatic rebalance finished"])
+
+    # check additional calls to stop return 'nothing to stop' + last message
+    result = l1.rpc.rebalancestop()['message']
+    assert result.startswith("No rebalance is running, nothing to stop. "
+                             "Last 'rebalanceall' gave: Automatic rebalance finished")
 
     # wait until listpeers is up2date
     wait_for_all_htlcs(nodes)
