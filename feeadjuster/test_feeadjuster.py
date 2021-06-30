@@ -175,7 +175,7 @@ def test_feeadjuster_imbalance(node_factory):
     scid_A = chan_A["short_channel_id"]
     scid_B = chan_B["short_channel_id"]
     scids = [scid_A, scid_B]
-    default_fees = [(base_fee, ppm_fee), (base_fee, ppm_fee)]
+    default_fees = (base_fee, ppm_fee)
 
     chan_total = int(chan_A["total_msat"])
     assert chan_total == int(chan_B["total_msat"])
@@ -187,10 +187,7 @@ def test_feeadjuster_imbalance(node_factory):
         f"Adjusted fees of {scid_B}"
     ])
     log_offset = len(l2.daemon.logs)
-    # FIXME: The next line fails, not because of this test or plugin
-    # but because in clnd the channel never gets updated when setting
-    # fees some milliseconds after state gets NORMAL
-    wait_for_not_fees(l2, scids, default_fees[0])
+    wait_for_not_fees(l2, scids, default_fees)
 
     # First bring channel to somewhat of a balance
     amount = int(chan_total * 0.5)
@@ -199,7 +196,7 @@ def test_feeadjuster_imbalance(node_factory):
         f'Set default fees as imbalance is too low: {scid_A}',
         f'Set default fees as imbalance is too low: {scid_B}'
     ])
-    wait_for_fees(l2, scids, default_fees[0])
+    wait_for_fees(l2, scids, default_fees)
 
     # Because of the 70/30 imbalance limiter, a 15% payment must not yet trigger
     # 50% + 15% = 65% .. which is < 70%
@@ -213,7 +210,7 @@ def test_feeadjuster_imbalance(node_factory):
         f"Adjusted fees of {scid_A}",
         f"Adjusted fees of {scid_B}"
     ])
-    wait_for_not_fees(l2, scids, default_fees[0])
+    wait_for_not_fees(l2, scids, default_fees)
 
     # Bringing it back must cause default fees
     pay(l3, l1, amount)
@@ -221,7 +218,7 @@ def test_feeadjuster_imbalance(node_factory):
         f'Set default fees as imbalance is too low: {scid_A}',
         f'Set default fees as imbalance is too low: {scid_B}'
     ])
-    wait_for_fees(l2, scids, default_fees[0])
+    wait_for_fees(l2, scids, default_fees)
 
 
 @unittest.skipIf(not DEVELOPER, "Too slow without fast gossip")
@@ -248,7 +245,8 @@ def test_feeadjuster_big_enough_liquidity(node_factory):
     }
     # channels' size: 0.01btc
     # between 0.001btc and 0.009btc the liquidity is big enough
-    l1, l2, l3 = node_factory.line_graph(3, fundamount=10**6, opts=[{}, l2_opts, {}],
+    l1, l2, l3 = node_factory.line_graph(3, fundamount=10**6,
+                                         opts=[{}, l2_opts, {}],
                                          wait_for_announce=True)
 
     chan_A = l2.rpc.listpeers(l1.info["id"])["peers"][0]["channels"][0]
@@ -256,7 +254,7 @@ def test_feeadjuster_big_enough_liquidity(node_factory):
     scid_A = chan_A["short_channel_id"]
     scid_B = chan_B["short_channel_id"]
     scids = [scid_A, scid_B]
-    default_fees = [(base_fee, ppm_fee), (base_fee, ppm_fee)]
+    default_fees = (base_fee, ppm_fee)
 
     chan_total = int(chan_A["total_msat"])
     assert chan_total == int(chan_B["total_msat"])
@@ -268,10 +266,7 @@ def test_feeadjuster_big_enough_liquidity(node_factory):
         f"Adjusted fees of {scid_A}",
         f"Adjusted fees of {scid_B}"
     ])
-    # FIXME: The next line fails, not because of this test or plugin
-    # but because in clnd the channel never gets updated when setting
-    # fees some milliseconds after state gets NORMAL
-    wait_for_not_fees(l2, scids, default_fees[0])
+    wait_for_not_fees(l2, scids, default_fees)
 
     # Bring channels to beyond big enough liquidity with 0.003btc
     amount = 300000000
@@ -281,7 +276,7 @@ def test_feeadjuster_big_enough_liquidity(node_factory):
         f"Adjusted fees of {scid_B} with a ratio of 1.0"
     ])
     log_offset = len(l2.daemon.logs)
-    wait_for_fees(l2, scids, default_fees[0])
+    wait_for_fees(l2, scids, default_fees)
 
     # Let's move another 0.003btc -> the channels will be at 0.006btc
     amount = 300000000
@@ -297,7 +292,7 @@ def test_feeadjuster_big_enough_liquidity(node_factory):
         f"Adjusted fees of {scid_A}",
         f"Adjusted fees of {scid_B}"
     ])
-    wait_for_not_fees(l2, scids, default_fees[0])
+    wait_for_not_fees(l2, scids, default_fees)
 
 
 @unittest.skipIf(not DEVELOPER, "Too slow without fast gossip")
