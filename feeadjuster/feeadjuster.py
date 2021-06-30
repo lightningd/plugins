@@ -165,6 +165,7 @@ def maybe_adjust_fees(plugin: Plugin, scids: list):
             continue
 
         if not significant_update(plugin, scid):
+            plugin.log(f"Skipping insignificant fee update on {scid}", 'debug')
             continue
 
         percentage = get_adjusted_percentage(plugin, scid)
@@ -193,6 +194,33 @@ def maybe_add_new_balances(plugin: Plugin, scids: list):
                 "our": int(chan["to_us_msat"]),
                 "total": int(chan["total_msat"])
             }
+
+
+@plugin.subscribe("channel_opened")
+def channel_opened_event(plugin: Plugin, channel_opened: dict, **kwargs):
+    plugin.peers = plugin.rpc.listpeers()["peers"]
+    for peer in [p for p in plugin.peers if p['id'] == channel_opened['id']]:
+        for chan in [c for c in peer["channels"] if c['funding_txid'] == channel_opened['funding_txid']]:
+            if chan["state"] in ["CHANNELD_NORMAL", "CHANNELD_AWAITING_LOCKIN"]:
+                scid = chan.get("short_channel_id")
+                if scid is None:
+                    continue
+                maybe_add_new_balances(plugin, [scid])
+                maybe_adjust_fees(plugin, [scid])
+
+
+@plugin.subscribe("channel_state_changed")
+def channel_state_changed_event(plugin: Plugin, channel_state_changed: dict, **kwargs):
+    plugin.peers = plugin.rpc.listpeers()["peers"]
+    state = channel_state_changed.get("new_state")
+    # Note: AWAITING_LOCKIN cant happen currently as there is no state change
+    # notification on newly created channels and there would be no scid
+    if state in ["CHANNELD_NORMAL", "CHANNELD_AWAITING_LOCKIN"]:
+        scid = channel_state_changed.get("short_channel_id")
+        if scid is None:
+            return
+        maybe_add_new_balances(plugin, [scid])
+        maybe_adjust_fees(plugin, [scid])
 
 
 @plugin.subscribe("forward_event")
@@ -234,8 +262,10 @@ def feeadjust(plugin: Plugin):
     channels_adjusted = 0
     for peer in plugin.peers:
         for chan in peer["channels"]:
-            if chan["state"] == "CHANNELD_NORMAL":
-                scid = chan["short_channel_id"]
+            if chan["state"] in ["CHANNELD_NORMAL", "CHANNELD_AWAITING_LOCKIN"]:
+                scid = chan.get("short_channel_id")
+                if scid is None:
+                    continue
                 plugin.adj_balances[scid] = {
                     "our": int(chan["to_us_msat"]),
                     "total": int(chan["total_msat"])
