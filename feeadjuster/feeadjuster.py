@@ -234,8 +234,10 @@ def feeadjust(plugin: Plugin):
     channels_adjusted = 0
     for peer in plugin.peers:
         for chan in peer["channels"]:
-            if chan["state"] == "CHANNELD_NORMAL":
-                scid = chan["short_channel_id"]
+            if chan["state"] in ["CHANNELD_NORMAL", "CHANNELD_AWAITING_LOCKIN"]:
+                scid = chan.get("short_channel_id")
+                if scid is None:
+                    continue
                 plugin.adj_balances[scid] = {
                     "our": int(chan["to_us_msat"]),
                     "total": int(chan["total_msat"])
