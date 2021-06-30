@@ -277,8 +277,8 @@ def try_for_htlc_fee(plugin, payload, peer_id, amount, chunk, spendable_before):
             continue
 
         plugin.log(f"[{chunk + 1}/{payload['chunks']}] Sending over "
-                   "{len(route)} hops to {payload['command']} {amount} using "
-                   "{fees} fees", 'debug')
+                   f"{len(route)} hops to {payload['command']} {amount} using "
+                   f"{fees} fees", 'debug')
         for r in route:
             plugin.log("    - %s  %14s  %s" % (r['id'], r['channel'], r['amount_msat']), 'debug')
 
