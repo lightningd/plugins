@@ -196,6 +196,19 @@ def maybe_add_new_balances(plugin: Plugin, scids: list):
             }
 
 
+@plugin.subscribe("channel_opened")
+def channel_opened_event(plugin: Plugin, channel_opened: dict, **kwargs):
+    plugin.peers = plugin.rpc.listpeers()["peers"]
+    for peer in [p for p in plugin.peers if p['id'] == channel_opened['id']]:
+        for chan in [c for c in peer["channels"] if c['funding_txid'] == channel_opened['funding_txid']]:
+            if chan["state"] in ["CHANNELD_NORMAL", "CHANNELD_AWAITING_LOCKIN"]:
+                scid = chan.get("short_channel_id")
+                if scid is None:
+                    continue
+                maybe_add_new_balances(plugin, [scid])
+                maybe_adjust_fees(plugin, [scid])
+
+
 @plugin.subscribe("channel_state_changed")
 def channel_state_changed_event(plugin: Plugin, channel_state_changed: dict, **kwargs):
     plugin.peers = plugin.rpc.listpeers()["peers"]
