@@ -90,7 +90,7 @@ lightning-cli setbalance scid [percentage] [chunks] [maxfeepercent] [retry_for] 
   payment into several smaller ones. In this case it may happen that the
   operation will only be partially completed. The parameters value is the
   number of chunks to use. Default: auto-detect based on capacities, max 16.
-- OPTIONAL: `maxfeepercent` is a perecentage limit of the money to be paid in
+- OPTIONAL: `maxfeepercent` is a percentage limit of the money to be paid in
   fees and defaults to 0.5.
 - OPTIONAL: `retry_for` defines the number of seconds the plugin will retry to
   find a suitable route. Default: 60 seconds. Note: Applies for each chunk.
