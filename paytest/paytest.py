@@ -237,6 +237,13 @@ def timeout(plugin, secret):
     for p in parts:
         p[0].set_result({"result": "fail", "failure_onion": wrap_error(p[4], b"0017")})
 
+    del plugin.pending[secret]
+        
+        
+@plugin.method("timeoutallpendingtestpays")
+def timeoutallpendingtestpays(plugin, **kwargs):
+    for secret in plugin.pending.keys():
+        timout(plugin,secret)
 
 @plugin.async_hook("htlc_accepted")
 def on_htlc_accepted(onion, htlc, request, plugin, *args, **kwargs):
