@@ -20,7 +20,7 @@ try:
 except Exception:
     pass
 
-Channel = namedtuple('Channel', ['total', 'ours', 'theirs', 'pid', 'private', 'connected', 'scid', 'avail'])
+Channel = namedtuple('Channel', ['total', 'ours', 'theirs', 'pid', 'private', 'connected', 'scid', 'avail', 'base' ,'permil'])
 Charset = namedtuple('Charset', ['double_left', 'left', 'bar', 'mid', 'right', 'double_right', 'empty'])
 if have_utf8:
     draw = Charset('╟', '├', '─', '┼', '┤', '╢', '║')
@@ -85,7 +85,7 @@ def to_fiatstr(msat: Millisatoshi):
 # appends an output table header that explains fields and capacity
 def append_header(table, max_msat):
     short_str = Millisatoshi(max_msat).to_approx_str()
-    table.append("%c%-13sOUT/OURS %c IN/THEIRS%12s%c SCID           FLAG AVAIL ALIAS"
+    table.append("%c%-13sOUT/OURS %c IN/THEIRS%12s%c SCID           FLAG   BASE PERMIL AVAIL  ALIAS"
                  % (draw.left, short_str, draw.mid, short_str, draw.right))
 
 
@@ -152,7 +152,9 @@ def summary(plugin, exclude=''):
                 c['private'],
                 p['connected'],
                 c['short_channel_id'],
-                plugin.persist['peerstate'][pid]['avail']
+                plugin.persist['peerstate'][pid]['avail'],
+                c['fee_base_msat'],
+                c['fee_proportional_millionths'],
             ))
 
         if not active_channel and p['connected']:
@@ -210,7 +212,11 @@ def summary(plugin, exclude=''):
             else:
                 extra += '_'
             s += '[{}] '.format(extra)
-
+            
+            # append fees
+            s += ' {:5}'.format(c.base.millisatoshis)
+            s += ' {:6}  '.format(c.permil)
+            
             # append 24hr availability
             s += '{:4.0%}  '.format(c.avail)
 
