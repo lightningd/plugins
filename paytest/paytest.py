@@ -240,10 +240,10 @@ def timeout(plugin, secret):
     del plugin.pending[secret]
         
         
-@plugin.method("timeoutallpendingtestpays")
-def timeoutallpendingtestpays(plugin, **kwargs):
+@plugin.method("rejectpaytests")
+def rejectpaytests(plugin, **kwargs):
     for secret in plugin.pending.keys():
-        timout(plugin,secret)
+        timeout(plugin,secret)
 
 @plugin.async_hook("htlc_accepted")
 def on_htlc_accepted(onion, htlc, request, plugin, *args, **kwargs):
