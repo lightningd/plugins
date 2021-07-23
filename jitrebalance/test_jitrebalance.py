@@ -79,7 +79,7 @@ def test_simple_rebalance(node_factory):
                             exclude=[scid + '/0', scid + '/1'])['route']
 
     # This will succeed with l2 doing a rebalancing just-in-time !
-    l1.rpc.sendpay(route, inv['payment_hash'])
+    l1.rpc.sendpay(route, inv['payment_hash'], payment_secret=inv.get('payment_secret'))
     assert l1.rpc.waitsendpay(inv['payment_hash'])['status'] == 'complete'
     assert l2.daemon.is_in_log('Succesfully re-filled outgoing capacity')
 
@@ -146,7 +146,7 @@ def test_rebalance_failure(node_factory):
                             exclude=[scid + '/0', scid + '/1'])['route']
 
     # This will exclude [l5, l3] and fail as there is no route left
-    l1.rpc.sendpay(route, inv['payment_hash'])
+    l1.rpc.sendpay(route, inv['payment_hash'], payment_secret=inv.get('payment_secret'))
     with pytest.raises(RpcError, match='WIRE_TEMPORARY_CHANNEL_FAILURE'):
         l1.rpc.waitsendpay(inv['payment_hash'])
     assert l2.daemon.is_in_log('Could not get a route, no remaining one?')
