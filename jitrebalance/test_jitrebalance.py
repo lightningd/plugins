@@ -154,7 +154,7 @@ def test_rebalance_failure(node_factory):
 
     # Now test the timeout on number of attempts
     l3.rpc.plugin_start(hold_plugin)
-    l1.rpc.sendpay(route, inv['payment_hash'])
+    l1.rpc.sendpay(route, inv['payment_hash'], payment_secret=inv.get('payment_secret'))
     # l3 will hold on the HTLC, and at the time it rejects it, l2 won't try
     # other routes as it exceeded its timeout
     with pytest.raises(RpcError, match='WIRE_TEMPORARY_CHANNEL_FAILURE'):
