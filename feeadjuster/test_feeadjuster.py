@@ -60,7 +60,7 @@ def pay(l, ll, amount):
     label = ''.join(random.choices(string.ascii_letters, k=20))
     invoice = ll.rpc.invoice(amount, label, "desc")
     route = l.rpc.getroute(ll.info["id"], amount, riskfactor=0, fuzzpercent=0)
-    l.rpc.sendpay(route["route"], invoice["payment_hash"])
+    l.rpc.sendpay(route["route"], invoice["payment_hash"], payment_secret=invoice.get('payment_secret'))
     l.rpc.waitsendpay(invoice["payment_hash"])
 
 
