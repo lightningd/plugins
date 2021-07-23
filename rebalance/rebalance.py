@@ -238,6 +238,8 @@ def rebalance(plugin, outgoing_scid, incoming_scid, msatoshi: Millisatoshi = Non
     description = "%s to %s" % (outgoing_scid, incoming_scid)
     invoice = plugin.rpc.invoice(msatoshi, label, description, retry_for + 60)
     payment_hash = invoice['payment_hash']
+    # The requirement for payment_secret coincided with its addition to the invoice output.
+    payment_secret = invoice.get('payment_secret')
 
     rpc_result = None
     excludes = [my_node_id]   # excude all own channels to prevent shortcuts
@@ -303,7 +305,7 @@ def rebalance(plugin, outgoing_scid, incoming_scid, msatoshi: Millisatoshi = Non
             time_start = time.time()
             count_sendpay += 1
             try:
-                plugin.rpc.sendpay(route, payment_hash)
+                plugin.rpc.sendpay(route, payment_hash, payment_secret=payment_secret)
                 running_for = int(time.time()) - start_ts
                 result = plugin.rpc.waitsendpay(payment_hash, max(retry_for - running_for, 0))
                 time_sendpay += time.time() - time_start
