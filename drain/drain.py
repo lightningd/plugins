@@ -238,6 +238,8 @@ def try_for_htlc_fee(plugin, payload, peer_id, amount, chunk, spendable_before):
     description = "%s %s %s%s [%d/%d]" % (payload['command'], payload['scid'], payload['percentage'], '%', chunk + 1, payload['chunks'])
     invoice = plugin.rpc.invoice("any", label, description, retry_for + 60)
     payment_hash = invoice['payment_hash']
+    # The requirement for payment_secret coincided with its addition to the invoice output.
+    payment_secret = invoice.get('payment_secret')
     plugin.log("Invoice payment_hash: %s" % payment_hash)
 
     # exclude selected channel to prevent unwanted shortcuts
@@ -284,7 +286,7 @@ def try_for_htlc_fee(plugin, payload, peer_id, amount, chunk, spendable_before):
 
         try:
             ours = get_ours(plugin, payload['scid'])
-            plugin.rpc.sendpay(route, payment_hash, label)
+            plugin.rpc.sendpay(route, payment_hash, label, payment_secret=payment_secret)
             running_for = int(time.time()) - start_ts
             result = plugin.rpc.waitsendpay(payment_hash, max(retry_for - running_for, 0))
             if not result.get('status') == 'complete':
