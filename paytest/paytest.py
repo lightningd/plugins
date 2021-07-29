@@ -304,7 +304,7 @@ def on_htlc_accepted(onion, htlc, request, plugin, *args, **kwargs):
 
     parts = plugin.pending[ps]
     received = sum([p[2] for p in parts])
-    print("Received {:12} = {:4.2f}% with a total received of  {}/{} = {:4.2f}% with {} parts".format(int(Millisatoshi(onion["forward_amount"])),100*float(Millisatoshi(onion["forward_amount"]))/total,received, total,float(received)*100/total, len(parts)))
+    print("Received {:12} = {:4.2f}% with a total received of  {}/{} = {:4.2f}% with {} parts".format(int(Millisatoshi(onion["forward_amount"])),100.*int(Millisatoshi(onion["forward_amount"]))/total,received, total,float(received)*100/total, len(parts)))
 
     if received != total:
         return
