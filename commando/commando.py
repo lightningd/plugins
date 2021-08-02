@@ -48,7 +48,8 @@ def send_msg(plugin, peer_id, msgtype, idnum, contents):
 
 
 def send_result(plugin, peer_id, idnum, res):
-    # We can only send 64k in a message.
+    # We can only send 64k in a message, but there is 10 byte overhead
+    # in the message header; 65000 is safe.
     parts = textwrap.wrap(json.dumps(res), 65000)
     for p in parts[:-1]:
         send_msg(plugin, peer_id, COMMANDO_REPLY_CONTINUES, idnum, p)
