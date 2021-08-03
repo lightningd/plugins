@@ -12,6 +12,7 @@ Community curated plugins for c-lightning.
 | [backup][backup]                   | A simple and reliable backup plugin                                                       |
 | [boltz-channel-creation][boltz]    | A c-lightning plugin for Boltz Channel Creation Swaps                                     |
 | [btcli4j][btcli4j]                 | A Bitcoin Backend to enable safely the pruning mode, and support also rest APIs.          |
+| [commando][commando]               | Authorize peers to run commands on your node, and running commands on them.   |
 | [csvexportpays][csvexportpays]     | A plugin that exports all payments to a CSV file                                          |
 | [currencyrate][currencyrate]       | A plugin to convert other currencies to BTC using web requests                            |
 | [donations][donations]             | A simple donations page to accept donations from the web                                  |
@@ -206,3 +207,4 @@ Python plugins developers must ensure their plugin to work with all Python versi
 [java-api]: https://github.com/clightning4j/JRPClightning
 [btcli4j]: https://github.com/clightning4j/btcli4j 
 [backup]: https://github.com/lightningd/plugins/tree/master/backup
+[commando]: https://github.com/lightningd/plugins/tree/master/commando
