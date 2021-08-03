@@ -143,6 +143,16 @@ def try_command(plugin, peer_id, idnum, method, params, runestr):
         ok, failstr = check_rune(plugin, peer_id, runestr, method, params)
         if not ok:
             res = {'error': 'Not authorized: ' + failstr}
+        elif method in plugin.methods:
+            # Don't try to call indirectly into ourselves; we deadlock!
+            # But commando-rune is useful, so hardcode that.
+            if method == "commando-rune":
+                if isinstance(params, list):
+                    res = {'result': commando_rune(plugin, *params)}
+                else:
+                    res = {'result': commando_rune(plugin, **params)}
+            else:
+                res = {'error': 'FIXME: Refusing to call inside ourselves'}
         else:
             try:
                 res = {'result': plugin.rpc.call(method, params)}
