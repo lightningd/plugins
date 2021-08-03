@@ -283,3 +283,26 @@ def test_rune_time(node_factory):
                         method='commando-rune',
                         rune=rune,
                         params={'restrictions': 'id={}'.format(l2.info['id'])})
+
+
+def test_readonly(node_factory):
+    l1, l2 = node_factory.line_graph(2, fundchannel=False,
+                                     opts={'plugin': [plugin_path,
+                                                      datastore_path]})
+    rrune = l2.rpc.commando_rune(restrictions='readonly')['rune']
+
+    l1.rpc.call(method='commando',
+                payload={'peer_id': l2.info['id'],
+                         'method': 'listchannels',
+                         'rune': rrune,
+                         'params': {'source': l1.info['id']}})
+
+    with pytest.raises(RpcError, match='Not authorized.* = getsharedsecret'):
+        l1.rpc.commando(peer_id=l2.info['id'],
+                        rune=rrune,
+                        method='getsharedsecret')
+
+    with pytest.raises(RpcError, match='Not authorized.* = listdatastore'):
+        l1.rpc.commando(peer_id=l2.info['id'],
+                        rune=rrune,
+                        method='listdatastore')

@@ -20,7 +20,7 @@ For general plugin installation instructions see the repos main
 There are two configuration options, which can be specified multiple
 times:
 
-* --commando-reader: a node id which can execute `list` and `get` / `summary` commands
+* --commando-reader: a node id which can execute (most) `list` and `get` / `summary` commands
 * --commando-writer: a node id which can execute any commands.
 
 You can do this for static access lists, no runes necessary. You would
