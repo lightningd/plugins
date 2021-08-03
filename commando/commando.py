@@ -1,7 +1,13 @@
 #!/usr/bin/env python3
 """Commando is a plugin to allow one node to control another.  You use
-"commando" to send commands, and the 'commando-writer' and
-'commando-reader' to allow nodes to send you commands.
+"commando" to send commands, with 'method', 'params' and optional
+'rune' which authorizes it.
+
+Additionally, you can use "commando-rune" to create/add restrictions to
+existing runes (you can also use the runes.py library).
+
+Rather than handing a rune every time, peers can do "commando-cacherune"
+to make it the persistent default for their peer_id.
 
 The formats are:
 
@@ -10,11 +16,17 @@ type:594B - reply (with more coming)
 type:594D - last reply
 
 Each one is an 8 byte id (to link replies to command), followed by JSON.
+
 """
 from pyln.client import Plugin, RpcError
 import json
 import textwrap
+import time
 import random
+import secrets
+import string
+import runes
+from typing import Dict, Tuple, Optional
 
 plugin = Plugin()
 
@@ -36,7 +48,7 @@ def split_cmd(cmdstr):
     """Interprets JSON and method and params"""
     cmd = json.loads(cmdstr)
 
-    return cmd['method'], cmd.get('params')
+    return cmd['method'], cmd.get('params', {}), cmd.get('rune')
 
 
 def send_msg(plugin, peer_id, msgtype, idnum, contents):
@@ -57,22 +69,87 @@ def send_result(plugin, peer_id, idnum, res):
     send_msg(plugin, peer_id, COMMANDO_REPLY_TERM, idnum, parts[-1])
 
 
-def exec_command(plugin, peer_id, idnum, method, params):
-    """Run an arbitrary command and message back the result"""
+def is_rune_valid(plugin, runestr) -> Tuple[Optional[runes.Rune], str]:
+    """Is this runestring valid, and authorized for us?"""
     try:
-        res = {'result': plugin.rpc.call(method, params)}
-    except RpcError as e:
-        res = {'error': e.error}
+        rune = runes.Rune.from_base64(runestr)
+    except:  # noqa: E722
+        return None, 'Malformed base64 string'
+
+    if not plugin.masterrune.is_rune_authorized(rune):
+        return None, 'Invalid rune string'
+
+    return rune, ''
+
+
+def check_rune(plugin, node_id, runestr, command, params) -> Tuple[bool, str]:
+    """If we have a runestr, check it's valid and conditions met"""
+    print('rune = {}'.format(runestr))
+    # If they don't specify a rune, we use any previous for this peer
+    if runestr is None:
+        runestr = plugin.peer_runes.get(node_id)
+    if runestr is None:
+        # Finally, try reader-writer lists
+        if node_id in plugin.writers:
+            runestr = plugin.masterrune.to_base64()
+        elif node_id in plugin.readers:
+            runestr = add_reader_restrictions(plugin.masterrune.copy())
+
+    if runestr is None:
+        return False, 'No rune'
+
+    commando_dict = {'time': int(time.time()),
+                     'id': node_id,
+                     'version': plugin.version,
+                     'method': command}
+
+    # FIXME: This doesn't work well with complex params (it makes them str())
+    if isinstance(params, list):
+        for i, p in enumerate(params):
+            commando_dict['parr{}'.format(i)] = p
+    else:
+        for k, v in params.items():
+            # Cannot have punctuation in fieldnames, so remove.
+            for c in string.punctuation:
+                k = k.replace(c, '')
+            commando_dict['pname{}'.format(k)] = v
+
+    return plugin.masterrune.check_with_reason(runestr, commando_dict)
+
+
+def do_cacherune(plugin, peer_id, runestr):
+    if not plugin.have_datastore:
+        return {'error': 'No datastore available: try datastore.py?'}
+
+    if runestr is None:
+        return {'error': 'No rune set?'}
+
+    rune, whynot = is_rune_valid(plugin, runestr)
+    if not rune:
+        return {'error': whynot}
+
+    plugin.peer_runes[peer_id] = runestr
+    save_peer_runes(plugin, plugin.peer_runes)
+    return {'result': {'rune': runestr}}
+
+
+def try_command(plugin, peer_id, idnum, method, params, runestr):
+    """Run an arbitrary command and message back the result"""
+    # You can always set your rune, even if *that rune* wouldn't
+    # allow it!
+    if method == 'commando-cacherune':
+        res = do_cacherune(plugin, peer_id, runestr)
+    else:
+        ok, failstr = check_rune(plugin, peer_id, runestr, method, params)
+        if not ok:
+            res = {'error': 'Not authorized: ' + failstr}
+        else:
+            try:
+                res = {'result': plugin.rpc.call(method, params)}
+            except RpcError as e:
+                res = {'error': e.error}
 
     send_result(plugin, peer_id, idnum, res)
-
-
-def exec_read_command(plugin, peer_id, idnum, method, params):
-    """Run a list or get command and message back the result"""
-    if method.startswith('list') or method.startswith('get'):
-        exec_command(plugin, peer_id, idnum, method, params)
-    else:
-        send_result(plugin, peer_id, idnum, {'error': "Not permitted"})
 
 
 @plugin.hook('custommsg')
@@ -83,10 +160,8 @@ def on_custommsg(peer_id, payload, plugin, **kwargs):
     data = pbytes[10:]
 
     if mtype == COMMANDO_CMD:
-        if peer_id in plugin.writers:
-            exec_command(plugin, peer_id, idnum, *split_cmd(data))
-        elif peer_id in plugin.readers:
-            exec_read_command(plugin, peer_id, idnum, *split_cmd(data))
+        method, params, runestr = split_cmd(data)
+        try_command(plugin, peer_id, idnum, method, params, runestr)
     elif mtype == COMMANDO_REPLY_CONTINUES:
         if idnum in plugin.reqs:
             plugin.reqs[idnum].buf += data
@@ -114,12 +189,15 @@ def on_custommsg(peer_id, payload, plugin, **kwargs):
 
 
 @plugin.async_method("commando")
-def commando(plugin, request, peer_id, method, params=None):
+def commando(plugin, request, peer_id, method, params=None, rune=None):
     """Send a command to node_id, and wait for a response"""
     res = {'method': method}
     if params:
         res['params'] = params
+    if rune:
+        res['rune'] = rune
 
+    print("Trying command {}".format(res))
     while True:
         idnum = random.randint(0, 2**64)
         if idnum not in plugin.reqs:
@@ -129,11 +207,80 @@ def commando(plugin, request, peer_id, method, params=None):
     send_msg(plugin, peer_id, COMMANDO_CMD, idnum, json.dumps(res))
 
 
+@plugin.method("commando-cacherune")
+def commando_cacherune(plugin, rune):
+    """Sets the rune given to the persistent rune for this peer_id"""
+    # This is intercepted by commando runner, above.
+    raise RpcError('commando-cacherune', {},
+                   'Must be called as a remote commando call')
+
+
+def add_reader_restrictions(rune: runes.Rune) -> str:
+    """Let them execute list or get, but not getsharesecret!"""
+    # Allow list*, get* or summary.
+    rune.add_restriction(runes.Restriction.from_str('method^list'
+                                                    '|method^get'
+                                                    '|method=summary'))
+    # But not getsharesecret!
+    rune.add_restriction(runes.Restriction.from_str('method/getsharedsecret'))
+    return rune.to_base64()
+
+
+def save_peer_runes(plugin, peer_runes) -> None:
+    assert plugin.have_datastore
+    string = '\n'.join(['{}={}'.format(p, r) for p, r in peer_runes.items()])
+    plugin.rpc.datastore(key='commando-peer_runes',
+                         string=string,
+                         mode='create-or-replace')
+
+
+def load_peer_runes(plugin) -> Dict[str, str]:
+    if not plugin.have_datastore:
+        return {}
+
+    arr = plugin.rpc.listdatastore(key='commando-peer_runes')['datastore']
+    if arr == []:
+        return {}
+    peer_runes = {}
+    vals = bytes.fromhex(arr[0]['hex']).split(b'\n')
+    for p, r in [v.decode().split('=', maxsplit=1) for v in vals]:
+        peer_runes[p] = r
+    return peer_runes
+
+
+@plugin.method("commando-rune")
+def commando_rune(plugin, rune=None, restrictions=[]):
+    """Create a rune, (or derive from {rune}) with the given
+{restrictions} array (or string), or 'readonly'"""
+    if not plugin.have_datastore:
+        raise RpcError('commando-rune', {},
+                       'No datastore available: try datastore.py?')
+    if rune is None:
+        this_rune = plugin.masterrune.copy()
+    else:
+        this_rune, whynot = is_rune_valid(plugin, rune)
+        if this_rune is None:
+            raise RpcError('commando-rune', {'rune': rune}, whynot)
+
+    print("restrictions = {}".format(restrictions))
+    if restrictions == 'readonly':
+        add_reader_restrictions(this_rune)
+    elif isinstance(restrictions, str):
+        this_rune.add_restriction(runes.Restriction.from_str(restrictions))
+    else:
+        for r in restrictions:
+            print("Trying restriction {}".format(r))
+            this_rune.add_restriction(runes.Restriction.from_str(r))
+
+    return {'rune': this_rune.to_base64()}
+
+
 @plugin.init()
 def init(options, configuration, plugin):
+    plugin.reqs = {}
     plugin.writers = options['commando_writer']
     plugin.readers = options['commando_reader']
-    plugin.reqs = {}
+    plugin.version = plugin.rpc.getinfo()['version']
 
     # dev-sendcustommsg was renamed to sendcustommsg for 0.10.1
     try:
@@ -142,8 +289,40 @@ def init(options, configuration, plugin):
     except RpcError:
         plugin.msgcmd = 'dev-sendcustommsg'
 
-    plugin.log("Initialized with readers {}, writers {}"
-               .format(plugin.readers, plugin.writers))
+    # Unfortunately, on startup it can take a while for
+    # the datastore to be loaded (as it's actually a second plugin,
+    # loaded by the first.
+    end = time.time() + 10
+    secret = None
+    while time.time() < end:
+        try:
+            print("Trying listdatastore...")
+            secret = plugin.rpc.listdatastore('commando-secret')['datastore']
+        except RpcError:
+            time.sleep(1)
+        else:
+            break
+
+    if secret is None:
+        # Use a throwaway secret
+        secret = secrets.token_bytes()
+        plugin.have_datastore = False
+        plugin.peer_runes = {}
+        plugin.log("Initialized without rune support"
+                   " (needs datastore.py plugin)",
+                   level="info")
+    else:
+        plugin.have_datastore = True
+        if secret == []:
+            plugin.log("Creating initial rune secret", level='unusual')
+            secret = secrets.token_bytes()
+            plugin.rpc.datastore(key='commando-secret', hex=secret.hex())
+        else:
+            secret = bytes.fromhex(secret[0]['hex'])
+        plugin.log("Initialized with rune support", level="info")
+
+    plugin.masterrune = runes.MasterRune(secret)
+    plugin.peer_runes = load_peer_runes(plugin)
 
 
 plugin.add_option('commando_writer',
@@ -151,7 +330,7 @@ plugin.add_option('commando_writer',
                   default=[],
                   multi=True)
 plugin.add_option('commando_reader',
-                  description="What nodeid can do list/get commands?",
+                  description="What nodeid can do list/get/summary commands?",
                   default=[],
                   multi=True)
 plugin.run()
