@@ -84,7 +84,6 @@ def is_rune_valid(plugin, runestr) -> Tuple[Optional[runes.Rune], str]:
 
 def check_rune(plugin, node_id, runestr, command, params) -> Tuple[bool, str]:
     """If we have a runestr, check it's valid and conditions met"""
-    print('rune = {}'.format(runestr))
     # If they don't specify a rune, we use any previous for this peer
     if runestr is None:
         runestr = plugin.peer_runes.get(node_id)
@@ -207,7 +206,6 @@ def commando(plugin, request, peer_id, method, params=None, rune=None):
     if rune:
         res['rune'] = rune
 
-    print("Trying command {}".format(res))
     while True:
         idnum = random.randint(0, 2**64)
         if idnum not in plugin.reqs:
@@ -272,14 +270,12 @@ def commando_rune(plugin, rune=None, restrictions=[]):
         if this_rune is None:
             raise RpcError('commando-rune', {'rune': rune}, whynot)
 
-    print("restrictions = {}".format(restrictions))
     if restrictions == 'readonly':
         add_reader_restrictions(this_rune)
     elif isinstance(restrictions, str):
         this_rune.add_restriction(runes.Restriction.from_str(restrictions))
     else:
         for r in restrictions:
-            print("Trying restriction {}".format(r))
             this_rune.add_restriction(runes.Restriction.from_str(r))
 
     return {'rune': this_rune.to_base64()}
@@ -306,7 +302,6 @@ def init(options, configuration, plugin):
     secret = None
     while time.time() < end:
         try:
-            print("Trying listdatastore...")
             secret = plugin.rpc.listdatastore('commando-secret')['datastore']
         except RpcError:
             time.sleep(1)
