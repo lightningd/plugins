@@ -231,6 +231,8 @@ def add_reader_restrictions(rune: runes.Rune) -> str:
                                                     '|method=summary'))
     # But not getsharesecret!
     rune.add_restriction(runes.Restriction.from_str('method/getsharedsecret'))
+    # And not listdatastore!
+    rune.add_restriction(runes.Restriction.from_str('method/listdatastore'))
     return rune.to_base64()
 
 
