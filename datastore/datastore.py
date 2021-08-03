@@ -2,6 +2,7 @@
 from pyln.client import Plugin, RpcError
 import shelve
 import os
+from collections import namedtuple
 
 
 plugin = Plugin()
@@ -10,12 +11,12 @@ plugin = Plugin()
 def unload_store(plugin):
     """When we have a real store, we transfer our contents into it"""
     try:
-        datastore = shelve.open('datastore.dat', 'r')
+        datastore = shelve.open('datastore_v1.dat', 'r')
     except:
         return
 
-    plugin.log("Emptying store into main store!", level='unusual')
-    for k, d in datastore.items():
+    plugin.log("Emptying store into main store (resetting generations!)", level='unusual')
+    for k, (g, d) in datastore.items():
         try:
             plugin.rpc.datastore(k, d.hex())
         except RpcError as e:
@@ -23,7 +24,7 @@ def unload_store(plugin):
                        level='broken')
     datastore.close()
     plugin.log("Erasing our store", level='unusual')
-    os.unlink('datastore.dat')
+    os.unlink('datastore_v1.dat')
 
 
 @plugin.init()
