@@ -4,6 +4,7 @@ from bech32 import bech32_decode, CHARSET, convertbits
 from lib_autopilot import Autopilot, Strategy
 from pyln.client import LightningRpc, Plugin, RpcError
 import random
+import threading
 import math
 import networkx as nx
 import dns.resolver
@@ -126,8 +127,17 @@ def init(configuration, options, plugin):
     plugin.num_channels = int(options['autopilot-num-channels'])
     plugin.percent = int(options['autopilot-percent'])
     plugin.min_capacity_sat = int(options['autopilot-min-channel-size-msat']) / 1000
+    plugin.initialized = threading.Event()
+    plugin.autopilot = None
+    print('Initialized autopilot function')
 
-    plugin.autopilot = CLightning_autopilot(plugin.rpc)
+    def initialize_autopilot():
+        plugin.autopilot = CLightning_autopilot(plugin.rpc)
+        plugin.initialized.set()
+
+    # Load the autopilot in the background and have it notify
+    # dependents once we're finished.
+    threading.Thread(target=initialize_autopilot, daemon=True).start()
 
 
 @plugin.method('autopilot-run-once')
@@ -161,6 +171,7 @@ def run_once(plugin, dryrun=False):
 
     print("I'd like to open {} new channels with {} satoshis each".format(num_channels, channel_capacity))
 
+    plugin.initialized.wait()
     candidates = plugin.autopilot.find_candidates(
         num_channels,
         strategy=Strategy.DIVERSE,
