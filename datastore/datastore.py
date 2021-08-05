@@ -2,7 +2,6 @@
 from pyln.client import Plugin, RpcError
 import shelve
 import os
-from collections import namedtuple
 
 
 plugin = Plugin()
@@ -16,9 +15,9 @@ def unload_store(plugin):
         return
 
     plugin.log("Emptying store into main store (resetting generations!)", level='unusual')
-    for k, (g, d) in datastore.items():
+    for k, (g, data) in datastore.items():
         try:
-            plugin.rpc.datastore(k, d.hex())
+            plugin.rpc.datastore(key=[k], hex=d.hex())
         except RpcError as e:
             plugin.log("Failed to put {} into store: {}".format(k, e),
                        level='broken')

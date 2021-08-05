@@ -6,6 +6,7 @@ from pyln.client import Plugin, RpcException
 from collections import namedtuple
 import os
 import shelve
+from typing import Optional, Sequence, List, Union
 
 # Error codes
 DATASTORE_DEL_DOES_NOT_EXIST = 1200
@@ -13,23 +14,48 @@ DATASTORE_DEL_WRONG_GENERATION = 1201
 DATASTORE_UPDATE_ALREADY_EXISTS = 1202
 DATASTORE_UPDATE_DOES_NOT_EXIST = 1203
 DATASTORE_UPDATE_WRONG_GENERATION = 1204
+DATASTORE_UPDATE_HAS_CHILDREN = 1205
+DATASTORE_UPDATE_NO_CHILDREN = 1206
 
 plugin = Plugin()
 Entry = namedtuple('Entry', ['generation', 'data'])
 
-def datastore_entry(key, entry: Entry):
+
+# A singleton to most commands turns into a [].
+def normalize_key(key: Union[Sequence[str], str]) -> List[str]:
+    if not isinstance(key, list) and not isinstance(key, tuple):
+        key = [key]
+    return key
+
+# We turn list into nul-separated hexbytes for storage
+def key_to_hex(key: Sequence[str]) -> str:
+    return b'\0'.join([bytes(k, encoding='utf8') for k in key]).hex()
+
+
+def hex_to_key(hexstr: str) -> List[str]:
+    return [b.decode() for b in bytes.fromhex(hexstr).split(b'\0')]
+
+
+def datastore_entry(key: Sequence[str], entry: Optional[Entry]):
     """Return a dict representing the entry"""
 
-    # Entry may be a simple tuple; convert
-    entry = Entry(*entry)
-    ret = {'key': key, 'generation': entry.generation, 'hex': entry.data.hex()}
+    if not isinstance(key, list) and not isinstance(key, tuple):
+        key = [key]
 
-    # FFS, Python3 seems happy with \0 in UTF-8.
-    if 0 not in entry.data:
-        try:
-            ret['string'] = entry.data.decode('utf8')
-        except UnicodeDecodeError:
-            pass
+    ret = {'key': key}
+
+    if entry is not None:
+        # Entry may be a simple tuple; convert
+        entry = Entry(*entry)
+        ret['generation'] = entry.generation
+        ret['hex'] = entry.data.hex()
+
+        # FFS, Python3 seems happy with \0 in UTF-8.
+        if 0 not in entry.data:
+            try:
+                ret['string'] = entry.data.decode('utf8')
+            except UnicodeDecodeError:
+                pass
     return ret
 
 
@@ -38,6 +64,8 @@ def datastore(plugin, key, string=None, hex=None, mode="must-create", generation
     """Add/modify a {key} and {hex}/{string} data to the data store,
 optionally insisting it be {generation}"""
 
+    key = normalize_key(key)
+    khex = key_to_hex(key)
     if string is not None:
         if hex is not None:
             raise RpcException("Cannot specify both string or hex")
@@ -48,11 +76,13 @@ optionally insisting it be {generation}"""
         data = bytes.fromhex(hex)
 
     if mode == "must-create":
-        if key in plugin.datastore:
-            raise RpcException("already exists", DATASTORE_UPDATE_ALREADY_EXISTS)
+        if khex in plugin.datastore:
+            raise RpcException("already exists",
+                               DATASTORE_UPDATE_ALREADY_EXISTS)
     elif mode == "must-replace":
-        if key not in plugin.datastore:
-            raise RpcException("does not exist", DATASTORE_UPDATE_DOES_NOT_EXIST)
+        if khex not in plugin.datastore:
+            raise RpcException("does not exist",
+                               DATASTORE_UPDATE_DOES_NOT_EXIST)
     elif mode == "create-or-replace":
         if generation is not None:
             raise RpcException("generation only valid with"
@@ -62,57 +92,88 @@ optionally insisting it be {generation}"""
         if generation is not None:
             raise RpcException("generation only valid with"
                                " must-create/must-replace")
-        if key not in plugin.datastore:
-            raise RpcException("does not exist", DATASTORE_UPDATE_DOES_NOT_EXIST)
-        data = plugin.datastore[key].data + data
+        if khex not in plugin.datastore:
+            raise RpcException("does not exist",
+                               DATASTORE_UPDATE_DOES_NOT_EXIST)
+        data = plugin.datastore[khex].data + data
     elif mode == "create-or-append":
         if generation is not None:
             raise RpcException("generation only valid with"
                                " must-create/must-replace")
-        data = plugin.datastore.get(key, Entry(0, bytes())).data + data
+        data = plugin.datastore.get(khex, Entry(0, bytes())).data + data
     else:
         raise RpcException("invalid mode")
 
-    if key in plugin.datastore:
-        entry = plugin.datastore[key]
+    # Make sure parent doesn't exist
+    parent = [key[0]]
+    for i in range(1, len(key)):
+        if key_to_hex(parent) in plugin.datastore:
+            raise RpcException("Parent key [{}] exists".format(','.join(parent)),
+                               DATASTORE_UPDATE_NO_CHILDREN)
+        parent += [key[i]]
+
+    if khex in plugin.datastore:
+        entry = plugin.datastore[khex]
         if generation is not None:
             if entry.generation != generation:
                 raise RpcException("generation is different",
                                    DATASTORE_UPDATE_WRONG_GENERATION)
         gen = entry.generation + 1
     else:
+        # Make sure child doesn't exist (grossly inefficient)
+        if any([hex_to_key(k)[:len(key)] == key for k in plugin.datastore]):
+            raise RpcException("Key has children",
+                               DATASTORE_UPDATE_HAS_CHILDREN)
         gen = 0
 
-    plugin.datastore[key] = Entry(gen, data)
-    return datastore_entry(key, plugin.datastore[key])
+    plugin.datastore[khex] = Entry(gen, data)
+    return datastore_entry(key, plugin.datastore[khex])
 
 
 @plugin.method("deldatastore")
 def deldatastore(plugin, key, generation=None):
     """Remove a {key} from the data store"""
 
-    if not key in plugin.datastore:
+    key = normalize_key(key)
+    khex = key_to_hex(key)
+
+    if khex not in plugin.datastore:
         raise RpcException("does not exist", DATASTORE_DEL_DOES_NOT_EXIST)
 
-    entry = plugin.datastore[key]
+    entry = plugin.datastore[khex]
     if generation is not None and entry.generation != generation:
         raise RpcException("generation is different",
                            DATASTORE_DEL_WRONG_GENERATION)
 
     ret = datastore_entry(key, entry)
-    del plugin.datastore[key]
+    del plugin.datastore[khex]
     return ret
 
 
 @plugin.method("listdatastore")
-def listdatastore(plugin, key=None):
+def listdatastore(plugin, key=[]):
     """List datastore entries"""
-    if key is None:
-        return {'datastore': [datastore_entry(k, e)
-                              for k, e in plugin.datastore.items()]}
-    if key in plugin.datastore:
-        return {'datastore': [datastore_entry(key, plugin.datastore[key])]}
-    return {'datastore': []}
+
+    key = normalize_key(key)
+    ret = []
+    prev = None
+    for khex, e in sorted(plugin.datastore.items()):
+        k = hex_to_key(khex)
+        print("... {}".format(k))
+        if k[:len(key)] != key:
+            print("{} not equal".format(k[:len(key)]))
+            continue
+
+        # Don't print sub-children
+        if len(k) > len(key) + 1:
+            print("too long")
+            if prev is None or k[:len(key)+1] != prev:
+                prev = k[:len(key)+1]
+                ret += [datastore_entry(prev, None)]
+        else:
+            ret += [datastore_entry(k, e)]
+
+    return {'datastore': ret}
 
 
 def upgrade_store(plugin):
@@ -124,7 +185,7 @@ def upgrade_store(plugin):
     plugin.log("Upgrading store to have generation numbers", level='unusual')
     datastore = shelve.open('datastore_v1.dat', 'c')
     for k, d in oldstore.items():
-        datastore[k] = Entry(0, d)
+        datastore[key_to_hex([k])] = Entry(0, d)
     oldstore.close()
     datastore.close()
     os.unlink('datastore.dat')
