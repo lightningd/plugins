@@ -153,6 +153,7 @@ class FileBackend(Backend):
 
             if change.transaction is not None:
                 self._restore_transaction(change.transaction)
+        self.db.commit()
 
         # If this assertion fails we are in a degenerate state: we
         # have less than two changes in the backup (starting
