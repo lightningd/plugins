@@ -6,18 +6,18 @@ from typing import Iterator
 import sqlite3
 from tqdm import tqdm
 
-# A change that was proposed by c-lightning that needs saving to the
-# backup. `version` is the database version before the transaction was
-# applied. The optional snapshot reqpresents a complete copy of the database,
-# as it was before applying the `transaction`. This is used by the plugin from
-# time to time to allow the backend to compress the changelog and forms a new
-# basis for the backup.
+# A 'transaction' that was proposed by c-lightning and that needs saving to the
+# backup. `version` is the `data_version` of the database **after** `transaction`
+# has been applied. A 'snapshot' represents a complete copy of the database.
+# This is used by the plugin from time to time to allow the backend to compress
+# the changelog and forms a new basis for the backup.
+# If `Change` contains a snapshot and a transaction, they apply in that order.
 Change = namedtuple('Change', ['version', 'snapshot', 'transaction'])
 
 
 class Backend(object):
     def __init__(self, destination: str):
-        """Read the metadata from the destination and prepare any necesary resources.
+        """Read the metadata from the destination and prepare any necessary resources.
 
         After this call the following members must be initialized:
 
@@ -98,7 +98,6 @@ class Backend(object):
         for q in tx:
             q = self._rewrite_stmt(q)
             cur.execute(q)
-        self.db.commit()
 
     def restore(self, dest: str, remove_existing: bool = False):
         """Restore the backup in this backend to its former glory.
@@ -118,8 +117,9 @@ class Backend(object):
             os.unlink(dest)
 
         self.db = self._db_open(dest)
-        for c in tqdm(self.stream_changes()):
+        for c in tqdm(self.stream_changes(), total=self.version_count):
             if c.snapshot is not None:
                 self._restore_snapshot(c.snapshot, dest)
             if c.transaction is not None:
                 self._restore_transaction(c.transaction)
+        self.db.commit()
