@@ -34,6 +34,9 @@ def check_first_write(plugin, data_version):
        c-lightning was running without the plugin at some point -> crash!
      - c-lighning is more than 1 write behind: c-lightning had a lobotomy, or
        was restored from an old backup -> crash!
+
+    Note that `data_version` belongs to the not-yet-committed transaction and is
+    one ahead of the version committed-to in c-lightning's database.
     """
     backend = plugin.backend
 

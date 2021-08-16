@@ -16,7 +16,7 @@ class FileBackend(Backend):
         self.url = urlparse(self.destination)
 
         if os.path.exists(self.url.path) and create:
-            raise ValueError("Attempted to create a FileBackend, but file already exists.")
+            raise ValueError("Attempted to create a FileBackend, but file {} already exists.".format(self.url.path))
         if not os.path.exists(self.url.path) and not create:
             raise ValueError("Attempted to open a FileBackend but file doesn't already exists, use `backup-cli init` to initialize it first.")
         if create:
@@ -164,14 +164,11 @@ class FileBackend(Backend):
         # Remember `change`, it's the rewindable change we need to
         # stash on top of the new snapshot.
         clone = FileBackend(clonepath, create=True)
-        clone.offsets = [512, 0]
 
         # We are about to add the snapshot n-1 on top of n-2 (init),
         # followed by the last change for n on top of
         # n-1. prev_version trails that by one.
         clone.version = change.version - 2
-        clone.prev_version = clone.version - 1
-        clone.version_count = 0
         clone.write_metadata()
 
         snapshot = Change(
@@ -179,7 +176,7 @@ class FileBackend(Backend):
             snapshot=open(snapshotpath, 'rb').read(),
             transaction=None
         )
-        print("Adding intial snapshot with {} bytes for version {}".format(
+        print("Adding initial snapshot with {} bytes for version {}".format(
             len(snapshot.snapshot),
             snapshot.version
         ))
@@ -187,6 +184,7 @@ class FileBackend(Backend):
 
         assert clone.version == change.version - 1
         assert clone.prev_version == change.version - 2
+        print("Adding transaction for version {}".format(change.version))
         clone.add_change(change)
 
         assert self.version == clone.version
