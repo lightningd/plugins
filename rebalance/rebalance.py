@@ -684,6 +684,31 @@ def health_score(liquidity):
     return score * coefficient
 
 
+def get_avg_forward_fees(plugin: Plugin, intervals):
+    now = time.time()
+    max_interval = max(intervals)
+    total = [0] * len(intervals)
+    fees = [0] * len(intervals)
+    res = [0] * len(intervals)
+    all_forwards = list(filter(lambda fwd: fwd.get("status") == "settled"
+                               and fwd.get("resolved_time", 0)
+                               + max_interval * 60 * 60 * 24 > now,
+                               plugin.rpc.listforwards()["forwards"]))
+
+    # build intermediate result per interval
+    for fwd in all_forwards:
+        for idx, i in enumerate(intervals):
+            if now > fwd["resolved_time"] + i * 60 * 60 * 24:
+                continue
+            total[idx] += fwd["out_msat"]
+            fees[idx] += fwd["fee_msat"]
+
+    # return average intermediate
+    for idx, i in enumerate(res):
+        res[idx] = fees[idx] / total[idx] * 10**6
+    return res
+
+
 @plugin.method("rebalancereport")
 def rebalancereport(plugin: Plugin):
     """Show information about rebalance
@@ -727,6 +752,12 @@ def rebalancereport(plugin: Plugin):
         res["average_rebalance_fee_ppm"] = round(total_fee / total_amount * 10**6, 2)
     else:
         res["average_rebalance_fee_ppm"] = 0
+
+    avg_forward_fees = get_avg_forward_fees(plugin, [1, 7, 30])
+    res['average_forward_fee_ppm_1d'] = avg_forward_fees[0]
+    res['average_forward_fee_ppm_7d'] = avg_forward_fees[1]
+    res['average_forward_fee_ppm_30d'] = avg_forward_fees[2]
+
     return res
 
 
