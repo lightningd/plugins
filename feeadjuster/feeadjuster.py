@@ -104,9 +104,8 @@ def get_fees_median(plugin: Plugin, scid: str):
                         and ch['source'] != plugin.our_node_id]
     if len(channels_to_peer) == 0:
         return None
-    fees_base = [ch['base_fee_millisatoshi'] for ch in channels_to_peer]
     fees_ppm = [ch['fee_per_millionth'] for ch in channels_to_peer]
-    return {"base": statistics.median(fees_base), "ppm": statistics.median(fees_ppm)}
+    return {"base": plugin.adj_basefee, "ppm": statistics.median(fees_ppm)}
 
 
 def setchannelfee(plugin: Plugin, scid: str, base: int, ppm: int):
@@ -150,7 +149,7 @@ def maybe_adjust_fees(plugin: Plugin, scids: list):
         base = plugin.adj_basefee
         ppm = plugin.adj_ppmfee
 
-        # select ideal base fees values per channel
+        # select ideal values per channel
         fees = plugin.fee_strategy(plugin, scid)
         if fees is not None:
             base = fees['base']
@@ -170,7 +169,7 @@ def maybe_adjust_fees(plugin: Plugin, scids: list):
         percentage = get_adjusted_percentage(plugin, scid)
         assert 0 <= percentage and percentage <= 1
         ratio = plugin.get_ratio(percentage)
-        if setchannelfee(plugin, scid, int(base * ratio), int(ppm * ratio)):
+        if setchannelfee(plugin, scid, int(base), int(ppm * ratio)):
             plugin.log(f"Adjusted fees of {scid} with a ratio of {ratio}")
             plugin.adj_balances[scid]["last_liquidity"] = our
             channels_adjusted += 1
