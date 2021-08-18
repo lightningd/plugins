@@ -52,7 +52,8 @@ to work: `chmod 0400 hsm_secret`
 
 In order to tell `lightningd` to use the plugin you either need to tell it
 via the startup option `--plugin /path/to/backup.py` or by placing it (or a
-symlink to it) in the lightning plugin directory (`~/.lightning/plugins`).
+symlink to it) in the lightning plugin directory (`~/.lightning/plugins`) or
+by adding it to the `lightningd` configuration (`important-plugin=/path/to/backup.py`).
 
 On daemon startup the plugin will check the integrity of the existing backup
 and complain if there is a version mismatch.
