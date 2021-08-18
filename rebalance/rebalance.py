@@ -705,7 +705,10 @@ def get_avg_forward_fees(plugin: Plugin, intervals):
 
     # return average intermediate
     for idx, i in enumerate(res):
-        res[idx] = fees[idx] / total[idx] * 10**6
+        if int(total[idx]) > 0:
+            res[idx] = fees[idx] / total[idx] * 10**6
+        else:
+            res[idx] = 0
     return res
 
 
