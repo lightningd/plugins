@@ -27,7 +27,8 @@ def normalize_key(key: Union[Sequence[str], str]) -> List[str]:
         key = [key]
     return key
 
-# We turn list into nul-separated hexbytes for storage
+
+# We turn list into nul-separated hexbytes for storage (shelve needs all keys to be strings)
 def key_to_hex(key: Sequence[str]) -> str:
     return b'\0'.join([bytes(k, encoding='utf8') for k in key]).hex()
 
@@ -39,7 +40,7 @@ def hex_to_key(hexstr: str) -> List[str]:
 def datastore_entry(key: Sequence[str], entry: Optional[Entry]):
     """Return a dict representing the entry"""
 
-    if not isinstance(key, list) and not isinstance(key, tuple):
+    if isinstance(key, str):
         key = [key]
 
     ret = {'key': key}
@@ -68,7 +69,7 @@ optionally insisting it be {generation}"""
     khex = key_to_hex(key)
     if string is not None:
         if hex is not None:
-            raise RpcException("Cannot specify both string or hex")
+            raise RpcException("Cannot specify both string and hex")
         data = bytes(string, encoding="utf8")
     elif hex is None:
         raise RpcException("Must specify string or hex")
@@ -159,14 +160,11 @@ def listdatastore(plugin, key=[]):
     prev = None
     for khex, e in sorted(plugin.datastore.items()):
         k = hex_to_key(khex)
-        print("... {}".format(k))
         if k[:len(key)] != key:
-            print("{} not equal".format(k[:len(key)]))
             continue
 
         # Don't print sub-children
         if len(k) > len(key) + 1:
-            print("too long")
             if prev is None or k[:len(key)+1] != prev:
                 prev = k[:len(key)+1]
                 ret += [datastore_entry(prev, None)]
