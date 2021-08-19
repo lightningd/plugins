@@ -17,7 +17,7 @@ def unload_store(plugin):
     plugin.log("Emptying store into main store (resetting generations!)", level='unusual')
     for k, (g, data) in datastore.items():
         try:
-            plugin.rpc.datastore(key=[k], hex=d.hex())
+            plugin.rpc.datastore(key=[k], hex=data.hex())
         except RpcError as e:
             plugin.log("Failed to put {} into store: {}".format(k, e),
                        level='broken')
