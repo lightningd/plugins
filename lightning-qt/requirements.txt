@@ -1,0 +1,2 @@
+PyQt5==5.12.2
+pyln-client>=0.8.2

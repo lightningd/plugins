@@ -183,7 +183,7 @@ Python plugins developers must ensure their plugin to work with all Python versi
 [rebalance]: https://github.com/lightningd/plugins/tree/master/rebalance
 [graphql]: https://github.com/nettijoe96/c-lightning-graphql
 [graphql-spec]: https://graphql.org/
-[lightning-qt]: https://github.com/darosior/pylightning-qt
+[lightning-qt]: https://github.com/lightningd/plugins/tree/master/lightning-qt
 [cpp-api]: https://github.com/darosior/lightningcpp
 [js-api]: https://github.com/lightningd/clightningjs
 [monitor]: https://github.com/renepickhardt/plugins/tree/master/monitor
