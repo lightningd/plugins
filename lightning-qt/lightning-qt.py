@@ -15,6 +15,7 @@ from PyQt5.QtWidgets import QApplication, QWidget, QMessageBox
 from mainWindow import MainWindow
 from utils import timeout_bool
 
+
 class HackedLightningRpc(LightningRpc):
     """Dark side Lightning Rpc
 
@@ -29,6 +30,7 @@ class HackedLightningRpc(LightningRpc):
     the `call` method which raises exceptions to quiet the RPC exception and open a dialog
     for the user to understand what's happening. I chose the second method.
     """
+
     def call(self, method, payload=None):
         """Original call method with Qt-style exception handling"""
         try:
@@ -36,9 +38,11 @@ class HackedLightningRpc(LightningRpc):
         except RpcError as e:
             QMessageBox.warning(None, "RPC error", str(e))
             pass
-        return False # Rpc call failed
+        return False  # Rpc call failed
+
 
 plugin = Plugin()
+
 
 @plugin.init()
 def init(options, configuration, plugin):
@@ -59,39 +63,48 @@ def gui(plugin):
 
 
 if SUBSCRIBE_NOTIF:
+
     @plugin.subscribe("connect")
     def peer_connected(plugin, id, address):
-        n = notify2.Notification("C-lightning",
-                                 "Peer with id {} and ip {} just connected to you"
-                                 .format(id, address))
+        n = notify2.Notification(
+            "C-lightning",
+            "Peer with id {} and ip {} just connected to you".format(id, address),
+        )
         n.show()
 
     @plugin.subscribe("disconnect")
     def peer_disconnected(plugin, id):
-        n = notify2.Notification("C-lightning",
-                                 "Peer with id {} just disconnected from you"
-                                 .format(id))
+        n = notify2.Notification(
+            "C-lightning", "Peer with id {} just disconnected from you".format(id)
+        )
         n.show()
 
     @plugin.subscribe("invoice_payment")
     def invoice_payment(plugin, invoice_payment):
-        n = notify2.Notification("C-lightning",
-                                 "Invoice with label {} was just paid."
-                                 "Amount: {}"
-                                 "Preimage: {}"
-                                 .format(invoice_payment["label"],
-                                        invoice_payment["preimage"],
-                                        invoice_payment["msat"]))
+        n = notify2.Notification(
+            "C-lightning",
+            "Invoice with label {} was just paid."
+            "Amount: {}"
+            "Preimage: {}".format(
+                invoice_payment["label"],
+                invoice_payment["preimage"],
+                invoice_payment["msat"],
+            ),
+        )
         n.show()
 
     @plugin.subscribe("channel_opened")
     def channel_opened(plugin, channel_opened):
-        n = notify2.Notification("C-lightning",
-                                 "A channel was opened to you by {}, with an amount"
-                                 " of {} and the following funding transaction id:"
-                                 " {}.".format(channel_opened["id"],
-                                            channel_opened["amount"],
-                                            channel_opened["funding_txid"]))
+        n = notify2.Notification(
+            "C-lightning",
+            "A channel was opened to you by {}, with an amount"
+            " of {} and the following funding transaction id:"
+            " {}.".format(
+                channel_opened["id"],
+                channel_opened["amount"],
+                channel_opened["funding_txid"],
+            ),
+        )
         n.show()
 
 
@@ -99,7 +112,9 @@ if sys.stdin.isatty():
     print("Standalone mode")
     if len(sys.argv) == 1:
         print("Using default 'lightning-rpc' socket path")
-        plugin.rpc = HackedLightningRpc(os.path.join(os.path.expanduser("~"), ".lightning", "lightning-rpc"))
+        plugin.rpc = HackedLightningRpc(
+            os.path.join(os.path.expanduser("~"), ".lightning", "lightning-rpc")
+        )
     elif len(sys.argv) == 2:
         path = sys.argv[1].split("=")[1]
         plugin.rpc = HackedLightningRpc(path)
@@ -110,7 +125,7 @@ if sys.stdin.isatty():
         print("usage :")
         # Actually we don't mind the argument's name
         print("    python3 guy.py --socket-path /path/to/lightning-rpc/socket")
-    # Sometimes a forwarded UNIX domain socket might be usable only after some writing
+    #  Sometimes a forwarded UNIX domain socket might be usable only after some writing
     while timeout_bool(2, plugin.rpc.getinfo):
         print(".")
     print(gui(plugin))

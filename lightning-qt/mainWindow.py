@@ -2,7 +2,16 @@ import resources
 
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QIcon
-from PyQt5.QtWidgets import QMainWindow, QWidget, QAction, qApp, QDesktopWidget, QStackedWidget, QInputDialog, QMessageBox
+from PyQt5.QtWidgets import (
+    QMainWindow,
+    QWidget,
+    QAction,
+    qApp,
+    QDesktopWidget,
+    QStackedWidget,
+    QInputDialog,
+    QMessageBox,
+)
 
 from overviewPage import OverviewPage
 from receivePage import ReceivePage
@@ -10,12 +19,14 @@ from sendPage import SendPage
 from channelsPage import ChannelsPage
 from paymentsPage import PaymentsPage
 
+
 class MainWindow(QMainWindow):
     """The main window of our application.
-    
+
     It will contain a toolbar and a QStackedWidget to switch between page.
     :parameter plugin: A reference to the plugin used to access its methods such as the RPC.
     """
+
     def __init__(self, plugin):
         super().__init__()
         self.plugin = plugin
@@ -23,7 +34,7 @@ class MainWindow(QMainWindow):
 
     def createActions(self):
         """Creates the main actions of the page.
-        
+
         Namely the menubar and toolbar actions.
         """
         # MenuBar actions
@@ -37,7 +48,9 @@ class MainWindow(QMainWindow):
         self.restore_action = QAction("&Restore", self)
         self.restore_action.triggered.connect(lambda: self.show())
         self.del_expired_invoices_action = QAction("&Delete expired invoices", self)
-        self.del_expired_invoices_action.triggered.connect(lambda: self.plugin.rpc.delexpiredinvoice())
+        self.del_expired_invoices_action.triggered.connect(
+            lambda: self.plugin.rpc.delexpiredinvoice()
+        )
         self.del_invoice_action = QAction("&Delete a specified unpaid invoice", self)
         self.del_invoice_action.triggered.connect(self.menuDelInvoice)
         self.get_address_p2sh_action = QAction("&Get a P2SH-embedded segwit address")
@@ -45,11 +58,15 @@ class MainWindow(QMainWindow):
         self.get_address_segwit_action = QAction("&Get a native segwit address")
         self.get_address_segwit_action.triggered.connect(self.getAddressBech)
         # ToolBar actions
-        self.show_overview_action = QAction(QIcon(":/icons/overview"), "&Overview", self)
+        self.show_overview_action = QAction(
+            QIcon(":/icons/overview"), "&Overview", self
+        )
         self.show_overview_action.setToolTip("Show overview page")
         self.show_overview_action.setShortcut("Alt+1")
         self.show_overview_action.triggered.connect(self.showOverview)
-        self.show_receivepay_action = QAction(QIcon(":/icons/receive"), "&Receive Payment", self)
+        self.show_receivepay_action = QAction(
+            QIcon(":/icons/receive"), "&Receive Payment", self
+        )
         self.show_receivepay_action.setToolTip("Show receive payment page")
         self.show_receivepay_action.setShortcut("Alt+2")
         self.show_receivepay_action.triggered.connect(self.showReceive)
@@ -57,7 +74,9 @@ class MainWindow(QMainWindow):
         self.show_sendpay_action.setToolTip("Show send payment page")
         self.show_sendpay_action.setShortcut("Alt+3")
         self.show_sendpay_action.triggered.connect(self.showSend)
-        self.show_managechan_action = QAction(QIcon(":/icons/lightning"), "&Manage channels", self)
+        self.show_managechan_action = QAction(
+            QIcon(":/icons/lightning"), "&Manage channels", self
+        )
         self.show_managechan_action.setToolTip("Show channel management page")
         self.show_managechan_action.setShortcut("Alt+4")
         self.show_managechan_action.triggered.connect(self.showChannelsPage)
@@ -83,7 +102,7 @@ class MainWindow(QMainWindow):
 
     def createPages(self):
         """Creates each of our pages, which are QWidget-inherited objects
-        
+
         We pass a reference to the plugin to pages, so that they can interact
         with it (for now it's mainly for RPC).
         """
@@ -120,13 +139,13 @@ class MainWindow(QMainWindow):
         address = self.plugin.rpc.newaddr(addresstype="p2sh-segwit")
         if address:
             QMessageBox.information(self, "Bitcoin address", address["p2sh-segwit"])
-    
+
     def getAddressBech(self):
         """Shows a message box containing a native segwit address (bech32)"""
         address = self.plugin.rpc.newaddr()
         if address:
             QMessageBox.information(self, "Bitcoin address", address["bech32"])
-    
+
     def initUi(self):
         """Initializes the default parameters for the window (title, position, size)."""
         self.setWindowTitle("lightning-qt")
@@ -140,14 +159,20 @@ class MainWindow(QMainWindow):
         self.createToolbar()
         self.createPageManager()
         self.createPages()
-    
+
     def menuDelInvoice(self):
         """Shows a message which asks for an invoice label and delete this invoice"""
-        label = QInputDialog.getText(self, "Delete an unpaid invoice", "Enter the label of the invoice you want to delete")
+        label = QInputDialog.getText(
+            self,
+            "Delete an unpaid invoice",
+            "Enter the label of the invoice you want to delete",
+        )
         if label[1]:
-            result = self.plugin.rpc.delinvoice(label[0], 'unpaid')
+            result = self.plugin.rpc.delinvoice(label[0], "unpaid")
             if result:
-                QMessageBox.information(self, "Delete an unpaid invoice", "Succesfully deleted invoice")
+                QMessageBox.information(
+                    self, "Delete an unpaid invoice", "Succesfully deleted invoice"
+                )
 
     def showChannelsPage(self):
         """Set channelsPage as the current widget"""

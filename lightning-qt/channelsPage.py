@@ -4,8 +4,10 @@ from PyQt5.QtWidgets import QWidget, QLabel
 from forms.ui_channelsPage import Ui_ChannelsPage
 from utils import timeout_bool
 
+
 class ChannelsPage(QWidget, Ui_ChannelsPage):
     """The page to manage LN channels"""
+
     def __init__(self, plugin):
         super().__init__()
         self.setupUi(self)
@@ -35,15 +37,23 @@ class ChannelsPage(QWidget, Ui_ChannelsPage):
         """Close the channel specified by the user"""
         self.labelCloseResult.setText("Sending closing request..")
         self.labelCloseResult.repaint()
-        closing_result = self.plugin.rpc.close(self.lineCloseId.text(),
-                self.checkCloseForce.isChecked(), self.spinCloseTimeout.value())
+        closing_result = self.plugin.rpc.close(
+            self.lineCloseId.text(),
+            self.checkCloseForce.isChecked(),
+            self.spinCloseTimeout.value(),
+        )
         if closing_result:
             if "txid" in closing_result:
-                self.labelCloseResult.setText("{} closed channel at {}".format(
-                    closing_result["type"], closing_result["txid"]))
+                self.labelCloseResult.setText(
+                    "{} closed channel at {}".format(
+                        closing_result["type"], closing_result["txid"]
+                    )
+                )
             else:
-                self.labelCloseResult.setText("Could not close the channel before\
-                        timeout. Channel might still be closed in the future.")
+                self.labelCloseResult.setText(
+                    "Could not close the channel before\
+                        timeout. Channel might still be closed in the future."
+                )
         else:
             self.labelCloseResult.setText("")
 
@@ -54,20 +64,26 @@ class ChannelsPage(QWidget, Ui_ChannelsPage):
         self.labelNewChannelResult.repaint()
         # Condtion for RPC error in slots
         if timeout_bool(2, self.plugin.rpc.connect, peer):
-            peer_id = peer.split('@')[0]
+            peer_id = peer.split("@")[0]
             self.labelNewChannelResult.setText("Funding the channel..")
             self.labelNewChannelResult.repaint()
-            fund_result = self.plugin.rpc.fundchannel(peer_id,
-                    self.spinNewChannelAmount.value(),
-                    announce=not self.checkPrivateChannel.isChecked())
+            fund_result = self.plugin.rpc.fundchannel(
+                peer_id,
+                self.spinNewChannelAmount.value(),
+                announce=not self.checkPrivateChannel.isChecked(),
+            )
             # Condtion for RPC error in slots
             if fund_result:
                 self.labelNewChannelResult.setText(
-                        "Succesfully created the channel.\nFunding tx : {}".format(
-                            str(fund_result["txid"])))
+                    "Succesfully created the channel.\nFunding tx : {}".format(
+                        str(fund_result["txid"])
+                    )
+                )
         else:
-            self.labelNewChannelResult.setText("Could not connect to peer, connection timed out.")
-   
+            self.labelNewChannelResult.setText(
+                "Could not connect to peer, connection timed out."
+            )
+
     def initUi(self):
         """Initialize the UI by connecting actions"""
         self.buttonNewChannel.clicked.connect(self.createChannel)
@@ -88,13 +104,18 @@ class ChannelsPage(QWidget, Ui_ChannelsPage):
                     peer_id = QLabel(channel["peer_id"])
                     peer_id.setTextInteractionFlags(Qt.TextSelectableByMouse)
                     peer_id.setWordWrap(True)
-                    peer_id.setFixedWidth(200) #TODO: Handle this
+                    peer_id.setFixedWidth(200)  # TODO: Handle this
                     self.layoutNodeId.addWidget(peer_id)
                     our_amount = QLabel(str(channel["our_amount_msat"])[:-4])
                     our_amount.setTextInteractionFlags(Qt.TextSelectableByMouse)
                     our_amount.setAlignment(Qt.AlignRight)
                     self.layoutAmount.addWidget(our_amount)
-                    their_amount = QLabel(str((channel["channel_total_sat"] - channel["channel_sat"]) * 1000))
+                    their_amount = QLabel(
+                        str(
+                            (channel["channel_total_sat"] - channel["channel_sat"])
+                            * 1000
+                        )
+                    )
                     their_amount.setTextInteractionFlags(Qt.TextSelectableByMouse)
                     their_amount.setAlignment(Qt.AlignRight)
                     self.layoutIncoming.addWidget(their_amount)
@@ -102,8 +123,12 @@ class ChannelsPage(QWidget, Ui_ChannelsPage):
     def setRoutingFees(self):
         """Set a channel (or global) routing fees"""
         id_ = self.lineSetFeesId.text() or "all"
-        set_result = self.plugin.rpc.setchannelfee(id_, base=self.spinSetFeesBase.value(),
-                ppm=self.spinSetFeesPpm.value())
+        set_result = self.plugin.rpc.setchannelfee(
+            id_, base=self.spinSetFeesBase.value(), ppm=self.spinSetFeesPpm.value()
+        )
         if set_result:
-            self.labelSetFeesResult.setText("Succesfully set fees. Base : {}, ppm : {}".format(
-                set_result["base"], set_result["ppm"]))
+            self.labelSetFeesResult.setText(
+                "Succesfully set fees. Base : {}, ppm : {}".format(
+                    set_result["base"], set_result["ppm"]
+                )
+            )

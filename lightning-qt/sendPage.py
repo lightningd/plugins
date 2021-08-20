@@ -2,8 +2,10 @@ from PyQt5.QtWidgets import QWidget
 
 from forms.ui_sendpage import Ui_SendPage
 
+
 class SendPage(QWidget, Ui_SendPage):
     """The page to decode and/or pay bolt11 invoices"""
+
     def __init__(self, plugin):
         super().__init__()
         self.setupUi(self)
@@ -34,6 +36,12 @@ class SendPage(QWidget, Ui_SendPage):
         # Condition to prevent for RPC errors
         if pay_return:
             if "payment_preimage" in pay_return:
-                self.labelPaymentResult.setText("Succesfully paid invoice. Preimage: {}".format(pay_return["payment_preimage"]))
+                self.labelPaymentResult.setText(
+                    "Succesfully paid invoice. Preimage: {}".format(
+                        pay_return["payment_preimage"]
+                    )
+                )
             else:
-                self.labelPaymentResult.setText("Could not pay invoice. Maybe you should open a channel with the payee")
+                self.labelPaymentResult.setText(
+                    "Could not pay invoice. Maybe you should open a channel with the payee"
+                )
