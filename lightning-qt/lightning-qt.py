@@ -23,7 +23,7 @@ class HackedLightningRpc(LightningRpc):
     thrown in a slot. This behavior cannot be changed (C++ API) nor it can `except`ed.
     It means that if you make a Rpc call which raises an error in a slot (for example,
     randomly, `decodepay` with an user-entered value) it will exit the application
-    without even a traceback : PyQt5.5 we <3 u.
+    without even a traceback.
 
     To avoid this behevior I thought of making hand checks before making a Rpc call in
     a slot (i.e. doing this for each Rpc call since a GUI is event-driven), or override
@@ -108,8 +108,11 @@ if SUBSCRIBE_NOTIF:
         n.show()
 
 
-if sys.stdin.isatty():
+if not sys.stdin.isatty():
+    plugin.run()
+else:
     print("Standalone mode")
+
     if len(sys.argv) == 1:
         print("Using default 'lightning-rpc' socket path")
         plugin.rpc = HackedLightningRpc(
@@ -125,9 +128,10 @@ if sys.stdin.isatty():
         print("usage :")
         # Actually we don't mind the argument's name
         print("    python3 guy.py --socket-path /path/to/lightning-rpc/socket")
-    #  Sometimes a forwarded UNIX domain socket might be usable only after some writing
+        sys.exit(1)
+
+    # Sometimes a forwarded UNIX domain socket might be usable only after some writing
     while timeout_bool(2, plugin.rpc.getinfo):
         print(".")
+
     print(gui(plugin))
-else:
-    plugin.run()
