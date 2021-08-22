@@ -15,9 +15,7 @@ lightning-cli install_plugin lightning-qt
 Otherwise the traditional solution:
 ```
 git clone https://github.com/lightningd/plugins && cd plugins/lightning-qt
-pip3 install -r requirements.txt
-chmod a+x lightning-qt.py
-# And just start lightningd like
+make
 lightningd --plugin=lightning-qt.py
 ```
 
@@ -26,17 +24,14 @@ automatically loaded at startup:
 ```
 git clone https://github.com/lightningd/plugins
 cp -r plugins/lightning-qt ~/.lightning/plugins/lightning-qt
-python3 -m pip install ~/.lightning/plugins/lightning-qt/requirements.txt
-chmod a+x ~/.lightning/plugins/lightning-qt/lightning-qt.py
+make
 lightningd
 ```
 
 Or you can even start it dynamically like (C-lightning v0.7.2 and above):
 ```
 git clone https://github.com/lightningd/plugins && cd plugins/lightning-qt
-pip3 install -r requirements.txt
-chmod a+x lightning-qt.py
-# And just start lightningd like
+make
 lightning-cli plugin start lightning-qt.py
 ```
 
@@ -61,13 +56,6 @@ command line tool (installed with `pip install PyQt5`). If you modify a ui file 
 use [QDesigner](https://doc.qt.io/qt-5/qtdesigner-manual.html)), you can regenerate the Python code like:
 ```
 pyuic5 forms/channelspage.ui -o forms/ui_channelsPage.py
-```
-
-**FIXME: don't commit those huge binary blobs**
-Images are handled in the [qrc](gui.qrc) file : if you modify this resource file (for instance to add an
-image/icon), you can regenerate the Python code with:
-```
-pyrcc5 gui.qrc -o resources.py
 ```
 
 Please also note that PyQt5 has *__a very bad__* way to handle exception in slots: in short you cannot
