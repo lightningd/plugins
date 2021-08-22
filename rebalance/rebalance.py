@@ -780,9 +780,9 @@ def init(options, configuration, plugin):
     plugin.log(f"Plugin rebalance initialized with {plugin.fee_base} base / {plugin.fee_ppm} ppm fee  "
                f"cltv_final:{plugin.cltv_final}  "
                f"maxhops:{plugin.maxhops}  "
-               f"msatfactor:{plugin.msatfactor} "
-               f"erringnodes:{plugin.erringnodes} "
-               f"getroute: {plugin.getroute.__name__}")
+               f"msatfactor:{plugin.msatfactor}  "
+               f"erringnodes:{plugin.erringnodes}  "
+               f"getroute:{plugin.getroute.__name__}  ")
 
 
 plugin.add_option(
