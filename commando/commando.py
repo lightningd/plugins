@@ -128,7 +128,7 @@ def do_cacherune(plugin, peer_id, runestr):
         return {'error': whynot}
 
     plugin.peer_runes[peer_id] = runestr
-    save_peer_runes(plugin, plugin.peer_runes)
+    save_peer_rune(plugin, peer_id, runestr)
     return {'result': {'rune': runestr}}
 
 
@@ -236,11 +236,10 @@ def add_reader_restrictions(rune: runes.Rune) -> str:
     return rune.to_base64()
 
 
-def save_peer_runes(plugin, peer_runes) -> None:
+def save_peer_rune(plugin, peer_id, runestr) -> None:
     assert plugin.have_datastore
-    string = '\n'.join(['{}={}'.format(p, r) for p, r in peer_runes.items()])
-    plugin.rpc.datastore(key='commando-peer_runes',
-                         string=string,
+    plugin.rpc.datastore(key=['commando', 'peer_runes', peer_id],
+                         string=runestr,
                          mode='create-or-replace')
 
 
@@ -248,13 +247,10 @@ def load_peer_runes(plugin) -> Dict[str, str]:
     if not plugin.have_datastore:
         return {}
 
-    arr = plugin.rpc.listdatastore(key='commando-peer_runes')['datastore']
-    if arr == []:
-        return {}
     peer_runes = {}
-    vals = bytes.fromhex(arr[0]['hex']).split(b'\n')
-    for p, r in [v.decode().split('=', maxsplit=1) for v in vals]:
-        peer_runes[p] = r
+    entries = plugin.rpc.listdatastore(key=['commando', 'peer_runes'])
+    for entry in entries['datastore']:
+        peer_runes[entry['key'][2]] = entry['string']
     return peer_runes
 
 
@@ -304,7 +300,7 @@ def init(options, configuration, plugin):
     secret = None
     while time.time() < end:
         try:
-            secret = plugin.rpc.listdatastore('commando-secret')['datastore']
+            secret = plugin.rpc.listdatastore(['commando', 'secret'])['datastore']
         except RpcError:
             time.sleep(1)
         else:
@@ -323,7 +319,7 @@ def init(options, configuration, plugin):
         if secret == []:
             plugin.log("Creating initial rune secret", level='unusual')
             secret = secrets.token_bytes()
-            plugin.rpc.datastore(key='commando-secret', hex=secret.hex())
+            plugin.rpc.datastore(key=['commando', 'secret'], hex=secret.hex())
         else:
             secret = bytes.fromhex(secret[0]['hex'])
         plugin.log("Initialized with rune support", level="info")
