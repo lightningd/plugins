@@ -263,6 +263,7 @@ def commando_rune(plugin, rune=None, restrictions=[]):
                        'No datastore available: try datastore.py?')
     if rune is None:
         this_rune = plugin.masterrune.copy()
+        this_rune.add_restriction(runes.Restriction.unique_id(plugin.rune_counter))
     else:
         this_rune, whynot = is_rune_valid(plugin, rune)
         if this_rune is None:
@@ -275,6 +276,15 @@ def commando_rune(plugin, rune=None, restrictions=[]):
     else:
         for r in restrictions:
             this_rune.add_restriction(runes.Restriction.from_str(r))
+
+    # Now we've succeeded, update rune_counter.
+    if rune is None:
+        plugin.rpc.datastore(key=['commando', 'rune_counter'],
+                             string=str(plugin.rune_counter + 1),
+                             mode='must-replace',
+                             generation=plugin.rune_counter_generation)
+        plugin.rune_counter += 1
+        plugin.rune_counter_generation += 1
 
     return {'rune': this_rune.to_base64()}
 
@@ -320,9 +330,16 @@ def init(options, configuration, plugin):
             plugin.log("Creating initial rune secret", level='unusual')
             secret = secrets.token_bytes()
             plugin.rpc.datastore(key=['commando', 'secret'], hex=secret.hex())
+            plugin.rune_counter = 0
+            plugin.rune_counter_generation = 0
+            plugin.rpc.datastore(key=['commando', 'rune_counter'], string=str(0))
         else:
             secret = bytes.fromhex(secret[0]['hex'])
-        plugin.log("Initialized with rune support", level="info")
+            counter = plugin.rpc.listdatastore(['commando', 'rune_counter'])['datastore'][0]
+            plugin.rune_counter = int(counter['string'])
+            plugin.rune_counter_generation = int(counter['generation'])
+        plugin.log("Initialized with rune support: {} runes so far".format(plugin.rune_counter),
+                   level="info")
 
     plugin.masterrune = runes.MasterRune(secret)
     plugin.peer_runes = load_peer_runes(plugin)
