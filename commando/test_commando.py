@@ -275,7 +275,15 @@ def test_rune_time(node_factory):
                              method='commando-rune',
                              rune=rune,
                              params=[None, 'id={}'.format(l2.info['id'])])
-    assert rune2 == rune2a
+    # r2a ID will be 1 greater than r2 ID
+    r2 = runes.Rune.from_base64(rune2['rune'])
+    r2a = runes.Rune.from_base64(rune2a['rune'])
+    assert len(r2.restrictions) == len(r2a.restrictions)
+    assert r2a.restrictions[0].alternatives == [runes.Alternative(r2.restrictions[0].alternatives[0].field,
+                                                                  r2.restrictions[0].alternatives[0].cond,
+                                                                  str(int(r2.restrictions[0].alternatives[0].value) + 1))]
+    for r2_r, r2a_r in zip(r2.restrictions[1:], r2a.restrictions[1:]):
+        assert r2_r == r2a_r
 
     time.sleep(16)
     with pytest.raises(RpcError, match='Not authorized.*time'):
