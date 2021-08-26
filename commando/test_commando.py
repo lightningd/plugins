@@ -1,9 +1,9 @@
 import os
-from pyln.testing.fixtures import *  # noqa: F401,F403
-from pyln.client import RpcError
+from pyln.testing.fixtures import *  # type: ignore
+from pyln.client import RpcError  # type: ignore
 import pytest
 import json
-import runes
+import runes  # type: ignore
 import commando
 import time
 
