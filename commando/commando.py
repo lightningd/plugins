@@ -18,14 +18,14 @@ type:594D - last reply
 Each one is an 8 byte id (to link replies to command), followed by JSON.
 
 """
-from pyln.client import Plugin, RpcError
+from pyln.client import Plugin, RpcError  # type: ignore
 import json
 import textwrap
 import time
 import random
 import secrets
 import string
-import runes
+import runes  # type: ignore
 from typing import Dict, Tuple, Optional
 
 plugin = Plugin()
