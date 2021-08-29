@@ -20,9 +20,9 @@ if not hasattr(LightningD, 'version'):
 
         cmd = ["lightningd", "--version"]
         vstr = subprocess.check_output(cmd).decode('ASCII')
-        logging.info(vstr)
+        print("XXX", vstr)
         tpl = re.match(vre, vstr).groups()
-        logging.info(tpl)
+        print("XXX", tpl)
         if len(tpl) > 3:
             return (int(tpl[0]), int(tpl[1]), int(tpl[2]), int(tpl[4]), tpl[6])
         else:
