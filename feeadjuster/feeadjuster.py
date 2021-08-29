@@ -220,8 +220,8 @@ def forward_event(plugin: Plugin, forward_event: dict, **kwargs):
 
 
 @plugin.method("feeadjust")
-def feeadjust(plugin: Plugin):
-    """Adjust fees for all existing channels.
+def feeadjust(plugin: Plugin, scid: str = None):
+    """Adjust fees for all channels (default) or just a given `scid`.
 
     This method is automatically called in plugin init, or can be called manually after a successful payment.
     Otherwise, the plugin keeps the fees up-to-date.
@@ -234,13 +234,15 @@ def feeadjust(plugin: Plugin):
     for peer in plugin.peers:
         for chan in peer["channels"]:
             if chan["state"] == "CHANNELD_NORMAL":
-                scid = chan["short_channel_id"]
-                plugin.adj_balances[scid] = {
+                _scid = chan["short_channel_id"]
+                if scid != None and scid != _scid:
+                    continue
+                plugin.adj_balances[_scid] = {
                     "our": int(chan["to_us_msat"]),
                     "total": int(chan["total_msat"])
                 }
-                channels_adjusted += maybe_adjust_fees(plugin, [scid])
-    msg = f"{channels_adjusted} channels adjusted"
+                channels_adjusted += maybe_adjust_fees(plugin, [_scid])
+    msg = f"{channels_adjusted} channel(s) adjusted"
     plugin.log(msg)
     plugin.mutex.release()
     return msg
