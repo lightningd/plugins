@@ -2,11 +2,33 @@ import os
 import shelve
 import time
 import pytest
+import unittest
 from pyln.testing.fixtures import *  # noqa: F401,F403
 from pyln.client import RpcError
-from pyln.testing.utils import only_one, wait_for
+from pyln.testing.utils import only_one, wait_for, LightningD
 
 plugin_path = os.path.join(os.path.dirname(__file__), "datastore.py")
+
+
+# Patch the version parsing if pyln-testing is outdated.
+if not hasattr(LightningD, 'version'):
+    import re
+    import subprocess
+
+    def version():
+        vre = r'v(\d+)\.(\d+)\.(\d+)(-(\d+))?(-g([a-f0-9]{7}))'
+
+        cmd = ["lightningd", "--version"]
+        vstr = subprocess.check_output(cmd).decode('ASCII')
+        tpl = re.match(vre, vstr).groups()
+
+        if len(tpl) > 3:
+            return (int(tpl[0]), int(tpl[1]), int(tpl[2]), int(tpl[4]), tpl[6])
+        else:
+            return (int(tpl[0]), int(tpl[1]), int(tpl[2]))
+
+    LightningD.version = version
+
 
 
 # Test taken from lightning/tests/test_misc.py
@@ -118,6 +140,10 @@ def test_datastore(node_factory):
     assert l1.rpc.listdatastore() == {'datastore': []}
 
 
+@unittest.skipIf(
+    LightningD.version() > (0, 10, 0, 400),
+    "Built-in datastore overrides plugin"
+)
 def test_upgrade(node_factory):
     l1 = node_factory.get_node()
 
