@@ -132,6 +132,10 @@ def test_upgrade(node_factory):
     except RpcError:
         pass
 
+    # There's no upgrade if there's a real datastore.
+    if l1.daemon.is_in_log('there is a real datastore command'):
+        return
+
     l1.daemon.wait_for_log('Upgrading store to have generation numbers')
     wait_for(lambda: not os.path.exists(os.path.join(l1.daemon.lightning_dir,
                                                      'regtest',
@@ -159,7 +163,7 @@ def test_datastore_keylist(node_factory):
 
     # Cannot add child to existing!
     l1.rpc.datastore(key='a', string='aval')
-    with pytest.raises(RpcError, match='1206.*Parent key \[a\] exists'):
+    with pytest.raises(RpcError, match=r'1206.*Parent key \[a\] exists'):
         l1.rpc.datastore(key=['a', 'b'], string='abval',
                          mode='create-or-replace')
     # Listing subkey gives DNE.
