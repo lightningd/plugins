@@ -72,19 +72,6 @@ def test_commando(node_factory):
     assert len(json.dumps(ret)) > 65535
 
 
-def test_commando_no_datastore(node_factory):
-    l1, l2 = node_factory.line_graph(2, fundchannel=False,
-                                     opts={'plugin': plugin_path})
-    # These can happen before other init messages
-    l1.daemon.logsearch_start = 0
-    l1.daemon.wait_for_log("Initialized without rune support")
-    l2.daemon.logsearch_start = 0
-    l2.daemon.wait_for_log("Initialized without rune support")
-
-    with pytest.raises(RpcError, match="No datastore available"):
-        l2.rpc.commando_rune(l1.info['id'])
-
-
 def test_commando_rune(node_factory):
     l1, l2, l3 = node_factory.line_graph(3, fundchannel=False,
                                          opts={'plugin': [plugin_path,
