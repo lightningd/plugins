@@ -11,6 +11,9 @@ import dns.resolver
 import time
 
 
+plugin = Plugin()
+
+
 class CLightning_autopilot(Autopilot):
 
     def __init__(self, rpc):
@@ -113,13 +116,6 @@ class CLightning_autopilot(Autopilot):
                     self.__rpc_interface.fundchannel(nodeid, satoshis, None, True, 0)
             except ValueError as e:
                 print("Could not open a channel to {} with capacity of {}. Error: {}".format(nodeid, satoshis, str(e)))
-
-
-try:
-    # C-lightning v0.7.2
-    plugin = Plugin(dynamic=False)
-except:
-    plugin = Plugin()
 
 
 @plugin.init()
