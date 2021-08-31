@@ -129,10 +129,14 @@ def init(configuration, options, plugin):
     plugin.min_capacity_sat = int(options['autopilot-min-channel-size-msat']) / 1000
     plugin.initialized = threading.Event()
     plugin.autopilot = None
+    plugin.initerror = None
     print('Initialized autopilot function')
 
     def initialize_autopilot():
-        plugin.autopilot = CLightning_autopilot(plugin.rpc)
+        try:
+            plugin.autopilot = CLightning_autopilot(plugin.rpc)
+        except Exception as e:
+            plugin.initerror = e
         plugin.initialized.set()
 
     # Load the autopilot in the background and have it notify
@@ -178,6 +182,9 @@ def run_once(plugin, dryrun=False):
     print("I'd like to open {} new channels with {} satoshis each".format(num_channels, channel_capacity))
 
     plugin.initialized.wait()
+    if plugin.initerror:
+        return f"Error: autopilot had initialization errors: {str(plugin.initerror)}"
+
     candidates = plugin.autopilot.find_candidates(
         num_channels,
         strategy=Strategy.DIVERSE,
