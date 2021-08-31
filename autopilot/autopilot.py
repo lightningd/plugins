@@ -107,15 +107,19 @@ class CLightning_autopilot(Autopilot):
     def connect(self, candidates, balance=1000000, dryrun=False):
         pdf = self.calculate_statistics(candidates)
         connection_dict = self.calculate_proposed_channel_capacities(pdf, balance)
+        messages = []
         for nodeid, fraction in connection_dict.items():
             try:
                 satoshis = min(math.ceil(balance * fraction), 16777215)
-                print("Try to open channel with a capacity of {} to node {}".format(satoshis, nodeid))
+                messages.append(f"Try to open channel with a capacity of {satoshis} to node {nodeid}")
+                plugin.log(messages[-1])
                 if not dryrun:
                     self.__rpc_interface.connect(nodeid)
                     self.__rpc_interface.fundchannel(nodeid, satoshis, None, True, 0)
             except ValueError as e:
-                print("Could not open a channel to {} with capacity of {}. Error: {}".format(nodeid, satoshis, str(e)))
+                messages.append(f"Could not open a channel to {nodeid} with capacity of {satoshis}. Error: {str(e)}")
+                plugin.log(messages[-1], 'error')
+        return messages
 
 
 @plugin.init()
@@ -179,7 +183,7 @@ def run_once(plugin, dryrun=False):
         strategy=Strategy.DIVERSE,
         percentile=0.5
     )
-    plugin.autopilot.connect(candidates, available_funds, dryrun=dryrun)
+    return plugin.autopilot.connect(candidates, available_funds, dryrun=dryrun)
 
 
 plugin.add_option(
