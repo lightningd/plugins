@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 
-from bech32 import bech32_decode, CHARSET, convertbits
+from bech32 import bech32_decode, convertbits
 from lib_autopilot import Autopilot, Strategy
-from pyln.client import LightningRpc, Plugin, RpcError
+from pyln.client import Plugin, RpcError
 import random
 import threading
 import math
@@ -92,7 +92,7 @@ class CLightning_autopilot(Autopilot):
             print("Attempt RPC-call to download channels from the lightning network")
             channels = self.__rpc_interface.listchannels()["channels"]
             print("Number of retrieved channels: {}".format(len(channels)))
-        except ValueError as e:
+        except ValueError:
             print("Channel list could not be retrieved from the peers of the lightning network")
             return False
 
@@ -138,6 +138,12 @@ def init(configuration, options, plugin):
 
 @plugin.method('autopilot-run-once')
 def run_once(plugin, dryrun=False):
+    """
+    Run the autopilot manually one time.
+
+    The argument 'dryrun' can be set to True in order to just output what would
+    be done without actually opening any channels.
+    """
     # Let's start by inspecting the current state of the node
     funds = plugin.rpc.listfunds()
     awaiting_lockin_funds = sum([o['channel_sat'] for o in funds['channels'] if o['state'] == 'CHANNELD_AWAITING_LOCKIN'])
