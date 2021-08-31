@@ -19,7 +19,7 @@ class CLightning_autopilot(Autopilot):
     def __init__(self, rpc):
         self.__rpc_interface = rpc
 
-        print("No input specified download graph from peers")
+        plugin.log("No input specified download graph from peers")
         G = self.__download_graph()
         Autopilot.__init__(self, G)
 
@@ -49,13 +49,12 @@ class CLightning_autopilot(Autopilot):
         random.shuffle(seed_keys)
         for nodeid in seed_keys:
             try:
-                print("peering with node: {}".format(nodeid))
+                plugin.log(f"peering with node: {nodeid}")
                 self.__rpc_interface.connect(nodeid)
                 # FIXME: better strategy than sleep(2) for building up
                 time.sleep(2)
             except RpcError as e:
-                print("Unable to connect to node: {}".format(nodeid))
-                print(e)
+                plugin.log(f"Unable to connect to node: {nodeid}  {str(e)}", 'error')
 
     def __download_graph(self):
         """
@@ -68,10 +67,10 @@ class CLightning_autopilot(Autopilot):
         # FIXME: it is a real problem that we don't know how many nodes there
         # could be. In particular billion nodes networks will outgrow memory
         G = nx.Graph()
-        print("Instantiated networkx graph to store the lightning network")
+        plugin.log("Instantiated networkx graph to store the lightning network")
 
         nodes = []
-        print("Attempt RPC-call to download nodes from the lightning network")
+        plugin.log("Attempt RPC-call to download nodes from the lightning network")
         try:
             while len(nodes) == 0:
                 peers = self.__rpc_interface.listpeers()["peers"]
@@ -79,21 +78,21 @@ class CLightning_autopilot(Autopilot):
                     self.__connect_to_seeds()
                 nodes = self.__rpc_interface.listnodes()["nodes"]
         except ValueError as e:
-            print("Node list could not be retrieved from the peers of the lightning network")
+            plugin.log("Node list could not be retrieved from the peers of the lightning network", 'error')
             raise e
 
         for node in nodes:
             G.add_node(node["nodeid"], **node)
 
-        print("Number of nodes found and added to the local networkx graph: {}".format(len(nodes)))
+        plugin.log(f"Number of nodes found and added to the local networkx graph: {len(nodes)}")
 
         channels = {}
         try:
-            print("Attempt RPC-call to download channels from the lightning network")
+            plugin.log("Attempt RPC-call to download channels from the lightning network")
             channels = self.__rpc_interface.listchannels()["channels"]
-            print("Number of retrieved channels: {}".format(len(channels)))
+            plugin.log(f"Number of retrieved channels: {len(channels)}")
         except ValueError:
-            print("Channel list could not be retrieved from the peers of the lightning network")
+            plugin.log("Channel list could not be retrieved from the peers of the lightning network")
             return False
 
         for channel in channels:
@@ -130,7 +129,7 @@ def init(configuration, options, plugin):
     plugin.initialized = threading.Event()
     plugin.autopilot = None
     plugin.initerror = None
-    print('Initialized autopilot function')
+    plugin.log('Initialized autopilot function')
 
     def initialize_autopilot():
         try:
@@ -164,11 +163,11 @@ def run_once(plugin, dryrun=False):
     # to open
 
     if available_funds < plugin.min_capacity_sat:
-        print("Too low available funds: {} < {}".format(available_funds, plugin.min_capacity_sat))
+        plugin.log(f"Too low available funds: {available_funds} < {plugin.min_capacity_sat}")
         return False
 
     if len(channels) >= plugin.num_channels:
-        print("Already have {} channels. Aim is for {}.".format(len(channels), plugin.num_channels))
+        plugin.log(f"Already have {len(channels)} channels. Aim is for {plugin.num_channels}.")
         return False
 
     num_channels = min(
@@ -179,7 +178,7 @@ def run_once(plugin, dryrun=False):
     # Each channel will have this capacity
     channel_capacity = math.floor(available_funds / num_channels)
 
-    print("I'd like to open {} new channels with {} satoshis each".format(num_channels, channel_capacity))
+    plugin.log(f"I'd like to open {num_channels} new channels with {channel_capacity} satoshis each")
 
     plugin.initialized.wait()
     if plugin.initerror:
