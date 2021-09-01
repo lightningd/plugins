@@ -163,12 +163,14 @@ def run_once(plugin, dryrun=False):
     # to open
 
     if available_funds < plugin.min_capacity_sat:
-        plugin.log(f"Too low available funds: {available_funds} < {plugin.min_capacity_sat}")
-        return False
+        message = f"Too low available funds: {available_funds} < {plugin.min_capacity_sat}"
+        plugin.log(message)
+        return message
 
     if len(channels) >= plugin.num_channels:
-        plugin.log(f"Already have {len(channels)} channels. Aim is for {plugin.num_channels}.")
-        return False
+        message = f"Already have {len(channels)} channels. Aim is for {plugin.num_channels}."
+        plugin.log(message)
+        return message
 
     num_channels = min(
         int(available_funds / plugin.min_capacity_sat),
@@ -182,7 +184,9 @@ def run_once(plugin, dryrun=False):
 
     plugin.initialized.wait()
     if plugin.initerror:
-        return f"Error: autopilot had initialization errors: {str(plugin.initerror)}"
+        message = f"Error: autopilot had initialization errors: {str(plugin.initerror)}"
+        plugin.log(message, 'error')
+        return message
 
     candidates = plugin.autopilot.find_candidates(
         num_channels,
