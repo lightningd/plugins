@@ -1,0 +1,8 @@
+[Unit]
+Description=Weekly backup-compact for C-Lightning daemon
+
+[Timer]
+OnCalendar=weekly
+
+[Install]
+WantedBy=timers.target
