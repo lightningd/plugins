@@ -9,6 +9,7 @@ import pytest
 import subprocess
 from packaging import version
 import re
+import time
 
 
 plugin_dir = os.path.dirname(__file__)
@@ -302,6 +303,13 @@ def test_compact(bitcoind, directory, node_factory):
     }
     l1 = node_factory.get_node(options=opts, cleandir=False)
     l1.rpc.backup_compact()
+    r = l1.rpc.backup_compact()
+    assert r["result"] == "compaction still in progress"
+    l1.daemon.wait_for_log(r'plugin-backup.py: swapping backups')
+    time.sleep(1)                               # make sure thread returned
+    # nothing to compact returns stats
+    r = l1.rpc.backup_compact()
+    assert r["result"]["version_count"] == 2
 
     tmp = tempfile.TemporaryDirectory()
     subprocess.check_call([cli_path, "restore", bdest, tmp.name])
@@ -311,8 +319,10 @@ def test_compact(bitcoind, directory, node_factory):
     sync_blockheight(bitcoind, [l1])
 
     l1.rpc.backup_compact()
+    l1.daemon.wait_for_log(r'plugin-backup.py: swapping backups')
     tmp = tempfile.TemporaryDirectory()
     subprocess.check_call([cli_path, "restore", bdest, tmp.name])
+
 
 def test_parse_socket_url():
     with pytest.raises(ValueError):
