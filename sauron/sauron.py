@@ -101,11 +101,16 @@ def getchaininfo(plugin, **kwargs):
 @plugin.method("getrawblockbyheight")
 def getrawblock(plugin, height, **kwargs):
     blockhash_url = "{}/block-height/{}".format(plugin.api_endpoint, height)
-
     blockhash_req = fetch(blockhash_url)
-    block_req = fetch("{}/block/{}/raw".format(plugin.api_endpoint,
-                                               blockhash_req.text))
-    if blockhash_req.status_code != 200 or block_req.status_code != 200:
+    if blockhash_req.status_code != 200:
+        return {
+            "blockhash": None,
+            "block": None,
+        }
+
+    block_url = "{}/block/{}/raw".format(plugin.api_endpoint, blockhash_req.text)
+    block_req = fetch(block_url)
+    if block_req.status_code != 200:
         return {
             "blockhash": None,
             "block": None,
