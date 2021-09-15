@@ -22,10 +22,10 @@ class PaymentsPage(QWidget, Ui_PaymentsPage):
 
     def __init__(self, plugin):
         super().__init__()
-        self.paymentsData = []
+        self.payments_data = []
         self.setupUi(self)
         self.plugin = plugin
-        self.paymentsTableheaders = (
+        self.payments_tableheaders = (
             "",
             "Date",
             "Type",
@@ -34,21 +34,21 @@ class PaymentsPage(QWidget, Ui_PaymentsPage):
             "Amount (mBTC)",
             "",
         )
-        self.paymentsModel = TableModel(self.paymentsTableheaders)
-        self.proxyModel = CustomSortingModel()
-        self.proxyModel.setSourceModel(self.paymentsModel)
-        self.populatePaymentsData()
-        self.paymentsModel.setData(self.paymentsData)
-        self.paymentsTableView.setModel(self.proxyModel)
+        self.payments_model = TableModel(self.payments_tableheaders)
+        self.proxy_model = CustomSortingModel()
+        self.proxy_model.setSourceModel(self.payments_model)
+        self.populate_payments_data()
+        self.payments_model.set_data(self.payments_data)
+        self.paymentsTableView.setModel(self.proxy_model)
         self.paymentsTableView.sortByColumn(1, Qt.DescendingOrder)
-        self.setView()
-        self.initUi()
+        self.set_view()
+        self.init_ui()
 
-    def initUi(self):
+    def init_ui(self):
         """Initialize the UI by connecting actions"""
-        self.paymentsTableView.doubleClicked.connect(self.showDetails)
+        self.paymentsTableView.doubleClicked.connect(self.show_details)
 
-    def setView(self):
+    def set_view(self):
         """Set the Table sizes"""
         self.paymentsTableView.setColumnWidth(0, 30)
         self.paymentsTableView.setColumnWidth(1, 140)
@@ -59,43 +59,43 @@ class PaymentsPage(QWidget, Ui_PaymentsPage):
         self.paymentsTableView.setColumnHidden(6, True)
         self.paymentsTableView.setColumnHidden(4, True)
 
-    def populatePayments(self):
+    def populate_payments(self):
         """Update payments list"""
-        self.paymentsModel.layoutAboutToBeChanged.emit()
-        self.populatePaymentsData()
-        self.paymentsModel.setData(self.paymentsData)
-        self.paymentsModel.layoutChanged.emit()
+        self.payments_model.layoutAboutToBeChanged.emit()
+        self.populate_payments_data()
+        self.payments_model.set_data(self.payments_data)
+        self.payments_model.layoutChanged.emit()
 
-    def populatePaymentsData(self):
+    def populate_payments_data(self):
         """Update payments data"""
-        self.paymentsData = []
+        self.payments_data = []
         """Update pays history list"""
         pays = self.plugin.rpc.listpays()
         # Condition to prevent RPC errors
         if pays:
             for pay in pays["pays"]:
-                decodedPay = self.plugin.rpc.decodepay(pay["bolt11"])
+                decoded_pay = self.plugin.rpc.decodepay(pay["bolt11"])
                 if "label" in pay:
-                    self.paymentsData.append(
+                    self.payments_data.append(
                         [
                             pay["status"],
-                            datetime.datetime.fromtimestamp(decodedPay["created_at"]),
+                            datetime.datetime.fromtimestamp(decoded_pay["created_at"]),
                             "Pay",
                             pay["label"],
                             pay["payment_hash"],
-                            decodedPay["msatoshi"],
+                            decoded_pay["msatoshi"],
                             pay["bolt11"],
                         ]
                     )
                 else:
-                    self.paymentsData.append(
+                    self.payments_data.append(
                         [
                             pay["status"],
-                            datetime.datetime.fromtimestamp(decodedPay["created_at"]),
+                            datetime.datetime.fromtimestamp(decoded_pay["created_at"]),
                             "Pay",
                             "-",
                             pay["payment_hash"],
-                            decodedPay["msatoshi"],
+                            decoded_pay["msatoshi"],
                             pay["bolt11"],
                         ]
                     )
@@ -104,43 +104,43 @@ class PaymentsPage(QWidget, Ui_PaymentsPage):
         # Condition to prevent RPC errors
         if invoices:
             for invoice in invoices["invoices"]:
-                decodedPay = self.plugin.rpc.decodepay(invoice["bolt11"])
+                decoded_pay = self.plugin.rpc.decodepay(invoice["bolt11"])
                 if "label" in invoice:
-                    self.paymentsData.append(
+                    self.payments_data.append(
                         [
                             invoice["status"],
-                            datetime.datetime.fromtimestamp(decodedPay["created_at"]),
+                            datetime.datetime.fromtimestamp(decoded_pay["created_at"]),
                             "Invoice",
                             invoice["label"],
                             invoice["payment_hash"],
-                            decodedPay["msatoshi"],
+                            decoded_pay["msatoshi"],
                             invoice["bolt11"],
                         ]
                     )
                 else:
-                    self.paymentsData.append(
+                    self.payments_data.append(
                         [
                             invoice["status"],
-                            datetime.datetime.fromtimestamp(decodedPay["created_at"]),
+                            datetime.datetime.fromtimestamp(decoded_pay["created_at"]),
                             "Invoice",
                             "-",
                             invoice["payment_hash"],
-                            decodedPay["msatoshi"],
+                            decoded_pay["msatoshi"],
                             invoice["bolt11"],
                         ]
                     )
 
-    def showDetails(self):
+    def show_details(self):
         index = self.paymentsTableView.currentIndex()
         value = index.sibling(index.row(), 6).data()
-        decodedPay = self.plugin.rpc.decodepay(value)
+        decoded_pay = self.plugin.rpc.decodepay(value)
 
-        dialog = TransactionDescDialog(decodedPay)
+        dialog = TransactionDescDialog(decoded_pay)
         dialog.exec_()
 
 
 class CustomSortingModel(QSortFilterProxyModel):
-    def lessThan(self, left, right):
+    def less_than(self, left, right):
 
         col = left.column()
         dataleft = left.data()
@@ -222,17 +222,17 @@ class TableModel(QAbstractTableModel):
             )
             return value
 
-    def setData(self, datain):
+    def set_data(self, datain):
         self._arraydata = datain
 
-    def rowCount(self, index):
+    def row_count(self, index):
         # The length of the outer list.
         return len(self._arraydata)
 
-    def columnCount(self, index):
+    def column_count(self, index):
         return len(self._headerdata)
 
-    def headerData(self, section, orientation, role):
+    def header_data(self, section, orientation, role):
         if role == Qt.TextAlignmentRole:
             if section == 5:
                 return Qt.AlignRight | Qt.AlignVCenter

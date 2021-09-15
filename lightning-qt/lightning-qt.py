@@ -1,19 +1,18 @@
 #!/usr/bin/env python3
 
 # Better safe than sorry :-)
+from utils import timeout_bool
+from mainWindow import MainWindow
+from PyQt5.QtWidgets import QApplication, QWidget, QMessageBox
+from pyln.client import LightningRpc, Plugin, RpcError
+import sys
+import os
+
 SUBSCRIBE_NOTIF = True
 try:
     import notify2
 except ImportError:
     SUBSCRIBE_NOTIF = False
-import os
-import sys
-
-from pyln.client import LightningRpc, Plugin, RpcError
-from PyQt5.QtWidgets import QApplication, QWidget, QMessageBox
-
-from mainWindow import MainWindow
-from utils import timeout_bool
 
 
 class HackedLightningRpc(LightningRpc):
@@ -130,7 +129,8 @@ else:
         print("    python3 guy.py --socket-path /path/to/lightning-rpc/socket")
         sys.exit(1)
 
-    # Sometimes a forwarded UNIX domain socket might be usable only after some writing
+    # Sometimes a forwarded UNIX domain socket might be usable only after some
+    # writing
     while timeout_bool(2, plugin.rpc.getinfo):
         print(".")
 

@@ -10,9 +10,9 @@ class SendPage(QWidget, Ui_SendPage):
         super().__init__()
         self.setupUi(self)
         self.plugin = plugin
-        self.initUi()
+        self.init_ui()
 
-    def decodeInvoice(self):
+    def decode_invoice(self):
         """Decode the given bolt11 invoice"""
         invoice = self.plugin.rpc.decodepay(self.lineInvoice.text())
         # Condition to prevent for RPC errors
@@ -25,12 +25,12 @@ class SendPage(QWidget, Ui_SendPage):
             self.labelExpiry.setText(str(invoice["expiry"]))
             self.labelPublicKey.setText(invoice["payee"])
 
-    def initUi(self):
+    def init_ui(self):
         """Initialize the UI by connecting actions"""
-        self.buttonDecode.clicked.connect(self.decodeInvoice)
-        self.buttonPay.clicked.connect(self.payInvoice)
+        self.buttonDecode.clicked.connect(self.decode_invoice)
+        self.buttonPay.clicked.connect(self.pay_invoice)
 
-    def payInvoice(self):
+    def pay_invoice(self):
         """Pay the given bolt11 invoice"""
         pay_return = self.plugin.rpc.pay(self.lineInvoice.text())
         # Condition to prevent for RPC errors

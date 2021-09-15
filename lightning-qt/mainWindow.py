@@ -30,9 +30,9 @@ class MainWindow(QMainWindow):
     def __init__(self, plugin):
         super().__init__()
         self.plugin = plugin
-        self.initUi()
+        self.init_ui()
 
-    def createActions(self):
+    def create_actions(self):
         """Creates the main actions of the page.
 
         Namely the menubar and toolbar actions.
@@ -52,40 +52,40 @@ class MainWindow(QMainWindow):
             lambda: self.plugin.rpc.delexpiredinvoice()
         )
         self.del_invoice_action = QAction("&Delete a specified unpaid invoice", self)
-        self.del_invoice_action.triggered.connect(self.menuDelInvoice)
+        self.del_invoice_action.triggered.connect(self.menu_del_invoice)
         self.get_address_p2sh_action = QAction("&Get a P2SH-embedded segwit address")
-        self.get_address_p2sh_action.triggered.connect(self.getAddressP2sh)
+        self.get_address_p2sh_action.triggered.connect(self.get_address_p2sh)
         self.get_address_segwit_action = QAction("&Get a native segwit address")
-        self.get_address_segwit_action.triggered.connect(self.getAddressBech)
+        self.get_address_segwit_action.triggered.connect(self.get_address_bech)
         # ToolBar actions
         self.show_overview_action = QAction(
             QIcon(":/icons/overview"), "&Overview", self
         )
         self.show_overview_action.setToolTip("Show overview page")
         self.show_overview_action.setShortcut("Alt+1")
-        self.show_overview_action.triggered.connect(self.showOverview)
+        self.show_overview_action.triggered.connect(self.show_overview)
         self.show_receivepay_action = QAction(
             QIcon(":/icons/receive"), "&Receive Payment", self
         )
         self.show_receivepay_action.setToolTip("Show receive payment page")
         self.show_receivepay_action.setShortcut("Alt+2")
-        self.show_receivepay_action.triggered.connect(self.showReceive)
+        self.show_receivepay_action.triggered.connect(self.show_receive)
         self.show_sendpay_action = QAction(QIcon(":/icons/send"), "&Send Payment", self)
         self.show_sendpay_action.setToolTip("Show send payment page")
         self.show_sendpay_action.setShortcut("Alt+3")
-        self.show_sendpay_action.triggered.connect(self.showSend)
+        self.show_sendpay_action.triggered.connect(self.show_send)
         self.show_managechan_action = QAction(
             QIcon(":/icons/lightning"), "&Manage channels", self
         )
         self.show_managechan_action.setToolTip("Show channel management page")
         self.show_managechan_action.setShortcut("Alt+4")
-        self.show_managechan_action.triggered.connect(self.showChannelsPage)
+        self.show_managechan_action.triggered.connect(self.show_channels_page)
         self.show_payments_action = QAction(QIcon(":/icons/history"), "&Payments", self)
         self.show_payments_action.setToolTip("Show payments history page")
         self.show_payments_action.setShortcut("Alt+5")
-        self.show_payments_action.triggered.connect(self.showPaymentsPage)
+        self.show_payments_action.triggered.connect(self.show_payments_page)
 
-    def createMenu(self):
+    def create_menu(self):
         """Creates the menu at the top of the window."""
         self.menu = self.menuBar()
         file_menu = self.menu.addMenu("&File")
@@ -100,7 +100,7 @@ class MainWindow(QMainWindow):
         bitcoin_menu.addAction(self.get_address_segwit_action)
         bitcoin_menu.addAction(self.get_address_p2sh_action)
 
-    def createPages(self):
+    def create_pages(self):
         """Creates each of our pages, which are QWidget-inherited objects
 
         We pass a reference to the plugin to pages, so that they can interact
@@ -117,12 +117,12 @@ class MainWindow(QMainWindow):
         self.payments_page = PaymentsPage(self.plugin)
         self.page_manager.addWidget(self.payments_page)
 
-    def createPageManager(self):
+    def create_page_manager(self):
         """Creates the QStackedWidget which we will use as the page manager"""
         self.page_manager = QStackedWidget(self)
         self.setCentralWidget(self.page_manager)
 
-    def createToolbar(self):
+    def create_toolbar(self):
         """Creates the toolbar used to navigate between pages"""
         self.toolbar = self.addToolBar("")
         self.toolbar.setContextMenuPolicy(Qt.PreventContextMenu)
@@ -134,19 +134,19 @@ class MainWindow(QMainWindow):
         self.toolbar.addAction(self.show_managechan_action)
         self.toolbar.addAction(self.show_payments_action)
 
-    def getAddressP2sh(self):
+    def get_address_p2sh(self):
         """Shows a message box containing a P2SH-embedded segwit address"""
         address = self.plugin.rpc.newaddr(addresstype="p2sh-segwit")
         if address:
             QMessageBox.information(self, "Bitcoin address", address["p2sh-segwit"])
 
-    def getAddressBech(self):
+    def get_address_bech(self):
         """Shows a message box containing a native segwit address (bech32)"""
         address = self.plugin.rpc.newaddr()
         if address:
             QMessageBox.information(self, "Bitcoin address", address["bech32"])
 
-    def initUi(self):
+    def init_ui(self):
         """Initializes the default parameters for the window (title, position, size)."""
         self.setWindowTitle("lightning-qt")
         self.setWindowIcon(QIcon(":/icons/lightning"))
@@ -154,13 +154,13 @@ class MainWindow(QMainWindow):
         geo = self.frameGeometry()
         geo.moveCenter(QDesktopWidget().availableGeometry().center())
         self.move(geo.topLeft())
-        self.createActions()
-        self.createMenu()
-        self.createToolbar()
-        self.createPageManager()
-        self.createPages()
+        self.create_actions()
+        self.create_menu()
+        self.create_toolbar()
+        self.create_page_manager()
+        self.create_pages()
 
-    def menuDelInvoice(self):
+    def menu_del_invoice(self):
         """Shows a message which asks for an invoice label and delete this invoice"""
         label = QInputDialog.getText(
             self,
@@ -174,26 +174,26 @@ class MainWindow(QMainWindow):
                     self, "Delete an unpaid invoice", "Succesfully deleted invoice"
                 )
 
-    def showChannelsPage(self):
+    def show_channels_page(self):
         """Set channelsPage as the current widget"""
         self.channels_page.clear()
-        self.channels_page.populateChannels()
+        self.channels_page.populate_channels()
         self.page_manager.setCurrentWidget(self.channels_page)
 
-    def showPaymentsPage(self):
+    def show_payments_page(self):
         """Set paymentsPage as the current widget"""
-        self.payments_page.populatePayments()
+        self.payments_page.populate_payments()
         self.page_manager.setCurrentWidget(self.payments_page)
 
-    def showOverview(self):
+    def show_overview(self):
         """Set overviewPage as the current widget"""
         self.overview_page.update()
         self.page_manager.setCurrentWidget(self.overview_page)
 
-    def showReceive(self):
+    def show_receive(self):
         """Set receivePage as the current widget"""
         self.page_manager.setCurrentWidget(self.receive_page)
 
-    def showSend(self):
+    def show_send(self):
         """Set sendPage as the current widget"""
         self.page_manager.setCurrentWidget(self.send_page)

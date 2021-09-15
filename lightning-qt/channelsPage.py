@@ -12,8 +12,8 @@ class ChannelsPage(QWidget, Ui_ChannelsPage):
         super().__init__()
         self.setupUi(self)
         self.plugin = plugin
-        self.initUi()
-        self.populateChannels()
+        self.init_ui()
+        self.populate_channels()
 
     def clear(self):
         """Reset all the child widget to their default value"""
@@ -33,7 +33,7 @@ class ChannelsPage(QWidget, Ui_ChannelsPage):
         while self.layoutIncoming.count() > 2:
             self.layoutIncoming.takeAt(2).widget().deleteLater()
 
-    def closeChannel(self):
+    def close_channel(self):
         """Close the channel specified by the user"""
         self.labelCloseResult.setText("Sending closing request..")
         self.labelCloseResult.repaint()
@@ -57,7 +57,7 @@ class ChannelsPage(QWidget, Ui_ChannelsPage):
         else:
             self.labelCloseResult.setText("")
 
-    def createChannel(self):
+    def create_channel(self):
         """Connect to a peer and fund a channel with it"""
         peer = self.lineNewChannelId.text()
         self.labelNewChannelResult.setText("Connecting to peer..")
@@ -84,13 +84,13 @@ class ChannelsPage(QWidget, Ui_ChannelsPage):
                 "Could not connect to peer, connection timed out."
             )
 
-    def initUi(self):
+    def init_ui(self):
         """Initialize the UI by connecting actions"""
-        self.buttonNewChannel.clicked.connect(self.createChannel)
-        self.buttonCloseChannel.clicked.connect(self.closeChannel)
-        self.buttonSetFees.clicked.connect(self.setRoutingFees)
+        self.buttonNewChannel.clicked.connect(self.create_channel)
+        self.buttonCloseChannel.clicked.connect(self.close_channel)
+        self.buttonSetFees.clicked.connect(self.set_routing_fees)
 
-    def populateChannels(self):
+    def populate_channels(self):
         """Update channels list"""
         funds = self.plugin.rpc.listfunds()
         # Condition to prevent RPC errors
@@ -120,7 +120,7 @@ class ChannelsPage(QWidget, Ui_ChannelsPage):
                     their_amount.setAlignment(Qt.AlignRight)
                     self.layoutIncoming.addWidget(their_amount)
 
-    def setRoutingFees(self):
+    def set_routing_fees(self):
         """Set a channel (or global) routing fees"""
         id_ = self.lineSetFeesId.text() or "all"
         set_result = self.plugin.rpc.setchannelfee(
