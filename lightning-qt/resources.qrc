@@ -9,8 +9,8 @@
         <file alias="success">res/icons/payment_success.png</file>
         <file alias="expired">res/icons/payment_expired.png</file>
         <file alias="pending">res/icons/payment_pending.png</file>        
-        <file alias="txinput">res/icons/tx_input.png</file>                                        
-        <file alias="txoutput">res/icons/tx_output.png</file>           
+        <file alias="receive_black">res/icons/receive_black.png</file>
+        <file alias="send_black">res/icons/send_black.png</file>
     </qresource>
     <qresource prefix="/images">
     

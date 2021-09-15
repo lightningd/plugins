@@ -184,9 +184,9 @@ class TableModel(QAbstractTableModel):
             if index.column() == 3:
                 value = self._arraydata[index.row()][index.column() - 1]
                 if value == "Pay":
-                    return QIcon(":/icons/txoutput")
+                    return QIcon(":/icons/send_black")
                 elif value == "Invoice":
-                    return QIcon(":/icons/txinput")
+                    return QIcon(":/icons/receive_black")
         if role == Qt.BackgroundRole and index.row() % 2 == 1:
             return QColor(247, 247, 247)
         if role == Qt.ForegroundRole:

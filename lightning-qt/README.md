@@ -60,3 +60,8 @@ pyuic5 forms/channelspage.ui -o forms/ui_channelsPage.py
 
 Please also note that PyQt5 has *__a very bad__* way to handle exception in slots: in short you cannot
 `except` a raised exception in a [slot](https://doc.qt.io/qt-5/signalsandslots.html).
+
+### Icons
+
+If you contribute an icon, please do add its source and license information to the [icons
+README](res/icons/README.md).
