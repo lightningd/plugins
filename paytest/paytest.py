@@ -12,7 +12,7 @@ from pyln.client import Millisatoshi, Plugin, RpcError
 from pyln.proto.invoice import (
     Invoice, RouteHint, RouteHintSet, bech32_encode, bitarray_to_u5, bitstring,
     coincurve, encode_fallback, hashlib, shorten_amount, tagged, tagged_bytes)
-from pyln.proto.onion import RoutingOnion, chacha20_stream, ecdh
+from pyln.proto.onion import RoutingOnion, chacha20_stream, ecdh, TlvPayload
 from pyln.proto.primitives import PrivateKey, Secret
 
 # Something we don't have a preimage for, and allows downstream nodes
@@ -264,6 +264,12 @@ def on_htlc_accepted(onion, htlc, request, plugin, *args, **kwargs):
 
     # Shared key required for the response
     shared_secret = ecdh(PRIVKEY, ro.ephemeralkey)
+
+    # MPP payments really only work with TlvPayloads, otherwise we
+    # don't know the total. In addition the `.get(8)` would fail on a
+    # LegacyOnionPayload, so we just tell them to go away here.
+    if not isinstance(payload, TlvPayload):
+        return {'result': 'continue'}
 
     # We key the payment by payment_secret rather than payment_hash so
     # we collide less often.
