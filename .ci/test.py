@@ -154,6 +154,10 @@ def install_pyln_testing(pip_path):
         pip_path, 'install', '-U', f'{dest}/contrib/pyln-client'
     ])
 
+    subprocess.check_call([
+        pip_path, 'install', '-U', f'{dest}/contrib/pyln-proto'
+    ])
+
 
 def run_all(args):
     root_path = subprocess.check_output([
