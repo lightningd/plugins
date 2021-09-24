@@ -12,6 +12,10 @@ import gossipd
 import struct
 import time
 
+# Any message that is larger than this threshold will not be processed
+# as it bloats the database.
+MAX_MSG_SIZE = 1024
+
 plugin = Plugin()
 
 
@@ -44,6 +48,7 @@ class FileTailer():
             self.version, = struct.unpack("!B", f.read(1))
             f.seek(self.pos)
             while True:
+                skip = False
                 diff = 8
                 hdr = f.read(8)
                 if len(hdr) < 8:
@@ -58,10 +63,6 @@ class FileTailer():
                 # important = (length & 0x40000000 != 0)
                 length = length & (~0x80000000) & (~0x40000000)
 
-                if length > 1000:
-                    raise ValueError(
-                        f"Unreasonably large message: {length} bytes long"
-                    )
                 msg = f.read(length)
 
                 # Incomplete write, will try again
@@ -85,7 +86,14 @@ class FileTailer():
                     f.seek(self.pos)
                     continue
 
+                if length > MAX_MSG_SIZE:
+                    logging.warn(
+                        f"Unreasonably large message type {typ} at position {self.pos} ({length} bytes), skipping"
+                    )
+                    continue
+
                 ev_count += 1
+
                 yield msg
         logging.debug(
             f"Reached end of {self.filename} at {self.pos} after {ev_count} "
@@ -200,4 +208,5 @@ plugin.add_option(
     "SQL DSN defining where the gossip data should be stored."
 )
 
-plugin.run()
+if __name__ == "__main__":
+    plugin.run()
