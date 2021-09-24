@@ -41,24 +41,36 @@ jobs:
         tar -xjf bitcoin-${BITCOIND_VERSION}-x86_64-linux-gnu.tar.bz2
         sudo mv bitcoin-${BITCOIND_VERSION}/bin/* /usr/local/bin
         rm -rf bitcoin-${BITCOIND_VERSION}-x86_64-linux-gnu.tar.gz bitcoin-${BITCOIND_VERSION}
-        
+
     - name: Compile & install c-lightning@master
       run: |
         export EXPERIMENTAL_FEATURES=${{ matrix.experimental }}
         export DEVELOPER=${{ matrix.developer }}
         export COMPAT=${{ matrix.deprecated }}
         export VALGRIND=0
-        sudo apt-get install -y libsqlite3-dev build-essential gettext python python3 python3-mako net-tools zlib1g-dev libsodium-dev libpq-dev postgresql
+        sudo apt-get install -y libsqlite3-dev build-essential gettext python python3 net-tools zlib1g-dev libsodium-dev libpq-dev postgresql python3-pip
+
         cd lightning
+        pip3 install --user -U \
+          pip \
+          wheel \
+          blinker \
+          pytest-sentry \
+          pytest-test-groups==1.0.3 \
+          pytest-custom-exit-code==0.3.0 \
+          pytest-json-report
+
+        pip install --user -U -r requirements.txt  --use-feature=in-tree-build
+
         ./configure --disable-valgrind
         make -j 16
         sudo make install
-      
+
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v2
       with:
         python-version: ${{ matrix.python-version }}
-        
+
     - name: Test with pytest
       run: |
         export EXPERIMENTAL_FEATURES=${{ matrix.experimental }}
