@@ -53,6 +53,8 @@ jobs:
         cd lightning
         pip3 install --user -U \
           pip \
+          mako \
+          mrkd \
           wheel \
           blinker \
           pytest-sentry \
