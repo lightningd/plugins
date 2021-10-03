@@ -43,5 +43,9 @@ fkfuvjrbj6cfqppq6xcgfwmp4p23wq2unzlnqmdi6ibqtg2aq7thp2qd.onion
 Use tor browser to visit the url and create a invoice (and make a donation?).
 http://fkfuvjrbj6cfqppq6xcgfwmp4p23wq2unzlnqmdi6ibqtg2aq7thp2qd.onion/invoice/1000/donation
 
+##### Configuration
 
+You can initialize the plugin with a specific port and address:
 
+- `--requestinvoice-address=... (default 127.0.0.1)`
+- `--requestinvoice-port=... (default 8809)`

@@ -35,7 +35,7 @@ def getinvoice(amount, description):
     invoice = plugin.rpc.invoice(int(amount)*1000, label, description)
     return invoice
 
-def worker(port):
+def worker(address, port):
     asyncio.set_event_loop(asyncio.new_event_loop())
 
     print('Starting server on port {port}'.format(
@@ -46,16 +46,16 @@ def worker(port):
         default=uuid.uuid4())
 
     http_server = HTTPServer(WSGIContainer(app))
-    http_server.listen(port)
+    http_server.listen(port, address)
     IOLoop.instance().start()
 
 
-def start_server(port):
+def start_server(address, port):
     if port in jobs:
         raise ValueError("server already running on port {port}".format(port=port))
 
     p = threading.Thread(
-        target=worker, args=(port,), daemon=True)
+        target=worker, args=(address, port), daemon=True)
 
     jobs[port] = p
     p.start()
@@ -79,8 +79,9 @@ def invoiceserver(request, command="start"):
     The plugin takes one of the following commands:
     {start/stop/status/restart}.
     """
-    commands = {"start", "stop", "status","restart"}
-    port = os.getenv("FLASKPORT", default = 8809)
+    commands = {"start", "stop", "status", "restart"}
+    address = plugin.address
+    port = plugin.port
 
     # if command unknown make start our default command
     if command not in commands:
@@ -88,7 +89,7 @@ def invoiceserver(request, command="start"):
 
     if command == "start":
         try:
-            start_server(port)
+            start_server(address, port)
             return "Invoice server started successfully on port {}".format(port)
         except Exception as e:
             return "Error starting server on port {port}: {e}".format(
@@ -112,14 +113,29 @@ def invoiceserver(request, command="start"):
 
     if command == "restart":
         stop_server(port)
-        start_server(port)
+        start_server(address, port)
         return "Invoice server restarted"
 
 
 @plugin.init()
 def init(options, configuration, plugin):
-    port = os.getenv("REQUEST_INVOICE_PORT", default = 8809)
-    start_server(port)
+    plugin.address = options["requestinvoice-addr"]
+    plugin.port = int(options["requestinvoice-port"])
+
+    start_server(plugin.address, plugin.port)
+
+
+plugin.add_option(
+    "requestinvoice-addr",
+    "127.0.0.1",
+    "Manually set the address to be used for the requestinvoice-plugin, default is 127.0.0.1"
+)
+
+plugin.add_option(
+    "requestinvoice-port",
+    "8809",
+    "Manually set the port to be used for the requestinvoice-plugin, default is 8809"
+)
 
 
 plugin.run()
