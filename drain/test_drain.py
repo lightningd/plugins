@@ -1,14 +1,31 @@
-from pyln.testing.fixtures import *
+from flaky import flaky
+from pyln.testing.fixtures import *  # noqa: F401,F403
 from pyln.testing.utils import DEVELOPER
-from pyln.client import RpcError, Millisatoshi
-from utils import *
+from pyln.client import RpcError
+from .utils import get_ours, get_theirs, wait_ours, wait_for_all_htlcs
 import os
 import unittest
+import pytest
 
 
-pluginopt = {'plugin': os.path.join(os.path.dirname(__file__), "drain.py")}
+plugin_path = os.path.join(os.path.dirname(__file__), "drain.py")
+pluginopt = {'plugin': plugin_path}
 EXPERIMENTAL_FEATURES = int(os.environ.get("EXPERIMENTAL_FEATURES", "0"))
 
+
+def test_plugin_starts(node_factory):
+    l1 = node_factory.get_node()
+    # Test dynamically
+    l1.rpc.plugin_start(plugin_path)
+    l1.rpc.plugin_stop(plugin_path)
+    l1.rpc.plugin_start(plugin_path)
+    l1.stop()
+    # Then statically
+    l1.daemon.opts["plugin"] = plugin_path
+    l1.start()
+
+
+@flaky
 @unittest.skipIf(not DEVELOPER, "slow gossip, needs DEVELOPER=1")
 def test_drain_and_refill(node_factory, bitcoind):
     # Scenario: first drain then refill
@@ -27,7 +44,8 @@ def test_drain_and_refill(node_factory, bitcoind):
     scid12 = l1.get_channel_scid(l2)
     scid23 = l2.get_channel_scid(l3)
     scid34 = l3.get_channel_scid(l4)
-    scid41 = l4.fund_channel(l1, 10**6)
+    l4.openchannel(l1, 10**6)
+    scid41 = l4.get_channel_scid(l1)
 
     # disable fees to make circular line graph tests a lot easier
     for n in nodes:
@@ -36,7 +54,7 @@ def test_drain_and_refill(node_factory, bitcoind):
     # wait for each others gossip
     bitcoind.generate_block(6)
     for n in nodes:
-        for scid in [scid12,scid23,scid34,scid41]:
+        for scid in [scid12, scid23, scid34, scid41]:
             n.wait_channel_active(scid)
 
     # do some draining and filling
@@ -76,7 +94,8 @@ def test_fill_and_drain(node_factory, bitcoind):
     scid12 = l1.get_channel_scid(l2)
     scid23 = l2.get_channel_scid(l3)
     scid34 = l3.get_channel_scid(l4)
-    scid41 = l4.fund_channel(l1, 10**6)
+    l4.openchannel(l1, 10**6)
+    scid41 = l4.get_channel_scid(l1)
 
     # disable fees to make circular line graph tests a lot easier
     for n in nodes:
@@ -85,7 +104,7 @@ def test_fill_and_drain(node_factory, bitcoind):
     # wait for each others gossip
     bitcoind.generate_block(6)
     for n in nodes:
-        for scid in [scid12,scid23,scid34,scid41]:
+        for scid in [scid12, scid23, scid34, scid41]:
             n.wait_channel_active(scid)
 
     # for l2 to fill scid12, it needs to send on scid23, where its funder
@@ -120,12 +139,13 @@ def test_setbalance(node_factory, bitcoind):
     scid12 = l1.get_channel_scid(l2)
     scid23 = l2.get_channel_scid(l3)
     scid34 = l3.get_channel_scid(l4)
-    scid41 = l4.fund_channel(l1, 10**6)
+    l4.openchannel(l1, 10**6)
+    scid41 = l4.get_channel_scid(l1)
 
     # wait for each others gossip
     bitcoind.generate_block(6)
     for n in nodes:
-        for scid in [scid12,scid23,scid34,scid41]:
+        for scid in [scid12, scid23, scid34, scid41]:
             n.wait_channel_active(scid)
 
     # test auto 50/50 balancing
@@ -140,7 +160,7 @@ def test_setbalance(node_factory, bitcoind):
     assert(l1.rpc.setbalance(scid12, 30))
     wait_for_all_htlcs(nodes)
     ours_after = get_ours(l1, scid12)
-    assert(ours_after < ours_before * 0.33)
+    assert(ours_after < ours_before * 0.34)
     assert(ours_after > ours_before * 0.27)
 
     assert(l1.rpc.setbalance(scid12, 70))
@@ -164,6 +184,7 @@ def balance(node, node_a, scid_a, node_b, scid_b, node_c):
     wait_for_all_htlcs([node, node_a, node_b])
 
 
+@unittest.skipIf(not DEVELOPER, "slow gossip, needs DEVELOPER=1")
 def test_drain_chunks(node_factory, bitcoind):
     # SETUP: a small mesh that enables testing chunks
     #
@@ -190,11 +211,16 @@ def test_drain_chunks(node_factory, bitcoind):
     l2.connect(l4)
     l3.connect(l4)
     l4.connect(l1)
-    scid12 = l1.fund_channel(l2, 10**6)
-    scid13 = l1.fund_channel(l3, 10**6)
-    scid24 = l2.fund_channel(l4, 10**6)
-    scid34 = l3.fund_channel(l4, 10**6)
-    scid41 = l4.fund_channel(l1, 11**6)
+    l1.openchannel(l2, 10**6)
+    l1.openchannel(l3, 10**6)
+    l2.openchannel(l4, 10**6)
+    l3.openchannel(l4, 10**6)
+    l4.openchannel(l1, 11**6)
+    scid12 = l1.get_channel_scid(l2)
+    scid13 = l1.get_channel_scid(l3)
+    scid24 = l2.get_channel_scid(l4)
+    scid34 = l3.get_channel_scid(l4)
+    scid41 = l4.get_channel_scid(l1)
     nodes = [l1, l2, l3, l4]
     scids = [scid12, scid13, scid24, scid34, scid41]
 
@@ -268,11 +294,16 @@ def test_fill_chunks(node_factory, bitcoind):
     l2.connect(l4)
     l3.connect(l4)
     l4.connect(l1)
-    scid12 = l1.fund_channel(l2, 10**6)
-    scid13 = l1.fund_channel(l3, 10**6)
-    scid24 = l2.fund_channel(l4, 10**6)
-    scid34 = l3.fund_channel(l4, 10**6)
-    scid41 = l4.fund_channel(l1, 11**6)
+    l1.openchannel(l2, 10**6)
+    l1.openchannel(l3, 10**6)
+    l2.openchannel(l4, 10**6)
+    l3.openchannel(l4, 10**6)
+    l4.openchannel(l1, 11**6)
+    scid12 = l1.get_channel_scid(l2)
+    scid13 = l1.get_channel_scid(l3)
+    scid24 = l2.get_channel_scid(l4)
+    scid34 = l3.get_channel_scid(l4)
+    scid41 = l4.get_channel_scid(l1)
     nodes = [l1, l2, l3, l4]
     scids = [scid12, scid13, scid24, scid34, scid41]
 

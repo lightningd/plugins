@@ -25,13 +25,15 @@ lightning-cli recvmsg last_id
 #+END_SRC
 
 The ~last_id~ indicates the last message we read, so we can retrieve each message
-individually. If you'd just like to wait for the next message you can use a
-~last_id~ or ~-1~.
+individually. If you'd just like to wait for the next message then do not
+specify any ~last_id~.
+
 * Todo
 
 - [ ] Persist messages across restarts
-- [ ] Use ~rpc_command~ to intercept any payment listing and add the keysend
-  payments to it.
+- [X] Use ~rpc_command~ to intercept any payment listing and add the keysend
+  payments to it. (No longer needed, since keysends are handled correctly by
+  ~listpays~.)
 
 * Protocol
 The protocol was heavily inspired by the [[https://github.com/joostjager/whatsat#protocol][WhatSat protocol]]:

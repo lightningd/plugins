@@ -2,9 +2,8 @@
 from pyln.client import Plugin, Millisatoshi
 from packaging import version
 from collections import namedtuple
-from summary_avail import *
+from summary_avail import trace_availability, addpeer
 import pyln.client
-from math import floor, log10
 import requests
 import shelve
 import threading
@@ -47,37 +46,47 @@ class PeerThread(threading.Thread):
                 rpcpeers = plugin.rpc.listpeers()
                 trace_availability(plugin, rpcpeers)
                 plugin.persist.sync()
+                plugin.log("[PeerThread] Peerstate availability persisted and "
+                           "synced. Sleeping now...", 'debug')
                 time.sleep(plugin.avail_interval)
             except Exception as ex:
                 plugin.log("[PeerThread] " + str(ex), 'warn')
 
 
 class PriceThread(threading.Thread):
-    def __init__(self):
+    def __init__(self, proxies):
         super().__init__()
         self.daemon = True
+        self.proxies = proxies
 
     def run(self):
         while True:
             try:
-                r = requests.get('https://www.bitstamp.net/api/v2/ticker/BTC{}'.format(plugin.currency))
+                # NOTE: Bitstamp has a DNS/Proxy issues that can return 404
+                # Workaround: retry up to 5 times with a delay
+                for _ in range(5):
+                    r = requests.get('https://www.bitstamp.net/api/v2/ticker/BTC{}'.format(plugin.currency), proxies=self.proxies)
+                    if not r.status_code == 200:
+                        time.sleep(1)
+                        continue
+                    break
                 plugin.fiat_per_btc = float(r.json()['last'])
             except Exception as ex:
                 plugin.log("[PriceThread] " + str(ex), 'warn')
             # Six hours is more than often enough for polling
-            time.sleep(6*3600)
+            time.sleep(6 * 3600)
 
 
 def to_fiatstr(msat: Millisatoshi):
     return "{}{:.2f}".format(plugin.currency_prefix,
-                              int(msat) / 10**11 * plugin.fiat_per_btc)
+                             int(msat) / 10**11 * plugin.fiat_per_btc)
 
 
 # appends an output table header that explains fields and capacity
 def append_header(table, max_msat):
     short_str = Millisatoshi(max_msat).to_approx_str()
     table.append("%c%-13sOUT/OURS %c IN/THEIRS%12s%c SCID           FLAG AVAIL ALIAS"
-            % (draw.left, short_str, draw.mid, short_str, draw.right))
+                 % (draw.left, short_str, draw.mid, short_str, draw.right))
 
 
 @plugin.method("summary", long_desc=summary_description)
@@ -151,6 +160,7 @@ def summary(plugin, exclude=''):
 
     reply['avail_out'] = avail_out.to_btc_str()
     reply['avail_in'] = avail_in.to_btc_str()
+    reply['fees_collected'] = info['fees_collected_msat'].to_btc_str()
 
     if plugin.fiat_per_btc > 0:
         reply['utxo_amount'] += ' ({})'.format(to_fiatstr(utxo_amount))
@@ -166,7 +176,6 @@ def summary(plugin, exclude=''):
             # Create simple line graph, 47 chars wide.
             our_len = int(round(int(c.ours) / biggest * 23))
             their_len = int(round(int(c.theirs) / biggest * 23))
-            divided = False
 
             # We put midpoint in the middle.
             mid = draw.mid
@@ -224,19 +233,33 @@ def init(options, configuration, plugin):
     plugin.currency_prefix = options['summary-currency-prefix']
     plugin.fiat_per_btc = 0
 
-    plugin.avail_interval  = float(options['summary-availability-interval'])
-    plugin.avail_window    = 60 * 60 * int(options['summary-availability-window'])
-    plugin.persist         = shelve.open('summary.dat', writeback=True)
-    if not 'peerstate' in plugin.persist:
+    plugin.avail_interval = float(options['summary-availability-interval'])
+    plugin.avail_window = 60 * 60 * int(options['summary-availability-window'])
+    plugin.persist = shelve.open('summary.dat', writeback=True)
+    if 'peerstate' not in plugin.persist:
+        plugin.log("Creating a new summary.dat shelve", 'debug')
         plugin.persist['peerstate'] = {}
         plugin.persist['availcount'] = 0
+    else:
+        plugin.log(f"Reopened summary.dat shelve with {plugin.persist['availcount']} "
+                   f"runs and {len(plugin.persist['peerstate'])} entries", 'debug')
 
     info = plugin.rpc.getinfo()
+    config = plugin.rpc.listconfigs()
+    if 'always-use-proxy' in config and config['always-use-proxy']:
+        paddr = config['proxy']
+        # Default port in 9050
+        if ':' not in paddr:
+            paddr += ':9050'
+        proxies = {'https': 'socks5h://' + paddr,
+                   'http': 'socks5h://' + paddr}
+    else:
+        proxies = None
 
     # Measure availability
     PeerThread().start()
     # Try to grab conversion price
-    PriceThread().start()
+    PriceThread(proxies).start()
 
     # Prefer IPv4, otherwise take any to give out address.
     best_address = None

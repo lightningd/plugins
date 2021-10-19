@@ -1,13 +1,13 @@
 import subprocess
 import unittest
-import time
 import re
+import os
 
 from pyln.client import Plugin
 from pyln.testing.fixtures import *  # noqa: F401,F403
-from pyln.testing.utils import DEVELOPER
+from pyln.testing.utils import DEVELOPER, wait_for
 
-from summary_avail import *
+from .summary_avail import trace_availability
 
 pluginopt = {'plugin': os.path.join(os.path.dirname(__file__), "summary.py")}
 
@@ -15,8 +15,8 @@ pluginopt = {'plugin': os.path.join(os.path.dirname(__file__), "summary.py")}
 # returns a test plugin stub
 def get_stub():
     plugin = Plugin()
-    plugin.avail_interval  = 60
-    plugin.avail_window    = 3600
+    plugin.avail_interval = 60
+    plugin.avail_window = 3600
     plugin.persist = {}
     plugin.persist['peerstate'] = {}
     plugin.persist['availcount'] = 0
@@ -24,16 +24,18 @@ def get_stub():
 
 
 def test_summary_peer_thread(node_factory):
-    # in order to give the PeerThread a chance in a unit test
-    # we need to give it a low interval
-    opts = {'summary-availability-interval' : 0.1}
+    # Set a low PeerThread interval so we can test quickly.
+    opts = {'summary-availability-interval': 0.5}
     opts.update(pluginopt)
     l1, l2 = node_factory.line_graph(2, opts=opts)
+    l2id = l2.info['id']
 
     # when
     s1 = l1.rpc.summary()
-    l2.stop()        # we stop l2 and
-    time.sleep(0.5)  # wait a bit for the PeerThread to see it
+    l2.stop()  # we stop l2 and wait for l1 to see that
+    wait_for(lambda: l1.rpc.listpeers(l2id)['peers'][0]['connected'] is False)
+    l1.daemon.logsearch_start = len(l1.daemon.logs)
+    l1.daemon.wait_for_log(r".*availability persisted and synced.*")
     s2 = l1.rpc.summary()
 
     # then
@@ -49,10 +51,10 @@ def test_summary_avail_101():
     # given
     plugin = get_stub()
     rpcpeers = {
-        'peers' : [
-            { 'id' : '1', 'connected' : True },
-            { 'id' : '2', 'connected' : False },
-            { 'id' : '3', 'connected' : True },
+        'peers': [
+            {'id': '1', 'connected': True},
+            {'id': '2', 'connected': False},
+            {'id': '3', 'connected': True},
         ]
     }
 
@@ -64,9 +66,9 @@ def test_summary_avail_101():
     assert(plugin.persist['peerstate']['1']['avail'] == 1.0)
     assert(plugin.persist['peerstate']['2']['avail'] == 0.0)
     assert(plugin.persist['peerstate']['3']['avail'] == 1.0)
-    assert(plugin.persist['peerstate']['1']['connected'] == True)
-    assert(plugin.persist['peerstate']['2']['connected'] == False)
-    assert(plugin.persist['peerstate']['3']['connected'] == True)
+    assert(plugin.persist['peerstate']['1']['connected'] is True)
+    assert(plugin.persist['peerstate']['2']['connected'] is False)
+    assert(plugin.persist['peerstate']['3']['connected'] is True)
 
 
 # tests for 50% downtime
@@ -74,13 +76,13 @@ def test_summary_avail_50():
     # given
     plugin = get_stub()
     rpcpeers_on = {
-        'peers' : [
-            { 'id' : '1', 'connected' : True },
+        'peers': [
+            {'id': '1', 'connected': True},
         ]
     }
     rpcpeers_off = {
-        'peers' : [
-            { 'id' : '1', 'connected' : False },
+        'peers': [
+            {'id': '1', 'connected': False},
         ]
     }
 
@@ -99,13 +101,13 @@ def test_summary_avail_33():
     # given
     plugin = get_stub()
     rpcpeers_on = {
-        'peers' : [
-            { 'id' : '1', 'connected' : True },
+        'peers': [
+            {'id': '1', 'connected': True},
         ]
     }
     rpcpeers_off = {
-        'peers' : [
-            { 'id' : '1', 'connected' : False },
+        'peers': [
+            {'id': '1', 'connected': False},
         ]
     }
 
@@ -124,13 +126,13 @@ def test_summary_avail_66():
     # given
     plugin = get_stub()
     rpcpeers_on = {
-        'peers' : [
-            { 'id' : '1', 'connected' : True },
+        'peers': [
+            {'id': '1', 'connected': True},
         ]
     }
     rpcpeers_off = {
-        'peers' : [
-            { 'id' : '1', 'connected' : False },
+        'peers': [
+            {'id': '1', 'connected': False},
         ]
     }
 
@@ -150,13 +152,13 @@ def test_summary_avail_leadwin():
     # given
     plugin = get_stub()
     rpcpeers_on = {
-        'peers' : [
-            { 'id' : '1', 'connected' : True },
+        'peers': [
+            {'id': '1', 'connected': True},
         ]
     }
     rpcpeers_off = {
-        'peers' : [
-            { 'id' : '1', 'connected' : False },
+        'peers': [
+            {'id': '1', 'connected': False},
         ]
     }
 
@@ -171,23 +173,26 @@ def test_summary_avail_leadwin():
 
 # checks whether the peerstate is persistent
 def test_summary_persist(node_factory):
-    # in order to give the PeerThread a chance in a unit test
-    # we need to give it a low interval
-    opts = {'summary-availability-interval' : 0.1}
+    # Set a low PeerThread interval so we can test quickly.
+    opts = {'summary-availability-interval': 0.5, 'may_reconnect': True}
     opts.update(pluginopt)
     l1, l2 = node_factory.line_graph(2, opts=opts)
 
     # when
-    time.sleep(0.5)        # wait a bit for the PeerThread to capture data
+    l1.daemon.wait_for_log(r".*availability persisted and synced.*")
     s1 = l1.rpc.summary()
+    l2.stop()
     l1.restart()
+    assert l1.daemon.is_in_log(r".*Reopened summary.dat shelve.*")
+    l1.daemon.logsearch_start = len(l1.daemon.logs)
+    l1.daemon.wait_for_log(r".*availability persisted and synced.*")
     s2 = l1.rpc.summary()
 
     # then
     avail1 = int(re.search(' ([0-9]*)% ', s1['channels'][2]).group(1))
     avail2 = int(re.search(' ([0-9]*)% ', s2['channels'][2]).group(1))
     assert(avail1 == 100)
-    assert(avail2 > 0)
+    assert(0 < avail2 < 100)
 
 
 def test_summary_start(node_factory):

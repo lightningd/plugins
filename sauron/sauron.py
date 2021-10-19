@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
-import sys
 import requests
+import sys
+import time
 
 from requests.packages.urllib3.util.retry import Retry
 from requests.adapters import HTTPAdapter
@@ -101,15 +102,33 @@ def getchaininfo(plugin, **kwargs):
 @plugin.method("getrawblockbyheight")
 def getrawblock(plugin, height, **kwargs):
     blockhash_url = "{}/block-height/{}".format(plugin.api_endpoint, height)
-
     blockhash_req = fetch(blockhash_url)
-    block_req = fetch("{}/block/{}/raw".format(plugin.api_endpoint,
-                                                     blockhash_req.text))
-    if blockhash_req.status_code != 200 or block_req.status_code != 200:
+    if blockhash_req.status_code != 200:
         return {
             "blockhash": None,
             "block": None,
         }
+
+    block_url = "{}/block/{}/raw".format(plugin.api_endpoint, blockhash_req.text)
+    while True:
+        block_req = fetch(block_url)
+        if block_req.status_code != 200:
+            return {
+                "blockhash": None,
+                "block": None,
+            }
+        # We may download partial/incomplete files for Esplora. Best effort to
+        # not crash lightningd by sending an invalid (trimmed) block.
+        # NOTE: this will eventually be fixed upstream, at which point we should
+        # just reuse the retry handler.
+        content_len = block_req.headers.get("Content-length")
+        if content_len is None:
+            break
+        if int(content_len) == len(block_req.content):
+            break
+        plugin.log("Esplora gave us an incomplete block, retrying in 2s",
+                   level="error")
+        time.sleep(2)
 
     return {
         "blockhash": blockhash_req.text,

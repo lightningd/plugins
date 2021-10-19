@@ -1,13 +1,14 @@
 from datetime import datetime
 
+
 # ensure an rpc peer is added
 def addpeer(p, rpcpeer):
     pid = rpcpeer['id']
-    if not pid in p.persist['peerstate']:
+    if pid not in p.persist['peerstate']:
         p.persist['peerstate'][pid] = {
-            'connected' : rpcpeer['connected'],
-            'last_seen' : datetime.now() if rpcpeer['connected'] else None,
-            'avail' : 1.0 if rpcpeer['connected'] else 0.0
+            'connected': rpcpeer['connected'],
+            'last_seen': datetime.now() if rpcpeer['connected'] else None,
+            'avail': 1.0 if rpcpeer['connected'] else 0.0
         }
 
 
@@ -16,8 +17,8 @@ def trace_availability(p, rpcpeers):
     p.persist['availcount'] += 1
     leadwin = max(min(p.avail_window, p.persist['availcount'] * p.avail_interval), p.avail_interval)
     samples = leadwin / p.avail_interval
-    alpha   = 1.0 / samples
-    beta    = 1.0 - alpha
+    alpha = 1.0 / samples
+    beta = 1.0 - alpha
 
     for rpcpeer in rpcpeers['peers']:
         pid = rpcpeer['id']
@@ -26,7 +27,7 @@ def trace_availability(p, rpcpeers):
         if rpcpeer['connected']:
             p.persist['peerstate'][pid]['last_seen'] = datetime.now()
             p.persist['peerstate'][pid]['connected'] = True
-            p.persist['peerstate'][pid]['avail']     = 1.0 * alpha + p.persist['peerstate'][pid]['avail'] * beta
+            p.persist['peerstate'][pid]['avail'] = 1.0 * alpha + p.persist['peerstate'][pid]['avail'] * beta
         else:
             p.persist['peerstate'][pid]['connected'] = False
-            p.persist['peerstate'][pid]['avail']     = 0.0 * alpha + p.persist['peerstate'][pid]['avail'] * beta
+            p.persist['peerstate'][pid]['avail'] = 0.0 * alpha + p.persist['peerstate'][pid]['avail'] * beta

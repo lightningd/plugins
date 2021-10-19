@@ -1,54 +1,61 @@
 #!/usr/bin/env python3
-from backup import FileBackend, get_backend, Change
+from backends import get_backend
+from backend import Change
+from server import SocketServer, setup_server_logging
+
 import os
 import click
 import json
+import logging
 import sqlite3
 import sys
 
+root = logging.getLogger()
+root.setLevel(logging.INFO)
+
+handler = logging.StreamHandler(sys.stdout)
+handler.setLevel(logging.DEBUG)
+formatter = logging.Formatter('%(message)s')
+handler.setFormatter(formatter)
+root.addHandler(handler)
 
 @click.command()
-@click.argument("lightning-dir", type=click.Path(exists=True))
 @click.argument("backend-url")
+@click.option('--lightning-dir', type=click.Path(exists=True), default=None, help='Use an existing lightning directory (default: initialize an empty backup).')
 def init(lightning_dir, backend_url):
     destination = backend_url
     backend = get_backend(destination, create=True)
-    backend.version, backend.prev_version = 0, 0
-    backend.offsets = [512, 0]
-    backend.version_count = 0
-    backend.write_metadata()
 
-    lock_file = os.path.join(lightning_dir, "backup.lock")
-    db_file = os.path.join(lightning_dir, "lightningd.sqlite3")
+    if lightning_dir is not None:
+        lock_file = os.path.join(lightning_dir, "backup.lock")
+        db_file = os.path.join(lightning_dir, "lightningd.sqlite3")
 
-    with open(lock_file, "w") as f:
-        f.write(json.dumps({
-            'backend_url': destination,
-        }))
+        with open(lock_file, "w") as f:
+            f.write(json.dumps({
+                'backend_url': destination,
+            }))
 
-    # TODO Take a snapshot
+        data_version = 0
+        if os.path.exists(db_file):
+            print("Found an existing database at {db_file}, initializing the backup with a snapshot".format(db_file=db_file))
+            # Peek into the DB to see if we have
+            db = sqlite3.connect(db_file)
+            cur = db.cursor()
+            rows = cur.execute("SELECT intval FROM vars WHERE name = 'data_version'")
+            data_version = rows.fetchone()[0]
 
-    data_version = 0
-    if os.path.exists(db_file):
-        print("Found an existing database at {db_file}, initializing the backup with a snapshot".format(db_file=db_file))
-        # Peek into the DB to see if we have
-        db = sqlite3.connect(db_file)
-        cur = db.cursor()
-        rows = cur.execute("SELECT intval FROM vars WHERE name = 'data_version'")
-        data_version = rows.fetchone()[0]
-
-        snapshot = Change(
-            version=data_version,
-            snapshot=open(db_file, 'rb').read(),
-            transaction=None
-        )
-        if not backend.add_change(snapshot):
-            print("Could not write snapshot to backend")
-            sys.exit(1)
+            snapshot = Change(
+                version=data_version,
+                snapshot=open(db_file, 'rb').read(),
+                transaction=None
+            )
+            if not backend.add_change(snapshot):
+                print("Could not write snapshot to backend")
+                sys.exit(1)
+            else:
+                print("Successfully written initial snapshot to {destination}".format(destination=destination))
         else:
-            print("Successfully written initial snapshot to {destination}".format(destination=destination))
-    else:
-        print("Database does not exist yet, created an empty backup file")
+            print("Database does not exist yet, created an empty backup file")
 
     print("Initialized backup backend {destination}, you can now start c-lightning".format(
         destination=destination,
@@ -64,6 +71,22 @@ def restore(backend_url, restore_destination):
     backend.restore(restore_destination)
 
 
+@click.command()
+@click.argument("backend-url")
+@click.argument("addr")
+@click.option('--log-mode', type=click.Choice(['plain', 'systemd'], case_sensitive=False), default='plain', help='Debug log mode, defaults to plain')
+@click.option('--log-level', type=click.Choice(['debug', 'info', 'notice', 'warning', 'error', 'critical'], case_sensitive=False), default='info', help='Debug log level, defaults to info')
+def server(backend_url, addr, log_mode, log_level):
+    backend = get_backend(backend_url)
+    addr, port = addr.split(':')
+    port = int(port)
+
+    setup_server_logging(log_mode, log_level)
+
+    server = SocketServer((addr, port), backend)
+    server.run()
+
+
 @click.group()
 def cli():
     pass
@@ -71,6 +94,7 @@ def cli():
 
 cli.add_command(init)
 cli.add_command(restore)
+cli.add_command(server)
 
 if __name__ == "__main__":
     cli()

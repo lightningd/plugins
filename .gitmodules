@@ -22,3 +22,9 @@
 [submodule "webhook"]
 	path = webhook
 	url = https://github.com/fiatjaf/lightningd-webhook.git
+[submodule "python-teos"]
+	path = python-teos
+	url = https://github.com/talaia-labs/python-teos/
+[submodule "btcli4j"]
+	path = btcli4j
+	url = https://github.com/clightning4j/btcli4j.git

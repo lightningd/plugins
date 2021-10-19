@@ -1,0 +1,111 @@
+name: Integration Tests
+
+on:
+  push:
+  pull_request:
+    branches: [ master ]
+
+  schedule:
+    # Schedule a test once a day so we check compatibility with the
+    # upstream c-lightning master
+    - cron:  '0 17 * * *'
+
+jobs:
+  build-and-test:
+    name: Test PY=${{ matrix.python-version}}, DEV=${{ matrix.developer }}, EXP=${{ matrix.experimental }}, DEP=${{ matrix.deprecated }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: [3.6, 3.7, 3.8]
+        developer: [0,1]
+        experimental: [1]
+        deprecated: [0]
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Checkout c-lightning@master
+      uses: actions/checkout@v2
+      with:
+        repository: 'ElementsProject/lightning'
+        path: 'lightning'
+        ref: 'master'
+        submodules: 'recursive'
+
+    - name: Download runtime dependencies
+      run: |
+        export BITCOIND_VERSION="0.20.1"
+        wget https://storage.googleapis.com/c-lightning-tests/bitcoin-${BITCOIND_VERSION}-x86_64-linux-gnu.tar.bz2
+        tar -xjf bitcoin-${BITCOIND_VERSION}-x86_64-linux-gnu.tar.bz2
+        sudo mv bitcoin-${BITCOIND_VERSION}/bin/* /usr/local/bin
+        rm -rf bitcoin-${BITCOIND_VERSION}-x86_64-linux-gnu.tar.gz bitcoin-${BITCOIND_VERSION}
+
+    - name: Compile & install c-lightning@master
+      run: |
+        export EXPERIMENTAL_FEATURES=${{ matrix.experimental }}
+        export DEVELOPER=${{ matrix.developer }}
+        export COMPAT=${{ matrix.deprecated }}
+        export VALGRIND=0
+        sudo apt-get install -y libsqlite3-dev build-essential gettext python python3 net-tools zlib1g-dev libsodium-dev libpq-dev postgresql python3-pip
+
+        cd lightning
+        pip3 install --user -U \
+          pip \
+          mako \
+          mrkd \
+          wheel \
+          blinker \
+          pytest-sentry \
+          pytest-test-groups==1.0.3 \
+          pytest-custom-exit-code==0.3.0 \
+          pytest-json-report
+
+        pip install --user -U -r requirements.txt  --use-feature=in-tree-build
+
+        ./configure --disable-valgrind
+        make -j 16
+        sudo make install
+
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v2
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: Test with pytest
+      run: |
+        export EXPERIMENTAL_FEATURES=${{ matrix.experimental }}
+        export DEVELOPER=${{ matrix.developer }}
+        export COMPAT=${{ matrix.deprecated }}
+        export SLOW_MACHINE=1
+        export TEST_DEBUG=1
+        export TRAVIS=1
+        pip3 install -U virtualenv pip
+        python3 .ci/test.py
+    - name: Upload Unit Test Results
+      if: always()
+      uses: actions/upload-artifact@v2
+      with:
+        name: reports-${{ matrix.python-version }}
+        path: report-*.xml
+
+#  report:
+#    name: "Publish Unit Tests Results"
+#    needs: build-and-test
+#    runs-on: ubuntu-latest
+#    # the build-and-test job might be skipped, we don't need to run this job then
+#    if: success() || failure()
+#
+#    steps:
+#      - name: Download Artifacts
+#        uses: actions/download-artifact@v2
+#        with:
+#          path: artifacts
+#
+#      - name: Publish Unit Test Results
+#        uses: EnricoMi/publish-unit-test-result-action@v1.6
+#        with:
+#          check_name: Unit Test Results
+#          github_token: ${{ secrets.GITHUB_TOKEN }}
+#          files: artifacts/reports-*/report-*.xml

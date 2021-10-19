@@ -1,6 +1,6 @@
 from pyln.client import RpcError
 from pyln.testing.fixtures import *  # noqa: F401, F403
-from pyln.testing.utils import wait_for
+from pyln.testing.utils import wait_for, DEVELOPER
 import os
 import time
 import pytest
@@ -46,7 +46,7 @@ def test_simple_rebalance(node_factory):
     # Send 9 million millisatoshis + reserve + a tiny fee allowance from l3 to
     # l2 for the actual payment
     inv = l2.rpc.invoice(
-        chan['our_channel_reserve_satoshis']*1000 + 9000000 + 100,
+        chan['our_channel_reserve_satoshis'] * 1000 + 9000000 + 100,
         "imbalance", "imbalance"
     )
     time.sleep(1)
@@ -73,13 +73,13 @@ def test_simple_rebalance(node_factory):
     # Now wait for gossip to settle and l1 to learn the topology so it can
     # then route the payment. We do this now since we already did what we
     # could without this info
-    wait_for(lambda: len(l1.rpc.listchannels()['channels']) == 2*len(channels))
+    wait_for(lambda: len(l1.rpc.listchannels()['channels']) == 2 * len(channels))
 
     route = l1.rpc.getroute(node_id=l4.info['id'], msatoshi=amt, riskfactor=1,
                             exclude=[scid + '/0', scid + '/1'])['route']
 
     # This will succeed with l2 doing a rebalancing just-in-time !
-    l1.rpc.sendpay(route, inv['payment_hash'])
+    l1.rpc.sendpay(route, inv['payment_hash'], payment_secret=inv.get('payment_secret'))
     assert l1.rpc.waitsendpay(inv['payment_hash'])['status'] == 'complete'
     assert l2.daemon.is_in_log('Succesfully re-filled outgoing capacity')
 
@@ -113,7 +113,7 @@ def test_rebalance_failure(node_factory):
     # Send 9 million millisatoshis + reserve + a tiny fee allowance from l3 to
     # l2 for the actual payment
     inv = l2.rpc.invoice(
-        chan['our_channel_reserve_satoshis']*1000 + 9000000 + 100,
+        chan['our_channel_reserve_satoshis'] * 1000 + 9000000 + 100,
         "imbalance", "imbalance"
     )
     time.sleep(1)
@@ -140,13 +140,13 @@ def test_rebalance_failure(node_factory):
     # Now wait for gossip to settle and l1 to learn the topology so it can
     # then route the payment. We do this now since we already did what we
     # could without this info
-    wait_for(lambda: len(l1.rpc.listchannels()['channels']) == 2*len(channels))
+    wait_for(lambda: len(l1.rpc.listchannels()['channels']) == 2 * len(channels))
 
     route = l1.rpc.getroute(node_id=l4.info['id'], msatoshi=amt, riskfactor=1,
                             exclude=[scid + '/0', scid + '/1'])['route']
 
     # This will exclude [l5, l3] and fail as there is no route left
-    l1.rpc.sendpay(route, inv['payment_hash'])
+    l1.rpc.sendpay(route, inv['payment_hash'], payment_secret=inv.get('payment_secret'))
     with pytest.raises(RpcError, match='WIRE_TEMPORARY_CHANNEL_FAILURE'):
         l1.rpc.waitsendpay(inv['payment_hash'])
     assert l2.daemon.is_in_log('Could not get a route, no remaining one?')
@@ -154,7 +154,7 @@ def test_rebalance_failure(node_factory):
 
     # Now test the timeout on number of attempts
     l3.rpc.plugin_start(hold_plugin)
-    l1.rpc.sendpay(route, inv['payment_hash'])
+    l1.rpc.sendpay(route, inv['payment_hash'], payment_secret=inv.get('payment_secret'))
     # l3 will hold on the HTLC, and at the time it rejects it, l2 won't try
     # other routes as it exceeded its timeout
     with pytest.raises(RpcError, match='WIRE_TEMPORARY_CHANNEL_FAILURE'):

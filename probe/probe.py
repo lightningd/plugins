@@ -67,17 +67,20 @@ class Probe(Base):
     payment_hash = Column(String)
     started_at = Column(DateTime)
     finished_at = Column(DateTime)
+    amount = Column(Integer)
 
     def jsdict(self):
         return {
             'id': self.id,
             'destination': self.destination,
+            'amount': self.amount,
             'route': self.route,
             'erring_channel': self.erring_channel,
             'failcode': self.failcode,
             'started_at': str(self.started_at),
             'finished_at': str(self.finished_at),
         }
+
 
 def start_probe(plugin):
     t = threading.Thread(target=probe, args=[plugin, None])
@@ -86,19 +89,24 @@ def start_probe(plugin):
 
 
 @plugin.async_method('probe')
-def probe(plugin, request, node_id=None, **kwargs):
+def probe(plugin, request, node_id=None, amount=10000, **kwargs):
     res = None
     if node_id is None:
         nodes = plugin.rpc.listnodes()['nodes']
         node_id = choice(nodes)['nodeid']
 
     s = plugin.Session()
-    p = Probe(destination=node_id, started_at=datetime.now())
+    p = Probe(
+        destination=node_id,
+        started_at=datetime.now(),
+        amount=amount
+    )
     s.add(p)
+
     try:
         route = plugin.rpc.getroute(
             node_id,
-            msatoshi=10000,
+            msatoshi=amount,
             riskfactor=1,
             exclude=exclusions + list(temporary_exclusions.keys())
         )['route']
@@ -140,9 +148,9 @@ def traceroute(plugin, node_id, **kwargs):
         return traceroute
 
     # For each prefix length, shorten the route and attempt the payment
-    for l in range(1, len(traceroute['route'])+1):
+    for i in range(1, len(traceroute['route']) + 1):
         probe = {
-            'route': traceroute['route'][:l],
+            'route': traceroute['route'][:i],
             'payment_hash': ''.join(random.choice(string.hexdigits) for _ in range(64)),
             'started_at': str(datetime.now()),
         }
@@ -220,6 +228,7 @@ def poll_payments(plugin):
         cb = probe['callback']
         del probe['callback']
         cb(**probe)
+
 
 def clear_temporary_exclusion(plugin):
     timed_out = [k for k, v in temporary_exclusions.items() if v < time()]
