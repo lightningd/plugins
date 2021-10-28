@@ -22,6 +22,7 @@ Community curated plugins for c-lightning.
 | [graphql][graphql]                 | Exposes the c-lightning API over [graphql][graphql-spec]                                  |
 | [invoice-queue][invoice-queue]     | Listen to lightning invoices from multiple nodes and send to a redis queue for processing |
 | [lightning-qt][lightning-qt]       | A bitcoin-qt-like GUI for lightningd                                                      |
+| [lnurlp][lnurlp]                   | A plugin to handle lnurlp payRequest callbacks                                            |
 | [monitor][monitor]                 | helps you analyze the health of your peers and channels                                   |
 | [persistent-channels][pers-chans]  | Maintains a number of channels to peers                                                   |
 | [probe][probe]                     | Regularly probes the network for stability                                                |
