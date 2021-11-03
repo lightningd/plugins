@@ -8,6 +8,7 @@ import requests
 import shelve
 import threading
 import time
+import os
 
 plugin = Plugin(autopatch=True)
 
@@ -233,6 +234,26 @@ def summary(plugin, exclude=''):
     return reply
 
 
+def init_db(plugin, retry_time=4, sleep_time=1):
+    db = None
+    retry = 0
+    while (db is None and retry < retry_time):
+        try:
+            db = shelve.open('summary.dat', writeback=True)
+        except IOError as ex:
+            plugin.log("Error during db initialization: {}".format(ex))
+            time.sleep(sleep_time)
+            if retry == retry_time - 2:
+                # In case we can not access to the file
+                # we can safely delete the db and recreate a new one
+                os.remove("summary.dat")
+        retry += 1
+
+    if db is None:
+        raise Error("db initialization error")
+    return db
+
+
 @plugin.init()
 def init(options, configuration, plugin):
     plugin.currency = options['summary-currency']
@@ -241,7 +262,7 @@ def init(options, configuration, plugin):
 
     plugin.avail_interval = float(options['summary-availability-interval'])
     plugin.avail_window = 60 * 60 * int(options['summary-availability-window'])
-    plugin.persist = shelve.open('summary.dat', writeback=True)
+    plugin.persist = init_db(plugin)
     if 'peerstate' not in plugin.persist:
         plugin.log("Creating a new summary.dat shelve", 'debug')
         plugin.persist['peerstate'] = {}
