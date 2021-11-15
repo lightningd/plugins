@@ -742,9 +742,13 @@ def rebalancereport(plugin: Plugin):
     total_fee = Millisatoshi(0)
     total_amount = Millisatoshi(0)
     res["total_successful_rebalances"] = len(rebalances)
+    # pyln-client does not support the 'status' argument as yet
+    # pays = plugin.rpc.listpays(status="complete")["pays"]
+    pays = plugin.rpc.listpays()["pays"]
+    pays = [p for p in pays if p.get('status') == 'complete']
     for r in rebalances:
         try:
-            pay = plugin.rpc.listpays(r["bolt11"])["pays"][0]
+            pay = next(p for p in pays if p["payment_hash"] == r["payment_hash"])
             total_amount += pay["amount_msat"]
             total_fee += pay["amount_sent_msat"] - pay["amount_msat"]
         except Exception:
