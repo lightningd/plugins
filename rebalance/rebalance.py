@@ -448,7 +448,7 @@ def feeadjust_would_be_nice(plugin: Plugin):
 
 
 def get_max_amount(i: int, plugin: Plugin):
-    return max(plugin.min_amount, plugin.enough_liquidity / (4**(i + 1)))
+    return max(plugin.min_amount, plugin.enough_liquidity / (4**i))
 
 
 def get_max_fee(plugin: Plugin, msat: Millisatoshi):
