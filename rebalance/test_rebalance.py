@@ -77,6 +77,11 @@ def test_rebalance_manual(node_factory, bitcoind):
     assert result['hops'] == 3
     assert result['received'] == '250000000msat'
 
+    # briefly check rebalancereport works
+    report = l1.rpc.rebalancereport()
+    assert report.get('rebalanceall_is_running') == False
+    assert report.get('total_successful_rebalances') == 2
+
 
 def test_rebalance_all(node_factory, bitcoind):
     l1, l2, l3 = node_factory.line_graph(3, opts=plugin_opt)
@@ -135,3 +140,8 @@ def test_rebalance_all(node_factory, bitcoind):
     c13 = l1.rpc.listpeers(l3.info['id'])['peers'][0]['channels'][0]
     assert abs(0.5 - (Millisatoshi(c12['to_us_msat']) / Millisatoshi(c12['total_msat']))) < 0.01
     assert abs(0.5 - (Millisatoshi(c13['to_us_msat']) / Millisatoshi(c13['total_msat']))) < 0.01
+
+    # briefly check rebalancereport works
+    report = l1.rpc.rebalancereport()
+    assert report.get('rebalanceall_is_running') == False
+    assert report.get('total_successful_rebalances') == 2
