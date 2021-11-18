@@ -25,13 +25,13 @@ def wait_for_all_htlcs(nodes):
 
 # returns our_amount_msat for a given node and scid
 def get_ours(node, scid):
-    return [c for c in node.rpc.listfunds()['channels'] if c['short_channel_id'] == scid][0]['our_amount_msat']
+    return [c for c in node.rpc.listfunds()['channels'] if c.get('short_channel_id') == scid][0]['our_amount_msat']
 
 
 # returns their_amount_msat for a given node and scid
 def get_theirs(node, scid):
     ours = get_ours(node, scid)
-    total = [c for c in node.rpc.listfunds()['channels'] if c['short_channel_id'] == scid][0]['amount_msat']
+    total = [c for c in node.rpc.listfunds()['channels'] if c.get('short_channel_id') == scid][0]['amount_msat']
     return total - ours
 
 
