@@ -19,6 +19,7 @@ Community curated plugins for c-lightning.
 | [drain][drain]                     | Draining, filling and balancing channels with automatic chunks.                           |
 | [event-websocket][event-websocket] | Exposes notifications over a Websocket                                                    |
 | [feeadjuster][feeadjuster]         | Dynamic fees to keep your channels more balanced                                          |
+| [go-lnmetrics.reporter][reporter]  | Collect and report of the lightning node metrics                                          |
 | [graphql][graphql]                 | Exposes the c-lightning API over [graphql][graphql-spec]                                  |
 | [invoice-queue][invoice-queue]     | Listen to lightning invoices from multiple nodes and send to a redis queue for processing |
 | [lightning-qt][lightning-qt]       | A bitcoin-qt-like GUI for lightningd                                                      |
@@ -208,3 +209,4 @@ Python plugins developers must ensure their plugin to work with all Python versi
 [btcli4j]: https://github.com/clightning4j/btcli4j 
 [backup]: https://github.com/lightningd/plugins/tree/master/backup
 [commando]: https://github.com/lightningd/plugins/tree/master/commando
+[reporter]: https://github.com/LNOpenMetrics/go-lnmetrics.reporter
