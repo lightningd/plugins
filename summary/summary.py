@@ -10,6 +10,7 @@ import threading
 import time
 import os
 import glob
+import sys
 
 
 plugin = Plugin(autopatch=True)
@@ -268,6 +269,23 @@ def init_db(plugin, retry_time=4, sleep_time=1):
     return db
 
 
+def close_db(plugin) -> bool:
+    """
+    This method contains the logic to close the database
+    and print some error message that can happen.
+    """
+    if plugin.persist is not None:
+        try:
+            plugin.persist.close()
+            plugin.log("Database sync and closed with success")
+        except ValueError as ex:
+            plugin.log("An exception occurs during the db closing operation with the following message: {}".format(ex))
+            return False
+    else:
+        plugin.log("There is no db opened for the plugin")
+    return True
+
+
 @plugin.init()
 def init(options, configuration, plugin):
     plugin.currency = options['summary-currency']
@@ -318,6 +336,13 @@ def init(options, configuration, plugin):
         plugin.my_address = None
 
     plugin.log("Plugin summary.py initialized")
+
+
+@plugin.subscribe("shutdown")
+def on_rpc_command_callback(plugin, **kwargs):
+    plugin.log("Closing db before lightnind exit")
+    close_db(plugin)
+    sys.exit()
 
 
 plugin.add_option(
