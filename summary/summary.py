@@ -9,6 +9,8 @@ import shelve
 import threading
 import time
 import os
+import glob
+
 
 plugin = Plugin(autopatch=True)
 
@@ -235,6 +237,11 @@ def summary(plugin, exclude=''):
 
 
 def init_db(plugin, retry_time=4, sleep_time=1):
+    """
+    On some os we receive some error of type [Errno 79] Inappropriate file type or format: 'summary.dat.db'
+    With this function we retry the call to open db 4 time, and if the last time we obtain an error
+    We will remove the database and recreate a new one.
+    """
     db = None
     retry = 0
     while (db is None and retry < retry_time):
@@ -244,9 +251,16 @@ def init_db(plugin, retry_time=4, sleep_time=1):
             plugin.log("Error during db initialization: {}".format(ex))
             time.sleep(sleep_time)
             if retry == retry_time - 2:
+                plugin.log("As last attempt we try to delete the db.")
                 # In case we can not access to the file
                 # we can safely delete the db and recreate a new one
-                os.remove("summary.dat")
+                #
+                # From this reference https://stackoverflow.com/a/16231228/10854225
+                # the file can have different extension and depends from the os target
+                # in this way we say to remove any file that start with summary.dat*
+                # FIXME: There is better option to obtain the same result
+                for db_file in glob.glob(os.path.join(".", "summary.dat*")):
+                    os.remove(db_file)
         retry += 1
 
     if db is None:
