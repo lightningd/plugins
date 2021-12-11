@@ -54,16 +54,12 @@ jobs:
         cd lightning
         pip3 install --user -U \
           pip \
-          mako \
-          mrkd \
           wheel \
           blinker \
-          pytest-sentry \
-          pytest-test-groups==1.0.3 \
           pytest-custom-exit-code==0.3.0 \
           pytest-json-report
 
-        pip install --user -U -r requirements.txt  --use-feature=in-tree-build
+        pip install --user -U -r requirements.lock  --use-feature=in-tree-build
 
         ./configure --disable-valgrind
         make -j 16
