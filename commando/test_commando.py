@@ -23,7 +23,7 @@ def test_add_reader_restrictions():
 
 
 def test_commando(node_factory):
-    l1, l2 = node_factory.line_graph(2, fundchannel=False)
+    l1, l2 = node_factory.line_graph(2, fundchannel=True)
 
     l1.rpc.plugin_start(plugin_path, commando_reader=l2.info['id'])
     l2.rpc.plugin_start(plugin_path)
