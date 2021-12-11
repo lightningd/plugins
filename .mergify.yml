@@ -1,0 +1,19 @@
+queue_rules:
+  - name: default
+    conditions:
+      - "check-success=bitcoin-bot/fixups"
+      - "check-success=Integration Tests"
+
+pull_request_rules:
+  - name: Automatic merge on approval
+    conditions:
+      - "#approved-reviews-by>=2"
+      - "linear-history"
+      - "check-success=bitcoin-bot/fixups"
+      - "base=master"
+      - "label!=work-in-progress"
+    actions:
+        queue:
+            name: default
+            update_method: rebase
+
