@@ -33,6 +33,7 @@ jobs:
         path: 'lightning'
         ref: 'master'
         submodules: 'recursive'
+        fetch-depth: 0  # Required for pyln versions to be recognized
 
     - name: Download runtime dependencies
       run: |
