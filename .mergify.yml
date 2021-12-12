@@ -16,4 +16,9 @@ pull_request_rules:
         queue:
             name: default
             update_method: rebase
-
+            
+  - name: Remove outdated reviews
+    conditions:
+      - base=master
+    actions:
+      dismiss_reviews:
