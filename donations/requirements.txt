@@ -4,3 +4,4 @@ flask-bootstrap>=3.3.7.1
 flask-wtf==0.15.1
 Pillow>=6.2.2
 pyln-client>=0.9.0
+wtforms==2.3.3
