@@ -7,7 +7,7 @@ queue_rules:
 pull_request_rules:
   - name: Automatic merge on approval
     conditions:
-      - "#approved-reviews-by>=2"
+      - "#approved-reviews-by>=1"
       - "linear-history"
       - "check-success=bitcoin-bot/fixups"
       - "base=master"
