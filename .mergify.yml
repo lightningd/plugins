@@ -9,8 +9,9 @@ pull_request_rules:
     conditions:
       - "#approved-reviews-by>=1"
       - "linear-history"
-      - "check-success=bitcoin-bot/fixups"
-      - "check-success=Integration Tests"
+      - "check-success=Test PY=3.6, DEV=1, EXP=1, DEP=0"
+      - "check-success=Test PY=3.7, DEV=1, EXP=1, DEP=0"
+      - "check-success=Test PY=3.8, DEV=1, EXP=1, DEP=0"
       - "base=master"
       - "label!=work-in-progress"
     actions:
