@@ -23,6 +23,7 @@ Community curated plugins for c-lightning.
 | [graphql][graphql]                   | Exposes the c-lightning API over [graphql][graphql-spec]                                  |
 | [invoice-queue][invoice-queue]       | Listen to lightning invoices from multiple nodes and send to a redis queue for processing |
 | [lightning-qt][lightning-qt]         | A bitcoin-qt-like GUI for lightningd                                                      |
+| [listmempoolfunds][listmempoolfunds] | A replacement for listfunds that includes unconfirmed received outputs in the mempool     |
 | [monitor][monitor]                   | helps you analyze the health of your peers and channels                                   |
 | [persistent-channels][pers-chans]    | Maintains a number of channels to peers                                                   |
 | [probe][probe]                       | Regularly probes the network for stability                                                |
@@ -186,6 +187,7 @@ Python plugins developers must ensure their plugin to work with all Python versi
 [graphql]: https://github.com/nettijoe96/c-lightning-graphql
 [graphql-spec]: https://graphql.org/
 [lightning-qt]: https://github.com/darosior/pylightning-qt
+[listmempoolfunds]: https://github.com/andrewtoth/listmempoolfunds
 [cpp-api]: https://github.com/darosior/lightningcpp
 [js-api]: https://github.com/lightningd/clightningjs
 [monitor]: https://github.com/renepickhardt/plugins/tree/master/monitor
