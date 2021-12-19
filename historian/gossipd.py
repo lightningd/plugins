@@ -235,7 +235,8 @@ def parse_address(b):
     elif a.typ == 4:
         a.addr = b.read(35)
     else:
-        raise ValueError("Unknown address type {typ}".format(typ=a.typ))
+        print(f"Unknown address type {a.typ}")
+        return None
     a.port, = struct.unpack("!H", b.read(2))
     return a
 
