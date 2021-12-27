@@ -87,20 +87,10 @@ def compact(plugin, request, **kwargs):
     else:
         request.set_result(r) # plugin requires for immediate return
 
-@plugin.init()
-def on_init(options, **kwargs):
-    dest = options.get('backup-destination', 'null')
-    if dest != 'null':
-        plugin.log(
-            "The `--backup-destination` option is deprecated and will be "
-            "removed in future versions of the backup plugin. Please remove "
-            "it from your configuration. The destination is now determined by "
-            "the `backup.lock` file in the lightning directory",
-            level="warn"
-        )
 
     # IMPORTANT NOTE
-    # Putting RPC stuff in init() like the following can cause deadlocks!
+    # Don't make RPC calls (or any other) that trigger the db_write hook, we
+    # would deadlock as we cannot handle the hook simultaneous in a single threat.
     # See: https://github.com/lightningd/plugins/issues/209
     #configs = plugin.rpc.listconfigs()
     #if not configs['wallet'].startswith('sqlite3'):
@@ -149,12 +139,6 @@ def kill(message: str):
     # Sleep forever, just in case the master doesn't die on us...
     while True:
         time.sleep(30)
-
-
-plugin.add_option(
-    'backup-destination', None,
-    'UNUSED. Kept for backward compatibility only. Please update your configuration to remove this option.'
-)
 
 
 if __name__ == "__main__":

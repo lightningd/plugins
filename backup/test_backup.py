@@ -249,23 +249,6 @@ def test_restore_dir(node_factory, directory):
     subprocess.check_call([cli_path, "restore", bdest, bpath])
 
 
-def test_warning(directory, node_factory):
-    bpath = os.path.join(directory, 'lightning-1', 'regtest')
-    bdest = 'file://' + os.path.join(bpath, 'backup.dbak')
-    os.makedirs(bpath)
-    subprocess.check_call([cli_path, "init", "--lightning-dir", bpath, bdest])
-    opts = {
-        'plugin': plugin_path,
-        'allow-deprecated-apis': deprecated_apis,
-        'backup-destination': 'somewhere/over/the/rainbox',
-    }
-    l1 = node_factory.get_node(options=opts, cleandir=False)
-    l1.stop()
-
-    assert(l1.daemon.is_in_log(
-        r'The `--backup-destination` option is deprecated and will be removed in future versions of the backup plugin.'
-    ))
-
 class DummyBackend(Backend):
     def __init__(self):
         pass
@@ -314,7 +297,7 @@ def test_compact(bitcoind, directory, node_factory):
     tmp = tempfile.TemporaryDirectory()
     subprocess.check_call([cli_path, "restore", bdest, tmp.name])
 
-    # Trigger a couple more changes and the compact again.
+    # Trigger a couple more changes and then compact again.
     bitcoind.generate_block(100)
     sync_blockheight(bitcoind, [l1])
 
