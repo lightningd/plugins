@@ -7,6 +7,8 @@ from pyln.testing.utils import sync_blockheight
 import os
 import pytest
 import subprocess
+from packaging import version
+import re
 
 
 plugin_dir = os.path.dirname(__file__)
@@ -77,6 +79,37 @@ def test_init_not_empty(node_factory, directory):
     l1.daemon.opts['allow-deprecated-apis'] = deprecated_apis
     l1.start()
     assert(l1.daemon.is_in_log(r'plugin-backup.py: Versions match up'))
+
+
+def test_shutdown(directory, node_factory):
+    """
+    For lightningd versions that support it, we test a clean shutdown
+    """
+    bpath = os.path.join(directory, 'lightning-1', 'regtest')
+    bdest = 'file://' + os.path.join(bpath, 'backup.dbak')
+    os.makedirs(bpath)
+    subprocess.check_call([cli_path, "init", "--lightning-dir", bpath, bdest])
+    opts = {
+        'plugin': plugin_path,
+        'allow-deprecated-apis': deprecated_apis,
+    }
+    l1 = node_factory.get_node(options=opts, cleandir=False)
+    # shutdown notification introduced in v0.10.2
+    md = re.match(r'(v\d+\.\d+\.\d+(?:-\d+)?)(?:-g(\w+))?', l1.info['version'])
+    if version.parse(md.group(1)) < version.parse('v0.10.2'):
+        pytest.skip("Test needs lightningd version v0.10.2 or higher")
+
+    # add some db writes to compact
+    for _ in range(50):
+        l1.rpc.datastore(key='test', string='data', mode="create-or-append")
+
+    l1.rpc.backup_compact()
+    l1.restart()
+    if version.parse(md.group(1)) < version.parse('v0.10.2-126'):
+        assert(l1.daemon.is_in_log(r'plugin-backup.*we want to exit as last'))
+        return
+    assert(l1.daemon.is_in_log(r'plugin-backup.py: compaction aborted'))
+    l1.rpc.backup_compact()
 
 
 @flaky
