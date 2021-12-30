@@ -2,5 +2,5 @@ Click==7.0
 flaky>=3.6.1
 tqdm>=4.45
 psutil>=5
-pyln-client ~= 0.9.2
+pyln-client ~= 0.10.1
 packaging>=19.0
