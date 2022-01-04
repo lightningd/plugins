@@ -61,31 +61,31 @@ def run_one(p: Plugin) -> bool:
     vdir = tempfile.TemporaryDirectory()
     vpath = Path(vdir.name)
 
-    subprocess.check_call(['virtualenv', '--clear', '-q', vpath])
+    subprocess.check_output(['virtualenv', '--clear', '-q', vpath])
     bin_path = vpath / 'bin'
     pip_path = vpath / 'bin' / 'pip3'
     python_path = vpath / 'bin' / 'python'
     pytest_path = vpath / 'bin' / 'pytest'
-    pip_opts = ['-q']
+    pip_opts = ['-qq']
 
     # Install pytest (eventually we'd want plugin authors to include
     # it in their requirements-dev.txt, but for now let's help them a
     # bit).
-    subprocess.check_call(
+    subprocess.check_output(
         [pip_path, 'install', *pip_opts, *global_dependencies],
         stderr=subprocess.STDOUT,
     )
 
     # Now install all the requirements
     print("Installing requirements from {p.requirements}".format(p=p))
-    subprocess.check_call(
+    subprocess.check_output(
         [pip_path, 'install', '-U', *pip_opts, '-r', p.requirements],
         stderr=subprocess.STDOUT,
     )
 
     if p.devrequirements.exists():
         print("Installing requirements from {p.devrequirements}".format(p=p))
-        subprocess.check_call(
+        subprocess.check_output(
             [pip_path, 'install', '-U', *pip_opts, '-r', p.devrequirements],
             stderr=subprocess.STDOUT,
         )
@@ -97,12 +97,6 @@ def run_one(p: Plugin) -> bool:
 
     # Update pyln-testing to master since we're running against c-lightning master.
     install_pyln_testing(pip_path)
-
-    print("Current environment packages:")
-    subprocess.check_call(
-        [pip_path, 'freeze'],
-        stderr=subprocess.STDOUT,
-    )
 
     print("Running tests")
     try:
@@ -142,19 +136,19 @@ def install_pyln_testing(pip_path):
     dest = Path('/tmp/lightning')
     repo = 'https://github.com/ElementsProject/lightning.git'
     if not dest.exists():
-        subprocess.check_call([
+        subprocess.check_output([
             'git', 'clone', repo, dest
         ])
 
-    subprocess.check_call([
+    subprocess.check_output([
         pip_path, 'install', '-U', f'{dest}/contrib/pyln-testing'
     ])
 
-    subprocess.check_call([
+    subprocess.check_output([
         pip_path, 'install', '-U', f'{dest}/contrib/pyln-client'
     ])
 
-    subprocess.check_call([
+    subprocess.check_output([
         pip_path, 'install', '-U', f'{dest}/contrib/pyln-proto'
     ])
 
