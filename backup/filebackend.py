@@ -165,28 +165,29 @@ class FileBackend(Backend):
         longer when catching-up with changes (db writes) that happened while compacting.
         """
         stats = {}
-        with self.lock: # freeze our view of latest backup state
+
+        # Freeze our view of latest backup state.
+        with self.lock:
             self.read_metadata()
-            stop = self.version
-            stop_offset = self.offsets[1] # keep for catch-up later
+            stop_ver = self.version
+            stop_offset = self.offsets[1]   # keep for catch-up
             stats['before'] = self.stats()
 
+        # Create temporary snapshot database.
         tmp = tempfile.TemporaryDirectory()
-
-        # Location we extract the snapshot to and then apply
-        # incremental changes.
         snapshotpath = os.path.join(tmp.name, "lightningd.sqlite3")
-
-        logging.info("Starting compaction: stats={}".format(stats))
         self.db = self._db_open(snapshotpath)
 
-        # Remember `change`, it's the rewindable change we need to
-        # stash on top of the new snapshot.
-        for change in self.stream_changes(stop_version=stop):
+        logging.info("Starting compaction: stats={}".format(stats))
+
+        # Apply all changes from current backup to the snapshot database, up-to
+        # version = stop_ver-1, The last change (transaction) with version = stop_ver
+        # is kept for later.
+        for change in self.stream_changes(stop_version=stop_ver):
             if self.stop_compact:
                 return clone.cleanup()
 
-            if change.version == stop: # our snapshot will include up-to `stop` version - 1
+            if change.version == stop_ver:
                 break
 
             if change.snapshot is not None:
@@ -200,33 +201,28 @@ class FileBackend(Backend):
         # have less than two changes in the backup (starting
         # c-lightning alone produces 6 changes), and compacting an
         # almost empty backup is not useful.
-        assert change is not None
+        assert change.transaction is not None
+        assert change.version == stop_ver
 
-        # We are about to add the snapshot n-1 on top of n-2 (init),
-        # followed by the last change for n on top of
-        # n-1. prev_version trails that by one.
-        clone.version = change.version - 2  # n-2
-        clone.write_metadata()
-
+        # Create a new snapshot blob from snapshot database
         snapshot = Change(
-            version=change.version - 1,     # n-1
+            version=stop_ver - 1,
             snapshot=open(snapshotpath, 'rb').read(),
             transaction=None
         )
-        logging.debug("Adding initial snapshot with {} bytes for version {}".format(
-            len(snapshot.snapshot),
-            snapshot.version
-        ))
+
+        logging.debug("Adding initial snapshot with {} bytes for version {}".format(len(snapshot.snapshot), snapshot.version))
         clone.add_change(snapshot)
+        assert clone.version == stop_ver - 1
 
-        assert clone.version == change.version - 1
-        assert clone.prev_version == change.version - 2
         logging.debug("Adding transaction for version {}".format(change.version))
-        clone.add_change(change)            # n
+        clone.add_change(change)
+        assert clone.version == stop_ver
+        assert clone.prev_version == stop_ver - 1
 
-        assert self.version >= clone.version # db_write's in other thread can only _add_
+        # Just some extra sanity check, the main thread can only _add_ changes
+        assert self.version >= clone.version
         assert self.prev_version >= clone.prev_version
-        assert clone.version == stop
 
         # Refresh view of latest state so our clone can catch-up, then atomically
         # move clone-->self, all while blocking on_db_write
@@ -239,8 +235,11 @@ class FileBackend(Backend):
                 if self.stop_compact:
                     return clone.cleanup()
 
-                if change.version == stop: # clone already has it, skip
+                # stream_changes() expects to read at least one version, so we start
+                # at stop_offset, but clone already has stop_ver so skip it
+                if change.version == stop_ver:
                     continue
+
                 clone.add_change(change) # up-to and _including_ latest version
                 log.append(change.version)
 
