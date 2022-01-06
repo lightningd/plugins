@@ -102,7 +102,8 @@ class FileBackend(Backend):
         return True
 
     def stream_changes(self, stop_version=None, offset=None) -> Iterator[Change]:
-        if not stop_version and self.read_metadata():
+        if stop_version is None:
+            self.read_metadata()
             stop_version = self.version
 
         offset = 512 if offset is None else offset
@@ -187,11 +188,11 @@ class FileBackend(Backend):
             if self.stop_compact:
                 return clone.cleanup()
 
-            if change.version == stop_ver:
-                break
-
             if change.snapshot is not None:
                 self._restore_snapshot(change.snapshot, snapshotpath)
+
+            if change.version == stop_ver:
+                break
 
             if change.transaction is not None:
                 self._restore_transaction(change.transaction)
