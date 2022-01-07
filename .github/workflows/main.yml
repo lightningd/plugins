@@ -37,7 +37,7 @@ jobs:
 
     - name: Download runtime dependencies
       run: |
-        export BITCOIND_VERSION="0.21.0"
+        export BITCOIND_VERSION="0.20.1"
         wget https://storage.googleapis.com/c-lightning-tests/bitcoin-${BITCOIND_VERSION}-x86_64-linux-gnu.tar.bz2
         tar -xjf bitcoin-${BITCOIND_VERSION}-x86_64-linux-gnu.tar.bz2
         sudo mv bitcoin-${BITCOIND_VERSION}/bin/* /usr/local/bin
