@@ -426,6 +426,7 @@ def rebalance(
                 "sent": msatoshi + fees,
                 "received": msatoshi,
                 "fee": fees,
+                "fee_percentage": f"{fees/msatoshi*100:.3}%",
                 "hops": len(route),
                 "outgoing_scid": outgoing_scid,
                 "incoming_scid": incoming_scid,
