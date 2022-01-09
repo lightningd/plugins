@@ -304,11 +304,11 @@ def rebalance(plugin, outgoing_scid, incoming_scid, msatoshi: Millisatoshi = Non
                 excludes.append(worst_channel['channel'] + '/' + str(worst_channel['direction']))
                 continue
 
-
             rpc_result = {
                 "sent": msatoshi + fees,
                 "received": msatoshi,
                 "fee": fees,
+                "fee_percentage": f"{fees/msatoshi*100:.3}%",
                 "hops": len(route),
                 "outgoing_scid": outgoing_scid,
                 "incoming_scid": incoming_scid,
