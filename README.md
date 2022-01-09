@@ -25,6 +25,7 @@ Community curated plugins for c-lightning.
 | [lightning-qt][lightning-qt]       | A bitcoin-qt-like GUI for lightningd                                                      |
 | [listmempoolfunds][listmempoolfunds] | Track unconfirmed wallet deposits|
 | [monitor][monitor]                 | helps you analyze the health of your peers and channels                                   |
+| [noise][noise]                     | Chat with your fellow node operators                                                      |
 | [persistent-channels][pers-chans]  | Maintains a number of channels to peers                                                   |
 | [probe][probe]                     | Regularly probes the network for stability                                                |
 | [prometheus][prometheus]           | Lightning node exporter for the prometheus timeseries server                              |
@@ -171,6 +172,7 @@ Python plugins developers must ensure their plugin to work with all Python versi
 [esplora]: https://github.com/Blockstream/esplora
 [pers-chans]: https://github.com/lightningd/plugins/tree/master/persistent-channels
 [probe]: https://github.com/lightningd/plugins/tree/master/probe
+[noise]: https://github.com/lightningd/plugins/tree/master/noise
 [prometheus]: https://github.com/lightningd/plugins/tree/master/prometheus
 [summary]: https://github.com/lightningd/plugins/tree/master/summary
 [donations]: https://github.com/lightningd/plugins/tree/master/donations
