@@ -74,8 +74,9 @@ def get_peer_id_for_scid(plugin: Plugin, scid: str):
 def get_local_channel_for_scid(plugin: Plugin, scid: str):
     for peer in plugin.peers:
         for ch in peer['channels']:
-            if ch['short_channel_id'] == scid:
-                return ch
+            if 'short_channel_id' in ch:
+                if ch['short_channel_id'] == scid:
+                    return ch
     return None
 
 
