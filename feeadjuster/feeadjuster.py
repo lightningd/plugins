@@ -66,7 +66,7 @@ def get_ratio_hard(our_percentage):
 def get_peer_id_for_scid(plugin: Plugin, scid: str):
     for peer in plugin.peers:
         for ch in peer['channels']:
-            for ch in peer['channels']:
+            if 'short_channel_id' in ch:
                 if ch['short_channel_id'] == scid:
                     return peer['id']
     return None
