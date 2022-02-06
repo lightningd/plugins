@@ -152,7 +152,7 @@ def sendmsg(node_id, msg, plugin, request, pay=None, **kwargs):
 @plugin.async_method('recvmsg')
 def recvmsg(plugin, request, last_id=None, **kwargs):
     next_id = int(last_id) + 1 if last_id is not None else len(plugin.messages)
-    if next_id < len(plugin.messages):
+    if next_id <= len(plugin.messages):
         res = plugin.messages[int(last_id)].to_dict()
         res['total_messages'] = len(plugin.messages)
         request.set_result(res)
