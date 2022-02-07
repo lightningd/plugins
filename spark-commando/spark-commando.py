@@ -254,7 +254,7 @@ def enable_spark(plugin, rune=None, restrictions=[]):
 @plugin.method("spark-listpays")
 def spark_listpays():
     plugin.log("listpeers")
-    return plugin.rpc.listpeers()
+    return plugin.rpc.listpays()
 
 @plugin.method("spark-listpeers")
 def spark_listpeers():
