@@ -1,1 +1,3 @@
 pyln-client
+pyqrcode
+pypng

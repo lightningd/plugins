@@ -6,7 +6,9 @@ import textwrap
 import time
 import secrets
 import string
+import pyqrcode
 from typing import Dict, Tuple, Optional
+
 
 plugin = Plugin()
 
@@ -225,15 +227,12 @@ def enable_spark(plugin, rune=None, restrictions=[]):
         if this_rune is None:
             raise RpcError('commando-rune', {'rune': rune}, whynot)
 
-    read_only_rune = add_reader_restrictions(this_rune)
 
-    restrictions.append("method^spark")
-    
-    if isinstance(restrictions, str):
-        this_rune.add_restriction(runes.Restriction.from_str(restrictions))
+
+    if restrictions == 'readonly':
+        add_reader_restrictions(this_rune)
     else:
-        for r in restrictions:
-            this_rune.add_restriction(runes.Restriction.from_str(r))
+        this_rune.add_restriction(runes.Restriction.from_str("method^spark"))
 
     # Now we've succeeded, update rune_counter.
     if rune is None:
@@ -245,15 +244,17 @@ def enable_spark(plugin, rune=None, restrictions=[]):
         plugin.rune_counter_generation += 1
     
     #Should replace +=1 to +=2?
-
-    return {'rune': this_rune.to_base64(), 
-            'read-only rune':read_only_rune
-            }
+    res = {}
+    res["node_id"] = plugin.rpc.getinfo()["id"]
+    res["rune"] = this_rune.to_base64()
+    qr = pyqrcode.create(str(res), encoding="ascii")
+    qr.show()
+    return "Scan the QR and have fun!"
 
 
 @plugin.method("spark-listpays")
 def spark_listpays():
-    plugin.log("listpeers")
+    plugin.log("listpays")
     return plugin.rpc.listpays()
 
 @plugin.method("spark-listpeers")
