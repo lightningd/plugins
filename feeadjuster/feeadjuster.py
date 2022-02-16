@@ -66,18 +66,16 @@ def get_ratio_hard(our_percentage):
 def get_peer_id_for_scid(plugin: Plugin, scid: str):
     for peer in plugin.peers:
         for ch in peer['channels']:
-            if 'short_channel_id' in ch:
-                if ch['short_channel_id'] == scid:
-                    return peer['id']
+            if ch.get('short_channel_id') == scid:
+                return peer['id']
     return None
 
 
 def get_local_channel_for_scid(plugin: Plugin, scid: str):
     for peer in plugin.peers:
         for ch in peer['channels']:
-            if 'short_channel_id' in ch:
-                if ch['short_channel_id'] == scid:
-                    return ch
+            if ch.get('short_channel_id') == scid:
+                return ch
     return None
 
 
@@ -236,8 +234,8 @@ def feeadjust(plugin: Plugin, scid: str = None):
     for peer in plugin.peers:
         for chan in peer["channels"]:
             if chan["state"] == "CHANNELD_NORMAL":
-                _scid = chan["short_channel_id"]
-                if scid != None and scid != _scid:
+                _scid = chan.get("short_channel_id")
+                if scid is not None and scid != _scid:
                     continue
                 plugin.adj_balances[_scid] = {
                     "our": int(chan["to_us_msat"]),

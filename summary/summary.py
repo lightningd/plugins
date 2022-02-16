@@ -24,7 +24,7 @@ try:
 except Exception:
     pass
 
-Channel = namedtuple('Channel', ['total', 'ours', 'theirs', 'pid', 'private', 'connected', 'scid', 'avail', 'base' ,'permil'])
+Channel = namedtuple('Channel', ['total', 'ours', 'theirs', 'pid', 'private', 'connected', 'scid', 'avail', 'base', 'permil'])
 Charset = namedtuple('Charset', ['double_left', 'left', 'bar', 'mid', 'right', 'double_right', 'empty'])
 if have_utf8:
     draw = Charset('╟', '├', '─', '┼', '┤', '╢', '║')
@@ -216,11 +216,11 @@ def summary(plugin, exclude=''):
             else:
                 extra += '_'
             s += '[{}] '.format(extra)
-            
+
             # append fees
             s += ' {:5}'.format(c.base.millisatoshis)
             s += ' {:6}  '.format(c.permil)
-            
+
             # append 24hr availability
             s += '{:4.0%}  '.format(c.avail)
 
@@ -265,7 +265,7 @@ def init_db(plugin, retry_time=4, sleep_time=1):
         retry += 1
 
     if db is None:
-        raise Error("db initialization error")
+        raise RuntimeError("db initialization error")
     return db
 
 
