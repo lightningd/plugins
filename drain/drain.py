@@ -293,7 +293,7 @@ def try_for_htlc_fee(plugin, payload, peer_id, amount, chunk, spendable_before):
                 return False  # should not happen, but maybe API changes
             payload['success_msg'].append(f"{amount + fees}msat sent over {len(route)} "
                                           f"hops to {payload['command']} {amount}msat "
-                                          f"[{chunk + 1}/{payload['chunks']}")
+                                          f"[{chunk + 1}/{payload['chunks']}]")
             # we need to wait for HTLC to resolve, so remaining amounts
             # can be calculated correctly for the next chunk
             wait_ours(plugin, payload['scid'], ours)
