@@ -143,7 +143,6 @@ def test_forward_ok(node_factory, executor):
     assert(m2['verified'] is True)
 
 
-@pytest.mark.xfail(raises=concurrent.futures._base.TimeoutError)
 def test_read_tip(node_factory, executor):
     """Testcase for issue #331  https://github.com/lightningd/plugins/issues/331
 

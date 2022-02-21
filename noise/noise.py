@@ -160,7 +160,7 @@ def recvmsg(plugin, request, last_id=None, **kwargs):
     Returns a `concurrent.futures.Future`.
     Optional parameter `last_id` can be supplied to return an older message.
     """
-    next_id = int(last_id) + 1 if last_id is not None else len(plugin.messages)
+    next_id = int(last_id) if last_id is not None else len(plugin.messages)
     if next_id < len(plugin.messages):
         res = plugin.messages[int(last_id)].to_dict()
         res['total_messages'] = len(plugin.messages)
