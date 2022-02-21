@@ -9,6 +9,7 @@ import os
 import pytest
 import unittest
 import zbase32
+import concurrent
 
 
 plugin = os.path.join(os.path.dirname(__file__), 'noise.py')
@@ -140,6 +141,20 @@ def test_forward_ok(node_factory, executor):
 
     assert(m2['sender'] == l1.info['id'])
     assert(m2['verified'] is True)
+
+
+@pytest.mark.xfail(raises=concurrent.futures._base.TimeoutError)
+def test_read_tip(node_factory, executor):
+    """Testcase for issue #331  https://github.com/lightningd/plugins/issues/331
+
+    We try to read the topmost message by its ID.
+    """
+    opts = [{'plugin': plugin}] * 3
+    l1, l2, l3 = node_factory.line_graph(3, wait_for_announce=True, opts=opts)
+
+    l1.rpc.sendmsg(l3.info['id'], "test 1")
+    msg = executor.submit(l3.rpc.recvmsg, 0).result(10)
+    assert msg.get('body') == "test 1"
 
 
 def test_missing_tlv_fields(node_factory):
