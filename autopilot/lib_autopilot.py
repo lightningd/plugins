@@ -243,6 +243,7 @@ class Autopilot():
             path_pdf[node] = path_sum
 
         s = sum(path_pdf.values())
+        # FIXME: next line can raise a division by zero
         path_pdf = {k: v / s for k, v in path_pdf.items()}
         self.__logger.info(
             "DECREASE DIAMETER: probability density function created")
