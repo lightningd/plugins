@@ -156,6 +156,37 @@ def test_read_tip(node_factory, executor):
     assert msg.get('body') == "test 1"
 
 
+def test_read_order(node_factory, executor):
+    """ A testcase that sends and reads several times and checks correct order.
+    """
+    opts = [{'plugin': plugin}] * 3
+    l1, l2, l3 = node_factory.line_graph(3, wait_for_announce=True, opts=opts)
+
+    # send a bunch at once
+    l1.rpc.sendmsg(l3.info['id'], "test 0")
+    l1.rpc.sendmsg(l3.info['id'], "test 1")
+    l1.rpc.sendmsg(l3.info['id'], "test 2")
+
+    # check them all by using `last_id`
+    assert executor.submit(l3.rpc.recvmsg, 0).result(10).get('id') == 0
+    assert executor.submit(l3.rpc.recvmsg, 0).result(10).get('body') == "test 0"
+    assert executor.submit(l3.rpc.recvmsg, 1).result(10).get('id') == 1
+    assert executor.submit(l3.rpc.recvmsg, 1).result(10).get('body') == "test 1"
+    assert executor.submit(l3.rpc.recvmsg, 2).result(10).get('id') == 2
+    assert executor.submit(l3.rpc.recvmsg, 2).result(10).get('body') == "test 2"
+
+    # now async by waiting on a future to get a message with most recent 'id'
+    recv = executor.submit(l3.rpc.recvmsg)
+    l1.rpc.sendmsg(l3.info['id'], "test 3")
+    result = recv.result(10)
+    assert result.get('id') == 3
+    assert result.get('body') == "test 3"
+
+    # peak the same `last_id` := 3
+    assert executor.submit(l3.rpc.recvmsg, 3).result(10).get('id') == 3
+    assert executor.submit(l3.rpc.recvmsg, 3).result(10).get('body') == "test 3"
+
+
 def test_missing_tlv_fields(node_factory):
     """If we're missing a field we should not crash
     """
