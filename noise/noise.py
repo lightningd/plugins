@@ -154,15 +154,15 @@ def sendmsg(node_id, msg, plugin, request, pay=None, **kwargs):
 
 
 @plugin.async_method('recvmsg')
-def recvmsg(plugin, request, last_id=None, **kwargs):
+def recvmsg(plugin, request, msg_id=None, **kwargs):
     """Receives a chat message.
 
     Returns a `concurrent.futures.Future`.
-    Optional parameter `last_id` can be supplied to return an older message.
+    Optional parameter `msg_id` can be supplied to return an older messages.
     """
-    next_id = int(last_id) if last_id is not None else len(plugin.messages)
-    if next_id < len(plugin.messages):
-        res = plugin.messages[int(last_id)].to_dict()
+    msg_id = int(msg_id) if msg_id is not None else len(plugin.messages)
+    if msg_id < len(plugin.messages):
+        res = plugin.messages[msg_id].to_dict()
         res['total_messages'] = len(plugin.messages)
         request.set_result(res)
     else:

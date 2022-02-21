@@ -24,7 +24,7 @@ def test_sendmsg_success(node_factory, executor):
     m1 = recv.result(10)
 
     # This one should get the same result:
-    m2 = l3.rpc.recvmsg(last_id=-1)
+    m2 = l3.rpc.recvmsg(msg_id=-1)
     # They should be the same :-)
     assert(m1 == m2)
 
@@ -84,7 +84,7 @@ def test_sendmsg_retry(node_factory, executor):
     assert(sres['attempt'] == 2)
     pprint(sres)
 
-    l4.rpc.recvmsg(last_id=-1)
+    l4.rpc.recvmsg(msg_id=-1)
 
 
 def test_zbase32():
@@ -103,7 +103,7 @@ def test_msg_and_keysend(node_factory, executor):
     assert(l3.rpc.listpeers()['peers'][0]['channels'][0]['msatoshi_to_us'] == 0)
 
     l1.rpc.sendmsg(l3.info['id'], "Hello world!", amt)
-    m = l3.rpc.recvmsg(last_id=-1)
+    m = l3.rpc.recvmsg(msg_id=-1)
 
     assert(m['sender'] == l1.info['id'])
     assert(m['verified'] is True)
@@ -133,7 +133,7 @@ def test_forward_ok(node_factory, executor):
     m1 = recv.result(10)
 
     # This one should get the same result:
-    m2 = l3.rpc.recvmsg(last_id=-1)
+    m2 = l3.rpc.recvmsg(msg_id=-1)
     # They should be the same :-)
     assert(m1 == m2)
 
@@ -165,7 +165,7 @@ def test_read_order(node_factory, executor):
     l1.rpc.sendmsg(l3.info['id'], "test 1")
     l1.rpc.sendmsg(l3.info['id'], "test 2")
 
-    # check them all by using `last_id`
+    # check them all by using `msg_id`
     assert executor.submit(l3.rpc.recvmsg, 0).result(10).get('id') == 0
     assert executor.submit(l3.rpc.recvmsg, 0).result(10).get('body') == "test 0"
     assert executor.submit(l3.rpc.recvmsg, 1).result(10).get('id') == 1
@@ -180,7 +180,7 @@ def test_read_order(node_factory, executor):
     assert result.get('id') == 3
     assert result.get('body') == "test 3"
 
-    # peak the same `last_id` := 3
+    # peak the same `msg_id` := 3
     assert executor.submit(l3.rpc.recvmsg, 3).result(10).get('id') == 3
     assert executor.submit(l3.rpc.recvmsg, 3).result(10).get('body') == "test 3"
 
