@@ -54,7 +54,7 @@ class CLightning_autopilot(Autopilot):
                 # FIXME: better strategy than sleep(2) for building up
                 time.sleep(2)
             except RpcError as e:
-                plugin.log(f"Unable to connect to node: {nodeid}  {str(e)}", 'error')
+                plugin.log(f"Unable to connect to node: {nodeid}  {str(e)}", 'warn')
 
     def __download_graph(self):
         """
