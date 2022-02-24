@@ -230,7 +230,7 @@ def run_one(p: Plugin) -> bool:
         '--timeout=600',
         '--timeout-method=thread',
         '--reruns=2',
-        '--color=no',
+        '--color=yes',
         '-n=5',
     ]
 
