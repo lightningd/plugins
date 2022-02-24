@@ -3,7 +3,9 @@ import subprocess
 from pprint import pprint
 from collections import namedtuple
 from typing import Generator
+
 import logging
+import shutil
 import sys
 import tempfile
 import shlex
@@ -79,40 +81,54 @@ def enumerate_plugins(basedir: Path) -> Generator[Plugin, None, None]:
 def prepare_env(p: Plugin, directory: Path) -> bool:
     """ Returns whether we can run at all. Raises error if preparing failed.
     """
-    subprocess.check_output(['virtualenv', '--clear', '-q', directory])
+    subprocess.check_call(['virtualenv', '--clear', '-q', directory])
     pip_path = directory / 'bin' / 'pip3'
     python_path = directory / 'bin' / 'python'
 
     if p.framework == "pip":
         return prepare_env_pip(p, directory)
     elif p.framework == "poetry":
-        return prepare_env_poetry(p, directory)
+        return prepare_env_poetry(p)
     else:
         raise ValueError(f"Unknown framework {p.framework}")
 
-def prepare_env_poetry(p: Plugin, directory: Path) -> bool:
-    logging.info(f"Installing a new poetry virtualenv in {directory}")
-    pip_path = directory / 'bin' / 'pip3'
-    subprocess.check_call([
-        pip_path, 'install', '-U', '-qq', 'pip', 'wheel', 'poetry'
-    ])
+def prepare_env_poetry(p: Plugin) -> bool:
+    logging.info(f"Installing a new poetry virtualenv")
 
-    poetry_path = directory / 'bin' / 'poetry'
+    # Ensure the root environment has a good pip, wheel and poetry
+    pip3 = shutil.which('pip3')
+    python3 = shutil.which('python3')
+
+    subprocess.check_call([
+        pip3, 'install', '-U', '-qq', 'pip', 'wheel', 'poetry'
+    ], cwd=p.path.parent)
+
+    # We run all commands in the plugin directory so poetry remembers its settings
+    poetry = shutil.which('poetry')
     workdir = p.path.resolve()
+
+    logging.info(f"Using poetry at {poetry} ({python3}) to run tests in {workdir}")
 
     # Ensure that we're using the right virtualenv before installing
     try:
-        subprocess.check_output([
-            poetry_path, 'env', 'use', directory / 'bin' / 'python3'
-        ], cwd=workdir)
+        #subprocess.check_call([
+        #    poetry_path, 'env', 'use', python3
+        #], cwd=workdir)
+        pass
     except:
         logging.info(f"Plugin is incompatible with the current python version, skipping")
         return False
 
+    # Don't let poetry create a self-managed virtualenv (paths get confusing)
+    subprocess.check_call([
+        poetry, 'config', 'virtualenvs.create', 'true'
+    ], cwd=workdir)
+
+
     # Now we can proceed with the actual implementation
     logging.info(f"Installing poetry dependencies from {p.details['pyproject']}")
     subprocess.check_call([
-        poetry_path, 'install'
+        poetry, 'install', '--remove-untracked'
     ], cwd=workdir)
     return True
 
@@ -148,12 +164,12 @@ def prepare_env_pip(p: Plugin, directory: Path):
 def install_pyln_testing(pip_path):
     # Many plugins only implicitly depend on pyln-testing, so let's help them
     pip_opts = ['-qq']
-    subprocess.check_output(
+    subprocess.check_call(
         [pip_path, 'install', '-U', *pip_opts, 'pip', 'wheel'],
         stderr=subprocess.STDOUT,
     )
 
-    subprocess.check_output(
+    subprocess.check_call(
         [
             pip_path, 'install', '-U', *pip_opts,
             'pyln-testing==0.10.1',
@@ -191,41 +207,44 @@ def run_one(p: Plugin) -> bool:
 
     bin_path = vpath / 'bin'
     pytest_path = vpath / 'bin' / 'pytest'
-    poetry_path = vpath / 'bin' / 'poetry'
-    logging.debug(f"Checking that pytest is installed at {pytest_path}")
 
-    pytest = [pytest_path]
+    pytest = [str(pytest_path)]
     if p.framework == "poetry":
-        pytest = [poetry_path, 'run', 'pytest']
+        pytest = [shutil.which('poetry'), 'run', 'pytest']
 
-    print("Running tests")
+    if p.framework == "poetry":
+        subprocess.check_call([shutil.which('poetry'), 'env', 'info'])
+    else:
+        logging.info(f"Virtualenv at {vpath}")
+
+    env = os.environ.copy()
+    env.update({
+        # Need to customize PATH so lightningd can find the correct python3
+        'PATH': "{}:{}".format(bin_path, os.environ['PATH']),
+        # Some plugins require a valid locale to be set
+        'LC_ALL': 'C.UTF-8',
+        'LANG': 'C.UTF-8',
+    })
+    cmd = pytest + [
+        '-vvv',
+        '--timeout=600',
+        '--timeout-method=thread',
+        '--reruns=2',
+        '--color=no',
+        '-n=5',
+    ]
+
+    logging.info(f"Running `{' '.join(cmd)}` in directory {p.path.resolve()}")
     try:
-        env = os.environ.copy()
-        env.update({
-            # Need to customize PATH so lightningd can find the correct python3
-            'PATH': "{}:{}".format(bin_path, os.environ['PATH']),
-            # Some plugins require a valid locale to be set
-            'LC_ALL': 'C.UTF-8',
-            'LANG': 'C.UTF-8',
-        })
         subprocess.check_call(
-            [
-                *pytest,
-                p.path,
-                '-vvv',
-                '--timeout=600',
-                '--timeout-method=thread',
-                '--junitxml=report-{}.xml'.format(p.name),
-                '--reruns=2',
-                '--color=no',
-                '-o', 'junit_family=xunit2',
-                '-n=5',
-            ],
+            cmd,
             stderr=subprocess.STDOUT,
             env=env,
+            cwd=p.path.resolve(),
         )
         return True
-    except:
+    except Exception as e:
+        logging.warning(f"Error while executing ")
         return False
     finally:
         print("##[endgroup]")
