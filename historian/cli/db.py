@@ -27,7 +27,7 @@ def merge(source, destination):
         # Not strictly necessary, but I like progress indicators and ETAs.
         for table in meta.keys():
             rows = source.execute(f"SELECT count(*) FROM {table}")
-            count, = rows.next()
+            count, = rows.fetchone()
             meta[table] = count
 
         for r, in tqdm(
