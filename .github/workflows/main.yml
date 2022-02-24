@@ -12,13 +12,13 @@ on:
 
 jobs:
   build-and-test:
-    name: Test PY=${{ matrix.python-version}}, DEV=${{ matrix.developer }}, EXP=${{ matrix.experimental }}, DEP=${{ matrix.deprecated }}
+    name: Test PY=${{ matrix.python-version }}, DEV=${{ matrix.developer }}, EXP=${{ matrix.experimental }}, DEP=${{ matrix.deprecated }}
     runs-on: ubuntu-latest
     timeout-minutes: 45
     strategy:
       fail-fast: false
       matrix:
-        python-version: [3.6, 3.7, 3.8]
+        python-version: [3.7, 3.8, 3.9]
         developer: [0,1]
         experimental: [1]
         deprecated: [0]
