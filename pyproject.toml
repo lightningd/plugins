@@ -1,0 +1,16 @@
+[tool.poetry]
+name = "lightningd-plugins"
+version = "0.1.0"
+description = "Plugin test runner"
+authors = ["Christian Decker <decker.christian@gmail.com>"]
+license = "MIT"
+
+[tool.poetry.dependencies]
+python = "^3.6"
+virtualenv = "^20.13.1"
+
+[tool.poetry.dev-dependencies]
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
