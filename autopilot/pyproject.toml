@@ -1,0 +1,21 @@
+[tool.poetry]
+name = "cln-autopilot"
+version = "0.1.0"
+description = "Automatically manage lightning channels (OUTDATED)"
+authors = ["Rene Pickhardt <@renepickhardt>"]
+
+[tool.poetry.dependencies]
+python = "^3.8"
+networkx = ">=2.4"
+pyln-client = "0.10.1"
+dnspython = "^2.2.0"
+numpy = "^1.22.2"
+
+[tool.poetry.dev-dependencies]
+pyln-testing = "0.10.1"
+Flask = "^1.1.0"
+MarkupSafe = "2.0.1"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"

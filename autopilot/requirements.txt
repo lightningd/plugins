@@ -1,4 +1,0 @@
-dnspython>=1.16.0
-networkx>=2.4
-numpy>=1.16
-pyln-client>=0.7.3

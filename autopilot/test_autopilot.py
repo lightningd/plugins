@@ -9,7 +9,7 @@ plugin_opt = {'plugin': plugin_path}
 
 
 def test_starts(node_factory):
-    l1 = node_factory.get_node()
+    l1 = node_factory.get_node(allow_broken_log=True)
     # Test dynamically
     l1.rpc.plugin_start(plugin_path)
     l1.rpc.plugin_stop(plugin_path)
