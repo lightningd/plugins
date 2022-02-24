@@ -49,7 +49,18 @@ jobs:
         export DEVELOPER=${{ matrix.developer }}
         export COMPAT=${{ matrix.deprecated }}
         export VALGRIND=0
-        sudo apt-get install -y libsqlite3-dev build-essential gettext python python3 net-tools zlib1g-dev libsodium-dev libpq-dev postgresql python3-pip
+        sudo apt-get install -y \
+          build-essential \
+          gettext \
+          libpq-dev \
+          libsodium-dev \
+          libsqlite3-dev \
+          net-tools \
+          postgresql \
+          python \
+          python3 \
+          python3-pip \
+          zlib1g-dev
 
         cd lightning
         pip3 install --user -U \
@@ -80,29 +91,3 @@ jobs:
         export TRAVIS=1
         pip3 install -U virtualenv pip > /dev/null
         python3 .ci/test.py
-    - name: Upload Unit Test Results
-      if: always()
-      uses: actions/upload-artifact@v2
-      with:
-        name: reports-${{ matrix.python-version }}
-        path: report-*.xml
-
-#  report:
-#    name: "Publish Unit Tests Results"
-#    needs: build-and-test
-#    runs-on: ubuntu-latest
-#    # the build-and-test job might be skipped, we don't need to run this job then
-#    if: success() || failure()
-#
-#    steps:
-#      - name: Download Artifacts
-#        uses: actions/download-artifact@v2
-#        with:
-#          path: artifacts
-#
-#      - name: Publish Unit Test Results
-#        uses: EnricoMi/publish-unit-test-result-action@v1.6
-#        with:
-#          check_name: Unit Test Results
-#          github_token: ${{ secrets.GITHUB_TOKEN }}
-#          files: artifacts/reports-*/report-*.xml
