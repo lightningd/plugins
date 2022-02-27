@@ -1,6 +1,6 @@
 [submodule "sitzprobe"]
 	path = sitzprobe
-	url = https://github.com/niftynei/sitzprobe
+	url = https://github.com/niftynei/sitzprobe.git
 [submodule "graphql"]
 	path = graphql
 	url = https://github.com/nettijoe96/c-lightning-graphql.git
@@ -9,7 +9,7 @@
 	url = https://github.com/nettijoe96/jwt-factory.git
 [submodule "lightning-qt"]
 	path = lightning-qt
-	url = https://github.com/darosior/pylightning-qt
+	url = https://github.com/darosior/pylightning-qt.git
 [submodule "csvexportpays"]
 	path = csvexportpays
 	url = https://github.com/0xB10C/c-lightning-plugin-csvexportpays.git
