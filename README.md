@@ -167,6 +167,7 @@ Python plugins developers must ensure their plugin to work with all Python versi
  - [Go Plugin API & RPC Client][go-api] by @niftynei
  - [C++ Plugin API & RPC Client][cpp-api] by @darosior
  - [Javascript Plugin API & RPC Client][js-api] by @darosior
+ - [TypeScript Plugin API & RPC Client][ts-api] by @AaronDewes
  - [Java Plugin API & RPC Client][java-api] by @vincenzopalazzo
 
 [esplora]: https://github.com/Blockstream/esplora
@@ -192,6 +193,7 @@ Python plugins developers must ensure their plugin to work with all Python versi
 [listmempoolfunds]: https://github.com/andrewtoth/listmempoolfunds
 [cpp-api]: https://github.com/darosior/lightningcpp
 [js-api]: https://github.com/lightningd/clightningjs
+[ts-api]: https://github.com/runcitadel/c-lightning.ts
 [monitor]: https://github.com/renepickhardt/plugins/tree/master/monitor
 [reckless]: https://github.com/darosior/reckless
 [request-invoice]: https://github.com/lightningd/plugins/tree/master/request-invoice
