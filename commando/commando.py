@@ -161,8 +161,8 @@ def try_command(plugin, peer_id, idnum, method, params, runestr):
     send_result(plugin, peer_id, idnum, res)
 
 
-@plugin.hook('custommsg')
-def on_custommsg(peer_id, payload, plugin, **kwargs):
+@plugin.async_hook('custommsg')
+def on_custommsg(peer_id, payload, plugin, request, **kwargs):
     pbytes = bytes.fromhex(payload)
     mtype = int.from_bytes(pbytes[:2], "big")
     idnum = int.from_bytes(pbytes[2:10], "big")
@@ -194,7 +194,7 @@ def on_custommsg(peer_id, payload, plugin, **kwargs):
             else:
                 # Pass through result
                 finished.req.set_result(ret['result'])
-    return {'result': 'continue'}
+    request.set_result({'result': 'continue'})
 
 
 @plugin.async_method("commando")
