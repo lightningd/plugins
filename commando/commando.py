@@ -26,6 +26,7 @@ import random
 import secrets
 import string
 import runes  # type: ignore
+import multiprocessing
 from typing import Dict, Tuple, Optional
 
 plugin = Plugin()
@@ -132,6 +133,15 @@ def do_cacherune(plugin, peer_id, runestr):
     return {'result': {'rune': runestr}}
 
 
+def command_run(plugin, peer_id, idnum, method, params):
+    """Function to run a command and write the result"""
+    try:
+        res = {'result': plugin.rpc.call(method, params)}
+    except RpcError as e:
+        res = {'error': e.error}
+    send_result(plugin, peer_id, idnum, res)
+
+
 def try_command(plugin, peer_id, idnum, method, params, runestr):
     """Run an arbitrary command and message back the result"""
     # You can always set your rune, even if *that rune* wouldn't
@@ -153,10 +163,11 @@ def try_command(plugin, peer_id, idnum, method, params, runestr):
             else:
                 res = {'error': 'FIXME: Refusing to call inside ourselves'}
         else:
-            try:
-                res = {'result': plugin.rpc.call(method, params)}
-            except RpcError as e:
-                res = {'error': e.error}
+            # The subprocess does send_result itself: pyln-client doesn't
+            # support async RPC yet.
+            multiprocessing.Process(target=command_run,
+                                    args=(plugin, peer_id, idnum, method, params)).start()
+            return
 
     send_result(plugin, peer_id, idnum, res)
 
