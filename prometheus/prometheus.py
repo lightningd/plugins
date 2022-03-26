@@ -45,10 +45,10 @@ class FundsCollector(BaseLnCollector):
         funds = self.rpc.listfunds()
         print(funds['outputs'])
         output_funds = sum(
-            [o['amount_msat'].to_satoshi() for o in funds['outputs']]
+            [o['amount_msat'].to_satoshi() for o in funds['outputs'] if o['reserved']!='true']
         )
         channel_funds = sum(
-            [c['our_amount_msat'].to_satoshi() for c in funds['channels']]
+                [c['our_amount_msat'].to_satoshi() for c in funds['channels'] if c['state']!='ONCHAIN']
         )
         total = output_funds + channel_funds
 
