@@ -83,22 +83,16 @@ class PeerCollector(BaseLnCollector):
         connected = GaugeMetricFamily(
             'lightning_peer_connected',
             'Is the peer currently connected?',
-            labels=['id', 'alias'],
+            labels=['id'],
         )
         count = GaugeMetricFamily(
             'lightning_peer_channels',
             "The number of channels with the peer",
-            labels=['id', 'alias'],
+            labels=['id'],
         )
 
         for p in peers:
-            node = self.rpc.listnodes(p['id'])['nodes']
-            if len(node) != 0 and 'alias' in node[0]:
-                alias = node[0]['alias']
-            else:
-                alias = 'unknown'
-
-            labels = [p['id'], alias]
+            labels = [p['id']]
             count.add_metric(labels, len(p['channels']))
             connected.add_metric(labels, int(p['connected']))
 
