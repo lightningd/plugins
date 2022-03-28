@@ -169,6 +169,8 @@ Python plugins developers must ensure their plugin to work with all Python versi
  - [Javascript Plugin API & RPC Client][js-api] by @darosior
  - [TypeScript Plugin API & RPC Client][ts-api] by @AaronDewes
  - [Java Plugin API & RPC Client][java-api] by @vincenzopalazzo
+ - [C# Plugin Guideline and example project][csharp-example] by @joemphilips
+ - [Kotlin plugin guideline and example][kotlin-example] by @vincenzopalazzo
 
 [esplora]: https://github.com/Blockstream/esplora
 [pers-chans]: https://github.com/lightningd/plugins/tree/master/persistent-channels
@@ -216,3 +218,5 @@ Python plugins developers must ensure their plugin to work with all Python versi
 [backup]: https://github.com/lightningd/plugins/tree/master/backup
 [commando]: https://github.com/lightningd/plugins/tree/master/commando
 [reporter]: https://github.com/LNOpenMetrics/go-lnmetrics.reporter
+[csharp-example]: https://github.com/joemphilips/HelloWorldPlugin
+[kotlin-example]: https://vincenzopalazzo.medium.com/a-day-in-a-c-lightning-plugin-with-koltin-c8bbd4fa0406
