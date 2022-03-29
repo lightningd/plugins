@@ -48,6 +48,8 @@ class FundsCollector(BaseLnCollector):
             [o['amount_msat'].to_satoshi() for o in funds['outputs'] if not o['reserved']]
         )
         relevant_states = ('CHANNELD_AWAITING_LOCKIN',
+                'DUALOPEND_OPEN_INIT',
+                'DUALOPEND_AWAITING_LOCKIN',
                 'CHANNELD_NORMAL',
                 'CHANNELD_SHUTTING_DOWN',
                 'CLOSINGD_SIGEXCHANGE',
