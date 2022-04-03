@@ -113,7 +113,10 @@ def setchannelfee(plugin: Plugin, scid: str, base: int, ppm: int):
     if fees is None or base == fees['base'] and ppm == fees['ppm']:
         return False
     try:
-        plugin.rpc.setchannelfee(scid, base, ppm)
+        if plugin.rpcfeemethod == 'setchannel':
+            plugin.rpc.setchannel(scid, base, ppm)  # new method
+        else:
+            plugin.rpc.setchannelfee(scid, base, ppm)  # deprecated
         return True
     except RpcError as e:
         plugin.log(f"Could not adjust fees for channel {scid}: '{e}'", level="error")
@@ -299,6 +302,11 @@ def init(options: dict, configuration: dict, plugin: Plugin, **kwargs):
     if len([c for c in rpchelp if c["command"].startswith("listchannels ")
             and "destination" in c["command"]]) == 1:
         plugin.listchannels_by_dst = True
+
+    # detect if server supports new 'setchannel' command over setchannelfee
+    plugin.rpcfeemethod = 'setchannelfee'
+    if len([c for c in rpchelp if c["command"].startswith("setchannel ")]) == 1:
+        plugin.rpcfeemethod = 'setchannel'
 
     plugin.log(f"Plugin feeadjuster initialized "
                f"({plugin.adj_basefee} base / {plugin.adj_ppmfee} ppm) with an "
