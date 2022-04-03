@@ -49,7 +49,10 @@ def test_drain_and_refill(node_factory, bitcoind):
 
     # disable fees to make circular line graph tests a lot easier
     for n in nodes:
-        n.rpc.setchannelfee('all', 0, 0)
+        try:
+            n.rpc.setchannel('all', 0, 0)
+        except RpcError:  # retry with deprecated command name
+            n.rpc.setchannelfee('all', 0, 0)
 
     # wait for each others gossip
     bitcoind.generate_block(6)
@@ -99,7 +102,10 @@ def test_fill_and_drain(node_factory, bitcoind):
 
     # disable fees to make circular line graph tests a lot easier
     for n in nodes:
-        n.rpc.setchannelfee('all', 0, 0)
+        try:
+            n.rpc.setchannel('all', 0, 0)
+        except RpcError:  # retry with deprecated command name
+            n.rpc.setchannelfee('all', 0, 0)
 
     # wait for each others gossip
     bitcoind.generate_block(6)
