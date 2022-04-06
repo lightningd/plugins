@@ -301,3 +301,18 @@ def test_readonly(node_factory):
         l1.rpc.commando(peer_id=l2.info['id'],
                         rune=rrune,
                         method='listdatastore')
+
+
+def test_megacmd(node_factory):
+    l1, l2 = node_factory.line_graph(2, fundchannel=False,
+                                     opts={'plugin': [plugin_path,
+                                                      datastore_path]})
+    rrune = l2.rpc.commando_rune(restrictions='readonly')['rune']
+
+    # Proof that it got the rune: fails with "Unknown command" not "Not authorized"
+    with pytest.raises(RpcError, match='Unknown command'):
+        l1.rpc.call(method='commando',
+                    payload={'peer_id': l2.info['id'],
+                             'method': 'get' + 'x' * 130000,
+                             'rune': rrune,
+                             'params': {}})
