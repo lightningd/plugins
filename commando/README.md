@@ -151,3 +151,11 @@ a specific nodeid, for (as of this writing!) the next 60 seconds:
 That rune only allows them to rune "commando-rune" with an "id="
 restriction, within the given time; useful to place in a QR code to
 allow self-authorization.
+
+
+### Huge Commands and Responses
+
+Commands larger than about 64k are split into multiple parts; command
+responses similarly.  To avoid a Denial of Service, commands must be
+less than about 1MB in size: that's increased to 10MB if the peer has
+successfully used `commando-cacherune`.
