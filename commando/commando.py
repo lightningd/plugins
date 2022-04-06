@@ -51,9 +51,15 @@ class InReq:
     def __init__(self, idnum):
         self.idnum = idnum
         self.buf = b''
+        self.discard = False
 
     def append(self, data):
-        self.buf += data
+        if not self.discard:
+            self.buf += data
+
+    def start_discard(self):
+        self.buf = b''
+        self.discard = True
 
 
 def split_cmd(cmdstr):
@@ -204,11 +210,28 @@ def on_custommsg(peer_id, payload, plugin, request, **kwargs):
         if peer_id not in plugin.in_reqs or idnum != plugin.in_reqs[peer_id].idnum:
             plugin.in_reqs[peer_id] = InReq(idnum)
         plugin.in_reqs[peer_id].append(data)
+
+        # If you have cached a rune, give 10MB, otherwise 1MB.
+        # We can have hundreds of these things...
+        max_cmdlen = 1000000
+        if peer_id in plugin.peer_runes:
+            max_cmdlen *= 10
+
+        if len(plugin.in_reqs[peer_id].buf) > max_cmdlen:
+            plugin.in_reqs[peer_id].start_discard()
     elif mtype == COMMANDO_CMD_TERM:
         # Prepend any prior data from COMMANDO_CMD_CONTINUES:
         if peer_id in plugin.in_reqs:
             data = plugin.in_reqs[peer_id].buf + data
+            discard = plugin.in_reqs[peer_id].discard
             del plugin.in_reqs[peer_id]
+            # Were we ignoring this for being too long?  Error out now.
+            if discard:
+                send_result(plugin, peer_id, idnum,
+                            {'error': "Command too long"})
+                request.set_result({'result': 'continue'})
+                return
+
         method, params, runestr = split_cmd(data)
         try_command(plugin, peer_id, idnum, method, params, runestr)
     elif mtype == COMMANDO_REPLY_CONTINUES:
