@@ -71,14 +71,24 @@ def send_msg(plugin, peer_id, msgtype, idnum, contents):
     plugin.rpc.call(plugin.msgcmd, {'node_id': peer_id, 'msg': msg.hex()})
 
 
-def send_result(plugin, peer_id, idnum, res):
+def send_msgs(plugin, peer_id, idnum, obj, msgtype_cont, msgtype_term):
     # We can only send 64k in a message, but there is 10 byte overhead
     # in the message header; 65000 is safe.
-    parts = textwrap.wrap(json.dumps(res), 65000)
+    parts = textwrap.wrap(json.dumps(obj), 65000)
     for p in parts[:-1]:
-        send_msg(plugin, peer_id, COMMANDO_REPLY_CONTINUES, idnum, p)
+        send_msg(plugin, peer_id, msgtype_cont, idnum, p)
 
-    send_msg(plugin, peer_id, COMMANDO_REPLY_TERM, idnum, parts[-1])
+    send_msg(plugin, peer_id, msgtype_term, idnum, parts[-1])
+
+
+def send_result(plugin, peer_id, idnum, res):
+    send_msgs(plugin, peer_id, idnum, res,
+              COMMANDO_REPLY_CONTINUES, COMMANDO_REPLY_TERM)
+
+
+def send_request(plugin, peer_id, idnum, req):
+    send_msgs(plugin, peer_id, idnum, req,
+              COMMANDO_CMD_CONTINUES, COMMANDO_CMD_TERM)
 
 
 def is_rune_valid(plugin, runestr) -> Tuple[Optional[runes.Rune], str]:
@@ -242,7 +252,7 @@ def commando(plugin, request, peer_id, method, params=None, rune=None):
             break
 
     plugin.out_reqs[idnum] = CommandResponse(request)
-    send_msg(plugin, peer_id, COMMANDO_CMD_TERM, idnum, json.dumps(res))
+    send_request(plugin, peer_id, idnum, res)
 
 
 @plugin.method("commando-cacherune")
