@@ -316,3 +316,10 @@ def test_megacmd(node_factory):
                              'method': 'get' + 'x' * 130000,
                              'rune': rrune,
                              'params': {}})
+
+    with pytest.raises(RpcError, match='Command too long'):
+        l1.rpc.call(method='commando',
+                    payload={'peer_id': l2.info['id'],
+                             'method': 'get' + 'x' * 1100000,
+                             'rune': rrune,
+                             'params': {}})
