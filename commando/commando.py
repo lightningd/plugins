@@ -11,6 +11,7 @@ to make it the persistent default for their peer_id.
 
 The formats are:
 
+type:4C4D - execute this command (with more coming)
 type:4C4F - execute this command
 type:594B - reply (with more coming)
 type:594D - last reply
@@ -32,7 +33,8 @@ from typing import Dict, Tuple, Optional
 plugin = Plugin()
 
 # "YOLO"!
-COMMANDO_CMD = 0x4c4f
+COMMANDO_CMD_CONTINUES = 0x4c4d
+COMMANDO_CMD_TERM = 0x4c4f
 
 # Replies are split across multiple CONTINUES, then TERM.
 COMMANDO_REPLY_CONTINUES = 0x594b
@@ -43,6 +45,15 @@ class CommandResponse:
     def __init__(self, req):
         self.buf = bytes()
         self.req = req
+
+
+class InReq:
+    def __init__(self, idnum):
+        self.idnum = idnum
+        self.buf = b''
+
+    def append(self, data):
+        self.buf += data
 
 
 def split_cmd(cmdstr):
@@ -179,17 +190,25 @@ def on_custommsg(peer_id, payload, plugin, request, **kwargs):
     idnum = int.from_bytes(pbytes[2:10], "big")
     data = pbytes[10:]
 
-    if mtype == COMMANDO_CMD:
+    if mtype == COMMANDO_CMD_CONTINUES:
+        if peer_id not in plugin.in_reqs or idnum != plugin.in_reqs[peer_id].idnum:
+            plugin.in_reqs[peer_id] = InReq(idnum)
+        plugin.in_reqs[peer_id].append(data)
+    elif mtype == COMMANDO_CMD_TERM:
+        # Prepend any prior data from COMMANDO_CMD_CONTINUES:
+        if peer_id in plugin.in_reqs:
+            data = plugin.in_reqs[peer_id].buf + data
+            del plugin.in_reqs[peer_id]
         method, params, runestr = split_cmd(data)
         try_command(plugin, peer_id, idnum, method, params, runestr)
     elif mtype == COMMANDO_REPLY_CONTINUES:
-        if idnum in plugin.reqs:
-            plugin.reqs[idnum].buf += data
+        if idnum in plugin.out_reqs:
+            plugin.out_reqs[idnum].buf += data
     elif mtype == COMMANDO_REPLY_TERM:
-        if idnum in plugin.reqs:
-            plugin.reqs[idnum].buf += data
-            finished = plugin.reqs[idnum]
-            del plugin.reqs[idnum]
+        if idnum in plugin.out_reqs:
+            plugin.out_reqs[idnum].buf += data
+            finished = plugin.out_reqs[idnum]
+            del plugin.out_reqs[idnum]
 
             try:
                 ret = json.loads(finished.buf.decode())
@@ -219,11 +238,11 @@ def commando(plugin, request, peer_id, method, params=None, rune=None):
 
     while True:
         idnum = random.randint(0, 2**64)
-        if idnum not in plugin.reqs:
+        if idnum not in plugin.out_reqs:
             break
 
-    plugin.reqs[idnum] = CommandResponse(request)
-    send_msg(plugin, peer_id, COMMANDO_CMD, idnum, json.dumps(res))
+    plugin.out_reqs[idnum] = CommandResponse(request)
+    send_msg(plugin, peer_id, COMMANDO_CMD_TERM, idnum, json.dumps(res))
 
 
 @plugin.method("commando-cacherune")
@@ -302,7 +321,8 @@ def commando_rune(plugin, rune=None, restrictions=[]):
 
 @plugin.init()
 def init(options, configuration, plugin):
-    plugin.reqs = {}
+    plugin.out_reqs = {}
+    plugin.in_reqs = {}
     plugin.writers = options['commando_writer']
     plugin.readers = options['commando_reader']
     plugin.version = plugin.rpc.getinfo()['version']
