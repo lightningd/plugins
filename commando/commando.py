@@ -237,6 +237,12 @@ def on_custommsg(peer_id, payload, plugin, request, **kwargs):
     request.set_result({'result': 'continue'})
 
 
+@plugin.subscribe('disconnect')
+def on_disconnect(id, plugin, request, **kwargs):
+    if id in plugin.in_reqs:
+        del plugin.in_reqs[id]
+
+
 @plugin.async_method("commando")
 def commando(plugin, request, peer_id, method, params=None, rune=None):
     """Send a command to node_id, and wait for a response"""
