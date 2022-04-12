@@ -340,7 +340,7 @@ def init(options, configuration, plugin):
 
 @plugin.subscribe("shutdown")
 def on_rpc_command_callback(plugin, **kwargs):
-    plugin.log("Closing db before lightnind exit")
+    plugin.log("Closing db before lightningd exit")
     close_db(plugin)
     sys.exit()
 
