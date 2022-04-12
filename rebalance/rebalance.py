@@ -113,11 +113,12 @@ def cleanup(label, payload, rpc_result, error=None):
         if 'status is paid' in e.error.get('message', ""):
             return rpc_result
 
-    if error is not None and isinstance(error, RpcError):
-        # unwrap rebalance errors as 'normal' RPC result
-        if error.method == "rebalance":
-            return {"status": "exception",
-                    "message": error.error.get('message', "error not given")}
+    if error is not None:
+        if isinstance(error, RpcError):
+            # unwrap rebalance errors as 'normal' RPC result
+            if error.method == "rebalance":
+                return {"status": "exception",
+                        "message": error.error.get('message', "error not given")}
         raise error
 
     return rpc_result
