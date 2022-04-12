@@ -220,7 +220,7 @@ def init(options, configuration, plugin):
 
 plugin.add_option(
     'prometheus-listen',
-    '0.0.0.0:9750',
+    '127.0.0.1:9750',
     'Address and port to bind to'
 )
 
