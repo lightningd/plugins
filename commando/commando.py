@@ -362,8 +362,8 @@ def commando_rune(plugin, rune=None, restrictions=[]):
 def init(options, configuration, plugin):
     plugin.out_reqs = {}
     plugin.in_reqs = {}
-    plugin.writers = options['commando_writer']
-    plugin.readers = options['commando_reader']
+    plugin.writers = options['commando-writer']
+    plugin.readers = options['commando-reader']
     plugin.version = plugin.rpc.getinfo()['version']
 
     # dev-sendcustommsg was renamed to sendcustommsg for 0.10.1
@@ -415,11 +415,11 @@ def init(options, configuration, plugin):
     plugin.peer_runes = load_peer_runes(plugin)
 
 
-plugin.add_option('commando_writer',
+plugin.add_option('commando-writer',
                   description="What nodeid can do all commands?",
                   default=[],
                   multi=True)
-plugin.add_option('commando_reader',
+plugin.add_option('commando-reader',
                   description="What nodeid can do list/get/summary commands?",
                   default=[],
                   multi=True)
