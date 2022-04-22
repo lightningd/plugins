@@ -166,6 +166,19 @@ def sendmsg(node_id, msg, plugin, request, pay=None, **kwargs):
     request.set_result(res)
 
 
+@plugin.async_method('allmsgs')
+def allmsgs(plugin, request, **kwargs):
+    """
+    Prints all messages that have been received
+    """
+    msg_list = {}
+    for i in range(len(plugin.messages)):
+        res = plugin.messages[int(i)].to_dict()
+        res['total_messages'] = len(plugin.messages)
+        msg_list["message"+str(i)] = res
+    request.set_result(msg_list)
+
+
 @plugin.async_method('recvmsg')
 def recvmsg(plugin, request, msg_id=None, **kwargs):
     """Receives a chat message.

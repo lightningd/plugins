@@ -21,12 +21,18 @@ lightning-cli sendmsg 02a5deaa47804c518bb4a1c6f04a85b92b796516bd32c4114a51b00d73
 You can read the last message received using the following command:
 
 #+BEGIN_SRC bash
-lightning-cli recvmsg last_id
+lightning-cli recvmsg msg_id
 #+END_SRC
 
-The ~last_id~ indicates the last message we read, so we can retrieve each message
-individually. If you'd just like to wait for the next message then do not
-specify any ~last_id~.
+The ~msg_id~ indicates the id number of each message received in chronological
+order, so we can retrieve each message individually. If you'd just like to wait
+for the next message then do not specify any ~msg_id~.
+
+You can output all messages received using the following command:
+
+#+BEGIN_SRC bash
+lightning-cli allmsgs
+#+END_SRC
 
 * Todo
 
