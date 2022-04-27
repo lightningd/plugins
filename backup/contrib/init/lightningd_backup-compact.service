@@ -1,0 +1,11 @@
+[Unit]
+Description=Call backup-compact for C-Lightning daemon, running with backup plugin
+Requires=lightningd.service
+After=lightningd.service
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/lightning-cli --conf /etc/lightningd/lightningd.conf backup-compact
+
+User=bitcoin
+Group=bitcoin

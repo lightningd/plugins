@@ -7,6 +7,9 @@ from pyln.testing.utils import sync_blockheight
 import os
 import pytest
 import subprocess
+from packaging import version
+import re
+import time
 
 
 plugin_dir = os.path.dirname(__file__)
@@ -77,6 +80,37 @@ def test_init_not_empty(node_factory, directory):
     l1.daemon.opts['allow-deprecated-apis'] = deprecated_apis
     l1.start()
     assert(l1.daemon.is_in_log(r'plugin-backup.py: Versions match up'))
+
+
+def test_shutdown(directory, node_factory):
+    """
+    For lightningd versions that support it, we test a clean shutdown
+    """
+    bpath = os.path.join(directory, 'lightning-1', 'regtest')
+    bdest = 'file://' + os.path.join(bpath, 'backup.dbak')
+    os.makedirs(bpath)
+    subprocess.check_call([cli_path, "init", "--lightning-dir", bpath, bdest])
+    opts = {
+        'plugin': plugin_path,
+        'allow-deprecated-apis': deprecated_apis,
+    }
+    l1 = node_factory.get_node(options=opts, cleandir=False)
+    # shutdown notification introduced in v0.10.2
+    md = re.match(r'(v\d+\.\d+\.\d+(?:-\d+)?)(?:-g(\w+))?', l1.info['version'])
+    if version.parse(md.group(1)) < version.parse('v0.10.2'):
+        pytest.skip("Test needs lightningd version v0.10.2 or higher")
+
+    # add some db writes to compact
+    for _ in range(50):
+        l1.rpc.datastore(key='test', string='data', mode="create-or-append")
+
+    l1.rpc.backup_compact()
+    l1.restart()
+    if version.parse(md.group(1)) < version.parse('v0.10.2-126'):
+        assert(l1.daemon.is_in_log(r'plugin-backup.*we want to exit as last'))
+        return
+    assert(l1.daemon.is_in_log(r'plugin-backup.py: compaction aborted'))
+    l1.rpc.backup_compact()
 
 
 @flaky
@@ -215,23 +249,6 @@ def test_restore_dir(node_factory, directory):
     subprocess.check_call([cli_path, "restore", bdest, bpath])
 
 
-def test_warning(directory, node_factory):
-    bpath = os.path.join(directory, 'lightning-1', 'regtest')
-    bdest = 'file://' + os.path.join(bpath, 'backup.dbak')
-    os.makedirs(bpath)
-    subprocess.check_call([cli_path, "init", "--lightning-dir", bpath, bdest])
-    opts = {
-        'plugin': plugin_path,
-        'allow-deprecated-apis': deprecated_apis,
-        'backup-destination': 'somewhere/over/the/rainbox',
-    }
-    l1 = node_factory.get_node(options=opts, cleandir=False)
-    l1.stop()
-
-    assert(l1.daemon.is_in_log(
-        r'The `--backup-destination` option is deprecated and will be removed in future versions of the backup plugin.'
-    ))
-
 class DummyBackend(Backend):
     def __init__(self):
         pass
@@ -269,17 +286,26 @@ def test_compact(bitcoind, directory, node_factory):
     }
     l1 = node_factory.get_node(options=opts, cleandir=False)
     l1.rpc.backup_compact()
+    r = l1.rpc.backup_compact()
+    assert r["result"] == "compaction still in progress"
+    l1.daemon.wait_for_log(r'plugin-backup.py: swapping backups')
+    time.sleep(1)                               # make sure thread returned
+    # nothing to compact returns stats
+    r = l1.rpc.backup_compact()
+    assert r["result"]["version_count"] == 2
 
     tmp = tempfile.TemporaryDirectory()
     subprocess.check_call([cli_path, "restore", bdest, tmp.name])
 
-    # Trigger a couple more changes and the compact again.
+    # Trigger a couple more changes and then compact again.
     bitcoind.generate_block(100)
     sync_blockheight(bitcoind, [l1])
 
     l1.rpc.backup_compact()
+    l1.daemon.wait_for_log(r'plugin-backup.py: swapping backups')
     tmp = tempfile.TemporaryDirectory()
     subprocess.check_call([cli_path, "restore", bdest, tmp.name])
+
 
 def test_parse_socket_url():
     with pytest.raises(ValueError):

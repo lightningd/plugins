@@ -24,9 +24,13 @@ class Backend(object):
          - backend.version: the last data version we wrote to the backend
          - backend.prev_version: the previous data version in case we need to
            roll back the last one
+
+        Optional:
+         - version_count: number of changes added (snapshot + txn's) since init or compact
         """
         self.version = None
         self.prev_version = None
+        self.version_count = None
         raise NotImplementedError
 
     def add_change(self, change: Change) -> bool:

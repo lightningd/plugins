@@ -20,7 +20,7 @@ pip3 install --user -r requirements.txt
 ## Setup
 
 Before the backup plugin can be used it has to be initialized once. The following
-command will create /mnt/external/location/file.sql as backup file and reference it 
+command will create /mnt/external/location/file.bkp as backup file and reference it
 in `backup.lock` in the lightning directory that stores the internal state, and 
 which makes sure no two instances are using the same backup. (Make sure to stop 
 your Lightning node before running this command)
@@ -36,7 +36,8 @@ Notes:
  - You should use some non-local SSH or NFS mount as destination,
    otherwise any failure of the disk may result in both the original
    as well as the backup being corrupted.
- - Currently only the `file:///` URL scheme is supported.
+ - Currently `file:///` and `socket:` URL schemes are supported. For using the
+   `socket:` URL scheme see: https://github.com/lightningd/plugins/blob/master/backup/remote.md
 
 ## IMPORTANT note about hsm_secret
 
@@ -69,8 +70,10 @@ restore the backup. This can be done through the plugin command `backup-compact`
 lightning-cli backup-compact
 ```
 
-Be aware that this can take a long time depending on the size of the backup
-and I/O speeds, during which the daemon will not be reachable.
+This command will start compaction in the background and returns immediately: {"result": "compaction started"}
+or {"result": "compaction still in progress"} if compaction is still running.
+If there is nothing to compact (version_count=2), the command will return: {'backupsize': <size_in_bytes>, 'version_count': 2}}
+It can be called again to reduce the backup size to its minimum size (version_count=2).
 
 ## Restoring a backup
 
