@@ -1,6 +1,6 @@
-# Plugins for c-lightning
+# Plugins for Core-Lightning
 
-Community curated plugins for c-lightning.
+Community curated plugins for Core-Lightning.
 
 ![Integration Tests](https://github.com/lightningd/plugins/workflows/Integration%20Tests/badge.svg)
 
@@ -10,7 +10,7 @@ Community curated plugins for c-lightning.
 |------------------------------------|-------------------------------------------------------------------------------------------|
 | [autopilot][autopilot]             | An autopilot that suggests channels that should be established                            |
 | [backup][backup]                   | A simple and reliable backup plugin                                                       |
-| [boltz-channel-creation][boltz]    | A c-lightning plugin for Boltz Channel Creation Swaps                                     |
+| [boltz-channel-creation][boltz]    | A Core-Lightning plugin for Boltz Channel Creation Swaps                                     |
 | [btcli4j][btcli4j]                 | A Bitcoin Backend to enable safely the pruning mode, and support also rest APIs.          |
 | [commando][commando]               | Authorize peers to run commands on your node, and running commands on them.               |
 | [csvexportpays][csvexportpays]     | A plugin that exports all payments to a CSV file                                          |
@@ -20,7 +20,7 @@ Community curated plugins for c-lightning.
 | [event-websocket][event-websocket] | Exposes notifications over a Websocket                                                    |
 | [feeadjuster][feeadjuster]         | Dynamic fees to keep your channels more balanced                                          |
 | [go-lnmetrics.reporter][reporter]  | Collect and report of the lightning node metrics                                          |
-| [graphql][graphql]                 | Exposes the c-lightning API over [graphql][graphql-spec]                                  |
+| [graphql][graphql]                 | Exposes the Core-Lightning API over [graphql][graphql-spec]                                  |
 | [invoice-queue][invoice-queue]     | Listen to lightning invoices from multiple nodes and send to a redis queue for processing |
 | [lightning-qt][lightning-qt]       | A bitcoin-qt-like GUI for lightningd                                                      |
 | [listmempoolfunds][listmempoolfunds] | Track unconfirmed wallet deposits|
@@ -102,7 +102,7 @@ tests. While not strictly necessary, writing a test will ensure that your
 plugin is working correctly against a number of configurations (both with and
 without `DEVELOPER`, `COMPAT` and `EXPERIMENTAL_FEATURES`), and more
 importantly that they will continue to work with newly release versions of
-c-lightning.
+Core-Lightning.
 
 Writing a test is as simple as this:
 
@@ -121,7 +121,7 @@ def test_your_plugin(node_factory, bitcoind):
 ```
 
 Tests are run against pull requests, all commits on `master`, as well as once
-ever 24 hours to test against the latest `master` branch of the c-lightning
+ever 24 hours to test against the latest `master` branch of the Core-Lightning
 development tree.
 
 Running tests locally can be done like this:
@@ -157,7 +157,7 @@ Python plugins developers must ensure their plugin to work with all Python versi
  - [@conscott's plugins](https://github.com/conscott/c-lightning-plugins)
  - [@renepickhardt's plugins](https://github.com/renepickhardt/c-lightning-plugin-collection)
  - [@rsbondi's plugins](https://github.com/rsbondi/clightning-go-plugin)
- - [c-lightning plugins emulating commands of LND (lncli)](https://github.com/kristapsk/c-lightning-lnd-plugins)
+ - [Core-Lightning plugins emulating commands of LND (lncli)](https://github.com/kristapsk/c-lightning-lnd-plugins)
 
 ## Plugin Builder Resources
 
