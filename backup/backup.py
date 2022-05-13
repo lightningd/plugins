@@ -23,16 +23,16 @@ root.addHandler(handler)
 
 
 def check_first_write(plugin, data_version):
-    """Verify that we are up-to-date and c-lightning didn't forget writes.
+    """Verify that we are up-to-date and Core-Lightning didn't forget writes.
 
     We may be at most 1 write off:
 
-     - c-lightning and backup are at the same version (happy case)
-     - c-lightning is 1 write behind: it must've crashed inbetween calling the
+     - Core-Lightning and backup are at the same version (happy case)
+     - Core-Lightning is 1 write behind: it must've crashed inbetween calling the
        hook and committing the DB transaction.
-     - c-lightning is one or more writes ahead: either we lost some writes, or
-       c-lightning was running without the plugin at some point -> crash!
-     - c-lighning is more than 1 write behind: c-lightning had a lobotomy, or
+     - Core-Lightning is one or more writes ahead: either we lost some writes, or
+       Core-Lightning was running without the plugin at some point -> crash!
+     - c-lighning is more than 1 write behind: Core-Lightning had a lobotomy, or
        was restored from an old backup -> crash!
     """
     backend = plugin.backend
@@ -50,7 +50,7 @@ def check_first_write(plugin, data_version):
         return True
 
     elif backend.prev_version > data_version - 1:
-        kill("c-lightning seems to have lost some state (failed restore?). Emergency shutdown.")
+        kill("Core-Lightning seems to have lost some state (failed restore?). Emergency shutdown.")
 
     else:
         kill("Backup is out of date, we cannot continue safely. Emergency shutdown.")

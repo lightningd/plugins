@@ -157,7 +157,7 @@ class FileBackend(Backend):
 
         # If this assertion fails we are in a degenerate state: we
         # have less than two changes in the backup (starting
-        # c-lightning alone produces 6 changes), and compacting an
+        # Core-Lightning alone produces 6 changes), and compacting an
         # almost empty backup is not useful.
         assert change is not None
 

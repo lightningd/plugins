@@ -1,7 +1,7 @@
 # Autopilot
 
 This is a version of Rene Pickhardt's [Autopilot library][lib] ported as a
-c-lightning plugin.
+Core-Lightning plugin.
 
 > :warning: This plugin is still being ported and may not be currently reflect
 > the entire functionality. :construction:

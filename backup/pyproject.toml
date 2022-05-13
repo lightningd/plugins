@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "cln-backup"
 version = "0.1.0"
-description = "Keep your c-lightning node save by backing it up, in real-time (allows recovering without channel closures)."
+description = "Keep your Core-Lightning node save by backing it up, in real-time (allows recovering without channel closures)."
 authors = ["Christian Decker <decker@blockstream.com>"]
 
 [tool.poetry.dependencies]

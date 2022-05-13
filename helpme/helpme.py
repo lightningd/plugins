@@ -422,7 +422,7 @@ def get_channel_list(peers, state='CHANNELD_NORMAL'):
 
 
 def give_general_advice(plugin):
-    r = """Welcome to c-lightning!
+    r = """Welcome to Core-Lightning!
 
 The lightning network consists of bitcoin channels between computers
 (like this one), and the ability to send those bitcoins between them.
@@ -829,7 +829,7 @@ Beware that if your node is offline while channels are open, the other side of t
 
 
 def give_plugin_advice(plugin):
-    return """You can create plugins for c-lightning which do awesome things.  Like me, the 'helpme' plugin!  They can also, y'know, steal your lunch, so be careful!
+    return """You can create plugins for Core-Lightning which do awesome things.  Like me, the 'helpme' plugin!  They can also, y'know, steal your lunch, so be careful!
 
 There's a repository of useful plugins at https://github.com/lightningd/plugins
 

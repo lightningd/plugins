@@ -1,19 +1,19 @@
-Remote backup backend for c-lightning
+Remote backup backend for Core-Lightning
 =====================================
 
 Introduction
 ------------
 
-The purpose of this backend is to allow hassle-free incremental remote backups of a c-lightning
+The purpose of this backend is to allow hassle-free incremental remote backups of a Core-Lightning
 daemon's state.
 
 The remote backup system consists of two parts:
 
-- A `backup.py` plugin backend that listens for changes to c-lightning's database and communicates them 
+- A `backup.py` plugin backend that listens for changes to Core-Lightning's database and communicates them 
   to a remote server.
 
 - A server daemon that receives changes from the backup backend and communicates with a local backup backend
-  to store them. The server side does not need to be running c-lightning, nor have it installed.
+  to store them. The server side does not need to be running Core-Lightning, nor have it installed.
 
 ### URL scheme
 
@@ -35,7 +35,7 @@ backup-cli server file:///path/to/backup 127.0.0.1:8700
 On the client side:
 
 ```bash
-# Make sure c-lightning is not running
+# Make sure Core-Lightning is not running
 lightning-cli stop
 # Initialize the socket backend (this makes an initial snapshot, and creates a configuration file for the plugin)
 backup-cli init socket:127.0.0.1:8700 --lightning-dir "$HOME/.lightning/bitcoin"
@@ -48,7 +48,7 @@ Usage with SSH
 --------------
 
 The easiest way to connect the server and client if they are not running on the same host is with a ssh
-forward. For example, when connecting from another machine to the one running c-lightning use:
+forward. For example, when connecting from another machine to the one running Core-Lightning use:
 
 ```bash
 ssh mylightninghost -R 8700:127.0.0.1:8700
@@ -82,9 +82,9 @@ HiddenServicePort 8700 127.0.0.1:8700
 Goals
 -----
 
-- Hassle-free incremental remote backup of c-lightning's database over a simple TCP protocol.
+- Hassle-free incremental remote backup of Core-Lightning's database over a simple TCP protocol.
 
-- Safety. c-lightningd will only proceed when the remote backend has acknowledged storing a change, and will halt when there is no connection to the backup server.
+- Safety. Core-Lightning will only proceed when the remote backend has acknowledged storing a change, and will halt when there is no connection to the backup server.
 
 - Bandwidth efficiency. Updates can be really large, and SQL statements ought to be well compressible, so bandwidth is saved by performing zlib compression on the changes and snapshots. 
 

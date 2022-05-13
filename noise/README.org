@@ -1,5 +1,5 @@
 The Noise plugin allows sending and receiving private messages through the
-Lightning Network. It is implemented on top to c-lightning's ~createonion~ and
+Lightning Network. It is implemented on top to Core-Lightning's ~createonion~ and
 ~sendonion~ RPC methods that allow delivering custom payloads to a specific
 node, as well as the ~htlc_accepted~ hook which can be used to extract the
 message from the onion payload.

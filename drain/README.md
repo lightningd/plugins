@@ -39,7 +39,7 @@ lightningd --plugin=/path/to/plugin/drain.py
 ```
 
 Alternatively, you can also symlink or copy the plugins executable to the
-`.lightning/plugins` folder or the `plugins` folder of your c-lightning
+`.lightning/plugins` folder or the `plugins` folder of your Core-Lightning
 installation as executables within these directories will be loaded as plugins.
 
 

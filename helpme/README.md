@@ -1,7 +1,7 @@
-# Helpme plugin for c-lightning
+# Helpme plugin for Core-Lightning
 
 This plugin is designed to walk you through setting up a fresh
-c-lightning node, offering advice for common problems.
+Core-Lightning node, offering advice for common problems.
 
 ## Example Usage
 

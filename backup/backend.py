@@ -6,7 +6,7 @@ from typing import Iterator
 import sqlite3
 from tqdm import tqdm
 
-# A 'transaction' that was proposed by c-lightning and that needs saving to the
+# A 'transaction' that was proposed by Core-Lightning and that needs saving to the
 # backup. `version` is the `data_version` of the database **after** `transaction`
 # has been applied. A 'snapshot' represents a complete copy of the database.
 # This is used by the plugin from time to time to allow the backend to compress
@@ -81,7 +81,7 @@ class Backend(object):
         self.db = self._db_open(dest)
 
     def _rewrite_stmt(self, stmt: str) -> str:
-        """We had a stmt expansion bug in c-lightning, this replicates the fix.
+        """We had a stmt expansion bug in Core-Lightning, this replicates the fix.
 
         We were expanding statements incorrectly, missing some
         whitespace between a param and the `WHERE` keyword. This
