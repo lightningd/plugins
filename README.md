@@ -216,5 +216,5 @@ Python plugins developers must ensure their plugin to work with all Python versi
 [backup]: https://github.com/lightningd/plugins/tree/master/backup
 [commando]: https://github.com/lightningd/plugins/tree/master/commando
 [reporter]: https://github.com/LNOpenMetrics/go-lnmetrics.reporter
-[csharp-example]: https://github.com/joemphilips/HelloWorldPlugin
+[csharp-example]: https://github.com/joemphilips/DotNetLightning/tree/master/examples/HelloWorldPlugin
 [kotlin-example]: https://vincenzopalazzo.medium.com/a-day-in-a-c-lightning-plugin-with-koltin-c8bbd4fa0406
