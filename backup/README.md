@@ -10,10 +10,10 @@ Related info about backup solutions: https://github.com/ElementsProject/lightnin
 
 ## Installation
 
-There are some Python dependencies. You can install them using `pip3`:
+There are some Python dependencies. You can install them using `poetry`:
 
 ```bash
-pip3 install --user -r requirements.txt
+poetry install
 ```
 
 
