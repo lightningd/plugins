@@ -2,6 +2,7 @@
 import random
 import statistics
 import time
+import math
 from pyln.client import Plugin, Millisatoshi, RpcError
 from threading import Lock
 
@@ -108,12 +109,12 @@ def get_fees_median(plugin: Plugin, scid: str):
     return {"base": plugin.adj_basefee, "ppm": statistics.median(fees_ppm)}
 
 
-def setchannelfee(plugin: Plugin, scid: str, base: int, ppm: int):
+def setchannelfee(plugin: Plugin, scid: str, base: int, ppm: int, min_htlc: int, max_htlc: int):
     fees = get_chan_fees(plugin, scid)
     if fees is None or base == fees['base'] and ppm == fees['ppm']:
         return False
     try:
-        plugin.rpc.setchannel(scid, base, ppm)
+        plugin.rpc.setchannel(scid, base, ppm, min_htlc, max_htlc)
         return True
     except RpcError as e:
         plugin.log(f"Could not adjust fees for channel {scid}: '{e}'", level="error")
@@ -169,8 +170,12 @@ def maybe_adjust_fees(plugin: Plugin, scids: list):
         percentage = get_adjusted_percentage(plugin, scid)
         assert 0 <= percentage and percentage <= 1
         ratio = plugin.get_ratio(percentage)
-        if setchannelfee(plugin, scid, int(base), int(ppm * ratio)):
-            plugin.log(f"Adjusted fees of {scid} with a ratio of {ratio}")
+        if plugin.max_htlc_steps >= 1:
+            max_htlc = int(total * math.ceil(plugin.max_htlc_steps * percentage) / plugin.max_htlc_steps)
+        else:
+            max_htlc = None
+        if setchannelfee(plugin, scid, int(base), int(ppm * ratio), None, max_htlc):
+            plugin.log(f"Adjusted fees of {scid} with a ratio of {ratio}, set max_htlc to {max_htlc}")
             plugin.adj_balances[scid]["last_liquidity"] = our
             channels_adjusted += 1
     return channels_adjusted
@@ -272,6 +277,7 @@ def init(options: dict, configuration: dict, plugin: Plugin, **kwargs):
     plugin.update_threshold_abs = Millisatoshi(options.get("feeadjuster-threshold-abs"))
     plugin.big_enough_liquidity = Millisatoshi(options.get("feeadjuster-enough-liquidity"))
     plugin.imbalance = float(options.get("feeadjuster-imbalance"))
+    plugin.max_htlc_steps = int(options.get("feeadjuster-max-htlc-steps"))
     adjustment_switch = {
         "soft": get_ratio_soft,
         "hard": get_ratio_hard,
@@ -315,7 +321,8 @@ def init(options: dict, configuration: dict, plugin: Plugin, **kwargs):
                f"forward_event_subscription: {plugin.forward_event_subscription}, "
                f"adjustment_method: {plugin.get_ratio.__name__}, "
                f"fee_strategy: {plugin.fee_strategy.__name__}, "
-               f"listchannels_by_dst: {plugin.listchannels_by_dst}")
+               f"listchannels_by_dst: {plugin.listchannels_by_dst},"
+               f"max_htlc_steps: {plugin.max_htlc_steps}")
     plugin.mutex.release()
     feeadjust(plugin)
 
@@ -377,6 +384,15 @@ plugin.add_option(
     "Can be 'global' to use global config or default values, "
     "or 'median' to use the median fees from peers of peer "
     "Default: 'global'.",
+    "string"
+)
+plugin.add_option(
+    "feeadjuster-max-htlc-steps",
+    "0",
+    "Sets the number of max htlc adjustment steps. "
+    "This will reduce the max htlc according to available "
+    "liquidity, which can reduce local routing channel failures."
+    "A value of 0 disables the stepping.",
     "string"
 )
 plugin.run()
