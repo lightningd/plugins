@@ -225,13 +225,19 @@ def feeadjust(plugin: Plugin, scid: str = None):
 
     This method is automatically called in plugin init, or can be called manually after a successful payment.
     Otherwise, the plugin keeps the fees up-to-date.
+
+    To stop setting the channels with a list of nodes place a file called `feeadjuster-exclude.list` in the
+    lightningd data directory with a simple line-by-line list of pubkeys.
     """
     plugin.mutex.acquire(blocking=True)
     plugin.peers = plugin.rpc.listpeers()["peers"]
     if plugin.fee_strategy == get_fees_median and not plugin.listchannels_by_dst:
         plugin.channels = plugin.rpc.listchannels()['channels']
     channels_adjusted = 0
+    with open('feeadjuster-exclude.list') as file:
+        exclude_list = [l.rstrip("\n") for l in file]
     for peer in plugin.peers:
+      if peer["id"] not in exclude_list:
         for chan in peer["channels"]:
             if chan["state"] == "CHANNELD_NORMAL":
                 _scid = chan.get("short_channel_id")
