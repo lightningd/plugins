@@ -157,7 +157,7 @@ def summary(plugin, exclude=''):
                 p['connected'],
                 c['short_channel_id'],
                 plugin.persist['peerstate'][pid]['avail'],
-                c['fee_base_msat'],
+                Millisatoshi(c['fee_base_msat']),
                 c['fee_proportional_millionths'],
             ))
 
@@ -166,7 +166,7 @@ def summary(plugin, exclude=''):
 
     reply['avail_out'] = avail_out.to_btc_str()
     reply['avail_in'] = avail_in.to_btc_str()
-    reply['fees_collected'] = info['fees_collected_msat'].to_btc_str()
+    reply['fees_collected'] = Millisatoshi(info['fees_collected_msat']).to_btc_str()
 
     if plugin.fiat_per_btc > 0:
         reply['utxo_amount'] += ' ({})'.format(to_fiatstr(utxo_amount))
