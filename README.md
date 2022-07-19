@@ -26,6 +26,7 @@ Community curated plugins for Core-Lightning.
 | [listmempoolfunds][listmempoolfunds] | Track unconfirmed wallet deposits|
 | [monitor][monitor]                 | helps you analyze the health of your peers and channels                                   |
 | [noise][noise]                     | Chat with your fellow node operators                                                      |
+| [paythrough][paythrough]           | Pay an invoice through a specific channel, regardless of better routes                    |
 | [persistent-channels][pers-chans]  | Maintains a number of channels to peers                                                   |
 | [probe][probe]                     | Regularly probes the network for stability                                                |
 | [prometheus][prometheus]           | Lightning node exporter for the prometheus timeseries server                              |
@@ -193,6 +194,7 @@ Python plugins developers must ensure their plugin to work with all Python versi
 [graphql-spec]: https://graphql.org/
 [lightning-qt]: https://github.com/darosior/pylightning-qt
 [listmempoolfunds]: https://github.com/andrewtoth/listmempoolfunds
+[paythrough]: https://github.com/andrewtoth/paythrough
 [cpp-api]: https://github.com/darosior/lightningcpp
 [js-api]: https://github.com/lightningd/clightningjs
 [ts-api]: https://github.com/runcitadel/c-lightning.ts
