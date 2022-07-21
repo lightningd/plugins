@@ -26,7 +26,7 @@ which makes sure no two instances are using the same backup. (Make sure to stop
 your Lightning node before running this command)
 
 ```bash
-./backup-cli init --lightning-dir ~/.lightning/bitcoin file:///mnt/external/location/file.bkp
+poetry run ./backup-cli init --lightning-dir ~/.lightning/bitcoin file:///mnt/external/location/file.bkp
 ```
 
 Notes:
