@@ -39,7 +39,7 @@ Community curated plugins for Core-Lightning.
 | [summary][summary]                 | Print a nice summary of the node status                                                   |
 | [trustedcoin][trustedcoin]         | Replace your Bitcoin Core with data from public block explorers                           |
 | [webhook][webhook]                 | Dispatches webhooks based from [event notifications][event-notifications]                 |
-| [watchtower][teos-client]          | Watchtower client for The Eye of Satoshi                                                  |
+| [watchtower][watchtower-client]          | Watchtower client for The Eye of Satoshi                                                  |
 | [zmq][zmq]                         | Publishes notifications via [ZeroMQ][zmq-home] to configured endpoints                    |
 
 ## Installation
@@ -212,7 +212,7 @@ Python plugins developers must ensure their plugin to work with all Python versi
 [invoice-queue]: https://github.com/rbndg/Lightning-Invoice-Queue
 [boltz]: https://github.com/BoltzExchange/channel-creation-plugin
 [feeadjuster]: https://github.com/lightningd/plugins/tree/master/feeadjuster
-[teos-client]: https://github.com/talaia-labs/python-teos/tree/master/watchtower-plugin
+[watchtower-client]: https://github.com/talaia-labs/rust-teos/tree/master/watchtower-plugin
 [java-api]: https://github.com/clightning4j/JRPClightning
 [btcli4j]: https://github.com/clightning4j/btcli4j 
 [backup]: https://github.com/lightningd/plugins/tree/master/backup
