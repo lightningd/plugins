@@ -454,7 +454,7 @@ node!  Be prepared to lose your funds (but please report a bug if you do!)
     elif len(funds) == 0 and len(channels) > 0:
         r += "COMPLETE (all funds used for channels)"
     else:
-        funds = Millisatoshi(1000 * sum([f['value'] for f in funds
+        funds = Millisatoshi(sum([f['amount_msat'] for f in funds
                              if f['status'] == 'confirmed']))
         r += "COMPLETE ({} a.k.a. {})".format(funds, funds.to_btc_str())
         stages['funds'] = True
