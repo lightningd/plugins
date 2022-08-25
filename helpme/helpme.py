@@ -499,7 +499,7 @@ node!  Be prepared to lose your funds (but please report a bug if you do!)
     elif len([s for s in invoices if s['status'] == 'paid']) == 0:
         r += "INCOMPLETE (No payments succeeded)"
     else:
-        r += "COMPLETE ({} payments received)".format(len([s for s in invoices if s['status'] == 'complete']))
+        r += "COMPLETE ({} payments received)".format(len([s for s in invoices if s['status'] == 'paid']))
         stages['invoices'] = True
 
     r += "\nSTAGE 6 (adding bling): "
