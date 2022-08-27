@@ -239,8 +239,13 @@ def feeadjust(plugin: Plugin, scid: str = None):
     if plugin.fee_strategy == get_fees_median and not plugin.listchannels_by_dst:
         plugin.channels = plugin.rpc.listchannels()['channels']
     channels_adjusted = 0
-    with open('feeadjuster-exclude.list') as file:
-        exclude_list = [l.rstrip("\n") for l in file]
+    try:
+        with open('feeadjuster-exclude.list') as file:
+            exclude_list = [l.rstrip("\n") for l in file]
+            print("Excluding the channels with the nodes:", exclude_list)
+    except:
+        exclude_list = []
+        print("There is no feeadjuster-exclude.list given, applying the options to the channels with all peers.")
     for peer in plugin.peers:
       if peer["id"] not in exclude_list:
         for chan in peer["channels"]:
