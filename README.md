@@ -42,6 +42,7 @@ Community curated plugins for Core-Lightning.
 | [webhook][webhook]                 | Dispatches webhooks based from [event notifications][event-notifications]                 |
 | [watchtower][watchtower-client]          | Watchtower client for The Eye of Satoshi                                                  |
 | [zmq][zmq]                         | Publishes notifications via [ZeroMQ][zmq-home] to configured endpoints                    |
+| [nloop][nloop]                     | Generic Lightning Loop for boltz                     |
 
 ## Installation
 
@@ -222,3 +223,4 @@ Python plugins developers must ensure their plugin to work with all Python versi
 [reporter]: https://github.com/LNOpenMetrics/go-lnmetrics.reporter
 [csharp-example]: https://github.com/joemphilips/DotNetLightning/tree/master/examples/HelloWorldPlugin
 [kotlin-example]: https://vincenzopalazzo.medium.com/a-day-in-a-c-lightning-plugin-with-koltin-c8bbd4fa0406
+[nloop]: https://github.com/bitbankinc/NLoop
