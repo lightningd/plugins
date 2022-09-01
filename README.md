@@ -228,3 +228,4 @@ Python plugins developers must ensure their plugin to work with all Python versi
 [nloop]: https://github.com/bitbankinc/NLoop
 [poncho]: https://github.com/fiatjaf/poncho
 [blip12]: https://github.com/lightning/blips/blob/42cec1d0f66eb68c840443abb609a5a9acb34f8e/blip-0012.md
+[circular]: https://github.com/giovannizotta/circular
