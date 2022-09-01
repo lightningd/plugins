@@ -34,3 +34,6 @@
 [submodule "poncho"]
 	path = poncho
 	url = https://github.com/fiatjaf/poncho
+[submodule "circular"]
+	path = circular
+	url = https://github.com/giovannizotta/circular.git
