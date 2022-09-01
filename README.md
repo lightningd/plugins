@@ -12,6 +12,7 @@ Community curated plugins for Core-Lightning.
 | [backup][backup]                     | A simple and reliable backup plugin                                                         |
 | [boltz-channel-creation][boltz]      | A Core-Lightning plugin for Boltz Channel Creation Swaps                                    |
 | [btcli4j][btcli4j]                   | A Bitcoin Backend to enable safely the pruning mode, and support also rest APIs.            |
+| [circular][circular]                 | A smart rebalancing plugin for Core Lightning routing nodes                                 |
 | [commando][commando]                 | Authorize peers to run commands on your node, and running commands on them.                 |
 | [csvexportpays][csvexportpays]       | A plugin that exports all payments to a CSV file                                            |
 | [currencyrate][currencyrate]         | A plugin to convert other currencies to BTC using web requests                              |
