@@ -30,7 +30,7 @@ num_connected=2
 num_gossipers=1
 avail_out=0.27095103btc (USD $1009.16)
 avail_in=2.05851379btc (USD $7666.93)
-fees_collected=0.00000012341btc
+fees_collected=0.00000012341btc (USD $0.00)
 channels_key=P=private O=offline
 channels=          ├────────────╢                       (O):02ac05912f89e43b88de3472e8c3003b
            ├───────────╢                       (O):02dd4cef0192611bc34cd1c3a0a7eb0f

@@ -172,6 +172,7 @@ def summary(plugin, exclude=''):
         reply['utxo_amount'] += ' ({})'.format(to_fiatstr(utxo_amount))
         reply['avail_out'] += ' ({})'.format(to_fiatstr(avail_out))
         reply['avail_in'] += ' ({})'.format(to_fiatstr(avail_in))
+        reply['fees_collected'] += ' ({})'.format(to_fiatstr(info['fees_collected_msat']))
 
     if chans != []:
         reply['channels_flags'] = 'P:private O:offline'
