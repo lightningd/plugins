@@ -28,6 +28,7 @@ Community curated plugins for Core-Lightning.
 | [noise][noise]                     | Chat with your fellow node operators                                                      |
 | [paythrough][paythrough]           | Pay an invoice through a specific channel, regardless of better routes                    |
 | [persistent-channels][pers-chans]  | Maintains a number of channels to peers                                                   |
+| [poncho][poncho]                   | Turns CLN into a [hosted channels][blip12] provider                          |
 | [probe][probe]                     | Regularly probes the network for stability                                                |
 | [prometheus][prometheus]           | Lightning node exporter for the prometheus timeseries server                              |
 | [pruning][pruning]                 | This plugin manages pruning of bitcoind such that it can always sync                      |
@@ -217,10 +218,12 @@ Python plugins developers must ensure their plugin to work with all Python versi
 [feeadjuster]: https://github.com/lightningd/plugins/tree/master/feeadjuster
 [watchtower-client]: https://github.com/talaia-labs/rust-teos/tree/master/watchtower-plugin
 [java-api]: https://github.com/clightning4j/JRPClightning
-[btcli4j]: https://github.com/clightning4j/btcli4j 
+[btcli4j]: https://github.com/clightning4j/btcli4j
 [backup]: https://github.com/lightningd/plugins/tree/master/backup
 [commando]: https://github.com/lightningd/plugins/tree/master/commando
 [reporter]: https://github.com/LNOpenMetrics/go-lnmetrics.reporter
 [csharp-example]: https://github.com/joemphilips/DotNetLightning/tree/master/examples/HelloWorldPlugin
 [kotlin-example]: https://vincenzopalazzo.medium.com/a-day-in-a-c-lightning-plugin-with-koltin-c8bbd4fa0406
 [nloop]: https://github.com/bitbankinc/NLoop
+[poncho]: https://github.com/fiatjaf/poncho
+[blip12]: https://github.com/lightning/blips/blob/42cec1d0f66eb68c840443abb609a5a9acb34f8e/blip-0012.md
