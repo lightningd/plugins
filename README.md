@@ -6,44 +6,44 @@ Community curated plugins for Core-Lightning.
 
 ## Available plugins
 
-| Name                               | Short description                                                                         |
-|------------------------------------|-------------------------------------------------------------------------------------------|
-| [autopilot][autopilot]             | An autopilot that suggests channels that should be established                            |
-| [backup][backup]                   | A simple and reliable backup plugin                                                       |
-| [boltz-channel-creation][boltz]    | A Core-Lightning plugin for Boltz Channel Creation Swaps                                     |
-| [btcli4j][btcli4j]                 | A Bitcoin Backend to enable safely the pruning mode, and support also rest APIs.          |
-| [commando][commando]               | Authorize peers to run commands on your node, and running commands on them.               |
-| [csvexportpays][csvexportpays]     | A plugin that exports all payments to a CSV file                                          |
-| [currencyrate][currencyrate]       | A plugin to convert other currencies to BTC using web requests                            |
-| [donations][donations]             | A simple donations page to accept donations from the web                                  |
-| [drain][drain]                     | Draining, filling and balancing channels with automatic chunks.                           |
-| [event-websocket][event-websocket] | Exposes notifications over a Websocket                                                    |
-| [feeadjuster][feeadjuster]         | Dynamic fees to keep your channels more balanced                                          |
-| [go-lnmetrics.reporter][reporter]  | Collect and report of the lightning node metrics                                          |
-| [graphql][graphql]                 | Exposes the Core-Lightning API over [graphql][graphql-spec]                                  |
-| [invoice-queue][invoice-queue]     | Listen to lightning invoices from multiple nodes and send to a redis queue for processing |
-| [lightning-qt][lightning-qt]       | A bitcoin-qt-like GUI for lightningd                                                      |
-| [listmempoolfunds][listmempoolfunds] | Track unconfirmed wallet deposits|
-| [monitor][monitor]                 | helps you analyze the health of your peers and channels                                   |
-| [noise][noise]                     | Chat with your fellow node operators                                                      |
-| [paythrough][paythrough]           | Pay an invoice through a specific channel, regardless of better routes                    |
-| [persistent-channels][pers-chans]  | Maintains a number of channels to peers                                                   |
-| [poncho][poncho]                   | Turns CLN into a [hosted channels][blip12] provider                          |
-| [probe][probe]                     | Regularly probes the network for stability                                                |
-| [prometheus][prometheus]           | Lightning node exporter for the prometheus timeseries server                              |
-| [pruning][pruning]                 | This plugin manages pruning of bitcoind such that it can always sync                      |
-| [rebalance][rebalance]             | Keeps your channels balanced                                                              |
-| [reckless][reckless]               | An **experimental** plugin manager (search/install plugins)                               |
-| [requestinvoice][request-invoice]  | Http server to request invoices                                                           |
-| [sauron][sauron]                   | A Bitcoin backend relying on [Esplora][esplora]'s API                                     |
-| [sitzprobe][sitzprobe]             | A Lightning Network payment rehearsal utility                                             |
-| [sparko][sparko]                   | RPC over HTTP with fine-grained permissions, SSE and spark-wallet support                 |
-| [summary][summary]                 | Print a nice summary of the node status                                                   |
-| [trustedcoin][trustedcoin]         | Replace your Bitcoin Core with data from public block explorers                           |
-| [webhook][webhook]                 | Dispatches webhooks based from [event notifications][event-notifications]                 |
-| [watchtower][watchtower-client]          | Watchtower client for The Eye of Satoshi                                                  |
-| [zmq][zmq]                         | Publishes notifications via [ZeroMQ][zmq-home] to configured endpoints                    |
-| [nloop][nloop]                     | Generic Lightning Loop for boltz                     |
+| Name                                 | Short description                                                                           |
+| ------------------------------------ | ------------------------------------------------------------------------------------------- |
+| [autopilot][autopilot]               | An autopilot that suggests channels that should be established                              |
+| [backup][backup]                     | A simple and reliable backup plugin                                                         |
+| [boltz-channel-creation][boltz]      | A Core-Lightning plugin for Boltz Channel Creation Swaps                                    |
+| [btcli4j][btcli4j]                   | A Bitcoin Backend to enable safely the pruning mode, and support also rest APIs.            |
+| [commando][commando]                 | Authorize peers to run commands on your node, and running commands on them.                 |
+| [csvexportpays][csvexportpays]       | A plugin that exports all payments to a CSV file                                            |
+| [currencyrate][currencyrate]         | A plugin to convert other currencies to BTC using web requests                              |
+| [donations][donations]               | A simple donations page to accept donations from the web                                    |
+| [drain][drain]                       | Draining, filling and balancing channels with automatic chunks.                             |
+| [event-websocket][event-websocket]   | Exposes notifications over a Websocket                                                      |
+| [feeadjuster][feeadjuster]           | Dynamic fees to keep your channels more balanced                                            |
+| [go-lnmetrics.reporter][reporter]    | Collect and report of the lightning node metrics                                            |
+| [graphql][graphql]                   | Exposes the Core-Lightning API over [graphql][graphql-spec]                                 |
+| [invoice-queue][invoice-queue]       | Listen to lightning invoices from multiple nodes and send to a redis queue for processing   |
+| [lightning-qt][lightning-qt]         | A bitcoin-qt-like GUI for lightningd                                                        |
+| [listmempoolfunds][listmempoolfunds] | Track unconfirmed wallet deposits                                                           |
+| [monitor][monitor]                   | helps you analyze the health of your peers and channels                                     |
+| [noise][noise]                       | Chat with your fellow node operators                                                        |
+| [paythrough][paythrough]             | Pay an invoice through a specific channel, regardless of better routes                      |
+| [persistent-channels][pers-chans]    | Maintains a number of channels to peers                                                     |
+| [poncho][poncho]                     | Turns CLN into a [hosted channels][blip12] provider                                         |
+| [probe][probe]                       | Regularly probes the network for stability                                                  |
+| [prometheus][prometheus]             | Lightning node exporter for the prometheus timeseries server                                |
+| [pruning][pruning]                   | This plugin manages pruning of bitcoind such that it can always sync                        |
+| [rebalance][rebalance]               | Keeps your channels balanced                                                                |
+| [reckless][reckless]                 | An **experimental** plugin manager (search/install plugins)                                 |
+| [requestinvoice][request-invoice]    | Http server to request invoices                                                             |
+| [sauron][sauron]                     | A Bitcoin backend relying on [Esplora][esplora]'s API                                       |
+| [sitzprobe][sitzprobe]               | A Lightning Network payment rehearsal utility                                               |
+| [sparko][sparko]                     | RPC over HTTP with fine-grained permissions, SSE and spark-wallet support                   |
+| [summary][summary]                   | Print a nice summary of the node status                                                     |
+| [trustedcoin][trustedcoin]           | Replace your Bitcoin Core with data from public block explorers                             |
+| [webhook][webhook]                   | Dispatches webhooks based from [event notifications][event-notifications]                   |
+| [watchtower][watchtower-client]      | Watchtower client for The Eye of Satoshi                                                    |
+| [zmq][zmq]                           | Publishes notifications via [ZeroMQ][zmq-home] to configured endpoints                      |
+| [nloop][nloop]                       | Generic Lightning Loop for boltz                                                            |
 
 ## Installation
 
