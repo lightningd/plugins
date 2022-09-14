@@ -129,7 +129,6 @@ def test_fill_and_drain(node_factory, bitcoind):
 
 
 @unittest.skipIf(not DEVELOPER, "slow gossip, needs DEVELOPER=1")
-@unittest.skipIf(EXPERIMENTAL_FEATURES, "temporarily disabled since amounts seem to change")
 def test_setbalance(node_factory, bitcoind):
     # SETUP: a basic circular setup to run setbalance tests
     #
