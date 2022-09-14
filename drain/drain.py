@@ -20,7 +20,7 @@ HTLC_FEE_PAT = re.compile("^.* HTLC fee: ([0-9]+sat).*$")
 
 
 def setup_routing_fees(plugin, payload, route, amount, substractfees: bool = False):
-    delay = int(plugin.get_option('cltv-final'))
+    delay = plugin.cltv_final
 
     amount_iter = amount
     for r in reversed(route):
@@ -474,9 +474,10 @@ def setbalance(plugin, scid: str, percentage: float = 50, chunks: int = 0, retry
 
 @plugin.init()
 def init(options, configuration, plugin):
-    plugin.options['cltv-final']['value'] = plugin.rpc.listconfigs().get('cltv-final')
+    plugin.getinfo = plugin.rpc.getinfo()
+    plugin.configs = plugin.rpc.listconfigs()
+    plugin.cltv_final = plugin.configs.get('cltv-final')
     plugin.log("Plugin drain.py initialized")
 
 
-plugin.add_option('cltv-final', 10, 'Number of blocks for final CheckLockTimeVerify expiry')
 plugin.run()
