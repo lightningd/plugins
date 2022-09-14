@@ -25,7 +25,6 @@ def test_plugin_starts(node_factory):
     l1.start()
 
 
-@unittest.skipIf(True, "This test was broken by an upstream commit")
 @unittest.skipIf(not DEVELOPER, "slow gossip, needs DEVELOPER=1")
 def test_drain_and_refill(node_factory, bitcoind):
     # Scenario: first drain then refill
@@ -65,18 +64,25 @@ def test_drain_and_refill(node_factory, bitcoind):
     assert(l1.rpc.drain(scid12))
     wait_for_all_htlcs(nodes)
     assert(get_ours(l1, scid12) < ours_before * 0.05)  # account some reserves
+    assert(get_theirs(l1, scid12) > ours_before * 0.95)
 
+    # Investiage: Older version of cln forbid to do a 100% circular fill
+    #             The testcase for this was as followed:
+    #
     # refill again with 100% should not be possible in a line_graph circle,
     # this is not because of ln routing fees (turned off) but because of
     # HTLC commitment tx fee margin that applies for the funder.
-    with pytest.raises(RpcError, match=r"Outgoing capacity problem"):
-        l1.rpc.fill(scid12)
-
+    # with pytest.raises(RpcError, match=r"Outgoing capacity problem"):
+    #    l1.rpc.fill(scid12)
     # If we only go for 99.9% or exatctly 9741msat less, this must work.
+    # assert(l1.rpc.fill(scid12, 99.9))
+
+    ours_before = get_ours(l1, scid12)
     theirs_before = get_theirs(l1, scid12)
-    assert(l1.rpc.fill(scid12, 99.9))
+    assert(l1.rpc.fill(scid12))
     wait_for_all_htlcs(nodes)
-    assert(get_theirs(l1, scid12) < theirs_before * 0.05)  # account some reserves
+    assert(get_ours(l1, scid12) > theirs_before * 0.95)  # account some reserves
+    assert(get_theirs(l1, scid12) < theirs_before * 0.05)
 
 
 @unittest.skipIf(not DEVELOPER, "slow gossip, needs DEVELOPER=1")
