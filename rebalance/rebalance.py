@@ -3,6 +3,7 @@ from pyln.client import Plugin, Millisatoshi, RpcError
 from threading import Thread, Lock
 from datetime import timedelta
 from functools import reduce
+import semver
 import time
 import uuid
 
@@ -10,18 +11,31 @@ plugin = Plugin()
 plugin.rebalance_stop = False
 
 
-def setup_routing_fees(route, msatoshi):
+# The route msat helpers are needed because older versions of cln
+# had different msat/msatoshi fields with different types Millisatoshi/int
+def route_set_msat(obj, msat):
+    if plugin.rpcversion.major == 0 and plugin.rpcversion.minor < 12:
+        obj[plugin.msatfield] = msat.millisatoshis
+        obj['amount_msat'] = Millisatoshi(msat)
+    else:
+        obj[plugin.msatfield] = Millisatoshi(msat)
+
+
+def route_get_msat(r):
+    return Millisatoshi(r[plugin.msatfield])
+
+
+def setup_routing_fees(route, msat):
     delay = plugin.cltv_final
     for r in reversed(route):
-        r['msatoshi'] = msatoshi.millisatoshis
-        r['amount_msat'] = msatoshi
+        route_set_msat(r, msat)
         r['delay'] = delay
         channels = plugin.rpc.listchannels(r['channel'])
         ch = next(c for c in channels.get('channels') if c['destination'] == r['id'])
         fee = Millisatoshi(ch['base_fee_millisatoshi'])
         # BOLT #7 requires fee >= fee_base_msat + ( amount_to_forward * fee_proportional_millionths / 1000000 )
-        fee += (msatoshi * ch['fee_per_millionth'] + 10**6 - 1) // 10**6  # integer math trick to round up
-        msatoshi += fee
+        fee += (msat * ch['fee_per_millionth'] + 10**6 - 1) // 10**6  # integer math trick to round up
+        msat += fee
         delay += ch['delay']
 
 
@@ -65,9 +79,9 @@ def find_worst_channel(route):
         return None
     start_idx = 2
     worst = route[start_idx]
-    worst_val = route[start_idx - 1]['msatoshi'] - route[start_idx]['msatoshi']
+    worst_val = route_get_msat(route[start_idx - 1]) - route_get_msat(worst)
     for i in range(start_idx + 1, len(route) - 1):
-        val = route[i - 1]['msatoshi'] - route[i]['msatoshi']
+        val = route_get_msat(route[i - 1]) - route_get_msat(route[i])
         if val > worst_val:
             worst = route[i]
             worst_val = val
@@ -221,7 +235,7 @@ def rebalance(plugin, outgoing_scid, incoming_scid, msatoshi: Millisatoshi = Non
         "maxfeepercent": maxfeepercent,
         "exemptfee": exemptfee
     }
-    my_node_id = plugin.rpc.getinfo().get('id')
+    my_node_id = plugin.getinfo.get('id')
     outgoing_node_id = peer_from_scid(outgoing_scid, my_node_id, payload)
     incoming_node_id = peer_from_scid(incoming_scid, my_node_id, payload)
     get_channel(payload, outgoing_node_id, outgoing_scid, True)
@@ -292,7 +306,7 @@ def rebalance(plugin, outgoing_scid, incoming_scid, msatoshi: Millisatoshi = Non
             route_mid = r['route']
             route = [route_out] + route_mid + [route_in]
             setup_routing_fees(route, msatoshi)
-            fees = route[0]['amount_msat'] - msatoshi
+            fees = route_get_msat(route[0]) - msatoshi
 
             # check fee and exclude worst channel the next time
             # NOTE: the int(msat) casts are just a workaround for outdated pylightning versions
@@ -318,7 +332,7 @@ def rebalance(plugin, outgoing_scid, incoming_scid, msatoshi: Millisatoshi = Non
             full_route_str = "%s -> %s -> %s -> %s" % (get_node_alias(my_node_id), get_node_alias(outgoing_node_id), midroute_str, get_node_alias(my_node_id))
             plugin.log("%d hops and %s fees for %s along route: %s" % (len(route), fees.to_satoshi_str(), msatoshi.to_satoshi_str(), full_route_str))
             for r in route:
-                plugin.log("    - %s  %14s  %s" % (r['id'], r['channel'], r['amount_msat']), 'debug')
+                plugin.log("    - %s  %14s  %s" % (r['id'], r['channel'], route_get_msat(r)), 'debug')
 
             time_start = time.time()
             count_sendpay += 1
@@ -795,6 +809,19 @@ def init(options, configuration, plugin):
     plugin.erringnodes = int(options.get("rebalance-erringnodes"))
     plugin.getroute = getroute_switch(options.get("rebalance-getroute"))
     plugin.rebalanceall_msg = None
+
+    # parse semver string to determine RPC version
+    # strip leading 'v' although semver should ignore it, but it doesn't.
+    plugin.getinfo = plugin.rpc.getinfo()
+    rpcversion = plugin.getinfo.get('version')
+    if rpcversion.startswith('v'):
+        rpcversion = rpcversion[1:]
+    plugin.rpcversion = semver.VersionInfo.parse(rpcversion)
+
+    # use getroute amount_msat/msatoshi field depending on version
+    plugin.msatfield = 'amount_msat'
+    if plugin.rpcversion.major == 0 and plugin.rpcversion.minor < 12:
+        plugin.msatfield = 'msatoshi'
 
     plugin.log(f"Plugin rebalance initialized with {plugin.fee_base} base / {plugin.fee_ppm} ppm fee  "
                f"cltv_final:{plugin.cltv_final}  "
