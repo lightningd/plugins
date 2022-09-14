@@ -152,7 +152,7 @@ def test_or_set_chunks(plugin, payload):
 
     # get all spendable/receivables for our channels
     channels = {}
-    for channel in plugin.rpc.listchannels(source=payload['my_id']).get('channels'):
+    for channel in payload['mychannels']:
         if channel['short_channel_id'] == scid:
             continue
         try:
@@ -244,9 +244,9 @@ def try_for_htlc_fee(plugin, payload, peer_id, amount, chunk, spendable_before):
 
     # exclude selected channel to prevent unwanted shortcuts
     excludes = [f"{payload['scid']}/0", f"{payload['scid']}/1"]
-    mychannels = plugin.rpc.listchannels(source=my_id).get('channels')
+
     # exclude local channels known to have too little capacity.
-    for channel in mychannels:
+    for channel in payload['mychannels']:
         if channel['short_channel_id'] == payload['scid']:
             continue  # already added few lines above
         spend, recv = spendable_from_scid(plugin, payload, channel['short_channel_id'])
@@ -347,8 +347,9 @@ def read_params(command: str, scid: str, percentage: float, chunks: int,
     }
 
     # cache some often required data
-    payload['my_id'] = plugin.rpc.getinfo().get('id')
+    payload['my_id'] = plugin.getinfo.get('id')
     payload['start_ts'] = int(time.time())
+    payload['mychannels'] = plugin.rpc.listchannels(source=payload['my_id']).get('channels')
 
     # translate a 'setbalance' into respective drain or fill
     if command == 'setbalance':
