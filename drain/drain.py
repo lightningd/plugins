@@ -2,6 +2,7 @@
 from pyln.client import Plugin, Millisatoshi, RpcError
 from utils import get_ours, wait_ours
 import re
+import semver
 import time
 import uuid
 
@@ -19,13 +20,26 @@ HTLC_FEE_EST = Millisatoshi('3000sat')
 HTLC_FEE_PAT = re.compile("^.* HTLC fee: ([0-9]+sat).*$")
 
 
+# The route msat helpers are needed because older versions of cln
+# had different msat/msatoshi fields with different types Millisatoshi/int
+def route_set_msat(r, msat):
+    if plugin.rpcversion.major == 0 and plugin.rpcversion.minor < 12:
+        r[plugin.msatfield] = msat.millisatoshis
+        r['amount_msat'] = Millisatoshi(msat)
+    else:
+        r[plugin.msatfield] = Millisatoshi(msat)
+
+
+def route_get_msat(r):
+    return Millisatoshi(r[plugin.msatfield])
+
+
 def setup_routing_fees(plugin, payload, route, amount, substractfees: bool = False):
     delay = plugin.cltv_final
 
     amount_iter = amount
     for r in reversed(route):
-        r['msatoshi'] = amount_iter.millisatoshis
-        r['amount_msat'] = amount_iter
+        route_set_msat(r, amount_iter)
         r['delay'] = delay
         channels = plugin.rpc.listchannels(r['channel'])
         ch = next(c for c in channels.get('channels') if c['destination'] == r['id'])
@@ -51,8 +65,7 @@ def setup_routing_fees(plugin, payload, route, amount, substractfees: bool = Fal
                     raise RpcError(payload['command'], payload, {'message': 'Cannot cover fees to %s %s' % (payload['command'], amount)})
                 amount_iter -= fee
             first = False
-            r['msatoshi'] = amount_iter.millisatoshis
-            r['amount_msat'] = amount_iter
+            route_set_msat(r, amount_iter)
 
 
 # This raises an error when a channel is not normal or peer is not connected
@@ -126,9 +139,9 @@ def find_worst_channel(route):
         return None
     start_idx = 2
     worst = route[start_idx]
-    worst_val = route[start_idx - 1]['msatoshi'] - worst['msatoshi']
+    worst_val = route_get_msat(route[start_idx - 1]) - route_get_msat(worst)
     for i in range(start_idx + 1, len(route) - 1):
-        val = route[i - 1]['msatoshi'] - route[i]['msatoshi']
+        val = route_get_msat(route[i - 1]) - route_get_msat(route[i])
         if val > worst_val:
             worst = route[i]
             worst_val = val
@@ -270,7 +283,7 @@ def try_for_htlc_fee(plugin, payload, peer_id, amount, chunk, spendable_before):
 
         # check fee and exclude worst channel the next time
         # NOTE: the int(msat) casts are just a workaround for outdated pylightning versions
-        fees = route[0]['amount_msat'] - route[-1]['amount_msat']
+        fees = route_get_msat(route[0]) - route_get_msat(route[-1])
         if fees > payload['exemptfee'] and int(fees) > int(amount) * payload['maxfeepercent'] / 100:
             worst_channel = find_worst_channel(route)
             if worst_channel is None:
@@ -282,7 +295,7 @@ def try_for_htlc_fee(plugin, payload, peer_id, amount, chunk, spendable_before):
                    f"{len(route)} hops to {payload['command']} {amount} using "
                    f"{fees} fees", 'debug')
         for r in route:
-            plugin.log("    - %s  %14s  %s" % (r['id'], r['channel'], r['amount_msat']), 'debug')
+            plugin.log("    - %s  %14s  %s" % (r['id'], r['channel'], route_get_msat(r)), 'debug')
 
         try:
             ours = get_ours(plugin, payload['scid'])
@@ -478,6 +491,19 @@ def init(options, configuration, plugin):
     plugin.getinfo = plugin.rpc.getinfo()
     plugin.configs = plugin.rpc.listconfigs()
     plugin.cltv_final = plugin.configs.get('cltv-final')
+
+    # parse semver string to determine RPC version
+    # strip leading 'v' although semver should ignore it, but it doesn't.
+    rpcversion = plugin.getinfo.get('version')
+    if rpcversion.startswith('v'):
+        rpcversion = rpcversion[1:]
+    plugin.rpcversion = semver.VersionInfo.parse(rpcversion)
+
+    # use getroute amount_msat/msatoshi field depending on version
+    plugin.msatfield = 'amount_msat'
+    if plugin.rpcversion.major == 0 and plugin.rpcversion.minor < 12:
+        plugin.msatfield = 'msatoshi'
+
     plugin.log("Plugin drain.py initialized")
 
 
