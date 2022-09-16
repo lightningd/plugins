@@ -1,6 +1,6 @@
 from flaky import flaky
 from pyln.testing.fixtures import *  # noqa: F401,F403
-from pyln.testing.utils import DEVELOPER
+from pyln.testing.utils import DEVELOPER, wait_for
 from pyln.client import RpcError
 from .utils import get_ours, get_theirs, wait_ours, wait_for_all_htlcs
 import os
@@ -222,6 +222,9 @@ def test_drain_chunks(node_factory, bitcoind):
     l2.openchannel(l4, 10**6)
     l3.openchannel(l4, 10**6)
     l4.openchannel(l1, 11**6)
+
+    wait_for(lambda: l4.rpc.listpeers(l1.info['id'])['peers'][0]['channels'][0]['state'] == 'CHANNELD_NORMAL')
+
     scid12 = l1.get_channel_scid(l2)
     scid13 = l1.get_channel_scid(l3)
     scid24 = l2.get_channel_scid(l4)
@@ -295,16 +298,16 @@ def test_fill_chunks(node_factory, bitcoind):
     #  scid41:  l4 -> l1   11**6   (~1.750.000 sat)
 
     l1, l2, l3, l4 = node_factory.get_nodes(4, opts=pluginopt)
-    l1.connect(l2)
-    l1.connect(l3)
-    l2.connect(l4)
-    l3.connect(l4)
-    l4.connect(l1)
-    l1.openchannel(l2, 10**6)
-    l1.openchannel(l3, 10**6)
-    l2.openchannel(l4, 10**6)
-    l3.openchannel(l4, 10**6)
-    l4.openchannel(l1, 11**6)
+
+    channels = [(l1, l2), (l1, l3), (l2, l4), (l3, l4), (l4, l1)]
+
+    for src, dst in channels:
+        src.connect(dst)
+        src.openchannel(dst, 10**6, confirm=True)
+
+    wait_for(lambda: l4.rpc.listpeers(l1.info['id'])['peers'][0]['channels'][0]['state'] == 'CHANNELD_NORMAL')
+    bitcoind.generate_block(6)
+
     scid12 = l1.get_channel_scid(l2)
     scid13 = l1.get_channel_scid(l3)
     scid24 = l2.get_channel_scid(l4)
@@ -314,7 +317,6 @@ def test_fill_chunks(node_factory, bitcoind):
     scids = [scid12, scid13, scid24, scid34, scid41]
 
     # wait for each others gossip
-    bitcoind.generate_block(6)
     for n in nodes:
         for scid in scids:
             n.wait_channel_active(scid)

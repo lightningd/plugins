@@ -20,11 +20,10 @@ HTLC_FEE_PAT = re.compile("^.* HTLC fee: ([0-9]+sat).*$")
 
 
 def setup_routing_fees(plugin, payload, route, amount, substractfees: bool = False):
-    delay = int(plugin.get_option('cltv-final'))
+    delay = int(plugin.get_option('drain-cltv-final'))
 
     amount_iter = amount
     for r in reversed(route):
-        r['msatoshi'] = amount_iter.millisatoshis
         r['amount_msat'] = amount_iter
         r['delay'] = delay
         channels = plugin.rpc.listchannels(r['channel'])
@@ -51,7 +50,6 @@ def setup_routing_fees(plugin, payload, route, amount, substractfees: bool = Fal
                     raise RpcError(payload['command'], payload, {'message': 'Cannot cover fees to %s %s' % (payload['command'], amount)})
                 amount_iter -= fee
             first = False
-            r['msatoshi'] = amount_iter.millisatoshis
             r['amount_msat'] = amount_iter
 
 
@@ -474,9 +472,9 @@ def setbalance(plugin, scid: str, percentage: float = 50, chunks: int = 0, retry
 
 @plugin.init()
 def init(options, configuration, plugin):
-    plugin.options['cltv-final']['value'] = plugin.rpc.listconfigs().get('cltv-final')
+    plugin.options['drain-cltv-final']['value'] = plugin.rpc.listconfigs().get('drain-cltv-final')
     plugin.log("Plugin drain.py initialized")
 
 
-plugin.add_option('cltv-final', 10, 'Number of blocks for final CheckLockTimeVerify expiry')
+plugin.add_option('drain-cltv-final', 10, 'Number of blocks for final CheckLockTimeVerify expiry')
 plugin.run()
