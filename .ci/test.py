@@ -25,7 +25,6 @@ global_dependencies = [
     'pytest==5.*',
     'pytest-xdist',
     'pytest-timeout',
-    'pyln-testing',
     'pytest-rerunfailures',
 ]
 
