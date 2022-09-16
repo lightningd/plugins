@@ -68,9 +68,13 @@ jobs:
           wheel \
           blinker \
           pytest-custom-exit-code==0.3.0 \
-          pytest-json-report
+          pytest-json-report \
+          poetry
 
-        pip install --user -U -r requirements.lock  --use-feature=in-tree-build
+        poetry export --dev --without-hashes -o requirements.txt
+        # Doctor out the relative paths
+        sed -i '/pyln/d' requirements.txt
+        pip3 install -r requirements.txt
 
         ./configure --disable-valgrind
         make -j 16
