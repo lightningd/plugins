@@ -1,2 +1,0 @@
-runes>=0.4
-pyln-client>=0.10.1

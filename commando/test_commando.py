@@ -6,10 +6,13 @@ import json
 import runes  # type: ignore
 import commando
 import time
+import subprocess
 
 plugin_path = os.path.join(os.path.dirname(__file__), "commando.py")
 datastore_path = os.path.join(os.path.dirname(os.path.dirname(__file__)),
                               "datastore", "datastore.py")
+
+native_commando = b'commando' in subprocess.check_output(['lightningd', '--help'])
 
 
 def test_add_reader_restrictions():
@@ -22,6 +25,7 @@ def test_add_reader_restrictions():
     assert mrune.check_with_reason(runestr, {'method': 'fail'}) == (False, 'method: does not start with list AND method: does not start with get AND method: != summary')
 
 
+@pytest.mark.skipif(native_commando, reason="lightningd has built-in commando")
 def test_commando(node_factory):
     l1, l2 = node_factory.line_graph(2, fundchannel=True)
 
@@ -72,6 +76,7 @@ def test_commando(node_factory):
     assert len(json.dumps(ret)) > 65535
 
 
+@pytest.mark.skipif(native_commando, reason="lightningd has built-in commando")
 def test_commando_rune(node_factory):
     l1, l2, l3 = node_factory.line_graph(3, fundchannel=False,
                                          opts={'plugin': [plugin_path,
@@ -183,6 +188,7 @@ def test_commando_rune(node_factory):
                          'params': {'source': l3.info['id']}})
 
 
+@pytest.mark.skipif(native_commando, reason="lightningd has built-in commando")
 def test_commando_cacherune(node_factory):
     l1, l2 = node_factory.line_graph(2, fundchannel=False,
                                      opts={'plugin': [plugin_path,
@@ -235,6 +241,7 @@ def test_commando_cacherune(node_factory):
                          'params': {'source': l1.info['id']}})
 
 
+@pytest.mark.skipif(native_commando, reason="lightningd has built-in commando")
 def test_rune_time(node_factory):
     l1, l2 = node_factory.line_graph(2, fundchannel=False,
                                      opts={'plugin': [plugin_path,
@@ -280,6 +287,7 @@ def test_rune_time(node_factory):
                         params={'restrictions': 'id={}'.format(l2.info['id'])})
 
 
+@pytest.mark.skipif(native_commando, reason="lightningd has built-in commando")
 def test_readonly(node_factory):
     l1, l2 = node_factory.line_graph(2, fundchannel=False,
                                      opts={'plugin': [plugin_path,
@@ -303,6 +311,7 @@ def test_readonly(node_factory):
                         method='listdatastore')
 
 
+@pytest.mark.skipif(native_commando, reason="lightningd has built-in commando")
 def test_megacmd(node_factory):
     l1, l2 = node_factory.line_graph(2, fundchannel=False,
                                      opts={'plugin': [plugin_path,
