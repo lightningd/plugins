@@ -19,13 +19,11 @@ exclude = [
     '.git',
     '.github',
     'lightning',
-    'feeadjuster'
 ]
 global_dependencies = [
     'pytest==5.*',
     'pytest-xdist',
     'pytest-timeout',
-    'pytest-rerunfailures',
 ]
 
 Plugin = namedtuple(
@@ -45,6 +43,12 @@ def enumerate_plugins(basedir: Path) -> Generator[Plugin, None, None]:
         x for x in basedir.iterdir() \
         if x.is_dir() and x.name not in exclude
     ])
+
+    plugins = list([
+        x for x in plugins \
+        if not (x / '.skiptest').exists()
+    ])
+
     pip_pytest = [
         x for x in plugins if (x / Path('requirements.txt')).exists()
     ]
@@ -52,7 +56,6 @@ def enumerate_plugins(basedir: Path) -> Generator[Plugin, None, None]:
     poetry_pytest = [
         x for x in plugins if (x / Path("pyproject.toml")).exists()
     ]
-    print(poetry_pytest)
 
     for p in sorted(pip_pytest):
         yield Plugin(
@@ -129,6 +132,7 @@ def prepare_env_poetry(p: Plugin) -> bool:
     subprocess.check_call([
         poetry, 'install', '--remove-untracked'
     ], cwd=workdir)
+    print(subprocess.check_output(['poetry', 'run', 'pip', 'list']))
     return True
 
 def prepare_env_pip(p: Plugin, directory: Path):
@@ -157,6 +161,7 @@ def prepare_env_pip(p: Plugin, directory: Path):
             stderr=subprocess.STDOUT,
         )
     install_pyln_testing(pip_path)
+    print(subprocess.check_output([pip_path, "list"]).decode('ASCII'))
     return True
 
 
@@ -171,11 +176,9 @@ def install_pyln_testing(pip_path):
     subprocess.check_call(
         [
             pip_path, 'install', '-U', *pip_opts,
-            'pyln-testing==0.10.1',
-            "pyln-client==0.10.1",
-            "Flask==1.1.0",
-            "MarkupSafe==2.0.1",
-            'itsdangerous==1.1.0'
+            'pyln-testing',
+            'grpcio',
+            'protobuf',
         ],
         stderr=subprocess.STDOUT,
     )
@@ -226,9 +229,8 @@ def run_one(p: Plugin) -> bool:
     })
     cmd = pytest + [
         '-vvv',
-        '--timeout=600',
+        '--timeout=180',
         '--timeout-method=thread',
-        '--reruns=2',
         '--color=yes',
         '-n=5',
     ]
