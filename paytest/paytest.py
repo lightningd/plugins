@@ -288,7 +288,7 @@ def on_htlc_accepted(onion, htlc, request, plugin, *args, **kwargs):
         (
             request,
             total,
-            int(Millisatoshi(onion["forward_amount"])),
+            onion["forward_msat"],
             shared_secret,
             generate_keyset(shared_secret),
         )
