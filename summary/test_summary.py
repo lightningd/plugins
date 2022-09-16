@@ -33,8 +33,8 @@ def test_summary_peer_thread(node_factory):
     # when
     s1 = l1.rpc.summary()
     l2.stop()  # we stop l2 and wait for l1 to see that
+    l1.daemon.wait_for_log(f".*{l2id}.*Peer connection lost.*")
     wait_for(lambda: l1.rpc.listpeers(l2id)['peers'][0]['connected'] is False)
-    l1.daemon.logsearch_start = len(l1.daemon.logs)
     l1.daemon.wait_for_log(r".*availability persisted and synced.*")
     s2 = l1.rpc.summary()
 
