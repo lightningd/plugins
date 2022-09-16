@@ -6,11 +6,11 @@ authors = ["Christian Decker <decker@blockstream.io>"]
 license = "MIT"
 
 [tool.poetry.dependencies]
-python = "^3.6"
-pyln-client = "0.10.1"
+python = "^3.7"
+pyln-client = ">=0.12"
 
 [tool.poetry.dev-dependencies]
-pyln-testing = "^0.10.1"
+pyln-testing = "^0.12.0"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
