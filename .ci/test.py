@@ -130,8 +130,16 @@ def prepare_env_poetry(p: Plugin) -> bool:
     # Now we can proceed with the actual implementation
     logging.info(f"Installing poetry dependencies from {p.details['pyproject']}")
     subprocess.check_call([
-        poetry, 'install', '--remove-untracked'
+        poetry, 'install'
     ], cwd=workdir)
+
+    pip_opts = ['-qq']
+
+    subprocess.check_call(
+        ['poetry', 'run', 'pip', 'install', *pip_opts, *global_dependencies],
+        stderr=subprocess.STDOUT,
+    )
+
     print(subprocess.check_output(['poetry', 'run', 'pip', 'list']))
     return True
 
