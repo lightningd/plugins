@@ -240,7 +240,6 @@ def run_one(p: Plugin) -> bool:
         '--timeout=180',
         '--timeout-method=thread',
         '--color=yes',
-        '-n=5',
     ]
 
     logging.info(f"Running `{' '.join(cmd)}` in directory {p.path.resolve()}")
