@@ -2,7 +2,7 @@
 from binascii import hexlify
 from onion import OnionPayload
 from onion import TlvPayload
-from pyln.client import Plugin, RpcError
+from pyln.client import Plugin, RpcError, Millisatoshi
 import hashlib
 import os
 import struct
@@ -202,7 +202,7 @@ def on_htlc_accepted(onion, htlc, plugin, **kwargs):
 
     preimage = payload.get(TLV_KEYSEND_PREIMAGE)
     if preimage is not None:
-        msg.payment = Payment(preimage.value, htlc['amount'])
+        msg.payment = Payment(preimage.value, Millisatoshi(htlc['amount_msat']))
         res = {
             'result': 'resolve',
             'payment_key': hexlify(preimage.value).decode('ASCII')
