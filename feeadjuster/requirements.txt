@@ -1,1 +1,2 @@
 pyln-client>=0.8.2
+semver==2.*
