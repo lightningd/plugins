@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import random
+import semver
 import statistics
 import time
 import math
@@ -212,8 +213,13 @@ def forward_event(plugin: Plugin, forward_event: dict, **kwargs):
         out_scid = forward_event["out_channel"]
         maybe_add_new_balances(plugin, [in_scid, out_scid])
 
-        plugin.adj_balances[in_scid]["our"] += forward_event["in_msatoshi"]
-        plugin.adj_balances[out_scid]["our"] -= forward_event["out_msatoshi"]
+        if plugin.rpcversion.major == 0 and plugin.rpcversion.minor < 12:
+            plugin.adj_balances[in_scid]["our"] += int(forward_event["in_msatoshi"])
+            plugin.adj_balances[out_scid]["our"] -= int(forward_event["out_msatoshi"])
+        else:
+            plugin.adj_balances[in_scid]["our"] += int(forward_event["in_msat"])
+            plugin.adj_balances[out_scid]["our"] -= int(forward_event["out_msat"])
+
         try:
             # Pseudo-randomly add some hysterisis to the update
             if not plugin.deactivate_fuzz and random.randint(0, 9) == 9:
@@ -281,7 +287,15 @@ def feeadjuster_toggle(plugin: Plugin, value: bool = None):
 
 @plugin.init()
 def init(options: dict, configuration: dict, plugin: Plugin, **kwargs):
-    plugin.our_node_id = plugin.rpc.getinfo()["id"]
+    # parse semver string to determine RPC version
+    # strip leading 'v' although semver should ignore it, but it doesn't.
+    plugin.getinfo = plugin.rpc.getinfo()
+    rpcversion = plugin.getinfo.get('version')
+    if rpcversion.startswith('v'):
+        rpcversion = rpcversion[1:]
+    plugin.rpcversion = semver.VersionInfo.parse(rpcversion)
+
+    plugin.our_node_id = plugin.getinfo["id"]
     plugin.deactivate_fuzz = options.get("feeadjuster-deactivate-fuzz")
     plugin.forward_event_subscription = not options.get("feeadjuster-deactivate-fee-update")
     plugin.update_threshold = float(options.get("feeadjuster-threshold"))
