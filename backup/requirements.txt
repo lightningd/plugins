@@ -1,2 +1,2 @@
-pyln-client
+pyln-client>=0.12
 psutil
