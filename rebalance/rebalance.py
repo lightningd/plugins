@@ -774,7 +774,14 @@ def rebalancereport(plugin: Plugin):
     total_fee = Millisatoshi(0)
     total_amount = Millisatoshi(0)
     res["total_successful_rebalances"] = len(rebalances)
-    pays = plugin.rpc.listpays(status="complete")["pays"]
+
+    # iterate if cln doesn't already support `status` on listpays since v0.10.2
+    if plugin.rpcversion.major == 0 and plugin.rpcversion.minor <= 10 and plugin.rpcversion.patch < 2:
+        pays = plugin.rpc.listpays()["pays"]
+        pays = [p for p in pays if p.get('status') == 'complete']
+    else:
+        pays = plugin.rpc.listpays(status="complete")["pays"]
+
     for r in rebalances:
         try:
             pay = next(p for p in pays if p["payment_hash"] == r["payment_hash"])
