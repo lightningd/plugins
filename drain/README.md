@@ -49,7 +49,7 @@ Once the plugin is active you can use it to `drain` a given percentage of
 liquidity (default 100%) on one of your channels by:
 
 ```
-lightning-cli drain scid [percentage] [chunks] [maxfeepercent] [retry_for] [exemptfee]
+lightning-cli drain scid [percentage] [chunks] [retry_for] [maxfeepercent] [exemptfee]
 ```
 
 The plugin has also a `fill` command that does excactly the opposite. You
@@ -57,7 +57,7 @@ can use it to fill up a given percentage of liquidity (default 100%) on your
 side of a channel:
 
 ```
-lightning-cli fill scid [percentage] [chunks] [maxfeepercent] [retry_for] [exemptfee]
+lightning-cli fill scid [percentage] [chunks] [retry_for] [maxfeepercent] [exemptfee]
 ```
 
 Another useful command is the `setbalance` that will fill up or drain your side
@@ -65,7 +65,7 @@ of a channels balance to a given total percentage (default 50%). It will do all
 the math for you, so that you do not need to care for current channel balance:
 
 ```
-lightning-cli setbalance scid [percentage] [chunks] [maxfeepercent] [retry_for] [exemptfee]
+lightning-cli setbalance scid [percentage] [chunks] [retry_for] [maxfeepercent] [exemptfee]
 ```
 
 
@@ -90,10 +90,10 @@ lightning-cli setbalance scid [percentage] [chunks] [maxfeepercent] [retry_for] 
   payment into several smaller ones. In this case it may happen that the
   operation will only be partially completed. The parameters value is the
   number of chunks to use. Default: auto-detect based on capacities, max 16.
-- OPTIONAL: `maxfeepercent` is a percentage limit of the money to be paid in
-  fees and defaults to 0.5.
 - OPTIONAL: `retry_for` defines the number of seconds the plugin will retry to
   find a suitable route. Default: 60 seconds. Note: Applies for each chunk.
+- OPTIONAL: `maxfeepercent` is a percentage limit of the money to be paid in
+  fees and defaults to 0.5.
 - OPTIONAL: The `exemptfee` option can be used for tiny payments which would be
   dominated by the fee leveraged by forwarding nodes. Setting `exemptfee`
   allows the `maxfeepercent` check to be skipped on fees that are smaller than
