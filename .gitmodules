@@ -37,3 +37,6 @@
 [submodule "circular"]
 	path = circular
 	url = https://github.com/giovannizotta/circular.git
+[submodule "python-teos"]
+	path = python-teos
+	url = https://github.com/talaia-labs/python-teos

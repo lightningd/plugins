@@ -33,6 +33,7 @@ Community curated plugins for Core-Lightning.
 | [probe][probe]                       | Regularly probes the network for stability                                                  |
 | [prometheus][prometheus]             | Lightning node exporter for the prometheus timeseries server                                |
 | [pruning][pruning]                   | This plugin manages pruning of bitcoind such that it can always sync                        |
+| [python-teos][python-teos]           | The Eye of Satoshi - Lightning Watchtower                                                   |
 | [rebalance][rebalance]               | Keeps your channels balanced                                                                |
 | [reckless][reckless]                 | An **experimental** plugin manager (search/install plugins)                                 |
 | [requestinvoice][request-invoice]    | Http server to request invoices                                                             |
@@ -229,3 +230,4 @@ Python plugins developers must ensure their plugin to work with all Python versi
 [poncho]: https://github.com/fiatjaf/poncho
 [blip12]: https://github.com/lightning/blips/blob/42cec1d0f66eb68c840443abb609a5a9acb34f8e/blip-0012.md
 [circular]: https://github.com/giovannizotta/circular
+[python-teos]: https://github.com/talaia-labs/python-teos
