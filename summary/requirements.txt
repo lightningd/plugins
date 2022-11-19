@@ -1,4 +1,4 @@
-pyln-client>=0.12
+pyln-client>=0.12.1
 requests>=2.10.0
 requests[socks]>=2.10.0
 packaging>=14.1
