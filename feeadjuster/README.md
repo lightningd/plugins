@@ -18,5 +18,7 @@ This also modifies the fee curve to achieve having this amount of liquidity.
 limit feeadjuster's activity to more imbalanced channels. E.g. 0.3 for '70/30'% or 0.6 for '40/60'%.
 - `feeadjuster-feestrategy` Sets the per channel fee selection strategy. Can be 'global' (default) to use global config or default values, or 'median' to use 
 the median fees from peers of peer.
+- `feeadjuster-median-multiplier` Sets the factor with which the median fee is multiplied if using the fee strategy
+'median'. This allows over- or underbidding other nodes by a constant factor (default: 1.0).
 - `feeadjuster-max-htlc-steps` Default 0 (turned off). Sets the number of max htlc adjustment steps. If our local channel balance drops below a step level
 it will reduce the max htlc to that level, which can reduce local routing channel failures.  A value of 0 disables the stepping.
