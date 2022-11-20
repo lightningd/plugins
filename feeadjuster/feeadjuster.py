@@ -107,7 +107,7 @@ def get_fees_median(plugin: Plugin, scid: str):
     if len(channels_to_peer) == 0:
         return None
     fees_ppm = [ch['fee_per_millionth'] for ch in channels_to_peer]
-    return {"base": plugin.adj_basefee, "ppm": statistics.median(fees_ppm)}
+    return {"base": plugin.adj_basefee, "ppm": statistics.median(fees_ppm) * plugin.median_multiplier}
 
 
 def setchannelfee(plugin: Plugin, scid: str, base: int, ppm: int, min_htlc: int = None, max_htlc: int = None):
@@ -309,6 +309,7 @@ def init(options: dict, configuration: dict, plugin: Plugin, **kwargs):
         "median": get_fees_median
     }
     plugin.fee_strategy = fee_strategy_switch.get(options.get("feeadjuster-feestrategy"), get_fees_global)
+    plugin.median_multiplier = float(options.get("feeadjuster-median-multiplier"))
     config = plugin.rpc.listconfigs()
     plugin.adj_basefee = config["fee-base"]
     plugin.adj_ppmfee = config["fee-per-satoshi"]
@@ -404,6 +405,14 @@ plugin.add_option(
     "Can be 'global' to use global config or default values, "
     "or 'median' to use the median fees from peers of peer "
     "Default: 'global'.",
+    "string"
+)
+plugin.add_option(
+    "feeadjuster-median-multiplier",
+    "1.0",
+    "Sets the factor with which the median fee is multiplied if using the fee strategy 'median'. "
+    "This allows over or underbidding other nodes by a constant factor"
+    "Default: '1.0'.",
     "string"
 )
 plugin.add_option(
