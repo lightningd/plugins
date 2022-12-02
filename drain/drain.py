@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
+from clnutils import cln_parse_rpcversion
 from pyln.client import Plugin, Millisatoshi, RpcError
 from utils import get_ours, wait_ours
 import re
-import semver
 import time
 import uuid
 
@@ -23,7 +23,7 @@ HTLC_FEE_PAT = re.compile("^.* HTLC fee: ([0-9]+sat).*$")
 # The route msat helpers are needed because older versions of cln
 # had different msat/msatoshi fields with different types Millisatoshi/int
 def route_set_msat(r, msat):
-    if plugin.rpcversion.major == 0 and plugin.rpcversion.minor < 12:
+    if plugin.rpcversion[0] == 0 and plugin.rpcversion[1] < 12:
         r[plugin.msatfield] = msat.millisatoshis
         r['amount_msat'] = Millisatoshi(msat)
     else:
@@ -488,20 +488,15 @@ def setbalance(plugin, scid: str, percentage: float = 50, chunks: int = 0, retry
 
 @plugin.init()
 def init(options, configuration, plugin):
+    # do all the stuff that needs to be done just once ...
     plugin.getinfo = plugin.rpc.getinfo()
+    plugin.rpcversion = cln_parse_rpcversion(plugin.getinfo.get('version'))
     plugin.configs = plugin.rpc.listconfigs()
     plugin.cltv_final = plugin.configs.get('cltv-final')
 
-    # parse semver string to determine RPC version
-    # strip leading 'v' although semver should ignore it, but it doesn't.
-    rpcversion = plugin.getinfo.get('version')
-    if rpcversion.startswith('v'):
-        rpcversion = rpcversion[1:]
-    plugin.rpcversion = semver.VersionInfo.parse(rpcversion)
-
     # use getroute amount_msat/msatoshi field depending on version
     plugin.msatfield = 'amount_msat'
-    if plugin.rpcversion.major == 0 and plugin.rpcversion.minor < 12:
+    if plugin.rpcversion[0] == 0 and plugin.rpcversion[1] < 12:
         plugin.msatfield = 'msatoshi'
 
     plugin.log("Plugin drain.py initialized")
