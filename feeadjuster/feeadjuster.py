@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 import random
-import semver
 import statistics
 import time
 import math
+from clnutils import cln_parse_rpcversion
 from pyln.client import Plugin, Millisatoshi, RpcError
 from threading import Lock
 
@@ -213,7 +213,7 @@ def forward_event(plugin: Plugin, forward_event: dict, **kwargs):
         out_scid = forward_event["out_channel"]
         maybe_add_new_balances(plugin, [in_scid, out_scid])
 
-        if plugin.rpcversion.major == 0 and plugin.rpcversion.minor < 12:
+        if plugin.rpcversion[0] == 0 and plugin.rpcversion[1] < 12:
             plugin.adj_balances[in_scid]["our"] += int(forward_event["in_msatoshi"])
             plugin.adj_balances[out_scid]["our"] -= int(forward_event["out_msatoshi"])
         else:
@@ -287,14 +287,9 @@ def feeadjuster_toggle(plugin: Plugin, value: bool = None):
 
 @plugin.init()
 def init(options: dict, configuration: dict, plugin: Plugin, **kwargs):
-    # parse semver string to determine RPC version
-    # strip leading 'v' although semver should ignore it, but it doesn't.
+    # do all the stuff that needs to be done just once ...
     plugin.getinfo = plugin.rpc.getinfo()
-    rpcversion = plugin.getinfo.get('version')
-    if rpcversion.startswith('v'):
-        rpcversion = rpcversion[1:]
-    plugin.rpcversion = semver.VersionInfo.parse(rpcversion)
-
+    plugin.rpcversion = cln_parse_rpcversion(plugin.getinfo.get('version'))
     plugin.our_node_id = plugin.getinfo["id"]
     plugin.deactivate_fuzz = options.get("feeadjuster-deactivate-fuzz")
     plugin.forward_event_subscription = not options.get("feeadjuster-deactivate-fee-update")
