@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-from pyln.client import Plugin, Millisatoshi, RpcError
-from threading import Thread, Lock
+from clnutils import cln_parse_rpcversion
 from datetime import timedelta
 from functools import reduce
-import semver
+from pyln.client import Plugin, Millisatoshi, RpcError
+from threading import Thread, Lock
 import time
 import uuid
 
@@ -14,7 +14,7 @@ plugin.rebalance_stop = False
 # The route msat helpers are needed because older versions of cln
 # had different msat/msatoshi fields with different types Millisatoshi/int
 def route_set_msat(obj, msat):
-    if plugin.rpcversion.major == 0 and plugin.rpcversion.minor < 12:
+    if plugin.rpcversion[0] == 0 and plugin.rpcversion[1] < 12:
         obj[plugin.msatfield] = msat.millisatoshis
         obj['amount_msat'] = Millisatoshi(msat)
     else:
@@ -776,7 +776,7 @@ def rebalancereport(plugin: Plugin):
     res["total_successful_rebalances"] = len(rebalances)
 
     # iterate if cln doesn't already support `status` on listpays since v0.10.2
-    if plugin.rpcversion.major == 0 and plugin.rpcversion.minor <= 10 and plugin.rpcversion.patch < 2:
+    if plugin.rpcversion[0] == 0 and plugin.rpcversion[1] <= 10 and plugin.rpcversion[2] < 2:
         pays = plugin.rpc.listpays()["pays"]
         pays = [p for p in pays if p.get('status') == 'complete']
     else:
@@ -806,6 +806,9 @@ def rebalancereport(plugin: Plugin):
 
 @plugin.init()
 def init(options, configuration, plugin):
+    # do all the stuff that needs to be done just once ...
+    plugin.getinfo = plugin.rpc.getinfo()
+    plugin.rpcversion = cln_parse_rpcversion(plugin.getinfo.get('version'))
     config = plugin.rpc.listconfigs()
     plugin.cltv_final = config.get("cltv-final")
     plugin.fee_base = Millisatoshi(config.get("fee-base"))
@@ -817,17 +820,9 @@ def init(options, configuration, plugin):
     plugin.getroute = getroute_switch(options.get("rebalance-getroute"))
     plugin.rebalanceall_msg = None
 
-    # parse semver string to determine RPC version
-    # strip leading 'v' although semver should ignore it, but it doesn't.
-    plugin.getinfo = plugin.rpc.getinfo()
-    rpcversion = plugin.getinfo.get('version')
-    if rpcversion.startswith('v'):
-        rpcversion = rpcversion[1:]
-    plugin.rpcversion = semver.VersionInfo.parse(rpcversion)
-
     # use getroute amount_msat/msatoshi field depending on version
     plugin.msatfield = 'amount_msat'
-    if plugin.rpcversion.major == 0 and plugin.rpcversion.minor < 12:
+    if plugin.rpcversion[0] == 0 and plugin.rpcversion[1] < 12:
         plugin.msatfield = 'msatoshi'
 
     plugin.log(f"Plugin rebalance initialized with {plugin.fee_base} base / {plugin.fee_ppm} ppm fee  "
