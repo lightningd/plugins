@@ -209,6 +209,22 @@ def getroute_switch(method_name):
     return switch.get(method_name, getroute_iterative)
 
 
+def waitsendpay(payment_hash, start_ts, retry_for):
+    while True:
+        try:
+            timeout = min(max(retry_for + start_ts - int(time.time()), 0), 10)
+            result = plugin.rpc.waitsendpay(payment_hash, timeout)
+            return result
+        except RpcError as e:
+            if e.method == "waitsendpay" and e.error.get('code') == 200:
+                if plugin.rebalance_stop:
+                    raise e
+                if int(time.time()) - start_ts >= retry_for:
+                    raise e
+            else:
+                raise e
+
+
 @plugin.method("rebalance")
 def rebalance(plugin, outgoing_scid, incoming_scid, msatoshi: Millisatoshi = None,
               retry_for: int = 60, maxfeepercent: float = 0.5,
@@ -338,8 +354,7 @@ def rebalance(plugin, outgoing_scid, incoming_scid, msatoshi: Millisatoshi = Non
             count_sendpay += 1
             try:
                 plugin.rpc.sendpay(route, payment_hash, payment_secret=payment_secret)
-                running_for = int(time.time()) - start_ts
-                result = plugin.rpc.waitsendpay(payment_hash, max(retry_for - running_for, 0))
+                result = waitsendpay(payment_hash, start_ts, retry_for)
                 time_sendpay += time.time() - time_start
                 if result.get('status') == "complete":
                     rpc_result["stats"] = f"running_for:{int(time.time()) - start_ts}  count_getroute:{count}  time_getroute:{time_getroute}  time_getroute_avg:{time_getroute / count}  count_sendpay:{count_sendpay}  time_sendpay:{time_sendpay}  time_sendpay_avg:{time_sendpay / count_sendpay}"
