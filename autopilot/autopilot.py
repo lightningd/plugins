@@ -125,7 +125,7 @@ class CLightning_autopilot(Autopilot):
 def init(configuration, options, plugin):
     plugin.num_channels = int(options['autopilot-num-channels'])
     plugin.percent = int(options['autopilot-percent'])
-    plugin.min_capacity_sat = int(Millisatoshi(options['autopilot-min-channel-size-msat']) / 1000)
+    plugin.min_capacity_msat = Millisatoshi(options['autopilot-min-channel-size-msat'])
     plugin.initialized = threading.Event()
     plugin.autopilot = None
     plugin.initerror = None
@@ -153,17 +153,17 @@ def run_once(plugin, dryrun=False):
     """
     # Let's start by inspecting the current state of the node
     funds = plugin.rpc.listfunds()
-    awaiting_lockin_funds = sum([o['channel_sat'] for o in funds['channels'] if o['state'] == 'CHANNELD_AWAITING_LOCKIN'])
-    output_funds = sum([o['value'] for o in funds['outputs'] if o['status'] == 'confirmed']) - awaiting_lockin_funds
+    awaiting_lockin_msat = Millisatoshi(sum([o['our_amount_msat'] for o in funds['channels'] if o['state'] == 'CHANNELD_AWAITING_LOCKIN']))
+    onchain_msat = Millisatoshi(sum([o['amount_msat'] for o in funds['outputs'] if o['status'] == 'confirmed'])) - awaiting_lockin_msat
     channels = funds['channels']
-    available_funds = output_funds / 100.0 * plugin.percent
+    available_funds = onchain_msat / 100.0 * plugin.percent
 
     # Now we can look whether and how we'd like to open new channels. This
     # depends on available funds and the number of channels we were configured
     # to open
 
-    if available_funds < plugin.min_capacity_sat:
-        message = f"Too low available funds: {available_funds} < {plugin.min_capacity_sat}"
+    if available_funds < plugin.min_capacity_msat:
+        message = f"Too low available funds: {available_funds} < {plugin.min_capacity_msat}"
         plugin.log(message)
         return message
 
@@ -173,12 +173,12 @@ def run_once(plugin, dryrun=False):
         return message
 
     num_channels = min(
-        int(available_funds / plugin.min_capacity_sat),
+        int(available_funds / plugin.min_capacity_msat),
         plugin.num_channels - len(channels)
     )
 
     # Each channel will have this capacity
-    channel_capacity = math.floor(available_funds / num_channels)
+    channel_capacity = available_funds / num_channels
 
     plugin.log(f"I'd like to open {num_channels} new channels with {channel_capacity} satoshis each")
 
@@ -193,7 +193,7 @@ def run_once(plugin, dryrun=False):
         strategy=Strategy.DIVERSE,
         percentile=0.5
     )
-    return plugin.autopilot.connect(candidates, available_funds, dryrun=dryrun)
+    return plugin.autopilot.connect(candidates, available_funds / 1000, dryrun=dryrun)
 
 
 plugin.add_option(
