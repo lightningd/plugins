@@ -2,7 +2,7 @@
 
 from bech32 import bech32_decode, convertbits
 from lib_autopilot import Autopilot, Strategy
-from pyln.client import Plugin, RpcError
+from pyln.client import Millisatoshi, Plugin, RpcError
 import random
 import threading
 import math
@@ -125,7 +125,7 @@ class CLightning_autopilot(Autopilot):
 def init(configuration, options, plugin):
     plugin.num_channels = int(options['autopilot-num-channels'])
     plugin.percent = int(options['autopilot-percent'])
-    plugin.min_capacity_sat = int(options['autopilot-min-channel-size-msat']) / 1000
+    plugin.min_capacity_sat = int(Millisatoshi(options['autopilot-min-channel-size-msat']) / 1000)
     plugin.initialized = threading.Event()
     plugin.autopilot = None
     plugin.initerror = None
@@ -212,8 +212,9 @@ plugin.add_option(
 
 plugin.add_option(
     'autopilot-min-channel-size-msat',
-    '100000000',
+    '100000000msat',
     'Minimum channel size to open.',
+    'string'
 )
 
 
