@@ -110,7 +110,7 @@ def get_fees_median(plugin: Plugin, scid: str):
     return {"base": plugin.adj_basefee, "ppm": statistics.median(fees_ppm)}
 
 
-def setchannelfee(plugin: Plugin, scid: str, base: int, ppm: int, min_htlc: int, max_htlc: int):
+def setchannelfee(plugin: Plugin, scid: str, base: int, ppm: int, min_htlc: int = None, max_htlc: int = None):
     fees = get_chan_fees(plugin, scid)
     if fees is None or base == fees['base'] and ppm == fees['ppm']:
         return False
