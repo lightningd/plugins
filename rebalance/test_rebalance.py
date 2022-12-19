@@ -124,7 +124,7 @@ def test_rebalance_all(node_factory, bitcoind):
     # check the rebalanceall starts
     result = l1.rpc.rebalanceall(feeratio=5.0)  # we need high fees to work
     assert result['message'].startswith('Rebalance started')
-    l1.daemon.wait_for_logs([f"Try to rebalance: {scid12} -> {scid31}",
+    l1.daemon.wait_for_logs([f"tries to rebalance: {scid12} -> {scid31}",
                              f"Automatic rebalance finished"])
 
     # check additional calls to stop return 'nothing to stop' + last message
