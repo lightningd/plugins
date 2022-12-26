@@ -249,21 +249,21 @@ def feeadjust(plugin: Plugin, scid: str = None):
         with open('feeadjuster-exclude.list') as file:
             exclude_list = [l.rstrip("\n") for l in file]
             print("Excluding the channels with the nodes:", exclude_list)
-    except:
+    except FileNotFoundError:
         exclude_list = []
         print("There is no feeadjuster-exclude.list given, applying the options to the channels with all peers.")
     for peer in plugin.peers:
-      if peer["id"] not in exclude_list:
-        for chan in peer["channels"]:
-            if chan["state"] == "CHANNELD_NORMAL":
-                _scid = chan.get("short_channel_id")
-                if scid is not None and scid != _scid:
-                    continue
-                plugin.adj_balances[_scid] = {
-                    "our": int(chan["to_us_msat"]),
-                    "total": int(chan["total_msat"])
-                }
-                channels_adjusted += maybe_adjust_fees(plugin, [_scid])
+        if peer["id"] not in exclude_list:
+            for chan in peer["channels"]:
+                if chan["state"] == "CHANNELD_NORMAL":
+                    _scid = chan.get("short_channel_id")
+                    if scid is not None and scid != _scid:
+                        continue
+                    plugin.adj_balances[_scid] = {
+                        "our": int(chan["to_us_msat"]),
+                        "total": int(chan["total_msat"])
+                    }
+                    channels_adjusted += maybe_adjust_fees(plugin, [_scid])
     msg = f"{channels_adjusted} channel(s) adjusted"
     plugin.log(msg)
     plugin.mutex.release()
