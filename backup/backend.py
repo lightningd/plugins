@@ -93,7 +93,7 @@ class Backend(object):
         return stmt
 
     def _restore_transaction(self, tx: Iterator[str]):
-        assert(self.db)
+        assert self.db
         cur = self.db.cursor()
         for q in tx:
             q = self._rewrite_stmt(q)

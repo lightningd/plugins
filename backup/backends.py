@@ -28,6 +28,6 @@ def get_backend(destination, create=False, require_init=False):
     initialized = backend.initialize()
     if require_init and not initialized:
         kill("Could not initialize the backup {}, please use 'backup-cli' to initialize the backup first.".format(destination))
-    assert(backend.version is not None)
-    assert(backend.prev_version is not None)
+    assert backend.version is not None
+    assert backend.prev_version is not None
     return backend

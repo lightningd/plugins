@@ -44,7 +44,7 @@ def setup_server_logging(mode, level):
         root_logger.handlers = []
         root_logger.addHandler(SystemdHandler())
     else:
-        assert(mode == 'plain')
+        assert mode == 'plain'
 
 
 class SocketServer:
