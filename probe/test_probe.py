@@ -1,6 +1,7 @@
 import unittest
 import os
 from pyln.testing.fixtures import *  # noqa: F401,F403
+from pyln.testing.utils import DEVELOPER
 
 plugin_path = os.path.join(os.path.dirname(__file__), "probe.py")
 
@@ -55,4 +56,3 @@ def test_route_unreachable(node_factory):
     assert(res['failcode'] == 16394)
     route = res['route'].split(',')
     assert(route.index(res['erring_channel']) == 1)
-
