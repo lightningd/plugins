@@ -69,7 +69,7 @@ jobs:
           pytest-custom-exit-code==0.3.0 \
           pytest-json-report
 
-        pip install --user -U -r requirements.lock  --use-feature=in-tree-build
+        pip install --user -U -r requirements.lock
 
         ./configure --disable-valgrind
         make -j 16
