@@ -79,7 +79,7 @@ def test_rebalance_manual(node_factory, bitcoind):
 
     # briefly check rebalancereport works
     report = l1.rpc.rebalancereport()
-    assert report.get('rebalanceall_is_running') == False
+    assert report.get('rebalanceall_is_running') is False
     assert report.get('total_successful_rebalances') == 2
 
 
@@ -143,5 +143,5 @@ def test_rebalance_all(node_factory, bitcoind):
 
     # briefly check rebalancereport works
     report = l1.rpc.rebalancereport()
-    assert report.get('rebalanceall_is_running') == False
+    assert report.get('rebalanceall_is_running') is False
     assert report.get('total_successful_rebalances') == 2

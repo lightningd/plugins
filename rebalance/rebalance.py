@@ -357,7 +357,7 @@ def rebalance(plugin, outgoing_scid, incoming_scid, msatoshi: Millisatoshi = Non
                 "status": "complete",
                 "message": f"{msatoshi + fees} sent over {len(route)} hops to rebalance {msatoshi}",
             }
-            midroute_str = reduce(lambda x,y: x + " -> " + y, map(lambda r: get_node_alias(r['id']), route_mid))
+            midroute_str = reduce(lambda x, y: x + " -> " + y, map(lambda r: get_node_alias(r['id']), route_mid))
             full_route_str = "%s -> %s -> %s -> %s" % (get_node_alias(my_node_id), get_node_alias(outgoing_node_id), midroute_str, get_node_alias(my_node_id))
             plugin.log(f"Thread{get_thread_id_str()} {len(route)} hops and {fees.to_satoshi_str()} fees for {msatoshi.to_satoshi_str()} along route: {full_route_str}")
             for r in route:
