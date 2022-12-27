@@ -64,12 +64,16 @@ jobs:
         cd lightning
         pip3 install --user -U \
           pip \
+          poetry \
           wheel \
           blinker \
           pytest-custom-exit-code==0.3.0 \
           pytest-json-report
 
-        pip install --user -U -r requirements.lock
+        poetry install
+        poetry update
+        poetry export --without-hashes -f requirements.txt --output requirements.txt
+        pip install --user -U -r requirements.txt
 
         ./configure --disable-valgrind
         make -j 16
