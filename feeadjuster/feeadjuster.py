@@ -214,11 +214,11 @@ def forward_event(plugin: Plugin, forward_event: dict, **kwargs):
         maybe_add_new_balances(plugin, [in_scid, out_scid])
 
         if plugin.rpcversion[0] == 0 and plugin.rpcversion[1] < 12:
-            plugin.adj_balances[in_scid]["our"] += int(forward_event["in_msatoshi"])
-            plugin.adj_balances[out_scid]["our"] -= int(forward_event["out_msatoshi"])
+            plugin.adj_balances[in_scid]["our"] += int(Millisatoshi(forward_event["in_msatoshi"]))
+            plugin.adj_balances[out_scid]["our"] -= int(Millisatoshi(forward_event["out_msatoshi"]))
         else:
-            plugin.adj_balances[in_scid]["our"] += int(forward_event["in_msat"])
-            plugin.adj_balances[out_scid]["our"] -= int(forward_event["out_msat"])
+            plugin.adj_balances[in_scid]["our"] += int(Millisatoshi(forward_event["in_msat"]))
+            plugin.adj_balances[out_scid]["our"] -= int(Millisatoshi(forward_event["out_msat"]))
 
         try:
             # Pseudo-randomly add some hysterisis to the update
