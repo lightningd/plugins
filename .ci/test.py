@@ -25,7 +25,6 @@ global_dependencies = [
     'pytest==5.*',
     'pytest-xdist',
     'pytest-timeout',
-    'pyln-testing',
     'pytest-rerunfailures',
 ]
 
@@ -163,6 +162,7 @@ def prepare_env_pip(p: Plugin, directory: Path):
 
 def install_pyln_testing(pip_path):
     # Many plugins only implicitly depend on pyln-testing, so let's help them
+    cln_path = os.environ['CLN_PATH']
     pip_opts = ['-qq']
     subprocess.check_call(
         [pip_path, 'install', '-U', *pip_opts, 'pip', 'wheel'],
@@ -172,8 +172,8 @@ def install_pyln_testing(pip_path):
     subprocess.check_call(
         [
             pip_path, 'install', '-U', *pip_opts,
-            'pyln-testing==0.10.1',
-            "pyln-client==0.10.1",
+            cln_path + "/contrib/pyln-client",
+            cln_path + "/contrib/pyln-testing",
             "Flask==1.1.0",
             "MarkupSafe==2.0.1",
             'itsdangerous==1.1.0'
