@@ -75,6 +75,7 @@ jobs:
         poetry update
         poetry export --without-hashes -f requirements.txt --output requirements.txt
         pip install --user -U -r requirements.txt
+        pip install --user contrib/pyln-client contrib/pyln-testing
 
         ./configure --disable-valgrind
         make -j 16
@@ -93,5 +94,6 @@ jobs:
         export SLOW_MACHINE=1
         export TEST_DEBUG=1
         export TRAVIS=1
-        pip3 install -U virtualenv pip > /dev/null
+        export CLN_PATH=${{ github.workspace }}/lightning
+        pip3 install --user -U virtualenv pip > /dev/null
         python3 .ci/test.py
