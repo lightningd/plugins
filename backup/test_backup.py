@@ -49,9 +49,9 @@ def test_start_no_init(node_factory, directory):
         options=opts, cleandir=False, may_fail=True, start=False
     )
 
-    with pytest.raises(ValueError):
-        # The way we detect a failure to start is when we attempt to connect
-        # to the RPC.
+    with pytest.raises(TimeoutError):
+        # The way we detect a failure to start is when start() is running
+        # into timeout looking for 'Server started with public key'.
         l1.start()
     assert(l1.daemon.is_in_log(
         r'Could not find backup.lock in the lightning-dir'
