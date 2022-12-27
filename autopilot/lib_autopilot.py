@@ -65,6 +65,8 @@ import math
 import pickle
 import networkx as nx
 import numpy as np
+
+
 class Strategy:
     # define constants. Never changed as they are part of the API
     DIVERSE = "diverse"
