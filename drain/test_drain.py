@@ -1,4 +1,3 @@
-from flaky import flaky
 from pyln.testing.fixtures import *  # noqa: F401,F403
 from pyln.testing.utils import DEVELOPER
 from pyln.client import RpcError
