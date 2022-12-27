@@ -1,10 +1,13 @@
-import logging, socket, struct
+import logging
+import socket
+import struct
 import json
 import sys
 from typing import Tuple
 
 from backend import Backend
-from protocol import PacketType, recvall, PKT_CHANGE_TYPES, change_from_packet, packet_from_change, send_packet, recv_packet
+from protocol import PacketType, PKT_CHANGE_TYPES, change_from_packet, packet_from_change, send_packet, recv_packet
+
 
 class SystemdHandler(logging.Handler):
     PREFIX = {
@@ -31,6 +34,7 @@ class SystemdHandler(logging.Handler):
         except Exception:
             self.handleError(record)
 
+
 def setup_server_logging(mode, level):
     root_logger = logging.getLogger()
     root_logger.setLevel(level.upper())
@@ -41,6 +45,7 @@ def setup_server_logging(mode, level):
         root_logger.addHandler(SystemdHandler())
     else:
         assert(mode == 'plain')
+
 
 class SocketServer:
     def __init__(self, addr: Tuple[str, int], backend: Backend) -> None:
@@ -63,7 +68,7 @@ class SocketServer:
         while True:
             try:
                 (typ, payload) = self._recv_packet()
-            except IOError as e:
+            except IOError:
                 logging.info('Connection closed')
                 break
             if typ in PKT_CHANGE_TYPES:
@@ -86,8 +91,8 @@ class SocketServer:
             elif typ == PacketType.REQ_METADATA:
                 logging.debug('Received REQ_METADATA')
                 blob = struct.pack("!IIIQ", 0x01, self.backend.version,
-                           self.backend.prev_version,
-                           self.backend.version_count)
+                                   self.backend.prev_version,
+                                   self.backend.version_count)
                 self._send_packet(PacketType.METADATA, blob)
             elif typ == PacketType.RESTORE:
                 logging.info('Received RESTORE')
@@ -118,7 +123,7 @@ class SocketServer:
             conn, _ = self.bind.accept()
             try:
                 self._handle_conn(conn)
-            except Exception as e:
+            except Exception:
                 logging.exception('Got exception')
             finally:
                 conn.close()

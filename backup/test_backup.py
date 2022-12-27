@@ -1,5 +1,4 @@
 from backend import Backend
-from filebackend import FileBackend
 import socketbackend
 from flaky import flaky
 from pyln.testing.fixtures import *  # noqa: F401,F403
@@ -7,6 +6,7 @@ from pyln.testing.utils import sync_blockheight
 import os
 import pytest
 import subprocess
+import tempfile
 
 
 plugin_dir = os.path.dirname(__file__)
@@ -236,6 +236,7 @@ class DummyBackend(Backend):
     def __init__(self):
         pass
 
+
 def test_rewrite():
     tests = [
         (
@@ -280,6 +281,7 @@ def test_compact(bitcoind, directory, node_factory):
     l1.rpc.backup_compact()
     tmp = tempfile.TemporaryDirectory()
     subprocess.check_call([cli_path, "restore", bdest, tmp.name])
+
 
 def test_parse_socket_url():
     with pytest.raises(ValueError):
