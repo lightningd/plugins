@@ -57,6 +57,7 @@ jobs:
           libsqlite3-dev \
           net-tools \
           postgresql \
+          protobuf-compiler \
           python3 \
           python3-pip \
           zlib1g-dev
