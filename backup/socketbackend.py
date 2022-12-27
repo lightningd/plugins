@@ -115,7 +115,7 @@ class SocketBackend(Backend):
             else:  # TODO NAME is assumed to be IPv4 for now
                 self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         else:
-            assert(self.url.proxytype == ProxyType.SOCKS5)
+            assert self.url.proxytype == ProxyType.SOCKS5
             import socks
             self.sock = socks.socksocket()
             self.sock.set_proxy(socks.SOCKS5, self.url.proxytarget.host, self.url.proxytarget.port)
@@ -146,7 +146,7 @@ class SocketBackend(Backend):
     def _request_metadata(self) -> None:
         self._send_packet(PacketType.REQ_METADATA, b'')
         (typ, payload) = self._recv_packet()
-        assert(typ == PacketType.METADATA)
+        assert typ == PacketType.METADATA
         self.protocol, self.version, self.prev_version, self.version_count = struct.unpack("!IIIQ", payload)
 
     def add_change(self, entry: Change) -> bool:
@@ -177,7 +177,7 @@ class SocketBackend(Backend):
                 self._send_packet(typ, payload)
                 # Wait for change to be acknowledged before continuing.
                 (typ, _) = self._recv_packet()
-                assert(typ == PacketType.ACK)
+                assert typ == PacketType.ACK
             except (BrokenPipeError, OSError):
                 pass
             else:
@@ -203,7 +203,7 @@ class SocketBackend(Backend):
         self._send_packet(PacketType.REWIND, version)
         # Wait for change to be acknowledged before continuing.
         (typ, _) = self._recv_packet()
-        assert(typ == PacketType.ACK)
+        assert typ == PacketType.ACK
         return True
 
     def stream_changes(self) -> Iterator[Change]:
@@ -222,10 +222,10 @@ class SocketBackend(Backend):
 
         if version != self.version:
             raise ValueError("Versions do not match up: restored version {}, backend version {}".format(version, self.version))
-        assert(version == self.version)
+        assert version == self.version
 
     def compact(self):
         self._send_packet(PacketType.COMPACT, b'')
         (typ, payload) = self._recv_packet()
-        assert(typ == PacketType.COMPACT_RES)
+        assert typ == PacketType.COMPACT_RES
         return json.loads(payload.decode())

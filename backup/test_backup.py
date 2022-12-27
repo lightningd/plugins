@@ -28,13 +28,13 @@ def test_start(node_factory, directory):
     }
     l1 = node_factory.get_node(options=opts, cleandir=False)
     plugins = [os.path.basename(p['name']) for p in l1.rpc.plugin("list")['plugins']]
-    assert("backup.py" in plugins)
+    assert "backup.py" in plugins
 
     # Restart the node a couple of times, to check that we can resume normally
     for i in range(5):
         l1.restart()
         plugins = [os.path.basename(p['name']) for p in l1.rpc.plugin("list")['plugins']]
-        assert("backup.py" in plugins)
+        assert "backup.py" in plugins
 
 
 def test_start_no_init(node_factory, directory):
@@ -53,9 +53,7 @@ def test_start_no_init(node_factory, directory):
         # The way we detect a failure to start is when start() is running
         # into timeout looking for 'Server started with public key'.
         l1.start()
-    assert(l1.daemon.is_in_log(
-        r'Could not find backup.lock in the lightning-dir'
-    ))
+    assert l1.daemon.is_in_log(r'Could not find backup.lock in the lightning-dir')
 
 
 def test_init_not_empty(node_factory, directory):
@@ -69,14 +67,14 @@ def test_init_not_empty(node_factory, directory):
     l1.stop()
 
     out = subprocess.check_output([cli_path, "init", "--lightning-dir", bpath, bdest])
-    assert(b'Found an existing database' in out)
-    assert(b'Successfully written initial snapshot' in out)
+    assert b'Found an existing database' in out
+    assert b'Successfully written initial snapshot' in out
 
     # Now restart and add the plugin
     l1.daemon.opts['plugin'] = plugin_path
     l1.daemon.opts['allow-deprecated-apis'] = deprecated_apis
     l1.start()
-    assert(l1.daemon.is_in_log(r'plugin-backup.py: Versions match up'))
+    assert l1.daemon.is_in_log(r'plugin-backup.py: Versions match up')
 
 
 @flaky
@@ -109,7 +107,7 @@ def test_tx_abort(node_factory, directory):
     print(l1.db.query("SELECT * FROM vars;"))
 
     l1.restart()
-    assert(l1.daemon.is_in_log(r'Last changes not applied'))
+    assert l1.daemon.is_in_log(r'Last changes not applied')
 
 
 @flaky
@@ -146,7 +144,7 @@ def test_failing_restore(node_factory, directory):
 
     l1.daemon.proc.wait()
     section("Verifying the node died with an error")
-    assert(l1.daemon.is_in_log(r'lost some state') is not None)
+    assert l1.daemon.is_in_log(r'lost some state') is not None
 
 
 def test_intermittent_backup(node_factory, directory):
@@ -175,7 +173,7 @@ def test_intermittent_backup(node_factory, directory):
         l1.start()
 
     l1.daemon.proc.wait()
-    assert(l1.daemon.is_in_log(r'Backup is out of date') is not None)
+    assert l1.daemon.is_in_log(r'Backup is out of date') is not None
 
 
 def test_restore(node_factory, directory):
@@ -228,9 +226,8 @@ def test_warning(directory, node_factory):
     l1 = node_factory.get_node(options=opts, cleandir=False)
     l1.stop()
 
-    assert(l1.daemon.is_in_log(
-        r'The `--backup-destination` option is deprecated and will be removed in future versions of the backup plugin.'
-    ))
+    assert l1.daemon.is_in_log(r'The `--backup-destination` option is deprecated and will be removed in future versions of the backup plugin.')
+
 
 class DummyBackend(Backend):
     def __init__(self):
@@ -248,7 +245,7 @@ def test_rewrite():
     b = DummyBackend()
 
     for i, o in tests:
-        assert(b._rewrite_stmt(i) == o)
+        assert b._rewrite_stmt(i) == o
 
 
 def test_restore_pre_4090(directory):
@@ -308,31 +305,31 @@ def test_parse_socket_url():
 
     # IPv4
     s = socketbackend.parse_socket_url('socket:127.0.0.1:1234')
-    assert(s.target.host == '127.0.0.1')
-    assert(s.target.port == 1234)
-    assert(s.target.addrtype == socketbackend.AddrType.IPv4)
-    assert(s.proxytype == socketbackend.ProxyType.DIRECT)
+    assert s.target.host == '127.0.0.1'
+    assert s.target.port == 1234
+    assert s.target.addrtype == socketbackend.AddrType.IPv4
+    assert s.proxytype == socketbackend.ProxyType.DIRECT
 
     # IPv6
     s = socketbackend.parse_socket_url('socket:[::1]:1235')
-    assert(s.target.host == '::1')
-    assert(s.target.port == 1235)
-    assert(s.target.addrtype == socketbackend.AddrType.IPv6)
-    assert(s.proxytype == socketbackend.ProxyType.DIRECT)
+    assert s.target.host == '::1'
+    assert s.target.port == 1235
+    assert s.target.addrtype == socketbackend.AddrType.IPv6
+    assert s.proxytype == socketbackend.ProxyType.DIRECT
 
     # Hostname
     s = socketbackend.parse_socket_url('socket:backup.local:1236')
-    assert(s.target.host == 'backup.local')
-    assert(s.target.port == 1236)
-    assert(s.target.addrtype == socketbackend.AddrType.NAME)
-    assert(s.proxytype == socketbackend.ProxyType.DIRECT)
+    assert s.target.host == 'backup.local'
+    assert s.target.port == 1236
+    assert s.target.addrtype == socketbackend.AddrType.NAME
+    assert s.proxytype == socketbackend.ProxyType.DIRECT
 
     # Tor
     s = socketbackend.parse_socket_url('socket:backupserver.onion:1234?proxy=socks5:127.0.0.1:9050')
-    assert(s.target.host == 'backupserver.onion')
-    assert(s.target.port == 1234)
-    assert(s.target.addrtype == socketbackend.AddrType.NAME)
-    assert(s.proxytype == socketbackend.ProxyType.SOCKS5)
-    assert(s.proxytarget.host == '127.0.0.1')
-    assert(s.proxytarget.port == 9050)
-    assert(s.proxytarget.addrtype == socketbackend.AddrType.IPv4)
+    assert s.target.host == 'backupserver.onion'
+    assert s.target.port == 1234
+    assert s.target.addrtype == socketbackend.AddrType.NAME
+    assert s.proxytype == socketbackend.ProxyType.SOCKS5
+    assert s.proxytarget.host == '127.0.0.1'
+    assert s.proxytarget.port == 9050
+    assert s.proxytarget.addrtype == socketbackend.AddrType.IPv4

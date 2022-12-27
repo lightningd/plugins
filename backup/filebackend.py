@@ -119,7 +119,7 @@ class FileBackend(Backend):
 
             if version != self.version:
                 raise ValueError("Versions do not match up: restored version {}, backend version {}".format(version, self.version))
-            assert(version == self.version)
+            assert version == self.version
 
     def compact(self):
         stop = self.version  # Stop one version short of the head when compacting

@@ -60,7 +60,7 @@ def check_first_write(plugin, data_version):
 def on_db_write(writes, data_version, plugin, **kwargs):
     change = Change(data_version, None, writes)
     if not plugin.initialized:
-        assert(check_first_write(plugin, change.version))
+        assert check_first_write(plugin, change.version)
         plugin.initialized = True
 
     if plugin.backend.add_change(change):
