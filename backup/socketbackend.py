@@ -1,37 +1,47 @@
 from collections import namedtuple
-import json, logging, socket, re, struct, time
+import json
+import logging
+import socket
+import re
+import struct
+import time
 from typing import Tuple, Iterator
 from urllib.parse import urlparse, parse_qs
 
 from backend import Backend, Change
-from protocol import PacketType, recvall, PKT_CHANGE_TYPES, change_from_packet, packet_from_change, send_packet, recv_packet
+from protocol import PacketType, PKT_CHANGE_TYPES, change_from_packet, packet_from_change, send_packet, recv_packet
 
 # Total number of reconnection tries
-RECONNECT_TRIES=5
+RECONNECT_TRIES = 5
 
 # Delay in seconds between reconnections (initial)
-RECONNECT_DELAY=5
+RECONNECT_DELAY = 5
 
 # Scale delay factor after each failure
-RECONNECT_DELAY_BACKOFF=1.5
+RECONNECT_DELAY_BACKOFF = 1.5
 
 HostPortInfo = namedtuple('HostPortInfo', ['host', 'port', 'addrtype'])
 SocketURLInfo = namedtuple('SocketURLInfo', ['target', 'proxytype', 'proxytarget'])
 
 # Network address type.
+
+
 class AddrType:
     IPv4 = 0
     IPv6 = 1
     NAME = 2
 
 # Proxy type. Only SOCKS5 supported at the moment as this is sufficient for Tor.
+
+
 class ProxyType:
     DIRECT = 0
     SOCKS5 = 1
 
+
 def parse_host_port(path: str) -> HostPortInfo:
     '''Parse a host:port pair.'''
-    if path.startswith('['): # bracketed IPv6 address
+    if path.startswith('['):  # bracketed IPv6 address
         eidx = path.find(']')
         if eidx == -1:
             raise ValueError('Unterminated bracketed host address.')
@@ -46,7 +56,7 @@ def parse_host_port(path: str) -> HostPortInfo:
         if eidx == -1:
             raise ValueError('Port number missing.')
         host = path[0:eidx]
-        if re.match('\d+\.\d+\.\d+\.\d+$', host): # matches IPv4 address format
+        if re.match(r'\d+\.\d+\.\d+\.\d+$', host):  # matches IPv4 address format
             addrtype = AddrType.IPv4
         else:
             addrtype = AddrType.NAME
@@ -58,6 +68,7 @@ def parse_host_port(path: str) -> HostPortInfo:
         raise ValueError('Invalid port number')
 
     return HostPortInfo(host=host, port=port, addrtype=addrtype)
+
 
 def parse_socket_url(destination: str) -> SocketURLInfo:
     '''Parse a socket: URL to extract the information contained in it.'''
@@ -73,7 +84,7 @@ def parse_socket_url(destination: str) -> SocketURLInfo:
     # reject unknown parameters (currently all of them)
     qs = parse_qs(url.query)
     for (key, values) in qs.items():
-        if key == 'proxy': # proxy=socks5:127.0.0.1:9050
+        if key == 'proxy':  # proxy=socks5:127.0.0.1:9050
             if len(values) != 1:
                 raise ValueError('Proxy can only have one value')
 
@@ -88,6 +99,7 @@ def parse_socket_url(destination: str) -> SocketURLInfo:
 
     return SocketURLInfo(target=target, proxytype=proxytype, proxytarget=proxytarget)
 
+
 class SocketBackend(Backend):
     def __init__(self, destination: str, create: bool):
         self.version = None
@@ -100,7 +112,7 @@ class SocketBackend(Backend):
         if self.url.proxytype == ProxyType.DIRECT:
             if self.url.target.addrtype == AddrType.IPv6:
                 self.sock = socket.socket(socket.AF_INET6, socket.SOCK_STREAM)
-            else: # TODO NAME is assumed to be IPv4 for now
+            else:  # TODO NAME is assumed to be IPv4 for now
                 self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         else:
             assert(self.url.proxytype == ProxyType.SOCKS5)
@@ -109,8 +121,8 @@ class SocketBackend(Backend):
             self.sock.set_proxy(socks.SOCKS5, self.url.proxytarget.host, self.url.proxytarget.port)
 
         logging.info('Connecting to {}:{} (addrtype {}, proxytype {}, proxytarget {})...'.format(
-                self.url.target.host, self.url.target.port, self.url.target.addrtype,
-                self.url.proxytype, self.url.proxytarget))
+            self.url.target.host, self.url.target.port, self.url.target.addrtype,
+            self.url.proxytype, self.url.proxytarget))
         self.sock.connect((self.url.target.host, self.url.target.port))
         logging.info('Connected to {}'.format(self.destination))
 
@@ -144,7 +156,7 @@ class SocketBackend(Backend):
         retry = 0
         retry_delay = RECONNECT_DELAY
         need_connect = False
-        while True: # Retry loop
+        while True:  # Retry loop
             try:
                 if need_connect:
                     self.connect()

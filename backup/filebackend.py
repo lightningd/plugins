@@ -1,10 +1,12 @@
-import logging, os, struct
+import logging
+import os
+import struct
 import shutil
 import tempfile
 from typing import Iterator
 from urllib.parse import urlparse
-
 from backend import Backend, Change
+
 
 class FileBackend(Backend):
     def __init__(self, destination: str, create: bool):
