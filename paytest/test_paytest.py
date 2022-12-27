@@ -1,8 +1,6 @@
 from pyln.testing.fixtures import *  # noqa: F401,F403
-from pyln.testing.utils import DEVELOPER
 from pyln.client import RpcError
 import os
-import unittest
 import pytest
 from pprint import pprint
 
@@ -17,7 +15,7 @@ def test_start(node_factory):
 
 def test_invoice(node_factory):
     l1 = node_factory.get_node(options=pluginopt)
-    inv = l1.rpc.testinvoice('03'*33)
+    inv = l1.rpc.testinvoice('03' * 33)
     details = l1.rpc.decodepay(inv['invoice'])
     pprint(details)
 
@@ -41,7 +39,7 @@ def test_mpp_pay(node_factory):
     """ l1 send a payment that is going to be split.
     """
     l1, l2 = node_factory.line_graph(2, opts=pluginopt, wait_for_announce=True)
-    res = l1.rpc.paytest(l2.info['id'], 2*10**8)
+    res = l1.rpc.paytest(l2.info['id'], 2 * 10**8)
 
     l2.daemon.wait_for_log(r'Received 200000000/200000000 with [0-9]+ parts')
 

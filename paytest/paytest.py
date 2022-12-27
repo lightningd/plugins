@@ -193,10 +193,10 @@ def testinvoice(destination, amount=None, **kwargs):
 
 def wrap_error(keys, err):
     b = unhexlify(err)
-    l = len(b)
-    padlen = 256 - l
+    c = len(b)
+    padlen = 256 - c
     pad = b"\x00" * padlen
-    b = struct.pack("!H", l) + b + struct.pack("!H", padlen) + pad
+    b = struct.pack("!H", c) + b + struct.pack("!H", padlen) + pad
     assert len(b) == 256 + 2 + 2
     h = hmac.HMAC(keys.um, hashes.SHA256(), backend=default_backend())
     h.update(b)
@@ -280,7 +280,7 @@ def on_htlc_accepted(onion, htlc, request, plugin, *args, **kwargs):
         Timer(60.0, timeout, args=(plugin, ps)).start()
 
     payment_data = payload.get(8).value
-    secret = payment_data[:32]
+    # secret = payment_data[:32]
     total = payment_data[32:].hex()
 
     total = int(total, 16)
