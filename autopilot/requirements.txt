@@ -1,2 +1,2 @@
-networkx==2.8.8
+networkx>=2.6
 dnspython==2.2.1
