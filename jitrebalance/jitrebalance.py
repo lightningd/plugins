@@ -38,7 +38,7 @@ def get_circular_route(scid, chan, amt, peer, exclusions, request):
     try:
         route = plugin.rpc.getroute(
             node_id=peer['id'],
-            msatoshi=last_amt,
+            amount_msat=last_amt,
             riskfactor=1,
             exclude=exclusions,
             cltv=last_cltv,
@@ -49,7 +49,6 @@ def get_circular_route(scid, chan, amt, peer, exclusions, request):
             'id': plugin.node_id,
             'channel': scid,
             'direction': chan['direction'],
-            'msatoshi': amt,
             'amount_msat': '{}msat'.format(amt),
             'delay': 9
         }]
@@ -106,14 +105,16 @@ def try_rebalance(scid, chan, amt, peer, request):
                            "payment_hash={}".format(scid, payment_hash))
             return
         except RpcError as e:
-            error = e.error['data']
+            if not "data" in e.error:
+                raise e
+            data = e.error['data']
             # The erring_channel field can not be present (shouldn't happen) or
             # can be "0x0x0"
-            erring_channel = error.get('erring_channel', '0x0x0')
+            erring_channel = data.get('erring_channel', '0x0x0')
             if erring_channel != '0x0x0':
                 if erring_channel == scid:
                     break
-                erring_direction = error['erring_direction']
+                erring_direction = data['erring_direction']
                 exclusions.append("{}/{}".format(erring_channel,
                                                  erring_direction))
                 plugin.log("Excluding {} due to a failed attempt"
@@ -182,7 +183,7 @@ def on_htlc_accepted(htlc, onion, plugin, request, **kwargs):
     # TODO If we are the funder we need to take the cost of an HTLC into
     # account as well.
     # funder = chan['msatoshi_to_us_max'] == chan['msatoshi_total']
-    forward_amt = Millisatoshi(onion['forward_amount'])
+    forward_amt = Millisatoshi(onion['forward_msat'])
 
     # If we have enough capacity just let it through now. Otherwise the
     # Millisatoshi raises an error for negative amounts in the calculation

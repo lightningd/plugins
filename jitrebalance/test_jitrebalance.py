@@ -46,7 +46,7 @@ def test_simple_rebalance(node_factory):
     # Send 9 million millisatoshis + reserve + a tiny fee allowance from l3 to
     # l2 for the actual payment
     inv = l2.rpc.invoice(
-        chan['our_channel_reserve_satoshis'] * 1000 + 9000000 + 100,
+        chan['our_reserve_msat'] + 9000000 + 100,
         "imbalance", "imbalance"
     )
     time.sleep(1)
@@ -59,7 +59,7 @@ def test_simple_rebalance(node_factory):
     wait_for(no_pending_htlcs)
 
     chan = l2.rpc.listpeers(l3.info['id'])['peers'][0]['channels'][0]
-    assert(chan['spendable_msatoshi'] < amt)
+    assert(int(chan['spendable_msat']) < amt)
 
     # Get (l2, l5) so we can exclude it when routing from l1 to l4
     peer = l2.rpc.listpeers(l5.info['id'])['peers'][0]
@@ -113,7 +113,7 @@ def test_rebalance_failure(node_factory):
     # Send 9 million millisatoshis + reserve + a tiny fee allowance from l3 to
     # l2 for the actual payment
     inv = l2.rpc.invoice(
-        chan['our_channel_reserve_satoshis'] * 1000 + 9000000 + 100,
+        chan['our_reserve_msat'] + 9000000 + 100,
         "imbalance", "imbalance"
     )
     time.sleep(1)
@@ -126,7 +126,7 @@ def test_rebalance_failure(node_factory):
     wait_for(no_pending_htlcs)
 
     chan = l2.rpc.listpeers(l3.info['id'])['peers'][0]['channels'][0]
-    assert(chan['spendable_msatoshi'] < amt)
+    assert(int(chan['spendable_msat']) < amt)
 
     # Get (l2, l5) so we can exclude it when routing from l1 to l4
     peer = l2.rpc.listpeers(l5.info['id'])['peers'][0]
