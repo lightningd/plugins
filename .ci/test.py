@@ -22,7 +22,7 @@ exclude = [
     'feeadjuster'
 ]
 global_dependencies = [
-    'pytest==5.*',
+    'pytest',
     'pytest-xdist',
     'pytest-timeout',
     'pytest-rerunfailures',
