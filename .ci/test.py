@@ -174,9 +174,8 @@ def install_pyln_testing(pip_path):
             pip_path, 'install', '-U', *pip_opts,
             cln_path + "/contrib/pyln-client",
             cln_path + "/contrib/pyln-testing",
-            "Flask==1.1.0",
-            "MarkupSafe==2.0.1",
-            'itsdangerous==1.1.0'
+            "MarkupSafe>=2.0",
+            'itsdangerous>=2.0'
         ],
         stderr=subprocess.STDOUT,
     )
