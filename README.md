@@ -13,7 +13,6 @@ Community curated plugins for Core-Lightning.
 | [boltz-channel-creation][boltz]      | A Core-Lightning plugin for Boltz Channel Creation Swaps                                    |
 | [btcli4j][btcli4j]                   | A Bitcoin Backend to enable safely the pruning mode, and support also rest APIs.            |
 | [circular][circular]                 | A smart rebalancing plugin for Core Lightning routing nodes                                 |
-| [commando][commando]                 | Authorize peers to run commands on your node, and running commands on them.                 |
 | [csvexportpays][csvexportpays]       | A plugin that exports all payments to a CSV file                                            |
 | [currencyrate][currencyrate]         | A plugin to convert other currencies to BTC using web requests                              |
 | [donations][donations]               | A simple donations page to accept donations from the web                                    |
@@ -177,6 +176,16 @@ Python plugins developers must ensure their plugin to work with all Python versi
  - [C# Plugin Guideline and example project][csharp-example] by @joemphilips
  - [Kotlin plugin guideline and example][kotlin-example] by @vincenzopalazzo
 
+## Archived plugins
+
+The following is a list of archived plugins that no longer maintained.
+If you like a plugin from that list, feel free to update and fix it, so we can
+un-archive it.
+
+| Name                                 | Short description                                                                           |
+| ------------------------------------ | ------------------------------------------------------------------------------------------- |
+| [commando][commando]                 | Authorize peers to run commands on your node, and running commands on them.                 |
+
 [esplora]: https://github.com/Blockstream/esplora
 [pers-chans]: https://github.com/lightningd/plugins/tree/master/persistent-channels
 [probe]: https://github.com/lightningd/plugins/tree/master/probe
@@ -222,7 +231,7 @@ Python plugins developers must ensure their plugin to work with all Python versi
 [java-api]: https://github.com/clightning4j/JRPClightning
 [btcli4j]: https://github.com/clightning4j/btcli4j
 [backup]: https://github.com/lightningd/plugins/tree/master/backup
-[commando]: https://github.com/lightningd/plugins/tree/master/commando
+[commando]: https://github.com/lightningd/plugins/tree/master/archive/commando
 [reporter]: https://github.com/LNOpenMetrics/go-lnmetrics.reporter
 [csharp-example]: https://github.com/joemphilips/DotNetLightning/tree/master/examples/HelloWorldPlugin
 [kotlin-example]: https://vincenzopalazzo.medium.com/a-day-in-a-c-lightning-plugin-with-koltin-c8bbd4fa0406
