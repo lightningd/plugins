@@ -14,7 +14,7 @@ jobs:
   build-and-test:
     name: Test PY=${{ matrix.python-version }}, DEV=${{ matrix.developer }}, EXP=${{ matrix.experimental }}, DEP=${{ matrix.deprecated }}
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 60
     strategy:
       fail-fast: false
       matrix:
