@@ -7,14 +7,17 @@ authors = ["Rene Pickhardt <@renepickhardt>"]
 [tool.poetry.dependencies]
 python = "^3.8"
 networkx = ">=2.4"
-pyln-client = "0.10.1"
+pyln-client = "0.12.1"
 dnspython = "^2.2.0"
 numpy = "^1.22.2"
 
 [tool.poetry.dev-dependencies]
-pyln-testing = "0.10.1"
-Flask = "^1.1.0"
-MarkupSafe = "2.0.1"
+pyln-testing = "0.12.1"
+
+[tool.poetry.group.dev.dependencies]
+pytest-rerunfailures = "^10.3"
+pytest-timeout = "^2.1.0"
+pytest-xdist = "^3.1.0"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
