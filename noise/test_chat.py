@@ -100,7 +100,7 @@ def test_msg_and_keysend(node_factory, executor):
     amt = 10000
 
     # Check that l3 does not have funds initially
-    assert(l3.rpc.listpeers()['peers'][0]['channels'][0]['msatoshi_to_us'] == 0)
+    assert(l3.rpc.listpeers()['peers'][0]['channels'][0]['to_us_msat'] == 0)
 
     l1.rpc.sendmsg(l3.info['id'], "Hello world!", amt)
     m = l3.rpc.recvmsg(msg_id=-1)
@@ -113,7 +113,7 @@ def test_msg_and_keysend(node_factory, executor):
     assert(p['amount'] == '10000msat')
 
     # Check that l3 actually got the funds I sent it
-    wait_for(lambda: l3.rpc.listpeers()['peers'][0]['channels'][0]['msatoshi_to_us'] == amt)
+    wait_for(lambda: l3.rpc.listpeers()['peers'][0]['channels'][0]['to_us_msat'] == amt)
 
 
 def test_forward_ok(node_factory, executor):
