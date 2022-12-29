@@ -118,7 +118,7 @@ class Autopilot():
         if percentile < 0 or percentile > 1:
             raise ValueError("percentile must be btween 0 and 1")
 
-        cumsum = 0
+        cumsum = 1  # Avoid division by 0
         used_pdf = {}
         for n, value in sorted(
                 pdf.items(), key=itemgetter(1), reverse=True):
@@ -162,7 +162,7 @@ class Autopilot():
             cumsum += score
 
         # renoremalize result
-        pdf = {k: v / cumsum for k, v in pdf.items()}
+        pdf = {k: v / (cumsum + 1) for k, v in pdf.items()}
         self.__logger.info(
             "CENTRALITY_PDF: Generated pdf")
 
@@ -191,7 +191,7 @@ class Autopilot():
             "RICH_PDF: Try to retrieve a PDF proportional to capacities")
 
         rich_nodes = {}
-        network_capacity = 0
+        network_capacity = 1  # Avoid division by 0
         candidates = []
         for n in self.G.nodes():
             total_capacity = sum(
@@ -245,8 +245,7 @@ class Autopilot():
             path_pdf[node] = path_sum
 
         s = sum(path_pdf.values())
-        # FIXME: next line can raise a division by zero
-        path_pdf = {k: v / s for k, v in path_pdf.items()}
+        path_pdf = {k: v / (s + 1) for k, v in path_pdf.items()}
         self.__logger.info(
             "DECREASE DIAMETER: probability density function created")
 
@@ -275,7 +274,7 @@ class Autopilot():
                 "manipulate_pdf: Skewing the probability density function")
             pdf = {k: v**2 for k, v in pdf.items()}
             s = sum(pdf.values())
-            pdf = {k: v / s for k, v in pdf.items()}
+            pdf = {k: v / (s+1) for k, v in pdf.items()}
 
         if smooth:
             self.__logger.info(
@@ -311,7 +310,7 @@ class Autopilot():
                             ["satoshis"] for n in neighbors])
             average = capacity / (1 + len(neighbors))
             pdf[candidate] = average
-        cumsum = sum(pdf.values())
+        cumsum = max(1, sum(pdf.values()))
         pdf = {k: v / cumsum for k, v in pdf.items()}
         w = 0.7
         print("percentage   smoothed percentage    capacity    numchannels     alias")
@@ -342,7 +341,7 @@ class Autopilot():
         self.__logger.info(
             "Need at least a balance of {} satoshi to open {} channels".format(
                 needed_total_balance, len(pdf)))
-        while needed_total_balance > balance and len(pdf) > 1:
+        while int(needed_total_balance) > int(balance) and len(pdf) > 1:
             min_val = min(pdf.values())
             k = [k for k, v in pdf.items() if v == min_val][0]
             self.__logger.info(

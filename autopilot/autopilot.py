@@ -109,7 +109,7 @@ class CLightning_autopilot(Autopilot):
         messages = []
         for nodeid, fraction in connection_dict.items():
             try:
-                satoshis = min(math.ceil(balance * fraction), 16777215)
+                satoshis = min(math.ceil(int(balance) * float(fraction)), 16777215)
                 messages.append(f"Try to open channel with a capacity of {satoshis} to node {nodeid}")
                 plugin.log(messages[-1])
                 if not dryrun:
