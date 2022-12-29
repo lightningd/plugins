@@ -53,13 +53,25 @@ class Payment(object):
 
 def serialize_payload(n, blockheight):
     block, tx, out = n['channel'].split('x')
-    payload = hexlify(struct.pack(
-        "!cQQL", b'\x00',
-        int(block) << 40 | int(tx) << 16 | int(out),
-        int(n['amount_msat']),
-        blockheight + n['delay'])).decode('ASCII')
-    payload += "00" * 12
-    return payload
+    scid = int(block) << 40 | int(tx) << 16 | int(out)
+    def minint(i):
+        if i < 2**8:
+            return struct.pack("!b", i)
+        elif i < 2**16:
+            return struct.pack('!H', i)
+        elif i < 2**32:
+            return struct.pack("!I", i)
+        else:
+            return struct.pack("!Q", i)
+
+    amt = int(n['amount_msat'])
+    cltv = blockheight + n['delay']
+
+    payload = TlvPayload()
+    payload.add_field(2, minint(amt))
+    payload.add_field(4, minint(cltv))
+    payload.add_field(6, minint(scid))
+    return payload.to_bytes().hex()
 
 
 def buildpath(plugin, node_id, payload, amt, exclusions):
@@ -71,7 +83,7 @@ def buildpath(plugin, node_id, payload, amt, exclusions):
     for h, n in zip(route[:-1], route[1:]):
         # We tell the node h about the parameters to use for n (a.k.a. h + 1)
         hops.append({
-            "type": "legacy",
+            "type": "tlv",
             "pubkey": h['id'],
             "payload": serialize_payload(n, blockheight)
         })
@@ -201,8 +213,11 @@ def on_htlc_accepted(onion, htlc, plugin, **kwargs):
     msg.verified = sigcheck['verified']
 
     preimage = payload.get(TLV_KEYSEND_PREIMAGE)
+    print("YYY")
+    print(htlc)
+    print(onion)
     if preimage is not None:
-        msg.payment = Payment(preimage.value, htlc['amount'])
+        msg.payment = Payment(preimage.value, htlc['amount_msat'])
         res = {
             'result': 'resolve',
             'payment_key': hexlify(preimage.value).decode('ASCII')

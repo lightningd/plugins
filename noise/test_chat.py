@@ -110,7 +110,7 @@ def test_msg_and_keysend(node_factory, executor):
     p = m['payment']
     assert(p is not None)
     assert(p['payment_key'] is not None)
-    assert(p['amount'] == '10000msat')
+    assert(p['amount'] == 10000)
 
     # Check that l3 actually got the funds I sent it
     wait_for(lambda: l3.rpc.listpeers()['peers'][0]['channels'][0]['to_us_msat'] == amt)
