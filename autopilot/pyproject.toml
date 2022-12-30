@@ -5,11 +5,17 @@ description = "Automatically manage lightning channels (OUTDATED)"
 authors = ["Rene Pickhardt <@renepickhardt>"]
 
 [tool.poetry.dependencies]
-python = "^3.8"
-networkx = ">=2.4"
+python = "^3.7"
 pyln-client = "0.12.1"
 dnspython = "^2.2.0"
-numpy = "^1.22.2"
+numpy = [
+  { version = "^1.24", python = ">=3.8,<3.12" },
+  { version = "^1.19", python = "<3.8" }
+]
+networkx = [
+  { version = "^2.8", python = ">=3.8" },
+  { version = "^2.6", python = ">=3.7,<3.8" }
+]
 
 [tool.poetry.dev-dependencies]
 pyln-testing = "0.12.1"
