@@ -7,14 +7,9 @@ concurrency:
 
 on:
   push:
-  pull_request:
     branches: [ master ]
-
-  schedule:
-    # Schedule a test once a day so we check compatibility with the
-    # upstream c-lightning master
-    - cron:  '0 17 * * *'
-
+  pull_request:
+  
 jobs:
   build-and-test:
     name: Test PY=${{ matrix.python-version }}, DEV=${{ matrix.developer }}, EXP=${{ matrix.experimental }}, DEP=${{ matrix.deprecated }}
