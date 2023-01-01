@@ -97,3 +97,16 @@ jobs:
         export CLN_PATH=${{ github.workspace }}/lightning
         pip3 install --user -U virtualenv pip > /dev/null
         python3 .ci/test.py
+
+  gather:
+    # A dummy task that depends on the full matrix of tests, and
+    # signals successful completion. Used for the PR status to pass
+    # before merging.
+    name: CI completion
+    runs-on: ubuntu-20.04
+    needs:
+      - build-and-test
+    steps:
+      - name: Complete
+        run: |
+          echo CI completed successfully
