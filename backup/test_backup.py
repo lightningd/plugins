@@ -2,7 +2,7 @@ from backend import Backend
 import socketbackend
 from flaky import flaky
 from pyln.testing.fixtures import *  # noqa: F401,F403
-from pyln.testing.utils import wait_for, sync_blockheight
+from pyln.testing.utils import sync_blockheight
 import os
 import pytest
 import subprocess
@@ -37,7 +37,7 @@ def test_start(node_factory, directory):
         assert "backup.py" in plugins
 
 
-def test_start_no_init(node_factory, directory, executor):
+def test_start_no_init(node_factory, directory):
     """The plugin should refuse to start if we haven't initialized the backup
     """
     bpath = os.path.join(directory, 'lightning-1', 'regtest')

@@ -54,9 +54,10 @@ class Payment(object):
 def serialize_payload(n, blockheight):
     block, tx, out = n['channel'].split('x')
     scid = int(block) << 40 | int(tx) << 16 | int(out)
+
     def minint(i):
         if i < 2**8:
-            return struct.pack("!b", i)
+            return struct.pack("!B", i)
         elif i < 2**16:
             return struct.pack('!H', i)
         elif i < 2**32:
@@ -213,9 +214,6 @@ def on_htlc_accepted(onion, htlc, plugin, **kwargs):
     msg.verified = sigcheck['verified']
 
     preimage = payload.get(TLV_KEYSEND_PREIMAGE)
-    print("YYY")
-    print(htlc)
-    print(onion)
     if preimage is not None:
         msg.payment = Payment(preimage.value, htlc['amount_msat'])
         res = {
@@ -226,9 +224,6 @@ def on_htlc_accepted(onion, htlc, plugin, **kwargs):
         res = {'result': 'continue'}
 
     plugin.messages.append(msg)
-    print("Delivering message to {c} waiters".format(
-        c=len(plugin.receive_waiters)
-    ))
     for r in plugin.receive_waiters:
         m = msg.to_dict()
         m['total_messages'] = len(plugin.messages)
