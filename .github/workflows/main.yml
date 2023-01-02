@@ -9,7 +9,7 @@ on:
   push:
     branches: [ master ]
   pull_request:
-  
+
 jobs:
   build-and-test:
     name: Test PY=${{ matrix.python-version }}, DEV=${{ matrix.developer }}, EXP=${{ matrix.experimental }}, DEP=${{ matrix.deprecated }}
