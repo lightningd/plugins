@@ -26,6 +26,7 @@ Community curated plugins for Core-Lightning.
 | [listmempoolfunds][listmempoolfunds] | Track unconfirmed wallet deposits                                                           |
 | [monitor][monitor]                   | helps you analyze the health of your peers and channels                                     |
 | [noise][noise]                       | Chat with your fellow node operators                                                        |
+| [nostrify][nostrify]                 | Send CLN events to Nostr                                                                    |
 | [paythrough][paythrough]             | Pay an invoice through a specific channel, regardless of better routes                      |
 | [persistent-channels][pers-chans]    | Maintains a number of channels to peers                                                     |
 | [poncho][poncho]                     | Turns CLN into a [hosted channels][blip12] provider                                         |
