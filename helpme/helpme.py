@@ -416,7 +416,12 @@ known_nodes_testnet = {
 def get_channel_list(peers, state='CHANNELD_NORMAL'):
     channels = []
     for p in peers:
-        channels += p['channels']
+        if 'channels' in p:
+            channels += p['channels']
+        elif 'num_channels' in p and p['num_channels'] > 0:
+            channels += plugin.rpc.listpeerchannels(p['id'])['channels']
+        else:
+            raise RpcError("helpme", {}, "RPC does not return channels")
 
     return [c for c in channels if state is None or c['state'] == state]
 
@@ -976,6 +981,14 @@ class ConnectThread(threading.Thread):
 
 @plugin.init()
 def init(options, configuration, plugin):
+    rpchelp = plugin.rpc.help().get('help')
+    # detect if server cli has moved `listpeers.channels[]` to `listpeerchannels`
+    # See https://github.com/ElementsProject/lightning/pull/5825
+    # TODO: replace by rpc version check once v23 is released
+    plugin.listpeerchannels = False
+    if len([c for c in rpchelp if c["command"].startswith("listpeerchannels ")]) != 0:
+        plugin.listpeerchannels = True
+
     network = plugin.rpc.getinfo()['network']
     if network == 'regtest':
         plugin.log('Not seeking regtest peers', level='debug')
