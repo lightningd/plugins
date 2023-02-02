@@ -72,17 +72,33 @@ def setup_routing_fees(payload, route, amount, substractfees: bool = False):
 def get_channel(payload, peer_id, scid=None):
     if scid is None:
         scid = payload['scid']
-    try:
-        peer = plugin.rpc.listpeers(peer_id).get('peers')[0]
-    except IndexError:
+
+    # from versions 23 and onwards we have `listpeers` and `listpeerchannels`
+    # if plugin.rpcversion[0] >= 23:
+    if plugin.listpeerchannels:  # FIXME: replace by rpcversion check (see above) once 23 is released
+        channels = plugin.rpc.listpeerchannels(peer_id)["channels"]
+        if len(channels) == 0:
+            raise RpcError(payload['command'], payload, {'message': 'Cannot find channels for peer %s' % (peer_id)})
+        try:
+            channel = next(c for c in channels if 'short_channel_id' in c and c['short_channel_id'] == scid)
+        except StopIteration:
+            raise RpcError(payload['command'], payload, {'message': 'Cannot find channel for peer %s with scid %s' % (peer_id, scid)})
+        if channel['state'] != "CHANNELD_NORMAL":
+            raise RpcError(payload['command'], payload, {'message': 'Channel %s: not in state CHANNELD_NORMAL, but: %s' % (scid, channel['state'])})
+        if not channel['peer_connected']:
+            raise RpcError(payload['command'], payload, {'message': 'Channel %s: peer is not connected.' % scid})
+        return channel
+
+    peers = plugin.rpc.listpeers(peer_id)['peers']
+    if len(peers) == 0:
         raise RpcError(payload['command'], payload, {'message': 'Cannot find peer %s' % peer_id})
     try:
-        channel = next(c for c in peer['channels'] if 'short_channel_id' in c and c['short_channel_id'] == scid)
+        channel = next(c for c in peers[0]['channels'] if 'short_channel_id' in c and c['short_channel_id'] == scid)
     except StopIteration:
         raise RpcError(payload['command'], payload, {'message': 'Cannot find channel %s for peer %s' % (scid, peer_id)})
     if channel['state'] != "CHANNELD_NORMAL":
         raise RpcError(payload['command'], payload, {'message': 'Channel %s not in state CHANNELD_NORMAL, but: %s' % (scid, channel['state'])})
-    if not peer['connected']:
+    if not peers[0]['connected']:
         raise RpcError(payload['command'], payload, {'message': 'Channel %s peer is not connected.' % scid})
     return channel
 
@@ -93,17 +109,17 @@ def spendable_from_scid(payload, scid=None, _raise=False):
 
     peer_id = peer_from_scid(payload, scid)
     try:
-        channel_peer = get_channel(payload, peer_id, scid)
+        channel = get_channel(payload, peer_id, scid)
     except RpcError as e:
         if _raise:
             raise e
         return Millisatoshi(0), Millisatoshi(0)
 
     # we check amounts via gossip and not wallet funds, as its more accurate
-    our = Millisatoshi(channel_peer['to_us_msat'])
-    total = Millisatoshi(channel_peer['total_msat'])
-    our_reserve = Millisatoshi(channel_peer['our_reserve_msat'])
-    their_reserve = Millisatoshi(channel_peer['their_reserve_msat'])
+    our = Millisatoshi(channel['to_us_msat'])
+    total = Millisatoshi(channel['total_msat'])
+    our_reserve = Millisatoshi(channel['our_reserve_msat'])
+    their_reserve = Millisatoshi(channel['their_reserve_msat'])
     their = total - our
 
     # reserves maybe not filled up yet
@@ -112,8 +128,9 @@ def spendable_from_scid(payload, scid=None, _raise=False):
     if their < their_reserve:
         their_reserve = their
 
-    spendable = channel_peer['spendable_msat']
-    receivable = channel_peer.get('receivable_msat')
+    spendable = channel['spendable_msat']
+    receivable = channel.get('receivable_msat')
+
     # receivable_msat was added with the 0.8.2 release, have a fallback
     if not receivable:
         receivable = their - their_reserve
@@ -488,6 +505,14 @@ def setbalance(plugin, scid: str, percentage: float = 50, chunks: int = 0, retry
 
 @plugin.init()
 def init(options, configuration, plugin):
+    rpchelp = plugin.rpc.help().get('help')
+    # detect if server cli has moved `listpeers.channels[]` to `listpeerchannels`
+    # See https://github.com/ElementsProject/lightning/pull/5825
+    # TODO: replace by rpc version check once v23 is released
+    plugin.listpeerchannels = False
+    if len([c for c in rpchelp if c["command"].startswith("listpeerchannels ")]) != 0:
+        plugin.listpeerchannels = True
+
     # do all the stuff that needs to be done just once ...
     plugin.getinfo = plugin.rpc.getinfo()
     plugin.rpcversion = cln_parse_rpcversion(plugin.getinfo.get('version'))
