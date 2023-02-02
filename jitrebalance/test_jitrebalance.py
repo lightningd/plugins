@@ -41,7 +41,7 @@ def test_simple_rebalance(node_factory):
         src.openchannel(dst, capacity=10**6)
 
     # Drain (l2, l3) so that a larger payment fails later on
-    chan = l2.rpc.listpeers(l3.info['id'])['peers'][0]['channels'][0]
+    chan = l2.rpc.listpeerchannels(l3.info['id'])['channels'][0]
 
     # Send 9 million millisatoshis + reserve + a tiny fee allowance from l3 to
     # l2 for the actual payment
@@ -53,17 +53,15 @@ def test_simple_rebalance(node_factory):
     l3.rpc.pay(inv['bolt11'])
 
     def no_pending_htlcs():
-        peer = l2.rpc.listpeers(l3.info['id'])['peers'][0]
-        return peer['channels'][0]['htlcs'] == []
+        return l2.rpc.listpeerchannels(l3.info['id'])['channels'][0]['htlcs'] == []
 
     wait_for(no_pending_htlcs)
 
-    chan = l2.rpc.listpeers(l3.info['id'])['peers'][0]['channels'][0]
+    chan = l2.rpc.listpeerchannels(l3.info['id'])['channels'][0]
     assert(int(chan['spendable_msat']) < amt)
 
     # Get (l2, l5) so we can exclude it when routing from l1 to l4
-    peer = l2.rpc.listpeers(l5.info['id'])['peers'][0]
-    scid = peer['channels'][0]['short_channel_id']
+    scid = l2.rpc.listpeerchannels(l5.info['id'])['channels'][0]['short_channel_id']
 
     # The actual invoice that l1 will attempt to pay to l4, and that will be
     # larger than the current capacity of (l2, l3) so it triggers a
@@ -108,7 +106,7 @@ def test_rebalance_failure(node_factory):
         src.openchannel(dst, capacity=10**6)
 
     # Drain (l2, l3) so that a larger payment fails later on
-    chan = l2.rpc.listpeers(l3.info['id'])['peers'][0]['channels'][0]
+    chan = l2.rpc.listpeerchannels(l3.info['id'])['channels'][0]
 
     # Send 9 million millisatoshis + reserve + a tiny fee allowance from l3 to
     # l2 for the actual payment
@@ -120,17 +118,15 @@ def test_rebalance_failure(node_factory):
     l3.rpc.pay(inv['bolt11'])
 
     def no_pending_htlcs():
-        peer = l2.rpc.listpeers(l3.info['id'])['peers'][0]
-        return peer['channels'][0]['htlcs'] == []
+        return l2.rpc.listpeerchannels(l3.info['id'])['channels'][0]['htlcs'] == []
 
     wait_for(no_pending_htlcs)
 
-    chan = l2.rpc.listpeers(l3.info['id'])['peers'][0]['channels'][0]
+    chan = l2.rpc.listpeerchannels(l3.info['id'])['channels'][0]
     assert(int(chan['spendable_msat']) < amt)
 
     # Get (l2, l5) so we can exclude it when routing from l1 to l4
-    peer = l2.rpc.listpeers(l5.info['id'])['peers'][0]
-    scid = peer['channels'][0]['short_channel_id']
+    scid = l2.rpc.listpeerchannels(l5.info['id'])['channels'][0]['short_channel_id']
 
     # The actual invoice that l1 will attempt to pay to l4, and that will be
     # larger than the current capacity of (l2, l3) so it triggers a
@@ -177,13 +173,14 @@ def test_issue_88(node_factory):
     l2.rpc.fundchannel(l4.info['id'], 10**5)
 
     peers = l2.rpc.listpeers()['peers']
+    channels = l2.rpc.listpeerchannels()['channels']
 
     # We should have 3 peers...
     assert(len(peers) == 3)
     # ... but only 2 channels with a short_channel_id...
-    assert(sum([1 for p in peers if 'short_channel_id' in p['channels'][0]]) == 2)
+    assert(sum([1 for c in channels if 'short_channel_id' in c]) == 2)
     # ... and one with l4, without a short_channel_id
-    assert('short_channel_id' not in l4.rpc.listpeers()['peers'][0]['channels'])
+    assert('short_channel_id' not in l4.rpc.listpeerchannels(l2.info['id'])['channels'][0])
 
     # Now if we send a payment l1 -> l2 -> l3, then l2 will stumble while
     # attempting to access the short_channel_id on the l2 -> l4 channel:

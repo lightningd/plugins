@@ -127,10 +127,14 @@ def try_rebalance(scid, chan, amt, peer, request):
 def get_peer_and_channel(peers, scid):
     """Look for the channel identified by {scid} in our list of {peers}"""
     for peer in peers:
-        for channel in peer["channels"]:
+        channels = []
+        if 'channels' in peer:
+            channels = peer["channels"]
+        elif 'num_channels' in peer and peer['num_channels'] > 0:
+            channels = plugin.rpc.listpeerchannels(peer["id"])["channels"]
+        for channel in channels:
             if channel.get("short_channel_id") == scid:
                 return (peer, channel)
-
     return (None, None)
 
 
@@ -213,11 +217,9 @@ def on_htlc_accepted(htlc, onion, plugin, request, **kwargs):
 @plugin.init()
 def init(options, configuration, plugin):
     plugin.log("jitrebalance.py initializing {}".format(configuration))
-    plugin.node_id = plugin.rpc.getinfo()['id']
-    # FIXME: this int() shouldn't be needed: check if this is pyln's or
-    # lightningd's fault.
-    plugin.rebalance_timeout = int(options.get("jitrebalance-try-timeout"))
 
+    plugin.node_id = plugin.rpc.getinfo()['id']
+    plugin.rebalance_timeout = int(options.get("jitrebalance-try-timeout"))
     # Set of currently active rebalancings, keyed by their payment_hash
     plugin.rebalances = {}
 
