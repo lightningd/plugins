@@ -100,7 +100,7 @@ def summary(plugin, exclude=''):
     reply = {}
     info = plugin.rpc.getinfo()
     funds = plugin.rpc.listfunds()
-    peers = plugin.rpc.listpeers()
+    peers = plugin.rpc.listpeers()['peers']
 
     # Make it stand out if we're not on mainnet.
     if info['network'] != 'bitcoin':
@@ -123,11 +123,16 @@ def summary(plugin, exclude=''):
     reply['num_channels'] = 0
     reply['num_connected'] = 0
     reply['num_gossipers'] = 0
-    for p in peers['peers']:
+    for p in peers:
         pid = p['id']
+        channels = []
+        if 'channels' in p:
+            channels = p['channels']
+        elif 'num_channels' in p and p['num_channels'] > 0:
+            channels = plugin.rpc.listpeerchannels(pid)['channels']
         addpeer(plugin, p)
         active_channel = False
-        for c in p['channels']:
+        for c in channels:
             if c['state'] != 'CHANNELD_NORMAL':
                 continue
             active_channel = True
