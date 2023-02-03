@@ -31,7 +31,12 @@ def monitor(plugin):
     chans = {}
     states = {}
     for p in peers['peers']:
-        for c in p['channels']:
+        channels = []
+        if 'channels' in p:
+            channels = p['channels']
+        elif 'num_channels' in p and p['num_channels'] > 0:
+            channels = plugin.rpc.listpeerchannels(p['id'])['channels']
+        for c in channels:
             if p['connected']:
                 reply['num_connected'] += 1
             reply['num_channels'] += 1
