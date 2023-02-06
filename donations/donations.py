@@ -27,7 +27,7 @@ from io import BytesIO
 from pyln.client import Plugin
 from random import random
 from wtforms import StringField, SubmitField, IntegerField
-from wtforms.validators import Required, NumberRange
+from wtforms.validators import DataRequired, NumberRange
 
 
 plugin = Plugin()
@@ -36,7 +36,7 @@ plugin = Plugin()
 class DonationForm(FlaskForm):
     """Form for donations """
     amount = IntegerField("Enter how many Satoshis you want to donate!",
-                          validators=[Required(), NumberRange(min=1, max=16666666)])
+                          validators=[DataRequired(), NumberRange(min=1, max=16666666)])
     description = StringField("Leave a comment (displayed publically)")
     submit = SubmitField('Donate')
 
