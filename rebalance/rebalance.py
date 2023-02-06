@@ -55,6 +55,15 @@ def setup_routing_fees(route, msat):
 
 
 def get_channel(payload, peer_id, scid, check_state: bool = False):
+    if plugin.listpeerchannels:
+        channels = plugin.rpc.listpeerchannels(peer_id)['channels']
+        channel = next(c for c in channels if c.get('short_channel_id') == scid)
+        if check_state:
+            if channel['state'] != "CHANNELD_NORMAL":
+                raise RpcError('rebalance', payload, {'message': 'Channel %s not in state CHANNELD_NORMAL, but: %s' % (scid, channel['state'])})
+            if not channel['peer_connected']:
+                raise RpcError('rebalance', payload, {'message': 'Channel %s peer is not connected.' % scid})
+        return channel
     peer = plugin.rpc.listpeers(peer_id).get('peers')[0]
     channel = next(c for c in peer['channels'] if c.get('short_channel_id') == scid)
     if check_state:
@@ -445,12 +454,18 @@ def could_receive(liquidity):
 
 
 def get_open_channels(plugin: Plugin):
-    channels = []
-    for peer in plugin.rpc.listpeers()["peers"]:
-        for ch in peer["channels"]:
+    result = []
+    if plugin.listpeerchannels:
+        channels = plugin.rpc.listpeerchannels()['channels']
+        for ch in channels:
             if ch["state"] == "CHANNELD_NORMAL" and not ch["private"]:
-                channels.append(ch)
-    return channels
+                result.append(ch)
+    else:
+        for peer in plugin.rpc.listpeers()["peers"]:
+            for ch in peer["channels"]:
+                if ch["state"] == "CHANNELD_NORMAL" and not ch["private"]:
+                    result.append(ch)
+    return result
 
 
 def check_liquidity_threshold(channels: list, threshold: Millisatoshi):
@@ -521,14 +536,18 @@ def get_max_fee(msat: Millisatoshi):
 
 
 def get_chan(scid: str):
-    for peer in plugin.rpc.listpeers()["peers"]:
-        if len(peer["channels"]) == 0:
-            continue
-        # We might have multiple channel entries ! Eg if one was just closed
-        # and reopened.
-        for chan in peer["channels"]:
+    if plugin.listpeerchannels:
+        channels = plugin.rpc.listpeerchannels()['channels']
+        for chan in channels:
             if chan.get("short_channel_id") == scid:
                 return chan
+    else:
+        for peer in plugin.rpc.listpeers()["peers"]:
+            if len(peer["channels"]) == 0:
+                continue
+            for chan in peer["channels"]:
+                if chan.get("short_channel_id") == scid:
+                    return chan
 
 
 def liquidity_info(channel, enough_liquidity: Millisatoshi, ideal_ratio: float):
@@ -566,18 +585,27 @@ def wait_for_htlcs(failed_channels: list, scids: list = None):
     result = True
     peers = plugin.rpc.listpeers()['peers']
     for p, peer in enumerate(peers):
+        pid = peer['id']
+        channels = []
         if 'channels' in peer:
-            for c, channel in enumerate(peer['channels']):
-                if scids is not None and channel.get('short_channel_id') not in scids:
-                    continue
-                if channel.get('short_channel_id') in failed_channels:
+            channels = peer['channels']
+        elif 'num_channels' in peer and peer['num_channels'] > 0:
+            channels = plugin.rpc.listpeerchannels(peer['id'])['channels']
+        for c, channel in enumerate(channels):
+            scid = channel.get('short_channel_id')
+            if scids is not None and scid not in scids:
+                continue
+            if scid in failed_channels:
+                result = False
+                continue
+            if 'htlcs' in channel:
+                lam = lambda: len(plugin.rpc.listpeers()['peers'][p]['channels'][c]['htlcs']) == 0
+                if plugin.listpeerchannels:
+                    lam = lambda: len(plugin.rpc.listpeerchannels(pid)['channels'][c]['htlcs']) == 0
+                if not wait_for(lam):
+                    failed_channels.append(scid)
+                    plugin.log(f"Thread{get_thread_id_str()} timeout while waiting for htlc settlement in channel {scid}")
                     result = False
-                    continue
-                if 'htlcs' in channel:
-                    if not wait_for(lambda: len(plugin.rpc.listpeers()['peers'][p]['channels'][c]['htlcs']) == 0):
-                        failed_channels.append(channel.get('short_channel_id'))
-                        plugin.log(f"Thread{get_thread_id_str()} timeout while waiting for htlc settlement in channel {channel.get('short_channel_id')}")
-                        result = False
     return result
 
 
@@ -943,6 +971,14 @@ def rebalancereport(plugin: Plugin):
 
 @plugin.init()
 def init(options, configuration, plugin):
+    rpchelp = plugin.rpc.help().get('help')
+    # detect if server cli has moved `listpeers.channels[]` to `listpeerchannels`
+    # See https://github.com/ElementsProject/lightning/pull/5825
+    # TODO: replace by rpc version check once v23 is released
+    plugin.listpeerchannels = False
+    if len([c for c in rpchelp if c["command"].startswith("listpeerchannels ")]) != 0:
+        plugin.listpeerchannels = True
+
     # do all the stuff that needs to be done just once ...
     plugin.getinfo = plugin.rpc.getinfo()
     plugin.rpcversion = cln_parse_rpcversion(plugin.getinfo.get('version'))
