@@ -25,5 +25,5 @@ def test_donation_server(node_factory):
     port = reserve()
     l1.rpc.donationserver('start', port)
     l1.daemon.wait_for_logs('plugin-donations.py: Process server on port')
-    msg = l1.rpc.donationserver("stop")
+    msg = l1.rpc.donationserver("stop", port)
     assert msg.startswith(f'stopped server on port')

@@ -139,7 +139,7 @@ def stop_server(port):
 
 
 @plugin.method('donationserver')
-def donationserver(request, command="start", port=8088):
+def donationserver(command="start", port=8088):
     """Starts a donationserver with {start/stop/restart} on {port}.
 
     A Simple HTTP Server is created that can serve a donation webpage and
@@ -177,7 +177,7 @@ def donationserver(request, command="start", port=8088):
         if stop_server(port):
             return "stopped server on port {}".format(port)
         else:
-            return "could not stop the server"
+            return "could not stop the server on port {}".format(port)
 
     if command == "restart":
         stop_server(port)
