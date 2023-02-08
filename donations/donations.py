@@ -76,7 +76,7 @@ def donation_form():
     if form.validate_on_submit():
         amount = form.amount.data
         description = form.description.data
-        label = "ln-plugin-donation-{}".format(random())
+        label = "ln-plugin-donations-{}".format(random())
         invoice = plugin.rpc.invoice(int(amount) * 1000, label, description)
         b11 = invoice["bolt11"]
         qr = make_base64_qr_code(b11)
@@ -84,7 +84,7 @@ def donation_form():
     invoices = plugin.rpc.listinvoices()["invoices"]
     donations = []
     for invoice in invoices:
-        if invoice["label"].startswith("ln-plugin-donation-"):
+        if invoice["label"].startswith("ln-plugin-donations-"):
             # FIXME: change to paid after debugging
             if invoice["status"] == "paid":
                 bolt11 = plugin.rpc.decodepay(invoice["bolt11"])
@@ -159,7 +159,7 @@ def donationserver(command="start", port=8088):
     try:
         port = int(port)
     except Exception:
-        port = int(plugin.options['donation-web-port']['value'])
+        port = int(plugin.options['donations-web-port']['value'])
 
     if command == "list":
         return "servers running on the following ports: {}".format(list(jobs.keys()))
@@ -189,13 +189,13 @@ def donationserver(command="start", port=8088):
 
 
 plugin.add_option(
-    'donation-autostart',
+    'donations-autostart',
     'true',
     'Should the donation server start automatically'
 )
 
 plugin.add_option(
-    'donation-web-port',
+    'donations-web-port',
     '8088',
     'Which port should the donation server listen to?'
 )
@@ -203,9 +203,9 @@ plugin.add_option(
 
 @plugin.init()
 def init(options, configuration, plugin):
-    port = int(options['donation-web-port'])
+    port = int(options['donations-web-port'])
 
-    if options['donation-autostart'].lower() in ['true', '1']:
+    if options['donations-autostart'].lower() in ['true', '1']:
         start_server(port)
 
 
