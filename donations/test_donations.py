@@ -1,7 +1,6 @@
 import os
 from pyln.testing.fixtures import *  # noqa: F401,F403
 from ephemeral_port_reserve import reserve  # type: ignore
-import time
 
 plugin_path = os.path.join(os.path.dirname(__file__), "donations.py")
 
@@ -11,7 +10,6 @@ def test_donation_starts(node_factory):
     # Test dynamically
     l1.rpc.plugin_start(plugin_path)
     l1.rpc.plugin_stop(plugin_path)
-    time.sleep(10)
     l1.rpc.plugin_start(plugin_path)
     l1.stop()
     # Then statically
@@ -20,10 +18,11 @@ def test_donation_starts(node_factory):
 
 
 def test_donation_server(node_factory):
-    pluginopt = {'plugin': plugin_path, 'allow_warning': True}
-    l1, l2 = node_factory.line_graph(2, opts=pluginopt)
+    pluginopt = {'plugin': plugin_path, 'donations-autostart': False}
+    l1 = node_factory.get_node(options=pluginopt, allow_warning=True)
     port = reserve()
     l1.rpc.donationserver('start', port)
-    l1.daemon.wait_for_logs('plugin-donations.py: Process server on port')
+    l1.daemon.wait_for_log("plugin-donations.py:.*Serving Flask app 'donations'")
+    l1.daemon.wait_for_log("plugin-donations.py:.*Running on all addresses")
     msg = l1.rpc.donationserver("stop", port)
-    assert msg.startswith(f'stopped server on port')
+    assert msg == f'stopped server on port {port}'
