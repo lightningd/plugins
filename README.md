@@ -213,6 +213,7 @@ un-archive it.
 [js-api]: https://github.com/lightningd/clightningjs
 [ts-api]: https://github.com/runcitadel/c-lightning.ts
 [monitor]: https://github.com/renepickhardt/plugins/tree/master/monitor
+[nostrify]: https://github.com/joelklabo/nostrify 
 [reckless]: https://github.com/darosior/reckless
 [request-invoice]: https://github.com/lightningd/plugins/tree/master/request-invoice
 [sauron]: https://github.com/lightningd/plugins/tree/master/sauron
