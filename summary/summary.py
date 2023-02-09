@@ -96,7 +96,7 @@ def append_header(table, max_msat):
 
 
 @plugin.method("summary", long_desc=summary_description)
-def summary(plugin, exclude=''):
+def summary(plugin, exclude='', sortkey=None):
     """Gets summary information about this node."""
 
     reply = {}
@@ -182,7 +182,9 @@ def summary(plugin, exclude=''):
         reply['fees_collected'] += ' ({})'.format(to_fiatstr(info['fees_collected_msat']))
 
     if len(chans) > 0:
-        chans = sorted(chans, key=attrgetter('scid'))
+        if sortkey is None or sortkey not in Channel._fields:
+            sortkey = plugin.sortkey
+        chans = sorted(chans, key=attrgetter(sortkey))
         reply['channels_flags'] = 'P:private O:offline'
         reply['channels'] = ["\n"]
         biggest = max(max(int(c.ours), int(c.theirs)) for c in chans)
@@ -314,6 +316,9 @@ def close_db(plugin) -> bool:
 
 @plugin.init()
 def init(options, configuration, plugin):
+    plugin.sortkey = options['summary-sortkey']
+    if plugin.sortkey not in Channel._fields:
+        plugin.sortkey = 'scid'  # default to 'scid' on unknown keys
     plugin.currency = options['summary-currency']
     plugin.currency_prefix = options['summary-currency-prefix']
     plugin.fiat_per_btc = 0
@@ -390,5 +395,10 @@ plugin.add_option(
     'summary-availability-window',
     72,
     'How many hours the availability should be averaged over.'
+)
+plugin.add_option(
+    'summary-sortkey',
+    'scid',
+    'Sort the channels list by a namedtuple key, defaults to "scid".'
 )
 plugin.run()
