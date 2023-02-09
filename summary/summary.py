@@ -6,16 +6,14 @@ from operator import attrgetter
 from summary_avail import trace_availability, addpeer
 import pyln.client
 import requests
-import shelve
 import threading
 import time
-import os
-import glob
+import pickle
 import sys
 
 
 plugin = Plugin(autopatch=True)
-dbfile = "summary.dat"
+datastore_key = ['summary', 'avail']
 
 have_utf8 = False
 
@@ -51,9 +49,9 @@ class PeerThread(threading.Thread):
             try:
                 rpcpeers = plugin.rpc.listpeers()
                 trace_availability(plugin, rpcpeers)
-                plugin.persist.sync()
-                plugin.log("[PeerThread] Peerstate availability persisted and "
-                           "synced. Sleeping now...", 'debug')
+                write_datastore(plugin)
+                plugin.log("[PeerThread] Peerstate wrote to datastore. "
+                           "Sleeping now...", 'debug')
                 time.sleep(plugin.avail_interval)
             except Exception as ex:
                 plugin.log("[PeerThread] " + str(ex), 'warn')
@@ -248,70 +246,20 @@ def summary(plugin, exclude='', sortkey=None):
     return reply
 
 
-def remove_db():
-    # From this reference https://stackoverflow.com/a/16231228/10854225
-    # the file can have different extension and depends from the os target
-    # in this way we say to remove any file that start with summary.dat*
-    # FIXME: There is better option to obtain the same result
-    for db_file in glob.glob(os.path.join(".", f"{dbfile}*")):
-        os.remove(db_file)
+def load_datastore(plugin):
+    entries = plugin.rpc.listdatastore(key=datastore_key)['datastore']
+    if len(entries) == 0:
+        plugin.log(f"Creating a new datastore '{datastore_key}'", 'debug')
+        return {'version': 1, 'peerstate': {}, 'availcount': 0}
+    persist = pickle.loads(bytearray.fromhex(entries[0]["hex"]))
+    plugin.log(f"Reopened datastore '{datastore_key}' with {persist['availcount']} "
+               f"runs and {len(persist['peerstate'])} entries", 'debug')
+    return persist
 
 
-def init_db(plugin, retry_time=4, sleep_time=1):
-    """
-    On some os we receive some error of type [Errno 79] Inappropriate file type or format: 'summary.dat.db'
-    With this function we retry the call to open db 4 time, and if the last time we obtain an error
-    We will remove the database and recreate a new one.
-    """
-    db = None
-    retry = 0
-    while (db is None and retry < retry_time):
-        try:
-            db = shelve.open(dbfile, writeback=True)
-        except IOError as ex:
-            plugin.log("Error during db initialization: {}".format(ex))
-            time.sleep(sleep_time)
-            if retry == retry_time - 2:
-                plugin.log("As last attempt we try to delete the db.")
-                # In case we can not access to the file
-                # we can safely delete the db and recreate a new one
-                remove_db()
-        retry += 1
-
-    if db is None:
-        raise RuntimeError("db initialization error")
-    else:
-        # Sometimes a re-opened databse will throw `_dmb.error: cannot add item`
-        # on first write maybe because of shelve binary format changes.
-        # In this case, remove and recreate.
-        try:
-            db['test_touch'] = "just_some_data"
-            del db['test_touch']
-        except Exception:
-            try:  # still give it a try to close it gracefully
-                db.close()
-            except Exception:
-                pass
-            remove_db()
-            return init_db(plugin)
-    return db
-
-
-def close_db(plugin) -> bool:
-    """
-    This method contains the logic to close the database
-    and print some error message that can happen.
-    """
-    if plugin.persist is not None:
-        try:
-            plugin.persist.close()
-            plugin.log("Database sync and closed with success")
-        except ValueError as ex:
-            plugin.log("An exception occurs during the db closing operation with the following message: {}".format(ex))
-            return False
-    else:
-        plugin.log("There is no db opened for the plugin")
-    return True
+def write_datastore(plugin):
+    hexstr = pickle.dumps(plugin.persist).hex()
+    plugin.rpc.datastore(key=datastore_key, hex=hexstr, mode="create-or-replace")
 
 
 @plugin.init()
@@ -325,14 +273,7 @@ def init(options, configuration, plugin):
 
     plugin.avail_interval = float(options['summary-availability-interval'])
     plugin.avail_window = 60 * 60 * int(options['summary-availability-window'])
-    plugin.persist = init_db(plugin)
-    if 'peerstate' not in plugin.persist:
-        plugin.log(f"Creating a new {dbfile} shelve", 'debug')
-        plugin.persist['peerstate'] = {}
-        plugin.persist['availcount'] = 0
-    else:
-        plugin.log(f"Reopened {dbfile} shelve with {plugin.persist['availcount']} "
-                   f"runs and {len(plugin.persist['peerstate'])} entries", 'debug')
+    plugin.persist = load_datastore(plugin)
 
     info = plugin.rpc.getinfo()
     config = plugin.rpc.listconfigs()
@@ -371,8 +312,9 @@ def init(options, configuration, plugin):
 
 @plugin.subscribe("shutdown")
 def on_rpc_command_callback(plugin, **kwargs):
-    plugin.log("Closing db before lightningd exit")
-    close_db(plugin)
+    # FIXME: Writing datastore does not work on exit, as daemon is already lost.
+    # plugin.log("Writing out datastore before shutting down")
+    # write_datastore(plugin)
     sys.exit()
 
 

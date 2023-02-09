@@ -35,7 +35,7 @@ def test_summary_peer_thread(node_factory):
     l2.stop()  # we stop l2 and wait for l1 to see that
     l1.daemon.wait_for_log(f".*{l2id}.*Peer connection lost.*")
     wait_for(lambda: l1.rpc.listpeers(l2id)['peers'][0]['connected'] is False)
-    l1.daemon.wait_for_log(r".*availability persisted and synced.*")
+    l1.daemon.wait_for_log("Peerstate wrote to datastore")
     s2 = l1.rpc.summary()
 
     # then
@@ -179,13 +179,15 @@ def test_summary_persist(node_factory):
     l1, l2 = node_factory.line_graph(2, opts=opts)
 
     # when
-    l1.daemon.wait_for_log(r".*availability persisted and synced.*")
+    l1.daemon.logsearch_start = 0
+    l1.daemon.wait_for_log("Creating a new datastore")
+    l1.daemon.wait_for_log("Peerstate wrote to datastore")
     s1 = l1.rpc.summary()
     l2.stop()
     l1.restart()
-    assert l1.daemon.is_in_log(r".*Reopened summary.dat shelve.*")
+    assert l1.daemon.is_in_log("Reopened datastore")
     l1.daemon.logsearch_start = len(l1.daemon.logs)
-    l1.daemon.wait_for_log(r".*availability persisted and synced.*")
+    l1.daemon.wait_for_log("Peerstate wrote to datastore")
     s2 = l1.rpc.summary()
 
     # then
