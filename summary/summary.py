@@ -14,6 +14,7 @@ import sys
 
 
 plugin = Plugin(autopatch=True)
+dbfile = "summary.dat"
 
 have_utf8 = False
 
@@ -243,6 +244,15 @@ def summary(plugin, exclude=''):
     return reply
 
 
+def remove_db():
+    # From this reference https://stackoverflow.com/a/16231228/10854225
+    # the file can have different extension and depends from the os target
+    # in this way we say to remove any file that start with summary.dat*
+    # FIXME: There is better option to obtain the same result
+    for db_file in glob.glob(os.path.join(".", f"{dbfile}*")):
+        os.remove(db_file)
+
+
 def init_db(plugin, retry_time=4, sleep_time=1):
     """
     On some os we receive some error of type [Errno 79] Inappropriate file type or format: 'summary.dat.db'
@@ -253,7 +263,7 @@ def init_db(plugin, retry_time=4, sleep_time=1):
     retry = 0
     while (db is None and retry < retry_time):
         try:
-            db = shelve.open('summary.dat', writeback=True)
+            db = shelve.open(dbfile, writeback=True)
         except IOError as ex:
             plugin.log("Error during db initialization: {}".format(ex))
             time.sleep(sleep_time)
@@ -261,17 +271,25 @@ def init_db(plugin, retry_time=4, sleep_time=1):
                 plugin.log("As last attempt we try to delete the db.")
                 # In case we can not access to the file
                 # we can safely delete the db and recreate a new one
-                #
-                # From this reference https://stackoverflow.com/a/16231228/10854225
-                # the file can have different extension and depends from the os target
-                # in this way we say to remove any file that start with summary.dat*
-                # FIXME: There is better option to obtain the same result
-                for db_file in glob.glob(os.path.join(".", "summary.dat*")):
-                    os.remove(db_file)
+                remove_db()
         retry += 1
 
     if db is None:
         raise RuntimeError("db initialization error")
+    else:
+        # Sometimes a re-opened databse will throw `_dmb.error: cannot add item`
+        # on first write maybe because of shelve binary format changes.
+        # In this case, remove and recreate.
+        try:
+            db['test_touch'] = "just_some_data"
+            del db['test_touch']
+        except Exception:
+            try:  # still give it a try to close it gracefully
+                db.close()
+            except Exception:
+                pass
+            remove_db()
+            return init_db(plugin)
     return db
 
 
@@ -302,11 +320,11 @@ def init(options, configuration, plugin):
     plugin.avail_window = 60 * 60 * int(options['summary-availability-window'])
     plugin.persist = init_db(plugin)
     if 'peerstate' not in plugin.persist:
-        plugin.log("Creating a new summary.dat shelve", 'debug')
+        plugin.log(f"Creating a new {dbfile} shelve", 'debug')
         plugin.persist['peerstate'] = {}
         plugin.persist['availcount'] = 0
     else:
-        plugin.log(f"Reopened summary.dat shelve with {plugin.persist['availcount']} "
+        plugin.log(f"Reopened {dbfile} shelve with {plugin.persist['availcount']} "
                    f"runs and {len(plugin.persist['peerstate'])} entries", 'debug')
 
     info = plugin.rpc.getinfo()
