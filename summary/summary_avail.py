@@ -1,13 +1,9 @@
-from datetime import datetime
-
-
 # ensure an rpc peer is added
 def addpeer(p, rpcpeer):
     pid = rpcpeer['id']
     if pid not in p.persist['peerstate']:
         p.persist['peerstate'][pid] = {
             'connected': rpcpeer['connected'],
-            'last_seen': datetime.now() if rpcpeer['connected'] else None,
             'avail': 1.0 if rpcpeer['connected'] else 0.0
         }
 
@@ -25,7 +21,6 @@ def trace_availability(p, rpcpeers):
         addpeer(p, rpcpeer)
 
         if rpcpeer['connected']:
-            p.persist['peerstate'][pid]['last_seen'] = datetime.now()
             p.persist['peerstate'][pid]['connected'] = True
             p.persist['peerstate'][pid]['avail'] = 1.0 * alpha + p.persist['peerstate'][pid]['avail'] * beta
         else:
