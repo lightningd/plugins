@@ -26,7 +26,7 @@ try:
 except Exception:
     pass
 
-Channel = namedtuple('Channel', ['total', 'ours', 'theirs', 'pid', 'private', 'connected', 'scid', 'avail', 'base', 'permil'])
+Channel = namedtuple('Channel', ['total', 'ours', 'theirs', 'pid', 'private', 'connected', 'scid', 'avail', 'base', 'ppm'])
 Charset = namedtuple('Charset', ['double_left', 'left', 'bar', 'mid', 'right', 'double_right', 'empty'])
 if have_utf8:
     draw = Charset('╟', '├', '─', '┼', '┤', '╢', '║')
@@ -34,8 +34,8 @@ else:
     draw = Charset('#', '[', '-', '/', ']', '#', '|')
 
 summary_description = "Gets summary information about this node.\n"\
-                      "Pass a list of scids to the {exclude} parameter"\
-                      " to exclude some channels from the outputs."
+                      "Pass a list of scids to the {exclude} parameter to exclude some channels from the outputs.\n"\
+                      "Sort the result by using the {sortkey} parameter that can be one of 'total', 'ours', 'theirs', 'scid' (default), 'avail', 'base', 'ppm'."
 
 
 class PeerThread(threading.Thread):
@@ -91,7 +91,7 @@ def to_fiatstr(msat: Millisatoshi):
 # appends an output table header that explains fields and capacity
 def append_header(table, max_msat):
     short_str = Millisatoshi(max_msat).to_approx_str()
-    table.append("%c%-13sOUT/OURS %c IN/THEIRS%12s%c SCID           FLAG   BASE PERMIL AVAIL  ALIAS"
+    table.append("%c%-13sOUT/OURS %c IN/THEIRS%12s%c SCID           FLAG   BASE PPM    AVAIL  ALIAS"
                  % (draw.left, short_str, draw.mid, short_str, draw.right))
 
 
@@ -182,9 +182,9 @@ def summary(plugin, exclude='', sortkey=None):
         reply['fees_collected'] += ' ({})'.format(to_fiatstr(info['fees_collected_msat']))
 
     if len(chans) > 0:
-        if sortkey is None or sortkey not in Channel._fields:
+        if sortkey is None or sortkey.lower() not in Channel._fields:
             sortkey = plugin.sortkey
-        chans = sorted(chans, key=attrgetter(sortkey))
+        chans = sorted(chans, key=attrgetter(sortkey.lower()))
         reply['channels_flags'] = 'P:private O:offline'
         reply['channels'] = ["\n"]
         biggest = max(max(int(c.ours), int(c.theirs)) for c in chans)
@@ -230,7 +230,7 @@ def summary(plugin, exclude='', sortkey=None):
 
             # append fees
             s += ' {:5}'.format(c.base.millisatoshis)
-            s += ' {:6}  '.format(c.permil)
+            s += ' {:6}  '.format(c.ppm)
 
             # append 24hr availability
             s += '{:4.0%}  '.format(c.avail)
