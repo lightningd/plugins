@@ -91,7 +91,7 @@ def to_fiatstr(msat: Millisatoshi):
 # appends an output table header that explains fields and capacity
 def append_header(table, max_msat):
     short_str = Millisatoshi(max_msat).to_approx_str()
-    table.append("%c%-13sOUT/OURS %c IN/THEIRS%12s%c SCID           FLAG   BASE PPM    AVAIL  ALIAS"
+    table.append("%c%-13sOUT/OURS %c IN/THEIRS%12s%c SCID           FLAG  BASE   PPM AVAIL  ALIAS"
                  % (draw.left, short_str, draw.mid, short_str, draw.right))
 
 
@@ -229,8 +229,8 @@ def summary(plugin, exclude='', sortkey=None):
             s += '[{}] '.format(extra)
 
             # append fees
-            s += ' {:5}'.format(c.base.millisatoshis)
-            s += ' {:6}  '.format(c.ppm)
+            s += ' {:4}'.format(c.base.millisatoshis)
+            s += ' {:5}  '.format(c.ppm)
 
             # append 24hr availability
             s += '{:4.0%}  '.format(c.avail)
