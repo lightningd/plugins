@@ -2,6 +2,7 @@
 from pyln.client import Plugin, Millisatoshi
 from packaging import version
 from collections import namedtuple
+from operator import attrgetter
 from summary_avail import trace_availability, addpeer
 import pyln.client
 import requests
@@ -180,7 +181,8 @@ def summary(plugin, exclude=''):
         reply['avail_in'] += ' ({})'.format(to_fiatstr(avail_in))
         reply['fees_collected'] += ' ({})'.format(to_fiatstr(info['fees_collected_msat']))
 
-    if chans != []:
+    if len(chans) > 0:
+        chans = sorted(chans, key=attrgetter('scid'))
         reply['channels_flags'] = 'P:private O:offline'
         reply['channels'] = ["\n"]
         biggest = max(max(int(c.ours), int(c.theirs)) for c in chans)
