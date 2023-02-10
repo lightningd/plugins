@@ -246,12 +246,25 @@ def summary(plugin, exclude='', sortkey=None):
     return reply
 
 
+def new_datastore():
+    return {'p': {}, 'r': 0, 'v': 1}  # see summary_avail.py for structure
+
+
+def check_datastore(obj):
+    if 'v' in obj and type(obj['v']) is int and obj['v'] == 1:
+        return True
+    return False
+
+
 def load_datastore(plugin):
     entries = plugin.rpc.listdatastore(key=datastore_key)['datastore']
     if len(entries) == 0:
         plugin.log(f"Creating a new datastore '{datastore_key}'", 'debug')
-        return {'p': {}, 'r': 0, 'v': 1}  # see summary_avail.py for structure
+        return new_datastore()
     persist = pickle.loads(bytearray.fromhex(entries[0]["hex"]))
+    if not check_datastore(persist):
+        plugin.log(f"Dismissing old datastore '{datastore_key}'", 'debug')
+        return new_datastore()
     plugin.log(f"Reopened datastore '{datastore_key}' with {persist['r']} "
                f"runs and {len(persist['p'])} entries", 'debug')
     return persist
