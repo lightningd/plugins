@@ -161,7 +161,7 @@ def summary(plugin, exclude='', sortkey=None):
                 c['private'],
                 p['connected'],
                 c['short_channel_id'],
-                plugin.persist['peerstate'][pid]['avail'],
+                plugin.persist['p'][pid]['a'],
                 Millisatoshi(c['fee_base_msat']),
                 c['fee_proportional_millionths'],
             ))
@@ -250,10 +250,10 @@ def load_datastore(plugin):
     entries = plugin.rpc.listdatastore(key=datastore_key)['datastore']
     if len(entries) == 0:
         plugin.log(f"Creating a new datastore '{datastore_key}'", 'debug')
-        return {'version': 1, 'peerstate': {}, 'availcount': 0}
+        return {'p': {}, 'r': 0, 'v': 1}  # see summary_avail.py for structure
     persist = pickle.loads(bytearray.fromhex(entries[0]["hex"]))
-    plugin.log(f"Reopened datastore '{datastore_key}' with {persist['availcount']} "
-               f"runs and {len(persist['peerstate'])} entries", 'debug')
+    plugin.log(f"Reopened datastore '{datastore_key}' with {persist['r']} "
+               f"runs and {len(persist['p'])} entries", 'debug')
     return persist
 
 
