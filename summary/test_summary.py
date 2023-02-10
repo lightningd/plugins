@@ -18,8 +18,9 @@ def get_stub():
     plugin.avail_interval = 60
     plugin.avail_window = 3600
     plugin.persist = {}
-    plugin.persist['peerstate'] = {}
-    plugin.persist['availcount'] = 0
+    plugin.persist['p'] = {}
+    plugin.persist['r'] = 0
+    plugin.persist['v'] = 1
     return plugin
 
 
@@ -63,12 +64,12 @@ def test_summary_avail_101():
         trace_availability(plugin, rpcpeers)
 
     # then
-    assert(plugin.persist['peerstate']['1']['avail'] == 1.0)
-    assert(plugin.persist['peerstate']['2']['avail'] == 0.0)
-    assert(plugin.persist['peerstate']['3']['avail'] == 1.0)
-    assert(plugin.persist['peerstate']['1']['connected'] is True)
-    assert(plugin.persist['peerstate']['2']['connected'] is False)
-    assert(plugin.persist['peerstate']['3']['connected'] is True)
+    assert(plugin.persist['p']['1']['a'] == 1.0)
+    assert(plugin.persist['p']['2']['a'] == 0.0)
+    assert(plugin.persist['p']['3']['a'] == 1.0)
+    assert(plugin.persist['p']['1']['c'] is True)
+    assert(plugin.persist['p']['2']['c'] is False)
+    assert(plugin.persist['p']['3']['c'] is True)
 
 
 # tests for 50% downtime
@@ -93,7 +94,7 @@ def test_summary_avail_50():
         trace_availability(plugin, rpcpeers_off)
 
     # then
-    assert(round(plugin.persist['peerstate']['1']['avail'], 3) == 0.5)
+    assert(round(plugin.persist['p']['1']['a'], 3) == 0.5)
 
 
 # tests for 2/3 downtime
@@ -118,7 +119,7 @@ def test_summary_avail_33():
         trace_availability(plugin, rpcpeers_off)
 
     # then
-    assert(round(plugin.persist['peerstate']['1']['avail'], 3) == 0.333)
+    assert(round(plugin.persist['p']['1']['a'], 3) == 0.333)
 
 
 # tests for 1/3 downtime
@@ -143,7 +144,7 @@ def test_summary_avail_66():
         trace_availability(plugin, rpcpeers_off)
 
     # then
-    assert(round(plugin.persist['peerstate']['1']['avail'], 3) == 0.667)
+    assert(round(plugin.persist['p']['1']['a'], 3) == 0.667)
 
 
 # checks the leading window is smaller if interval count is low
@@ -168,7 +169,7 @@ def test_summary_avail_leadwin():
     trace_availability(plugin, rpcpeers_off)
 
     # then
-    assert(round(plugin.persist['peerstate']['1']['avail'], 3) == 0.667)
+    assert(round(plugin.persist['p']['1']['a'], 3) == 0.667)
 
 
 # checks whether the peerstate is persistent
