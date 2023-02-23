@@ -15,21 +15,10 @@ import sys
 plugin = Plugin(autopatch=True)
 datastore_key = ['summary', 'avail']
 
-have_utf8 = False
-
-# __version__ was introduced in 0.0.7.1, with utf8 passthrough support.
-try:
-    if version.parse(pyln.client.__version__) >= version.parse("0.0.7.1"):
-        have_utf8 = True
-except Exception:
-    pass
-
 Channel = namedtuple('Channel', ['total', 'ours', 'theirs', 'pid', 'private', 'connected', 'scid', 'avail', 'base', 'ppm'])
 Charset = namedtuple('Charset', ['double_left', 'left', 'bar', 'mid', 'right', 'double_right', 'empty'])
-if have_utf8:
-    draw = Charset('╟', '├', '─', '┼', '┤', '╢', '║')
-else:
-    draw = Charset('#', '[', '-', '/', ']', '#', '|')
+draw_boxch = Charset('╟', '├', '─', '┼', '┤', '╢', '║')
+draw_ascii = Charset('#', '[', '-', '+', ']', '#', '|')
 
 summary_description = "Gets summary information about this node.\n"\
                       "Pass a list of scids to the {exclude} parameter to exclude some channels from the outputs.\n"\
@@ -89,13 +78,21 @@ def to_fiatstr(msat: Millisatoshi):
 # appends an output table header that explains fields and capacity
 def append_header(table, max_msat):
     short_str = Millisatoshi(max_msat).to_approx_str()
+    draw = plugin.draw
     table.append("%c%-13sOUT/OURS %c IN/THEIRS%12s%c SCID           FLAG  BASE   PPM AVAIL  ALIAS"
                  % (draw.left, short_str, draw.mid, short_str, draw.right))
 
 
 @plugin.method("summary", long_desc=summary_description)
-def summary(plugin, exclude='', sortkey=None):
+def summary(plugin, exclude='', sortkey=None, ascii=None):
     """Gets summary information about this node."""
+
+    # Sets ascii mode for this and future requests (if requested)
+    if ascii is not None:
+        if ascii:
+            plugin.draw = draw_ascii
+        else:
+            plugin.draw = draw_boxch
 
     reply = {}
     info = plugin.rpc.getinfo()
@@ -193,6 +190,7 @@ def summary(plugin, exclude='', sortkey=None):
             their_len = int(round(int(c.theirs) / biggest * 23))
 
             # We put midpoint in the middle.
+            draw = plugin.draw
             mid = draw.mid
             if our_len == 0:
                 left = "{:>23}".format('')
@@ -288,6 +286,13 @@ def init(options, configuration, plugin):
     plugin.avail_window = 60 * 60 * int(options['summary-availability-window'])
     plugin.persist = load_datastore(plugin)
 
+    plugin.draw = draw_ascii
+    # __version__ was introduced in 0.0.7.1, with utf8 passthrough support.
+    if hasattr(pyln.client, "__version__") and version.parse(pyln.client.__version__) >= version.parse("0.0.7.1"):
+        plugin.draw = draw_boxch
+    if options.get('summary-ascii'):
+        plugin.draw = draw_ascii
+
     info = plugin.rpc.getinfo()
     config = plugin.rpc.listconfigs()
     if 'always-use-proxy' in config and config['always-use-proxy']:
@@ -355,5 +360,11 @@ plugin.add_option(
     'summary-sortkey',
     'scid',
     'Sort the channels list by a namedtuple key, defaults to "scid".'
+)
+plugin.add_option(
+    'summary-ascii',
+    False,
+    'If ascii mode should be enabled by default',
+    'flag'
 )
 plugin.run()

@@ -221,6 +221,28 @@ def test_summary_start(node_factory):
         assert(s[k] == v)
 
 
+def test_summary_ascii(node_factory):
+    # given
+    l1, l2 = node_factory.line_graph(2, opts=pluginopt)
+    l3, l5 = node_factory.line_graph(2, opts={**pluginopt, 'summary-ascii': None})
+
+    # when
+    s1 = l1.rpc.summary()
+    s2 = l1.rpc.summary(ascii=True)
+    s3 = l1.rpc.summary()  # remembers last calls ascii setting
+    s4 = l1.rpc.summary(ascii=False)
+    s5 = l1.rpc.summary()
+    s6 = l3.rpc.summary()
+
+    # then
+    assert "├─────" in s1['channels'][-1]
+    assert "[-----" in s2['channels'][-1]
+    assert "[-----" in s3['channels'][-1]
+    assert "├─────" in s4['channels'][-1]
+    assert "├─────" in s5['channels'][-1]
+    assert "[-----" in s6['channels'][-1]
+
+
 def test_summary_opts(directory):
     opts = ['--summary-currency', '--summary-currency-prefix']
 
