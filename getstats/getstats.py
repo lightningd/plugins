@@ -473,23 +473,11 @@ def on_openchannel_peer_sigs(plugin, openchannel_peer_sigs, **kwargs):
     ts_event(f"openchannel_peer_sigs_cid_{cid}")
 
 
-@plugin.subscribe("shutdown")
-def on_shutdown(plugin, **kwargs):
-    plugin.dblock.acquire()
-    ts_event(f"shutdown")
-    # TODO: write current samples to db
-    plugin.dblock.release()
-    os._exit(0)  # Note: sys.exit() dows not work as intended here
-
-
-# We should not go for `db_write` as it will cause troubles when we also have
-# other hooks and do a lot of stuff. See ./doc/PLUGINS.md#db_write
-# Bad stuff happens, even if we just start a thread and return immideately.
+# We can't go for `db_write` as it will cause troubles when we also have all
+# the other hooks and do a lot of stuff. See ./doc/PLUGINS.md#db_write
 # @plugin.hook('db_write')
 # def on_db_write(writes, data_version, plugin, **kwargs):
-#     def db_write_job():
-#         ts_event('db_write')
-#     Thread(target=db_write_job, args=(None, )).start()
+#     ts_event('db_write')
 #     return RPC_CONTINUE
 
 
