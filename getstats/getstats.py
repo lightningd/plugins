@@ -60,6 +60,7 @@ migrations = [
     "CREATE INDEX idx_data_id ON data (tsi)",
     "CREATE INDEX idx_data_ts ON data (ts)",
     "CREATE INDEX idx_data_idts ON data (ts, tsi)",
+    "CREATE TABLE tsmask (id INTEGER PRIMARY KEY, pattern text UNIQUE)",
 ]
 
 
@@ -664,6 +665,21 @@ def liststats(plugin: Plugin):
             "type": get_tstypename(row[1])
         })
     return result
+
+
+@plugin.method('delstats')
+def delstats(plugin: Plugin, name: str, permanent: bool = True):
+    """ Permanently disables or purges timeseries.
+
+        `name` is a string that can contain wildcards to match multiple series.
+        `permanent` defines wether the timeseries should not be tracked anymore.
+    """
+    wait_initialized()
+    plugin.dblock.acquire()
+    tsi = get_tsi(name)
+    plugin.db.execute("DELETE FROM data WHERE tsi LIKE ?", (tsi))
+    plugin.db.commit()
+    plugin.dblock.release()
 
 
 @plugin.init()
