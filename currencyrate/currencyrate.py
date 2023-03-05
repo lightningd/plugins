@@ -13,12 +13,6 @@ plugin = Plugin()
 Source = namedtuple('Source', ['name', 'urlformat', 'replymembers'])
 
 sources = [
-    # e.g. {"GBP": {"volume_btc": "24.36647424", "rates": {"last": "13667.63"}, "avg_1h": "13786.86", "avg_6h": "13723.65", "avg_12h": "13680.23", "avg_24h": "13739.56"}, "USD": {"volume_btc": "27.97517017", "rates": {"last": "18204.21"}, "avg_1h": "19349.46", "avg_6h": "18621.72", "avg_12h": "18642.28", "avg_24h": "18698.94"}
-    # ...
-    # "GTQ": {"volume_btc": "0.03756101", "rates": {"last": "148505.46"}, "avg_1h": "148505.46", "avg_6h": "162463.69", "avg_12h": "162003.10", "avg_24h": "162003.10"}, "DKK": {"volume_btc": "0.00339923", "rates": {"last": "139737.53"}, "avg_12h": "139737.53", "avg_24h": "139737.53"}, "HTG": {"volume_btc": "0.00024758", "rates": {"last": "2019549.24"}, "avg_6h": "2019549.24", "avg_12h": "2019549.24", "avg_24h": "2019549.24"}, "NAD": {"volume_btc": "0.00722222", "rates": {"last": "360000.11"}, "avg_12h": "360000.11", "avg_24h": "360000.11"}}
-    Source('localbitcoins',
-           'https://localbitcoins.com/bitcoinaverage/ticker-all-currencies/',
-           ['{currency}', "avg_6h"]),
     # e.g. {"high": "18502.56", "last": "17970.41", "timestamp": "1607650787", "bid": "17961.87", "vwap": "18223.42", "volume": "7055.63066541", "low": "17815.92", "ask": "17970.41", "open": "18250.30"}
     Source('bitstamp',
            'https://www.bitstamp.net/api/v2/ticker/btc{currency_lc}/',
