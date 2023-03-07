@@ -75,7 +75,7 @@ jobs:
         poetry update
         poetry export --without-hashes -f requirements.txt --output requirements.txt
         pip install --user -U -r requirements.txt
-        pip install --user contrib/pyln-client contrib/pyln-testing
+        pip install --user contrib/pyln-client contrib/pyln-testing flaky
 
         ./configure --disable-valgrind
         make -j 16
