@@ -1,1 +1,1 @@
-pyln-client>=0.12.1
+pyln-client>=23.02
