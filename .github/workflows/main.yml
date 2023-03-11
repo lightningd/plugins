@@ -24,10 +24,10 @@ jobs:
         deprecated: [0]
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
 
     - name: Checkout c-lightning@master
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
       with:
         repository: 'ElementsProject/lightning'
         path: 'lightning'
@@ -82,7 +82,7 @@ jobs:
         sudo make install
 
     - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@v3
       with:
         python-version: ${{ matrix.python-version }}
 
