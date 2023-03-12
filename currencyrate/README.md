@@ -22,10 +22,10 @@ options multiple times to add or disable multiple sources.
 
 ## Commands
 
-`currencyrate` returns the number of msats per unit from every backend, eg:
+`currencyrates` returns the number of msats per unit from every backend, eg:
 
 ```
-$ lightning-cli currencyrate USD
+$ lightning-cli currencyrates USD
 {
    "localbitcoins": "5347227msat",
    "bitstamp": "5577515msat",
