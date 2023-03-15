@@ -31,10 +31,8 @@ def test_feeadjuster_starts(node_factory):
 
     # We adjust fees in init
     l1, l2, l3 = node_factory.line_graph(3, wait_for_announce=True)
-    scid_A = l2.rpc.listpeers(
-        l1.info["id"])["peers"][0]["channels"][0]["short_channel_id"]
-    scid_B = l2.rpc.listpeers(
-        l3.info["id"])["peers"][0]["channels"][0]["short_channel_id"]
+    scid_A = l2.rpc.listpeerchannels(l1.info["id"])["channels"][0]["short_channel_id"]
+    scid_B = l2.rpc.listpeerchannels(l3.info["id"])["channels"][0]["short_channel_id"]
     l2.rpc.plugin_start(plugin_path)
     l2.daemon.wait_for_logs([f"Adjusted fees of {scid_A}.*",
                              f"Adjusted fees of {scid_B}.*"])
@@ -94,8 +92,8 @@ def test_feeadjuster_adjusts(node_factory):
     l1, l2, l3 = node_factory.line_graph(3, opts=[{}, l2_opts, {}],
                                          wait_for_announce=True)
 
-    chan_A = l2.rpc.listpeers(l1.info["id"])["peers"][0]["channels"][0]
-    chan_B = l2.rpc.listpeers(l3.info["id"])["peers"][0]["channels"][0]
+    chan_A = l2.rpc.listpeerchannels(l1.info["id"])["channels"][0]
+    chan_B = l2.rpc.listpeerchannels(l3.info["id"])["channels"][0]
     scid_A = chan_A["short_channel_id"]
     scid_B = chan_B["short_channel_id"]
     nodes = [l1, l2, l3]
@@ -165,8 +163,8 @@ def test_feeadjuster_imbalance(node_factory):
     l1, l2, l3 = node_factory.line_graph(3, opts=[{}, l2_opts, {}],
                                          wait_for_announce=True)
 
-    chan_A = l2.rpc.listpeers(l1.info["id"])["peers"][0]["channels"][0]
-    chan_B = l2.rpc.listpeers(l3.info["id"])["peers"][0]["channels"][0]
+    chan_A = l2.rpc.listpeerchannels(l1.info["id"])["channels"][0]
+    chan_B = l2.rpc.listpeerchannels(l3.info["id"])["channels"][0]
     scid_A = chan_A["short_channel_id"]
     scid_B = chan_B["short_channel_id"]
     scids = [scid_A, scid_B]
@@ -246,8 +244,8 @@ def test_feeadjuster_big_enough_liquidity(node_factory):
     l1, l2, l3 = node_factory.line_graph(3, fundamount=10**6, opts=[{}, l2_opts, {}],
                                          wait_for_announce=True)
 
-    chan_A = l2.rpc.listpeers(l1.info["id"])["peers"][0]["channels"][0]
-    chan_B = l2.rpc.listpeers(l3.info["id"])["peers"][0]["channels"][0]
+    chan_A = l2.rpc.listpeerchannels(l1.info["id"])["channels"][0]
+    chan_B = l2.rpc.listpeerchannels(l3.info["id"])["channels"][0]
     scid_A = chan_A["short_channel_id"]
     scid_B = chan_B["short_channel_id"]
     scids = [scid_A, scid_B]

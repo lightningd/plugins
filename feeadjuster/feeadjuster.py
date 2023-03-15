@@ -13,7 +13,7 @@ plugin = Plugin()
 plugin.adj_balances = {}
 # Cache to avoid loads of RPC calls
 plugin.our_node_id = None
-plugin.peers = None
+plugin.peerchannels = None
 plugin.channels = None
 # Users can configure this
 plugin.update_threshold = 0.05
@@ -65,24 +65,38 @@ def get_ratio_hard(our_percentage):
     return 100**(0.5 - our_percentage) * (1 - our_percentage) * 2
 
 
+def get_peerchannels(plugin: Plugin):
+    """ Helper to reconstruct `listpeerchannels` for older CLN versions """
+    # first the good case
+    if plugin.rpcversion[0] > 23 or plugin.rpcversion[0] == 23 and plugin.rpcversion[1] >= 2:
+        return plugin.rpc.listpeerchannels()["channels"]
+    # now the workaround
+    channels = []
+    peers = plugin.rpc.listpeers()['peers']
+    for peer in peers:
+        newchans = peer['channels']
+        for ch in newchans:
+            ch['peer_id'] = peer['id']  # all we need is to set the 'peer_id'
+        channels.extend(newchans)
+    return channels
+
+
 def get_peer_id_for_scid(plugin: Plugin, scid: str):
-    for peer in plugin.peers:
-        for ch in peer['channels']:
-            if ch.get('short_channel_id') == scid:
-                return peer['id']
+    for ch in plugin.peerchannels:
+        if ch.get('short_channel_id') == scid:
+            return ch['peer_id']
     return None
 
 
-def get_local_channel_for_scid(plugin: Plugin, scid: str):
-    for peer in plugin.peers:
-        for ch in peer['channels']:
-            if ch.get('short_channel_id') == scid:
-                return ch
+def get_peerchannel(plugin: Plugin, scid: str):
+    for ch in plugin.peerchannels:
+        if ch.get("short_channel_id") == scid:
+            return ch
     return None
 
 
 def get_chan_fees(plugin: Plugin, scid: str):
-    channel = get_local_channel_for_scid(plugin, scid)
+    channel = get_peerchannel(plugin, scid)
     assert channel is not None
     return {"base": channel["fee_base_msat"], "ppm": channel["fee_proportional_millionths"]}
 
@@ -182,17 +196,10 @@ def maybe_adjust_fees(plugin: Plugin, scids: list):
     return channels_adjusted
 
 
-def get_chan(plugin: Plugin, scid: str):
-    for peer in plugin.peers:
-        for chan in peer["channels"]:
-            if chan.get("short_channel_id") == scid:
-                return chan
-
-
 def maybe_add_new_balances(plugin: Plugin, scids: list):
     for scid in scids:
         if scid not in plugin.adj_balances:
-            chan = get_chan(plugin, scid)
+            chan = get_peerchannel(plugin, scid)
             assert chan is not None
             plugin.adj_balances[scid] = {
                 "our": int(chan["to_us_msat"]),
@@ -205,7 +212,7 @@ def forward_event(plugin: Plugin, forward_event: dict, **kwargs):
     if not plugin.forward_event_subscription:
         return
     plugin.mutex.acquire(blocking=True)
-    plugin.peers = plugin.rpc.listpeers()["peers"]
+    plugin.peerchannels = get_peerchannels(plugin)
     if plugin.fee_strategy == get_fees_median and not plugin.listchannels_by_dst:
         plugin.channels = plugin.rpc.listchannels()['channels']
     if forward_event["status"] == "settled":
@@ -241,7 +248,7 @@ def feeadjust(plugin: Plugin, scid: str = None):
     lightningd data directory with a simple line-by-line list of pubkeys.
     """
     plugin.mutex.acquire(blocking=True)
-    plugin.peers = plugin.rpc.listpeers()["peers"]
+    plugin.peerchannels = get_peerchannels(plugin)
     if plugin.fee_strategy == get_fees_median and not plugin.listchannels_by_dst:
         plugin.channels = plugin.rpc.listchannels()['channels']
     channels_adjusted = 0
@@ -252,18 +259,18 @@ def feeadjust(plugin: Plugin, scid: str = None):
     except FileNotFoundError:
         exclude_list = []
         print("There is no feeadjuster-exclude.list given, applying the options to the channels with all peers.")
-    for peer in plugin.peers:
-        if peer["id"] not in exclude_list:
-            for chan in peer["channels"]:
-                if chan["state"] == "CHANNELD_NORMAL":
-                    _scid = chan.get("short_channel_id")
-                    if scid is not None and scid != _scid:
-                        continue
-                    plugin.adj_balances[_scid] = {
-                        "our": int(chan["to_us_msat"]),
-                        "total": int(chan["total_msat"])
-                    }
-                    channels_adjusted += maybe_adjust_fees(plugin, [_scid])
+    for chan in plugin.peerchannels:
+        if chan["peer_id"] in exclude_list:
+            continue
+        if chan["state"] == "CHANNELD_NORMAL":
+            _scid = chan.get("short_channel_id")
+            if scid is not None and scid != _scid:
+                continue
+            plugin.adj_balances[_scid] = {
+                "our": int(chan["to_us_msat"]),
+                "total": int(chan["total_msat"])
+            }
+            channels_adjusted += maybe_adjust_fees(plugin, [_scid])
     msg = f"{channels_adjusted} channel(s) adjusted"
     plugin.log(msg)
     plugin.mutex.release()
