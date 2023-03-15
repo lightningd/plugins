@@ -123,6 +123,12 @@ def get_fees_median(plugin: Plugin, scid: str):
     # fees > ~5000 (base and ppm) are currently about top 2% of network fee extremists
     fees_ppm = [ch['fee_per_millionth'] for ch in channels_to_peer if 0 < ch['fee_per_millionth'] < 5000]
     fees_base = [ch['base_fee_millisatoshi'] for ch in channels_to_peer if 0 < ch['base_fee_millisatoshi'] < 5000]
+
+    # if lists are emtpy use default values, otherwise statistics.median will fail.
+    if len(fees_ppm) == 0:
+        fees_ppm = [int(plugin.adj_ppmfee / plugin.median_multiplier)]
+    if len(fees_base) == 0:
+        fees_base = [int(plugin.adj_basefee / plugin.median_multiplier)]
     return {"base": statistics.median(fees_base) * plugin.median_multiplier,
             "ppm": statistics.median(fees_ppm) * plugin.median_multiplier}
 
