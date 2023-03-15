@@ -120,8 +120,11 @@ def get_fees_median(plugin: Plugin, scid: str):
                         and ch['source'] != plugin.our_node_id]
     if len(channels_to_peer) == 0:
         return None
-    fees_ppm = [ch['fee_per_millionth'] for ch in channels_to_peer]
-    return {"base": plugin.adj_basefee, "ppm": statistics.median(fees_ppm) * plugin.median_multiplier}
+    # fees > ~5000 (base and ppm) are currently about top 2% of network fee extremists
+    fees_ppm = [ch['fee_per_millionth'] for ch in channels_to_peer if 0 < ch['fee_per_millionth'] < 5000]
+    fees_base = [ch['base_fee_millisatoshi'] for ch in channels_to_peer if 0 < ch['base_fee_millisatoshi'] < 5000]
+    return {"base": statistics.median(fees_base) * plugin.median_multiplier,
+            "ppm": statistics.median(fees_ppm) * plugin.median_multiplier}
 
 
 def setchannelfee(plugin: Plugin, scid: str, base: int, ppm: int, min_htlc: int = None, max_htlc: int = None):
@@ -162,19 +165,19 @@ def maybe_adjust_fees(plugin: Plugin, scids: list):
         our = plugin.adj_balances[scid]["our"]
         total = plugin.adj_balances[scid]["total"]
         percentage = our / total
-        base = plugin.adj_basefee
-        ppm = plugin.adj_ppmfee
+        base = int(plugin.adj_basefee)
+        ppm = int(plugin.adj_ppmfee)
 
         # select ideal values per channel
         fees = plugin.fee_strategy(plugin, scid)
         if fees is not None:
-            base = fees['base']
-            ppm = fees['ppm']
+            base = int(fees['base'])
+            ppm = int(fees['ppm'])
 
         # reset to normal fees if imbalance is not high enough
         if (percentage > plugin.imbalance and percentage < 1 - plugin.imbalance):
             if setchannelfee(plugin, scid, base, ppm):
-                plugin.log(f"Set default fees as imbalance is too low: {scid}")
+                plugin.log(f"Set default fees as imbalance is too low for {scid}:   ppm {ppm}   base {base}msat")
                 plugin.adj_balances[scid]["last_liquidity"] = our
                 channels_adjusted += 1
             continue
@@ -189,8 +192,8 @@ def maybe_adjust_fees(plugin: Plugin, scids: list):
             max_htlc = int(total * math.ceil(plugin.max_htlc_steps * percentage) / plugin.max_htlc_steps)
         else:
             max_htlc = None
-        if setchannelfee(plugin, scid, int(base), int(ppm * ratio), None, max_htlc):
-            plugin.log(f"Adjusted fees of {scid} with a ratio of {ratio}, set max_htlc to {max_htlc}")
+        if setchannelfee(plugin, scid, base, int(ppm * ratio), None, max_htlc):
+            plugin.log(f"Adjusted fees of {scid} with a ratio of {ratio}:   ppm {int(ppm * ratio)}   base {base}msat   max_htlc {max_htlc}")
             plugin.adj_balances[scid]["last_liquidity"] = our
             channels_adjusted += 1
     return channels_adjusted
