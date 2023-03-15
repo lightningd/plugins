@@ -189,8 +189,8 @@ def test_feeadjuster_imbalance(node_factory):
     amount = int(chan_total * 0.5)
     pay(l1, l3, amount)
     l2.daemon.wait_for_logs([
-        f'Set default fees as imbalance is too low: {scid_A}',
-        f'Set default fees as imbalance is too low: {scid_B}'
+        f'Set default fees as imbalance is too low for {scid_A}',
+        f'Set default fees as imbalance is too low for {scid_B}'
     ])
     wait_for_fees(l2, scids, default_fees[0])
 
@@ -211,8 +211,8 @@ def test_feeadjuster_imbalance(node_factory):
     # Bringing it back must cause default fees
     pay(l3, l1, amount)
     l2.daemon.wait_for_logs([
-        f'Set default fees as imbalance is too low: {scid_A}',
-        f'Set default fees as imbalance is too low: {scid_B}'
+        f'Set default fees as imbalance is too low for {scid_A}',
+        f'Set default fees as imbalance is too low for {scid_B}'
     ])
     wait_for_fees(l2, scids, default_fees[0])
 
@@ -290,3 +290,46 @@ def test_feeadjuster_big_enough_liquidity(node_factory):
         f"Adjusted fees.*{scid_B}"
     ])
     wait_for_not_fees(l2, scids, default_fees[0])
+
+
+@unittest.skipIf(not DEVELOPER, "Too slow without fast gossip")
+def test_feeadjuster_median(node_factory):
+    """
+    A rather simple network:
+
+            a                b              c
+    l1  <=======>   l2   <=======>  l3  <=======> l4
+
+    l2 will adjust its configuration-set base and proportional fees for
+    channels A and B as l1 and l3 exchange payments.
+    l4 is needed so l2 can make a median peers-of-peer calculation on l3.
+    """
+    opts = {
+        "fee-base": 1337,
+        "fee-per-satoshi": 42,
+    }
+    l2_opts = {
+        "fee-base": 1000,
+        "fee-per-satoshi": 100,
+        "plugin": plugin_path,
+        "feeadjuster-deactivate-fuzz": None,
+        "feeadjuster-imbalance": 0.5,
+        "feeadjuster-feestrategy": "median"
+    }
+    l1, l2, l3, _ = node_factory.line_graph(4, opts=[opts, l2_opts, opts, opts],
+                                            wait_for_announce=True)
+
+    scid_a = l2.rpc.listpeerchannels(l1.info["id"])["channels"][0]["short_channel_id"]
+    scid_b = l2.rpc.listpeerchannels(l3.info["id"])["channels"][0]["short_channel_id"]
+
+    # we do a manual feeadjust
+    l2.rpc.feeadjust()
+    l2.daemon.wait_for_logs([
+        f"Adjusted fees.*{scid_a}",
+        f"Adjusted fees.*{scid_b}"
+    ])
+
+    # since there is only l4 with channel c towards l3, l2 should take that value
+    chan_b = l2.rpc.listpeerchannels(l3.info['id'])['channels'][0]
+    assert chan_b['fee_base_msat'] == 1337
+    assert chan_b['fee_proportional_millionths'] < 42  # we could do the actual ratio math, but meh
