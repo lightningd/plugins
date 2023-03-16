@@ -15,6 +15,7 @@ Community curated plugins for Core-Lightning.
 | [circular][circular]                 | A smart rebalancing plugin for Core Lightning routing nodes                                 |
 | [csvexportpays][csvexportpays]       | A plugin that exports all payments to a CSV file                                            |
 | [currencyrate][currencyrate]         | A plugin to convert other currencies to BTC using web requests                              |
+| [clearnet][clearnet]                 | A plugin that can be used to enforce clearnet connections when possible                     |
 | [donations][donations]               | A simple donations page to accept donations from the web                                    |
 | [drain][drain]                       | Draining, filling and balancing channels with automatic chunks.                             |
 | [event-websocket][event-websocket]   | Exposes notifications over a Websocket                                                      |
@@ -242,3 +243,4 @@ un-archive it.
 [blip12]: https://github.com/lightning/blips/blob/42cec1d0f66eb68c840443abb609a5a9acb34f8e/blip-0012.md
 [circular]: https://github.com/giovannizotta/circular
 [python-teos]: https://github.com/talaia-labs/python-teos
+[clearnet]: https://github.com/lightningd/plugins/tree/master/clearnet
