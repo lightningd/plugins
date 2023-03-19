@@ -1,18 +1,14 @@
 queue_rules:
   - name: default
     conditions:
-      - "check-success=Test PY=3.6, DEV=1, EXP=1, DEP=0"
-      - "check-success=Test PY=3.7, DEV=1, EXP=1, DEP=0"
-      - "check-success=Test PY=3.8, DEV=1, EXP=1, DEP=0"
+      - "check-success=CI completion"
 
 pull_request_rules:
   - name: Automatic merge on approval
     conditions:
       - "#approved-reviews-by>=1"
       - "linear-history"
-      - "check-success=Test PY=3.6, DEV=1, EXP=1, DEP=0"
-      - "check-success=Test PY=3.7, DEV=1, EXP=1, DEP=0"
-      - "check-success=Test PY=3.8, DEV=1, EXP=1, DEP=0"
+      - "check-success=CI completion"
       - "base=master"
       - "label!=work-in-progress"
     actions:
