@@ -2,13 +2,13 @@ queue_rules:
   - name: default
     conditions:
       - "check-success=CI completion"
+    merge_method: rebase
 
 pull_request_rules:
   - name: Automatic merge on approval
     conditions:
       - "#approved-reviews-by>=1"
       - "linear-history"
-      - "check-success=CI completion"
       - "base=master"
       - "label!=work-in-progress"
     actions:
@@ -16,7 +16,7 @@ pull_request_rules:
             name: default
             update_method: rebase
             method: rebase
-            
+
   - name: Remove outdated reviews
     conditions:
       - base=master
