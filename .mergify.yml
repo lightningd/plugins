@@ -3,6 +3,8 @@ queue_rules:
     conditions:
       - "check-success=CI completion"
     merge_method: rebase
+    update_method: rebase
+    allow_inplace_checks: true
 
 pull_request_rules:
   - name: Automatic merge on approval
