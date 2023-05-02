@@ -16,6 +16,7 @@ Community curated plugins for Core-Lightning.
 | [csvexportpays][csvexportpays]       | A plugin that exports all payments to a CSV file                                            |
 | [currencyrate][currencyrate]         | A plugin to convert other currencies to BTC using web requests                              |
 | [clearnet][clearnet]                 | A plugin that can be used to enforce clearnet connections when possible                     |
+| [cln-ntfy][cln-ntfy]                 | Core Lightning plugin for sending `ntfy` alerts.                                            |
 | [donations][donations]               | A simple donations page to accept donations from the web                                    |
 | [drain][drain]                       | Draining, filling and balancing channels with automatic chunks.                             |
 | [event-websocket][event-websocket]   | Exposes notifications over a Websocket                                                      |
@@ -244,3 +245,4 @@ un-archive it.
 [circular]: https://github.com/giovannizotta/circular
 [python-teos]: https://github.com/talaia-labs/python-teos
 [clearnet]: https://github.com/lightningd/plugins/tree/master/clearnet
+[cln-ntfy]: https://github.com/yukibtc/cln-ntfy
