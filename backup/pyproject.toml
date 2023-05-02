@@ -10,7 +10,7 @@ pyln-client = "0.12.1"
 click = "^8.0.4"
 tqdm = "^4.62.3"
 psutil = "5.9.4"
-flask = "2.2.2"
+flask = "2.2.5"
 
 [tool.poetry.group.dev.dependencies]
 pyln-testing = "0.12.1"
