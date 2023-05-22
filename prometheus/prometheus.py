@@ -32,7 +32,11 @@ class NodeCollector(BaseLnCollector):
             value=blockheight,
         )
 
-        fees_msat = info["msatoshi_fees_collected"]
+        print(info)
+        fees_msat = int(info.get(
+            "fees_collected_msat",
+            info.get("msatoshi_fees_collected", None)
+        ))
         yield GaugeMetricFamily(
             'lightning_fees_collected_msat',
             'How much have we been paid to route payments?',
