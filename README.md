@@ -35,6 +35,7 @@ Community curated plugins for Core-Lightning.
 | [reckless][reckless]                 | An **experimental** plugin manager (search/install plugins)                                 |
 | [sauron][sauron]                     | A Bitcoin backend relying on [Esplora][esplora]'s API                                       |
 | [sitzprobe][sitzprobe]               | A Lightning Network payment rehearsal utility                                               |
+| [sling][sling]                       | Rebalance your channels with smart rules and built-in background tasks                      |
 | [sparko][sparko]                     | RPC over HTTP with fine-grained permissions, SSE and spark-wallet support                   |
 | [trustedcoin][trustedcoin]           | Replace your Bitcoin Core with data from public block explorers                             |
 | [watchtower][watchtower-client]      | Watchtower client for The Eye of Satoshi                                                    |
@@ -245,6 +246,7 @@ Python plugins developers must ensure their plugin to work with all Python versi
 [reporter]: https://github.com/LNOpenMetrics/go-lnmetrics.reporter
 [sauron]: https://github.com/lightningd/plugins/tree/master/sauron
 [sitzprobe]: https://github.com/niftynei/sitzprobe
+[sling]: https://github.com/daywalker90/sling
 [sparko]: https://github.com/fiatjaf/sparko
 [summary]: https://github.com/lightningd/plugins/tree/master/archived/summary
 [trustedcoin]: https://github.com/fiatjaf/trustedcoin
