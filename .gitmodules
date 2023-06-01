@@ -43,3 +43,6 @@
 [submodule "holdinvoice"]
 	path = holdinvoice
 	url = https://github.com/daywalker90/holdinvoice.git
+[submodule "sling"]
+	path = sling
+	url = https://github.com/daywalker90/sling
