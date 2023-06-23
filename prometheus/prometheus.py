@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-from pyln.client import Plugin
+from pyln.client import Plugin, Millisatoshi
 from prometheus_client import start_http_server, CollectorRegistry
 from prometheus_client.core import InfoMetricFamily, GaugeMetricFamily
 from sys import exit
@@ -32,12 +32,12 @@ class NodeCollector(BaseLnCollector):
             value=blockheight,
         )
 
-#       fees_msat = info["msatoshi_fees_collected"]
-#       yield GaugeMetricFamily(
-#           'lightning_fees_collected_msat',
-#           'How much have we been paid to route payments?',
-#           value=fees_msat,
-#       )
+        fees_msat = info["fees_collected_msat"]
+        yield GaugeMetricFamily(
+            'lightning_fees_collected_msat',
+            'How much have we been paid to route payments?',
+            value=fees_msat,
+        )
 
 
 class FundsCollector(BaseLnCollector):
@@ -45,10 +45,10 @@ class FundsCollector(BaseLnCollector):
         funds = self.rpc.listfunds()
         print(funds['outputs'])
         output_funds = sum(
-            [o['amount_msat'].to_satoshi() for o in funds['outputs']]
+            [Millisatoshi(o['amount_msat']).to_satoshi() for o in funds['outputs']]
         )
         channel_funds = sum(
-            [c['our_amount_msat'].to_satoshi() for c in funds['channels']]
+            [Millisatoshi(c['our_amount_msat']).to_satoshi() for c in funds['channels']]
         )
         total = output_funds + channel_funds
 
@@ -213,7 +213,7 @@ def init(options, configuration, plugin):
     registry = CollectorRegistry()
     start_http_server(addr=ip, port=port, registry=registry)
     registry.register(NodeCollector(plugin.rpc, registry))
-#   registry.register(FundsCollector(plugin.rpc, registry))
+    registry.register(FundsCollector(plugin.rpc, registry))
     registry.register(PeerCollector(plugin.rpc, registry))
     registry.register(ChannelsCollector(plugin.rpc, registry))
 
