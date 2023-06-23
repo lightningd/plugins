@@ -76,12 +76,12 @@ class PeerCollector(BaseLnCollector):
         connected = GaugeMetricFamily(
             'lightning_peer_connected',
             'Is the peer currently connected?',
-            labels=['id'],
+            labels=['peer_id'],
         )
         count = GaugeMetricFamily(
             'lightning_peer_channels',
             "The number of channels with the peer",
-            labels=['id'],
+            labels=['peer_id'],
         )
 
         for p in peers:
@@ -97,66 +97,66 @@ class ChannelsCollector(BaseLnCollector):
         balance_gauge = GaugeMetricFamily(
             'lightning_channel_balance',
             'How many funds are at our disposal?',
-            labels=['id', 'scid', 'alias'],
+            labels=['peer_id', 'scid', 'alias'],
         )
         spendable_gauge = GaugeMetricFamily(
             'lightning_channel_spendable',
             'How much can we currently send over this channel?',
-            labels=['id', 'scid', 'alias'],
+            labels=['peer_id', 'scid', 'alias'],
         )
         total_gauge = GaugeMetricFamily(
             'lightning_channel_capacity',
             'How many funds are in this channel in total?',
-            labels=['id', 'scid', 'alias'],
+            labels=['peer_id', 'scid', 'alias'],
         )
         htlc_gauge = GaugeMetricFamily(
             'lightning_channel_htlcs',
             'How many HTLCs are currently active on this channel?',
-            labels=['id', 'scid', 'alias'],
+            labels=['peer_id', 'scid', 'alias'],
         )
 
         # Incoming routing statistics
         in_payments_offered_gauge = GaugeMetricFamily(
             'lightning_channel_in_payments_offered',
             'How many incoming payments did we try to forward?',
-            labels=['id', 'scid', 'alias'],
+            labels=['peer_id', 'scid', 'alias'],
         )
         in_payments_fulfilled_gauge = GaugeMetricFamily(
             'lightning_channel_in_payments_fulfilled',
             'How many incoming payments did we succeed to forward?',
-            labels=['id', 'scid', 'alias'],
+            labels=['peer_id', 'scid', 'alias'],
         )
         in_msatoshi_offered_gauge = GaugeMetricFamily(
             'lightning_channel_in_msatoshi_offered',
             'How many incoming msats did we try to forward?',
-            labels=['id', 'scid', 'alias'],
+            labels=['peer_id', 'scid', 'alias'],
         )
         in_msatoshi_fulfilled_gauge = GaugeMetricFamily(
             'lightning_channel_in_msatoshi_fulfilled',
             'How many incoming msats did we succeed to forward?',
-            labels=['id', 'scid', 'alias'],
+            labels=['peer_id', 'scid', 'alias'],
         )
 
         # Outgoing routing statistics
         out_payments_offered_gauge = GaugeMetricFamily(
             'lightning_channel_out_payments_offered',
             'How many outgoing payments did we try to forward?',
-            labels=['id', 'scid', 'alias'],
+            labels=['peer_id', 'scid', 'alias'],
         )
         out_payments_fulfilled_gauge = GaugeMetricFamily(
             'lightning_channel_out_payments_fulfilled',
             'How many outgoing payments did we succeed to forward?',
-            labels=['id', 'scid', 'alias'],
+            labels=['peer_id', 'scid', 'alias'],
         )
         out_msatoshi_offered_gauge = GaugeMetricFamily(
             'lightning_channel_out_msatoshi_offered',
             'How many outgoing msats did we try to forward?',
-            labels=['id', 'scid', 'alias'],
+            labels=['peer_id', 'scid', 'alias'],
         )
         out_msatoshi_fulfilled_gauge = GaugeMetricFamily(
             'lightning_channel_out_msatoshi_fulfilled',
             'How many outgoing msats did we succeed to forward?',
-            labels=['id', 'scid', 'alias'],
+            labels=['peer_id', 'scid', 'alias'],
         )
 
         peers = self.rpc.listpeers()['peers']
