@@ -126,16 +126,16 @@ class ChannelsCollector(BaseLnCollector):
             'How many incoming payments did we succeed to forward?',
             labels=['id', 'scid', 'alias'],
         )
-#       in_msatoshi_offered_gauge = GaugeMetricFamily(
-#           'lightning_channel_in_msatoshi_offered',
-#           'How many incoming msats did we try to forward?',
-#           labels=['id', 'scid', 'alias'],
-#       )
-#       in_msatoshi_fulfilled_gauge = GaugeMetricFamily(
-#           'lightning_channel_in_msatoshi_fulfilled',
-#           'How many incoming msats did we succeed to forward?',
-#           labels=['id', 'scid', 'alias'],
-#       )
+        in_msatoshi_offered_gauge = GaugeMetricFamily(
+            'lightning_channel_in_msatoshi_offered',
+            'How many incoming msats did we try to forward?',
+            labels=['id', 'scid', 'alias'],
+        )
+        in_msatoshi_fulfilled_gauge = GaugeMetricFamily(
+            'lightning_channel_in_msatoshi_fulfilled',
+            'How many incoming msats did we succeed to forward?',
+            labels=['id', 'scid', 'alias'],
+        )
 
         # Outgoing routing statistics
         out_payments_offered_gauge = GaugeMetricFamily(
@@ -148,16 +148,16 @@ class ChannelsCollector(BaseLnCollector):
             'How many outgoing payments did we succeed to forward?',
             labels=['id', 'scid', 'alias'],
         )
-#       out_msatoshi_offered_gauge = GaugeMetricFamily(
-#           'lightning_channel_out_msatoshi_offered',
-#           'How many outgoing msats did we try to forward?',
-#           labels=['id', 'scid', 'alias'],
-#       )
-#       out_msatoshi_fulfilled_gauge = GaugeMetricFamily(
-#           'lightning_channel_out_msatoshi_fulfilled',
-#           'How many outgoing msats did we succeed to forward?',
-#           labels=['id', 'scid', 'alias'],
-#       )
+        out_msatoshi_offered_gauge = GaugeMetricFamily(
+            'lightning_channel_out_msatoshi_offered',
+            'How many outgoing msats did we try to forward?',
+            labels=['id', 'scid', 'alias'],
+        )
+        out_msatoshi_fulfilled_gauge = GaugeMetricFamily(
+            'lightning_channel_out_msatoshi_fulfilled',
+            'How many outgoing msats did we succeed to forward?',
+            labels=['id', 'scid', 'alias'],
+        )
 
         peers = self.rpc.listpeers()['peers']
         for p in peers:
@@ -170,35 +170,35 @@ class ChannelsCollector(BaseLnCollector):
                     alias = 'unknown'
 
                 labels = [p['id'], c.get('short_channel_id', c.get('channel_id')), alias]
-#               balance_gauge.add_metric(labels, c['to_us_msat'].to_satoshi())
-#               spendable_gauge.add_metric(labels,
-#                                          c['spendable_msat'].to_satoshi())
-#               total_gauge.add_metric(labels, c['total_msat'].to_satoshi())
+                balance_gauge.add_metric(labels, Millisatoshi(c['to_us_msat']).to_satoshi())
+                spendable_gauge.add_metric(labels,
+                                           Millisatoshi(c['spendable_msat']).to_satoshi())
+                total_gauge.add_metric(labels, Millisatoshi(c['total_msat']).to_satoshi())
                 htlc_gauge.add_metric(labels, len(c['htlcs']))
 
                 in_payments_offered_gauge.add_metric(labels, c['in_payments_offered'])
                 in_payments_fulfilled_gauge.add_metric(labels, c['in_payments_fulfilled'])
-#               in_msatoshi_offered_gauge.add_metric(labels, c['in_msatoshi_offered'])
-#               in_msatoshi_fulfilled_gauge.add_metric(labels, c['in_msatoshi_fulfilled'])
+                in_msatoshi_offered_gauge.add_metric(labels, c['in_offered_msat'])
+                in_msatoshi_fulfilled_gauge.add_metric(labels, c['in_fulfilled_msat'])
 
                 out_payments_offered_gauge.add_metric(labels, c['out_payments_offered'])
                 out_payments_fulfilled_gauge.add_metric(labels, c['out_payments_fulfilled'])
-#               out_msatoshi_offered_gauge.add_metric(labels, c['out_msatoshi_offered'])
-#               out_msatoshi_fulfilled_gauge.add_metric(labels, c['out_msatoshi_fulfilled'])
+                out_msatoshi_offered_gauge.add_metric(labels, c['out_offered_msat'])
+                out_msatoshi_fulfilled_gauge.add_metric(labels, c['out_fulfilled_msat'])
 
         return [
             htlc_gauge,
-#           total_gauge,
-#           spendable_gauge,
-#           balance_gauge,
+            total_gauge,
+            spendable_gauge,
+            balance_gauge,
             in_payments_offered_gauge,
             in_payments_fulfilled_gauge,
-#           in_msatoshi_offered_gauge,
-#           in_msatoshi_fulfilled_gauge,
+            in_msatoshi_offered_gauge,
+            in_msatoshi_fulfilled_gauge,
             out_payments_offered_gauge,
             out_payments_fulfilled_gauge,
-#           out_msatoshi_offered_gauge,
-#           out_msatoshi_fulfilled_gauge,
+            out_msatoshi_offered_gauge,
+            out_msatoshi_fulfilled_gauge,
         ]
 
 
