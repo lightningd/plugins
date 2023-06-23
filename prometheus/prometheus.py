@@ -54,7 +54,7 @@ class FundsCollector(BaseLnCollector):
 
         yield GaugeMetricFamily(
             'lightning_funds_sum',
-            "The sum total of satoshis we currently own on this node.",
+            "The sum of satoshis we currently own on this node.",
             value=funds_sum,
         )
         yield GaugeMetricFamily(
