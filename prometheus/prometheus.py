@@ -50,12 +50,12 @@ class FundsCollector(BaseLnCollector):
         channel_funds = sum(
             [c['our_amount_msat'].to_satoshi() for c in funds['channels']]
         )
-        total = output_funds + channel_funds
+        funds_sum = output_funds + channel_funds
 
         yield GaugeMetricFamily(
-            'lightning_funds_total',
-            "Total satoshis we own on this node.",
-            value=total,
+            'lightning_funds_sum',
+            "The sum total of satoshis we currently own on this node.",
+            value=funds_sum,
         )
         yield GaugeMetricFamily(
             'lightning_funds_output',
