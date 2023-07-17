@@ -177,8 +177,9 @@ def maybe_adjust_fees(plugin: Plugin, scids: list):
         # select ideal values per channel
         fees = plugin.fee_strategy(plugin, scid)
         if fees is not None:
-            base = int(fees['base'])
             ppm = int(fees['ppm'])
+            if plugin.basefee:
+                base = int(fees['base'])
 
         # reset to normal fees if imbalance is not high enough
         if (percentage > plugin.imbalance and percentage < 1 - plugin.imbalance):
@@ -314,6 +315,7 @@ def init(options: dict, configuration: dict, plugin: Plugin, **kwargs):
     plugin.big_enough_liquidity = Millisatoshi(options.get("feeadjuster-enough-liquidity"))
     plugin.imbalance = float(options.get("feeadjuster-imbalance"))
     plugin.max_htlc_steps = int(options.get("feeadjuster-max-htlc-steps"))
+    plugin.basefee = bool(options.get("feeadjuster-basefee"))
     adjustment_switch = {
         "soft": get_ratio_soft,
         "hard": get_ratio_hard,
@@ -359,7 +361,8 @@ def init(options: dict, configuration: dict, plugin: Plugin, **kwargs):
                f"adjustment_method: {plugin.get_ratio.__name__}, "
                f"fee_strategy: {plugin.fee_strategy.__name__}, "
                f"listchannels_by_dst: {plugin.listchannels_by_dst},"
-               f"max_htlc_steps: {plugin.max_htlc_steps}")
+               f"max_htlc_steps: {plugin.max_htlc_steps},"
+               f"basefee: {plugin.basefee}")
     plugin.mutex.release()
     feeadjust(plugin)
 
@@ -439,5 +442,11 @@ plugin.add_option(
     "liquidity, which can reduce local routing channel failures."
     "A value of 0 disables the stepping.",
     "string"
+)
+plugin.add_option(
+    "feeadjuster-basefee",
+    False,
+    "Also adjust base fee dynamically. Currently only affects median strategy.",
+    "bool"
 )
 plugin.run()

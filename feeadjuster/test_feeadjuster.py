@@ -314,7 +314,8 @@ def test_feeadjuster_median(node_factory):
         "plugin": plugin_path,
         "feeadjuster-deactivate-fuzz": None,
         "feeadjuster-imbalance": 0.5,
-        "feeadjuster-feestrategy": "median"
+        "feeadjuster-feestrategy": "median",
+        "feeadjuster-basefee": True,
     }
     l1, l2, l3, _ = node_factory.line_graph(4, opts=[opts, l2_opts, opts, opts],
                                             wait_for_announce=True)
