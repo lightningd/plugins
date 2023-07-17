@@ -101,7 +101,8 @@ def get_config(plugin: Plugin, config: str):
 
     # now < 23.08
     result = plugin.rpc.listconfigs(config)
-    assert len(result)>0
+    if len(result) == 0:
+        return None
     return result[config]
 
 
@@ -364,9 +365,11 @@ def init(options: dict, configuration: dict, plugin: Plugin, **kwargs):
     plugin.fee_strategy = fee_strategy_switch.get(options.get("feeadjuster-feestrategy"), get_fees_global)
     plugin.median_multiplier = float(options.get("feeadjuster-median-multiplier"))
     plugin.adj_basefee = get_config(plugin, "fee-base")
-    assert plugin.adj_basefee is not None
+    if plugin.adj_basefee is None:
+        plugin.adj_basefee = 1000
     plugin.adj_ppmfee = get_config(plugin, "fee-per-satoshi")
-    assert plugin.adj_ppmfee is not None
+    if plugin.adj_ppmfee is None:
+        plugin.adj_ppmfee = 10
 
     # normalize the imbalance percentage value to 0%-50%
     if plugin.imbalance < 0 or plugin.imbalance > 1:
