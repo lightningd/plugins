@@ -126,6 +126,16 @@ class ChannelsCollector(BaseLnCollector):
             'How many HTLCs are currently active on this channel?',
             labels=['id', 'scid', 'alias'],
         )
+        fee_base_msat_gauge = GaugeMetricFamily(
+            'lightning_channel_fee_base_msat',
+            'How many msats do we charge as a base fee for routing?',
+            labels=['id', 'scid', 'alias'],
+        )
+        fee_proportional_millionths_gauge = GaugeMetricFamily(
+            'lightning_channel_fee_proportional_millionths',
+            'How many millionths of the forwarded amount do we charge for routing?',
+            labels=['id', 'scid', 'alias'],
+        )
 
         # Incoming routing statistics
         in_payments_offered_gauge = GaugeMetricFamily(
@@ -186,6 +196,8 @@ class ChannelsCollector(BaseLnCollector):
                                        c['spendable_msat'].to_satoshi())
             total_gauge.add_metric(labels, c['total_msat'].to_satoshi())
             htlc_gauge.add_metric(labels, len(c['htlcs']))
+            fee_base_msat_gauge.add_metric(labels, int(c['fee_base_msat']))
+            fee_proportional_millionths_gauge.add_metric(labels, int(c['fee_proportional_millionths']))
 
             in_payments_offered_gauge.add_metric(labels, c['in_payments_offered'])
             in_payments_fulfilled_gauge.add_metric(labels, c['in_payments_fulfilled'])
@@ -202,6 +214,8 @@ class ChannelsCollector(BaseLnCollector):
             total_gauge,
             spendable_gauge,
             balance_gauge,
+            fee_base_msat_gauge,
+            fee_proportional_millionths_gauge,
             in_payments_offered_gauge,
             in_payments_fulfilled_gauge,
             in_msatoshi_offered_gauge,
