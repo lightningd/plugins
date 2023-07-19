@@ -1,6 +1,7 @@
 import os
 from pyln.testing.fixtures import *  # noqa: F401,F403
 import urllib
+from ephemeral_port_reserve import reserve
 
 plugin_path = os.path.join(os.path.dirname(__file__), "prometheus.py")
 
@@ -25,3 +26,15 @@ def test_prometheus_scrape(node_factory):
     
     
     
+def test_prometheus_channels(node_factory):
+    port = reserve()
+    l1, l2, l3 = node_factory.line_graph(
+        3,
+        opts=[
+            {},
+            {'plugin': plugin_path, 'prometheus-listen': f'127.0.0.1:{port}'},
+            {}
+        ]
+    )
+    scrape = urllib.request.urlopen(f'http://localhost:{port}')
+    print(scrape)
