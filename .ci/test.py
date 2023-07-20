@@ -26,6 +26,7 @@ global_dependencies = [
     'pytest',
     'pytest-xdist',
     'pytest-timeout',
+    'grpcio',
 ]
 
 pip_opts = ['-qq']
