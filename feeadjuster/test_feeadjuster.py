@@ -60,6 +60,7 @@ def pay(l, ll, amount):
     route = l.rpc.getroute(ll.info["id"], amount, riskfactor=0, fuzzpercent=0)
     l.rpc.sendpay(route["route"], invoice["payment_hash"], payment_secret=invoice.get('payment_secret'))
     l.rpc.waitsendpay(invoice["payment_hash"])
+    l.wait_for_htlcs()
 
 
 def sync_gossip(nodes, scids):
@@ -334,3 +335,36 @@ def test_feeadjuster_median(node_factory):
     chan_b = l2.rpc.listpeerchannels(l3.info['id'])['channels'][0]
     assert chan_b['fee_base_msat'] == 1337
     assert chan_b['fee_proportional_millionths'] < 42  # we could do the actual ratio math, but meh
+
+
+def test_excludelist(node_factory, directory):
+    opts1 = {'may_reconnect': True}
+    opts2 = {'may_reconnect': True, "plugin": plugin_path,
+        "feeadjuster-deactivate-fee-update": None,
+        "feeadjuster-deactivate-fuzz": None,
+        "feeadjuster-imbalance": 0.5}
+    l1, l2, l3 = node_factory.line_graph(3, opts=[opts1, opts2, opts1], wait_for_announce=True)
+
+    scid_a = l2.rpc.listpeerchannels(l1.info["id"])["channels"][0]["short_channel_id"]
+    scid_b = l2.rpc.listpeerchannels(l3.info["id"])["channels"][0]["short_channel_id"]
+
+    # without exclude list a notification is printed
+    assert l2.rpc.feeadjust(scid_a) == "1 channel(s) adjusted"
+    assert l2.daemon.is_in_log("There is no feeadjuster-exclude.list given, applying the options to the channels with all peers.")
+
+    # stop l2, create a exlude list file containing [l1_id] and restart l2
+    l2.stop()
+    l2path = os.path.join(directory, 'lightning-2', 'regtest')
+    file = open(os.path.join(l2path, 'feeadjuster-exclude.list'), 'w+')
+    file.write(l1.info['id'])
+    file.close()
+    l2.start()
+    l2.daemon.is_in_log(f"Excluding the channels with the nodes: ['{l1.info['id']}']")
+    l2.connect(l1)
+    l2.connect(l3)
+
+    # Do some payments to have a proper imbalance and check
+    pay(l1, l2, 10**8)
+    assert l2.rpc.feeadjust(scid_a) == "0 channel(s) adjusted"
+    pay(l2, l3, 10**8)
+    assert l2.rpc.feeadjust(scid_b) == "1 channel(s) adjusted"
