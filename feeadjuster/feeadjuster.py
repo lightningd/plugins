@@ -22,6 +22,17 @@ plugin.mutex = Lock()
 plugin.mutex.acquire()
 
 
+def read_excludelist():
+    try:
+        with open('feeadjuster-exclude.list') as file:
+            exclude_list = [l.rstrip("\n") for l in file]
+            print("Excluding the channels with the nodes:", exclude_list)
+    except FileNotFoundError:
+        exclude_list = []
+        print("There is no feeadjuster-exclude.list given, applying the options to the channels with all peers.")
+    return exclude_list
+
+
 def get_adjusted_percentage(plugin: Plugin, scid: str):
     """
     For big channels, there may be a wide range where the liquidity is just okay.
@@ -298,13 +309,8 @@ def feeadjust(plugin: Plugin, scid: str = None):
     if plugin.fee_strategy == get_fees_median and not plugin.listchannels_by_dst:
         plugin.channels = plugin.rpc.listchannels()['channels']
     channels_adjusted = 0
-    try:
-        with open('feeadjuster-exclude.list') as file:
-            exclude_list = [l.rstrip("\n") for l in file]
-            print("Excluding the channels with the nodes:", exclude_list)
-    except FileNotFoundError:
-        exclude_list = []
-        print("There is no feeadjuster-exclude.list given, applying the options to the channels with all peers.")
+    exclude_list = read_excludelist()
+
     for chan in plugin.peerchannels:
         if chan["peer_id"] in exclude_list:
             continue
