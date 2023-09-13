@@ -1,5 +1,18 @@
 # Commando plugin
 
+Commando has been **included in Core Lightning as first class C plugin**.
+
+It has been actively developed since and has more cool new features added
+than listed below.
+
+Checkout latest updates on commando at:
+https://docs.corelightning.org/docs/commando &
+https://docs.corelightning.org/reference/lightning-commando
+
+------------------------------------------------------------------------------------------------------
+
+# Archived Commando python plugin
+
 This plugin allows other nodes to send your node commands, and allows you
 to send them to other nodes.  The nodes must be authorized, and must be
 directly connected.
