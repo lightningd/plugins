@@ -22,9 +22,6 @@
 [submodule "webhook"]
 	path = webhook
 	url = https://github.com/fiatjaf/lightningd-webhook.git
-[submodule "rust-teos"]
-	path = rust-teos
-	url = https://github.com/talaia-labs/rust-teos.git
 [submodule "btcli4j"]
 	path = btcli4j
 	url = https://github.com/clightning4j/btcli4j.git
@@ -37,9 +34,6 @@
 [submodule "circular"]
 	path = circular
 	url = https://github.com/giovannizotta/circular.git
-[submodule "python-teos"]
-	path = python-teos
-	url = https://github.com/talaia-labs/python-teos
 [submodule "holdinvoice"]
 	path = holdinvoice
 	url = https://github.com/daywalker90/holdinvoice.git
@@ -49,3 +43,6 @@
 [submodule "summars"]
 	path = summars
 	url = https://github.com/daywalker90/summars.git
+[submodule "watchtower-client"]
+	path = watchtower-client
+	url = https://github.com/talaia-labs/rust-teos
