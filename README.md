@@ -30,7 +30,7 @@ Community curated plugins for Core-Lightning.
 | [persistent-channels][pers-chans]    | Maintains a number of channels to peers                                                     |
 | [poncho][poncho]                     | Turns CLN into a [hosted channels][blip12] provider                                         |
 | [pruning][pruning]                   | This plugin manages pruning of bitcoind such that it can always sync                        |
-| [python-teos][python-teos]           | The Eye of Satoshi - Lightning Watchtower                                                   |
+| [rust-teos][rust-teos]               | The Eye of Satoshi - Lightning Watchtower (the [watchtower-plugin](https://github.com/talaia-labs/rust-teos/tree/master/watchtower-plugin) subdirectory)  |
 | [reckless][reckless]                 | An **experimental** plugin manager (search/install plugins)                                 |
 | [sauron][sauron]                     | A Bitcoin backend relying on [Esplora][esplora]'s API                                       |
 | [sitzprobe][sitzprobe]               | A Lightning Network payment rehearsal utility                                               |
@@ -61,6 +61,7 @@ If you like a plugin from that list, feel free to update and fix it, so we can u
 | [prometheus][prometheus]             | Lightning node exporter for the prometheus timeseries server                                |
 | [rebalance][rebalance]               | Keeps your channels balanced                                                                |
 | [summary][summary]                   | Print a nice summary of the node status                                                     |
+| [python-teos][python-teos]           | Old Python implementation of The Eye of Satoshi - Lightning Watchtower                      |
 
 ## Installation
 
@@ -247,7 +248,7 @@ Python plugins developers must ensure their plugin to work with all Python versi
 [summary]: https://github.com/lightningd/plugins/tree/master/archived/summary
 [trustedcoin]: https://github.com/fiatjaf/trustedcoin
 [ts-api]: https://github.com/runcitadel/c-lightning.ts
-[watchtower-client]: https://github.com/talaia-labs/rust-teos/tree/master/watchtower-plugin
+[rust-teos]: https://github.com/talaia-labs/rust-teos/tree/master/watchtower-plugin
 [webhook]: https://github.com/fiatjaf/lightningd-webhook
 [zmq]: https://github.com/lightningd/plugins/tree/master/zmq
 [zmq-home]: https://zeromq.org/
