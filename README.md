@@ -224,7 +224,7 @@ un-archive it.
 [csvexportpays]: https://github.com/0xB10C/c-lightning-plugin-csvexportpays
 [pruning]: https://github.com/Start9Labs/c-lightning-pruning-plugin
 [sparko]: https://github.com/fiatjaf/sparko
-[webhook]: https://github.com/fiatjaf/webhook
+[webhook]: https://github.com/fiatjaf/lightningd-webhook
 [trustedcoin]: https://github.com/fiatjaf/trustedcoin
 [event-notifications]: https://lightning.readthedocs.io/PLUGINS.html#event-notifications
 [event-websocket]: https://github.com/rbndg/c-lightning-events
