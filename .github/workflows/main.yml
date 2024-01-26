@@ -18,7 +18,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: [3.7, 3.8, 3.9]
+        python-version: ["3.8", "3.9", "3.10", "3.11", "3.12"]
         developer: [0,1]
         experimental: [1]
         deprecated: [0]
@@ -37,9 +37,9 @@ jobs:
 
     - name: Download runtime dependencies
       run: |
-        export BITCOIND_VERSION="0.20.1"
-        wget https://storage.googleapis.com/c-lightning-tests/bitcoin-${BITCOIND_VERSION}-x86_64-linux-gnu.tar.bz2
-        tar -xjf bitcoin-${BITCOIND_VERSION}-x86_64-linux-gnu.tar.bz2
+        export BITCOIND_VERSION="22.0"
+        wget https://bitcoincore.org/bin/bitcoin-core-${BITCOIND_VERSION}/bitcoin-${BITCOIND_VERSION}-x86_64-linux-gnu.tar.gz
+        tar -xzf bitcoin-${BITCOIND_VERSION}-x86_64-linux-gnu.tar.gz
         sudo mv bitcoin-${BITCOIND_VERSION}/bin/* /usr/local/bin
         rm -rf bitcoin-${BITCOIND_VERSION}-x86_64-linux-gnu.tar.gz bitcoin-${BITCOIND_VERSION}
 
