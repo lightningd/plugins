@@ -92,6 +92,7 @@ jobs:
         export TEST_DEBUG=1
         export TRAVIS=1
         export CLN_PATH=${{ github.workspace }}/lightning
+        pip3 install --upgrade pip
         pip3 install --user -U virtualenv pip > /dev/null
         python3 .ci/test.py
 
