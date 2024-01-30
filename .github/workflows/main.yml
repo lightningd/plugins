@@ -12,13 +12,14 @@ on:
 
 jobs:
   build-and-test:
-    name: Test PY=${{ matrix.python-version }}, EXP=${{ matrix.experimental }}, DEP=${{ matrix.deprecated }}
+    name: Test PY=${{ matrix.python-version }}, BCD=${{ matrix.bitcoind-version }}, EXP=${{ matrix.experimental }}, DEP=${{ matrix.deprecated }}
     runs-on: ubuntu-latest
     timeout-minutes: 60
     strategy:
       fail-fast: false
       matrix:
         python-version: ["3.8", "3.9", "3.10", "3.11", "3.12"]
+        bitcoind-version: ["26.0"]
         experimental: [1]
         deprecated: [0]
 
@@ -36,7 +37,7 @@ jobs:
 
     - name: Download runtime dependencies
       run: |
-        export BITCOIND_VERSION="22.0"
+        export BITCOIND_VERSION=${{ matrix.bitcoind-version }}
         wget https://bitcoincore.org/bin/bitcoin-core-${BITCOIND_VERSION}/bitcoin-${BITCOIND_VERSION}-x86_64-linux-gnu.tar.gz
         tar -xzf bitcoin-${BITCOIND_VERSION}-x86_64-linux-gnu.tar.gz
         sudo mv bitcoin-${BITCOIND_VERSION}/bin/* /usr/local/bin
