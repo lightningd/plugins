@@ -154,9 +154,9 @@ your environment.
 
 #### Minimum supported Python version
 
-The minimum supported version of Python for this repository is currently `3.6.x` (23 Dec 2016).
-Python plugins users must ensure to have a version `>= 3.6`.
-Python plugins developers must ensure their plugin to work with all Python versions `>= 3.6`.
+The minimum supported version of Python for this repository is currently `3.8.x` (14 Oct 2019).
+Python plugins users must ensure to have a version `>= 3.8`.
+Python plugins developers must ensure their plugin to work with all Python versions `>= 3.8`.
 
 
 ## More Plugins from the Community
@@ -205,7 +205,7 @@ Python plugins developers must ensure their plugin to work with all Python versi
 [js-api]: https://github.com/lightningd/clightningjs
 [ts-api]: https://github.com/runcitadel/c-lightning.ts
 [monitor]: https://github.com/renepickhardt/plugins/tree/master/monitor
-[nostrify]: https://github.com/joelklabo/nostrify 
+[nostrify]: https://github.com/joelklabo/nostrify
 [reckless]: https://github.com/darosior/reckless
 [request-invoice]: https://github.com/lightningd/plugins/tree/master/request-invoice
 [sauron]: https://github.com/lightningd/plugins/tree/master/sauron
