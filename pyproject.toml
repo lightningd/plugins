@@ -6,7 +6,7 @@ authors = ["Christian Decker <decker.christian@gmail.com>"]
 license = "MIT"
 
 [tool.poetry.dependencies]
-python = "^3.7"
+python = "^3.8"
 virtualenv = "^20.13.1"
 
 [tool.poetry.dev-dependencies]
