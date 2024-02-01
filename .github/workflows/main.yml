@@ -102,7 +102,7 @@ jobs:
     # signals successful completion. Used for the PR status to pass
     # before merging.
     name: CI completion
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     needs:
       - build-and-test
     steps:
