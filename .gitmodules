@@ -40,6 +40,3 @@
 [submodule "python-teos"]
 	path = python-teos
 	url = https://github.com/talaia-labs/python-teos
-[submodule "nostrify"]
-	path = nostrify
-	url = https://github.com/joelklabo/nostrify
