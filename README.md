@@ -25,7 +25,6 @@ Community curated plugins for Core-Lightning.
 | [listmempoolfunds][listmempoolfunds] | Track unconfirmed wallet deposits                                                           |
 | [monitor][monitor]                   | helps you analyze the health of your peers and channels                                     |
 | [nloop][nloop]                       | Generic Lightning Loop for boltz                                                            |
-| [nostrify][nostrify]                 | Send CLN events to Nostr                                                                    |
 | [paythrough][paythrough]             | Pay an invoice through a specific channel, regardless of better routes                      |
 | [persistent-channels][pers-chans]    | Maintains a number of channels to peers                                                     |
 | [poncho][poncho]                     | Turns CLN into a [hosted channels][blip12] provider                                         |
@@ -232,7 +231,6 @@ Python plugins developers must ensure their plugin to work with all Python versi
 [monitor]: https://github.com/renepickhardt/plugins/tree/master/monitor
 [nloop]: https://github.com/bitbankinc/NLoop
 [noise]: https://github.com/lightningd/plugins/tree/master/archived/noise
-[nostrify]: https://github.com/joelklabo/nostrify
 [paytest]: https://github.com/lightningd/plugins/tree/master/archived/paytest
 [paythrough]: https://github.com/andrewtoth/paythrough
 [pers-chans]: https://github.com/lightningd/plugins/tree/master/persistent-channels
