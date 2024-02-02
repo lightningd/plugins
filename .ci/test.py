@@ -56,6 +56,10 @@ def enumerate_plugins(basedir: Path) -> Generator[Plugin, None, None]:
     ]
     print(poetry_pytest)
 
+    rust_pytest = [
+        x for x in plugins if (x / Path("Cargo.toml")).exists()
+    ]
+
     for p in sorted(pip_pytest):
         yield Plugin(
             name=p.name,
@@ -79,6 +83,17 @@ def enumerate_plugins(basedir: Path) -> Generator[Plugin, None, None]:
             }
         )
 
+    for p in sorted(rust_pytest):
+        yield Plugin(
+            name=p.name,
+            path=p,
+            language="rust",
+            framework="cargo",
+            details={
+                "cargo": p / Path("Cargo.toml"),
+            }
+        )
+
 def prepare_env(p: Plugin, directory: Path) -> bool:
     """ Returns whether we can run at all. Raises error if preparing failed.
     """
@@ -91,6 +106,8 @@ def prepare_env(p: Plugin, directory: Path) -> bool:
         return prepare_env_pip(p, directory)
     elif p.framework == "poetry":
         return prepare_env_poetry(p, directory)
+    elif p.framework == "cargo":
+        return prepare_env_cargo(p, directory)
     else:
         raise ValueError(f"Unknown framework {p.framework}")
 
@@ -159,6 +176,21 @@ def prepare_env_pip(p: Plugin, directory: Path):
             [pip_path, 'install', '-U', *pip_opts, '-r', p.details['devrequirements']],
             stderr=subprocess.STDOUT,
         )
+    install_pyln_testing(pip_path)
+    return True
+
+
+def prepare_env_cargo(p: Plugin, directory: Path):
+    pip_path = directory / 'bin' / 'pip3'
+
+    # Install pytest (eventually we'd want plugin authors to include
+    # it in their requirements-dev.txt, but for now let's help them a
+    # bit).
+    subprocess.check_call(
+        [pip_path, 'install', *pip_opts, *global_dependencies],
+        stderr=subprocess.STDOUT,
+    )
+
     install_pyln_testing(pip_path)
     return True
 
