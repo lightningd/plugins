@@ -4,7 +4,7 @@ import string
 
 import unittest
 from pyln.testing.fixtures import *  # noqa: F401,F403
-from pyln.testing.utils import wait_for
+from pyln.testing.utils import DEVELOPER, wait_for
 
 
 plugin_path = os.path.join(os.path.dirname(__file__), "feeadjuster.py")
@@ -70,6 +70,7 @@ def sync_gossip(nodes, scids):
             wait_for(lambda: node.rpc.listchannels(scid) == n.rpc.listchannels(scid))
 
 
+@unittest.skipIf(not DEVELOPER, "Too slow without fast gossip")
 def test_feeadjuster_adjusts(node_factory):
     """
     A rather simple network:
@@ -139,6 +140,7 @@ def test_feeadjuster_adjusts(node_factory):
                              f'Adjusted fees of {scid_B} with a ratio of 0.2'])
 
 
+@unittest.skipIf(not DEVELOPER, "Too slow without fast gossip")
 def test_feeadjuster_imbalance(node_factory):
     """
     A rather simple network:
@@ -215,6 +217,7 @@ def test_feeadjuster_imbalance(node_factory):
     wait_for_fees(l2, scids, default_fees[0])
 
 
+@unittest.skipIf(not DEVELOPER, "Too slow without fast gossip")
 def test_feeadjuster_big_enough_liquidity(node_factory):
     """
     A rather simple network:
@@ -289,6 +292,7 @@ def test_feeadjuster_big_enough_liquidity(node_factory):
     wait_for_not_fees(l2, scids, default_fees[0])
 
 
+@unittest.skipIf(not DEVELOPER, "Too slow without fast gossip")
 def test_feeadjuster_median(node_factory):
     """
     A rather simple network:

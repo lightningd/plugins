@@ -8,7 +8,6 @@ license = "MIT"
 [tool.poetry.dependencies]
 python = "^3.7"
 pyln-client = "0.11.1"
-inotify = "^0.2.10"
 
 [tool.poetry.dev-dependencies]
 pyln-testing = "0.11.1"

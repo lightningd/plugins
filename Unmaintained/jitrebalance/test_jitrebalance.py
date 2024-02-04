@@ -1,6 +1,6 @@
 from pyln.client import RpcError
 from pyln.testing.fixtures import *  # noqa: F401, F403
-from pyln.testing.utils import wait_for
+from pyln.testing.utils import wait_for, DEVELOPER
 import os
 import time
 import pytest
@@ -13,6 +13,7 @@ hold_plugin = os.path.join(currdir, 'tests/hold_htlcs.py')
 reject_plugin = os.path.join(currdir, 'tests/refuse_htlcs.py')
 
 
+@unittest.skipIf(not DEVELOPER, "gossip is too slow if we're not in developer mode")
 def test_simple_rebalance(node_factory):
     """Simple rebalance that routes along a cycle to enable the original payment
 
@@ -81,6 +82,7 @@ def test_simple_rebalance(node_factory):
     assert l2.daemon.is_in_log('Succesfully re-filled outgoing capacity')
 
 
+@unittest.skipIf(not DEVELOPER, "gossip is too slow if we're not in developer mode")
 def test_rebalance_failure(node_factory):
     """Same setup as the first test :
 
@@ -156,6 +158,7 @@ def test_rebalance_failure(node_factory):
     assert l2.daemon.is_in_log('Timed out while trying to rebalance')
 
 
+@unittest.skipIf(not DEVELOPER, "gossip is too slow if we're not in developer mode")
 def test_issue_88(node_factory):
     """Reproduce issue #88: crash due to unconfirmed channel.
 
