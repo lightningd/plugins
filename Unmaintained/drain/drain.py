@@ -351,7 +351,7 @@ def try_for_htlc_fee(payload, peer_id, amount, chunk, spendable_before):
 
 
 def read_params(command: str, scid: str, percentage: float, chunks: int,
-                retry_for: int, maxfeepercent: float, exemptfee: int):
+                retry_for: int, maxfeepercent: float, exemptfee: Millisatoshi):
 
     # check parameters
     if command != 'drain' and command != 'fill' and command != 'setbalance':
@@ -466,7 +466,7 @@ def execute(payload: dict):
 
 @plugin.method("drain")
 def drain(plugin, scid: str, percentage: float = 100, chunks: int = 0, retry_for: int = 60,
-          maxfeepercent: float = 0.5, exemptfee: int = 5000):
+          maxfeepercent: float = 0.5, exemptfee: Millisatoshi = Millisatoshi(5000)):
     """Draining channel liquidity with circular payments.
 
     Percentage defaults to 100, resulting in an empty channel.

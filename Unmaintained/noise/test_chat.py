@@ -3,7 +3,7 @@ from flaky import flaky
 from pprint import pprint
 from pyln.client import RpcError
 from pyln.testing.fixtures import *  # noqa: F401,F403
-from pyln.testing.utils import wait_for
+from pyln.testing.utils import DEVELOPER, wait_for
 import hashlib
 import os
 import pytest
@@ -33,6 +33,7 @@ def test_sendmsg_success(node_factory, executor):
 
 
 @flaky  # since we cannot force a payment to take a specific route
+@unittest.skipIf(not DEVELOPER, "Fails often")
 @unittest.skipIf(True, "Just not stable")
 def test_sendmsg_retry(node_factory, executor):
     """Fail a sendmsg using a cheap route, and check that it retries.

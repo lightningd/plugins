@@ -1,4 +1,5 @@
 from pyln.testing.fixtures import *  # noqa: F401,F403
+from pyln.testing.utils import DEVELOPER
 from pyln.client import RpcError
 from .utils import get_ours, get_theirs, wait_ours, wait_for_all_htlcs
 import os
@@ -23,6 +24,7 @@ def test_plugin_starts(node_factory):
     l1.start()
 
 
+@unittest.skipIf(not DEVELOPER, "slow gossip, needs DEVELOPER=1")
 def test_drain_and_refill(node_factory, bitcoind):
     # Scenario: first drain then refill
     #
@@ -82,6 +84,7 @@ def test_drain_and_refill(node_factory, bitcoind):
     assert(get_theirs(l1, scid12) < theirs_before * 0.05)
 
 
+@unittest.skipIf(not DEVELOPER, "slow gossip, needs DEVELOPER=1")
 def test_fill_and_drain(node_factory, bitcoind):
     # Scenario: first fill of an empty channel and drain afterwards.
     #
@@ -130,6 +133,7 @@ def test_fill_and_drain(node_factory, bitcoind):
     assert(get_theirs(l1, scid12) < theirs_before * 0.05)  # account some reserves
 
 
+@unittest.skipIf(not DEVELOPER, "slow gossip, needs DEVELOPER=1")
 def test_setbalance(node_factory, bitcoind):
     # SETUP: a basic circular setup to run setbalance tests
     #
@@ -190,6 +194,7 @@ def balance(node, node_a, scid_a, node_b, scid_b, node_c):
     wait_for_all_htlcs([node, node_a, node_b])
 
 
+@unittest.skipIf(not DEVELOPER, "slow gossip, needs DEVELOPER=1")
 def test_drain_chunks(node_factory, bitcoind):
     # SETUP: a small mesh that enables testing chunks
     #
@@ -272,6 +277,7 @@ def test_drain_chunks(node_factory, bitcoind):
     assert(get_theirs(l1, scid41) > amount * 0.9)
 
 
+@unittest.skipIf(not DEVELOPER, "slow gossip, needs DEVELOPER=1")
 def test_fill_chunks(node_factory, bitcoind):
     # SETUP: a small mesh that enables testing chunks
     #
