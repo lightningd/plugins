@@ -9,45 +9,58 @@ Community curated plugins for Core-Lightning.
 | Name                                 | Short description                                                                           |
 | ------------------------------------ | ------------------------------------------------------------------------------------------- |
 | [autopilot][autopilot]               | An autopilot that suggests channels that should be established                              |
-| [backup][backup]                     | A simple and reliable backup plugin                                                         |
 | [boltz-channel-creation][boltz]      | A Core-Lightning plugin for Boltz Channel Creation Swaps                                    |
 | [btcli4j][btcli4j]                   | A Bitcoin Backend to enable safely the pruning mode, and support also rest APIs.            |
 | [circular][circular]                 | A smart rebalancing plugin for Core Lightning routing nodes                                 |
-| [csvexportpays][csvexportpays]       | A plugin that exports all payments to a CSV file                                            |
-| [currencyrate][currencyrate]         | A plugin to convert other currencies to BTC using web requests                              |
 | [clearnet][clearnet]                 | A plugin that can be used to enforce clearnet connections when possible                     |
 | [cln-ntfy][cln-ntfy]                 | Core Lightning plugin for sending `ntfy` alerts.                                            |
-| [donations][donations]               | A simple donations page to accept donations from the web                                    |
+| [csvexportpays][csvexportpays]       | A plugin that exports all payments to a CSV file                                            |
+| [currencyrate][currencyrate]         | A plugin to convert other currencies to BTC using web requests                              |
 | [drain][drain]                       | Draining, filling and balancing channels with automatic chunks.                             |
 | [event-websocket][event-websocket]   | Exposes notifications over a Websocket                                                      |
-| [feeadjuster][feeadjuster]           | Dynamic fees to keep your channels more balanced                                            |
 | [go-lnmetrics.reporter][reporter]    | Collect and report of the lightning node metrics                                            |
 | [graphql][graphql]                   | Exposes the Core-Lightning API over [graphql][graphql-spec]                                 |
 | [invoice-queue][invoice-queue]       | Listen to lightning invoices from multiple nodes and send to a redis queue for processing   |
 | [lightning-qt][lightning-qt]         | A bitcoin-qt-like GUI for lightningd                                                        |
 | [listmempoolfunds][listmempoolfunds] | Track unconfirmed wallet deposits                                                           |
 | [monitor][monitor]                   | helps you analyze the health of your peers and channels                                     |
-| [noise][noise]                       | Chat with your fellow node operators                                                        |
+| [nloop][nloop]                       | Generic Lightning Loop for boltz                                                            |
 | [nostrify][nostrify]                 | Send CLN events to Nostr                                                                    |
 | [paythrough][paythrough]             | Pay an invoice through a specific channel, regardless of better routes                      |
 | [persistent-channels][pers-chans]    | Maintains a number of channels to peers                                                     |
 | [poncho][poncho]                     | Turns CLN into a [hosted channels][blip12] provider                                         |
-| [probe][probe]                       | Regularly probes the network for stability                                                  |
-| [prometheus][prometheus]             | Lightning node exporter for the prometheus timeseries server                                |
 | [pruning][pruning]                   | This plugin manages pruning of bitcoind such that it can always sync                        |
 | [python-teos][python-teos]           | The Eye of Satoshi - Lightning Watchtower                                                   |
 | [rebalance][rebalance]               | Keeps your channels balanced                                                                |
 | [reckless][reckless]                 | An **experimental** plugin manager (search/install plugins)                                 |
-| [requestinvoice][request-invoice]    | Http server to request invoices                                                             |
 | [sauron][sauron]                     | A Bitcoin backend relying on [Esplora][esplora]'s API                                       |
 | [sitzprobe][sitzprobe]               | A Lightning Network payment rehearsal utility                                               |
 | [sparko][sparko]                     | RPC over HTTP with fine-grained permissions, SSE and spark-wallet support                   |
 | [summary][summary]                   | Print a nice summary of the node status                                                     |
 | [trustedcoin][trustedcoin]           | Replace your Bitcoin Core with data from public block explorers                             |
-| [webhook][webhook]                   | Dispatches webhooks based from [event notifications][event-notifications]                   |
 | [watchtower][watchtower-client]      | Watchtower client for The Eye of Satoshi                                                    |
+| [webhook][webhook]                   | Dispatches webhooks based from [event notifications][event-notifications]                   |
 | [zmq][zmq]                           | Publishes notifications via [ZeroMQ][zmq-home] to configured endpoints                      |
-| [nloop][nloop]                       | Generic Lightning Loop for boltz                                                            |
+
+## Unmaintained plugins
+
+| Name                                 | Short description                                                                           |
+| ------------------------------------ | ------------------------------------------------------------------------------------------- |
+| [autopilot][autopilot]               | An autopilot that suggests channels that should be established                              |
+| [backup][backup]                     | A simple and reliable backup plugin                                                         |
+| [commando][commando]                 | This plugin allows to send commands between nodes                                           |
+| [donations][donations]               | A simple donations page to accept donations from the web                                    |
+| [drain][drain]                       | Draining, filling and balancing channels with automatic chunks.                             |
+| [feeadjuster][feeadjuster]           | Dynamic fees to keep your channels more balanced                                            |
+| [helpme][helpme]                     | This plugin is designed to walk you through setting up a fresh Core-Lightning node          |
+| [historian][historian]               | Archiving the Lightning Network                                                             |
+| [jitrebalance][jitrebalance]         | The JITrebalance plugin                                                                     |
+| [noise][noise]                       | Chat with your fellow node operators                                                        |
+| [paytest][paytest]                   | A plugin to benchmark the performance of the ~pay~ plugin                                   |
+| [probe][probe]                       | Regularly probes the network for stability                                                  |
+| [prometheus][prometheus]             | Lightning node exporter for the prometheus timeseries server                                |
+| [rebalance][rebalance]               | Keeps your channels balanced                                                                |
+| [summary][summary]                   | Print a nice summary of the node status                                                     |
 
 ## Installation
 
@@ -179,59 +192,63 @@ Python plugins developers must ensure their plugin to work with all Python versi
  - [C# Plugin Guideline and example project][csharp-example] by @joemphilips
  - [Kotlin plugin guideline and example][kotlin-example] by @vincenzopalazzo
 
-[esplora]: https://github.com/Blockstream/esplora
-[pers-chans]: https://github.com/lightningd/plugins/tree/master/persistent-channels
-[probe]: https://github.com/lightningd/plugins/tree/master/probe
-[noise]: https://github.com/lightningd/plugins/tree/master/noise
-[prometheus]: https://github.com/lightningd/plugins/tree/master/prometheus
-[summary]: https://github.com/lightningd/plugins/tree/master/summary
-[donations]: https://github.com/lightningd/plugins/tree/master/donations
-[drain]: https://github.com/lightningd/plugins/tree/master/drain
-[plugin-docs]: https://lightning.readthedocs.io/PLUGINS.html
-[c-api]: https://github.com/ElementsProject/lightning/blob/master/plugins/libplugin.h
-[currencyrate]: https://github.com/lightningd/plugins/tree/master/currencyrate
-[python-api]: https://github.com/ElementsProject/lightning/tree/master/contrib/pylightning
-[python-api-pypi]: https://pypi.org/project/pylightning/
-[go-api]: https://github.com/niftynei/glightning
-[sitzprobe]: https://github.com/niftynei/sitzprobe
-[autopilot]: https://github.com/lightningd/plugins/tree/master/autopilot
-[rebalance]: https://github.com/lightningd/plugins/tree/master/rebalance
-[graphql]: https://github.com/nettijoe96/c-lightning-graphql
-[graphql-spec]: https://graphql.org/
-[lightning-qt]: https://github.com/darosior/pylightning-qt
-[listmempoolfunds]: https://github.com/andrewtoth/listmempoolfunds
-[paythrough]: https://github.com/andrewtoth/paythrough
-[cpp-api]: https://github.com/darosior/lightningcpp
-[js-api]: https://github.com/lightningd/clightningjs
-[ts-api]: https://github.com/runcitadel/c-lightning.ts
-[monitor]: https://github.com/renepickhardt/plugins/tree/master/monitor
-[nostrify]: https://github.com/joelklabo/nostrify
-[reckless]: https://github.com/darosior/reckless
-[request-invoice]: https://github.com/lightningd/plugins/tree/master/request-invoice
-[sauron]: https://github.com/lightningd/plugins/tree/master/sauron
-[zmq-home]: https://zeromq.org/
-[zmq]: https://github.com/lightningd/plugins/tree/master/zmq
-[csvexportpays]: https://github.com/0xB10C/c-lightning-plugin-csvexportpays
-[pruning]: https://github.com/Start9Labs/c-lightning-pruning-plugin
-[sparko]: https://github.com/fiatjaf/sparko
-[webhook]: https://github.com/fiatjaf/webhook
-[trustedcoin]: https://github.com/fiatjaf/trustedcoin
-[event-notifications]: https://lightning.readthedocs.io/PLUGINS.html#event-notifications
-[event-websocket]: https://github.com/rbndg/c-lightning-events
-[invoice-queue]: https://github.com/rbndg/Lightning-Invoice-Queue
-[boltz]: https://github.com/BoltzExchange/channel-creation-plugin
-[feeadjuster]: https://github.com/lightningd/plugins/tree/master/feeadjuster
-[watchtower-client]: https://github.com/talaia-labs/rust-teos/tree/master/watchtower-plugin
-[java-api]: https://github.com/clightning4j/JRPClightning
-[btcli4j]: https://github.com/clightning4j/btcli4j
-[backup]: https://github.com/lightningd/plugins/tree/master/backup
-[reporter]: https://github.com/LNOpenMetrics/go-lnmetrics.reporter
-[csharp-example]: https://github.com/joemphilips/DotNetLightning/tree/master/examples/HelloWorldPlugin
-[kotlin-example]: https://vincenzopalazzo.medium.com/a-day-in-a-c-lightning-plugin-with-koltin-c8bbd4fa0406
-[nloop]: https://github.com/bitbankinc/NLoop
-[poncho]: https://github.com/fiatjaf/poncho
+[autopilot]: https://github.com/lightningd/plugins/tree/master/Unmaintained/autopilot
+[backup]: https://github.com/lightningd/plugins/tree/master/Unmaintained/backup
 [blip12]: https://github.com/lightning/blips/blob/42cec1d0f66eb68c840443abb609a5a9acb34f8e/blip-0012.md
+[boltz]: https://github.com/BoltzExchange/channel-creation-plugin
+[btcli4j]: https://github.com/clightning4j/btcli4j
+[c-api]: https://github.com/ElementsProject/lightning/blob/master/plugins/libplugin.h
 [circular]: https://github.com/giovannizotta/circular
-[python-teos]: https://github.com/talaia-labs/python-teos
 [clearnet]: https://github.com/lightningd/plugins/tree/master/clearnet
 [cln-ntfy]: https://github.com/yukibtc/cln-ntfy
+[commando]: https://github.com/lightningd/plugins/tree/master/Unmaintained/commando
+[cpp-api]: https://github.com/darosior/lightningcpp
+[csharp-example]: https://github.com/joemphilips/DotNetLightning/tree/master/examples/HelloWorldPlugin
+[csvexportpays]: https://github.com/0xB10C/c-lightning-plugin-csvexportpays
+[currencyrate]: https://github.com/lightningd/plugins/tree/master/currencyrate
+[donations]: https://github.com/lightningd/plugins/tree/master/Unmaintained/donations
+[drain]: https://github.com/lightningd/plugins/tree/master/Unmaintained/drain
+[esplora]: https://github.com/Blockstream/esplora
+[event-notifications]: https://lightning.readthedocs.io/PLUGINS.html#event-notifications
+[event-websocket]: https://github.com/rbndg/c-lightning-events
+[feeadjuster]: https://github.com/lightningd/plugins/tree/master/Unmaintained/feeadjuster
+[go-api]: https://github.com/niftynei/glightning
+[graphql]: https://github.com/nettijoe96/c-lightning-graphql
+[graphql-spec]: https://graphql.org/
+[helpme]: https://github.com/lightningd/plugins/tree/master/Unmaintained/helpme
+[historian]: https://github.com/lightningd/plugins/tree/master/Unmaintained/historian
+[invoice-queue]: https://github.com/rbndg/Lightning-Invoice-Queue
+[java-api]: https://github.com/clightning4j/JRPClightning
+[jitrebalance]: https://github.com/lightningd/plugins/tree/master/Unmaintained/jitrebalance
+[js-api]: https://github.com/lightningd/clightningjs
+[kotlin-example]: https://vincenzopalazzo.medium.com/a-day-in-a-c-lightning-plugin-with-koltin-c8bbd4fa0406
+[lightning-qt]: https://github.com/darosior/pylightning-qt
+[listmempoolfunds]: https://github.com/andrewtoth/listmempoolfunds
+[monitor]: https://github.com/renepickhardt/plugins/tree/master/monitor
+[nloop]: https://github.com/bitbankinc/NLoop
+[noise]: https://github.com/lightningd/plugins/tree/master/Unmaintained/noise
+[nostrify]: https://github.com/joelklabo/nostrify
+[paytest]: https://github.com/lightningd/plugins/tree/master/Unmaintained/paytest
+[paythrough]: https://github.com/andrewtoth/paythrough
+[pers-chans]: https://github.com/lightningd/plugins/tree/master/persistent-channels
+[plugin-docs]: https://lightning.readthedocs.io/PLUGINS.html
+[poncho]: https://github.com/fiatjaf/poncho
+[probe]: https://github.com/lightningd/plugins/tree/master/Unmaintained/probe
+[prometheus]: https://github.com/lightningd/plugins/tree/master/Unmaintained/prometheus
+[pruning]: https://github.com/Start9Labs/c-lightning-pruning-plugin
+[python-api]: https://github.com/ElementsProject/lightning/tree/master/contrib/pylightning
+[python-api-pypi]: https://pypi.org/project/pylightning/
+[python-teos]: https://github.com/talaia-labs/python-teos
+[rebalance]: https://github.com/lightningd/plugins/tree/master/Unmaintained/rebalance
+[reckless]: https://github.com/darosior/reckless
+[reporter]: https://github.com/LNOpenMetrics/go-lnmetrics.reporter
+[sauron]: https://github.com/lightningd/plugins/tree/master/sauron
+[sitzprobe]: https://github.com/niftynei/sitzprobe
+[sparko]: https://github.com/fiatjaf/sparko
+[summary]: https://github.com/lightningd/plugins/tree/master/Unmaintained/summary
+[trustedcoin]: https://github.com/fiatjaf/trustedcoin
+[ts-api]: https://github.com/runcitadel/c-lightning.ts
+[watchtower-client]: https://github.com/talaia-labs/rust-teos/tree/master/watchtower-plugin
+[webhook]: https://github.com/fiatjaf/lightningd-webhook
+[zmq]: https://github.com/lightningd/plugins/tree/master/zmq
+[zmq-home]: https://zeromq.org/
