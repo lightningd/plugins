@@ -910,7 +910,7 @@ def get_avg_forward_fees(intervals):
 
 
 @plugin.method("rebalancereport")
-def rebalancereport(plugin: Plugin):
+def rebalancereport(plugin: Plugin, include_avg_fees: bool = True):
     """Show information about rebalance
     """
     res = {}
@@ -961,10 +961,11 @@ def rebalancereport(plugin: Plugin):
     else:
         res["average_rebalance_fee_ppm"] = 0
 
-    avg_forward_fees = get_avg_forward_fees([1, 7, 30])
-    res['average_forward_fee_ppm_1d'] = avg_forward_fees[0]
-    res['average_forward_fee_ppm_7d'] = avg_forward_fees[1]
-    res['average_forward_fee_ppm_30d'] = avg_forward_fees[2]
+    if include_avg_fees:
+        avg_forward_fees = get_avg_forward_fees([1, 7, 30])
+        res['average_forward_fee_ppm_1d'] = avg_forward_fees[0]
+        res['average_forward_fee_ppm_7d'] = avg_forward_fees[1]
+        res['average_forward_fee_ppm_30d'] = avg_forward_fees[2]
 
     return res
 
