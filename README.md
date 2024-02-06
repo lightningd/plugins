@@ -42,7 +42,12 @@ Community curated plugins for Core-Lightning.
 | [webhook][webhook]                   | Dispatches webhooks based from [event notifications][event-notifications]                   |
 | [zmq][zmq]                           | Publishes notifications via [ZeroMQ][zmq-home] to configured endpoints                      |
 
-## Unmaintained plugins
+## Archived plugins
+
+The following is a list of archived plugins that are no longer maintained and reside inside the 'archived' subdirectory.
+Any plugins that fail CI will be archived.
+
+If you like a plugin from that list, feel free to update and fix it, so we can un-archive it.
 
 | Name                                 | Short description                                                                           |
 | ------------------------------------ | ------------------------------------------------------------------------------------------- |
@@ -192,8 +197,8 @@ Python plugins developers must ensure their plugin to work with all Python versi
  - [C# Plugin Guideline and example project][csharp-example] by @joemphilips
  - [Kotlin plugin guideline and example][kotlin-example] by @vincenzopalazzo
 
-[autopilot]: https://github.com/lightningd/plugins/tree/master/Unmaintained/autopilot
-[backup]: https://github.com/lightningd/plugins/tree/master/Unmaintained/backup
+[autopilot]: https://github.com/lightningd/plugins/tree/master/archived/autopilot
+[backup]: https://github.com/lightningd/plugins/tree/master/archived/backup
 [blip12]: https://github.com/lightning/blips/blob/42cec1d0f66eb68c840443abb609a5a9acb34f8e/blip-0012.md
 [boltz]: https://github.com/BoltzExchange/channel-creation-plugin
 [btcli4j]: https://github.com/clightning4j/btcli4j
@@ -201,51 +206,51 @@ Python plugins developers must ensure their plugin to work with all Python versi
 [circular]: https://github.com/giovannizotta/circular
 [clearnet]: https://github.com/lightningd/plugins/tree/master/clearnet
 [cln-ntfy]: https://github.com/yukibtc/cln-ntfy
-[commando]: https://github.com/lightningd/plugins/tree/master/Unmaintained/commando
+[commando]: https://github.com/lightningd/plugins/tree/master/archived/commando
 [cpp-api]: https://github.com/darosior/lightningcpp
 [csharp-example]: https://github.com/joemphilips/DotNetLightning/tree/master/examples/HelloWorldPlugin
 [csvexportpays]: https://github.com/0xB10C/c-lightning-plugin-csvexportpays
 [currencyrate]: https://github.com/lightningd/plugins/tree/master/currencyrate
-[donations]: https://github.com/lightningd/plugins/tree/master/Unmaintained/donations
-[drain]: https://github.com/lightningd/plugins/tree/master/Unmaintained/drain
+[donations]: https://github.com/lightningd/plugins/tree/master/archived/donations
+[drain]: https://github.com/lightningd/plugins/tree/master/archived/drain
 [esplora]: https://github.com/Blockstream/esplora
 [event-notifications]: https://lightning.readthedocs.io/PLUGINS.html#event-notifications
 [event-websocket]: https://github.com/rbndg/c-lightning-events
-[feeadjuster]: https://github.com/lightningd/plugins/tree/master/Unmaintained/feeadjuster
+[feeadjuster]: https://github.com/lightningd/plugins/tree/master/archived/feeadjuster
 [go-api]: https://github.com/niftynei/glightning
 [graphql]: https://github.com/nettijoe96/c-lightning-graphql
 [graphql-spec]: https://graphql.org/
-[helpme]: https://github.com/lightningd/plugins/tree/master/Unmaintained/helpme
-[historian]: https://github.com/lightningd/plugins/tree/master/Unmaintained/historian
+[helpme]: https://github.com/lightningd/plugins/tree/master/archived/helpme
+[historian]: https://github.com/lightningd/plugins/tree/master/archived/historian
 [invoice-queue]: https://github.com/rbndg/Lightning-Invoice-Queue
 [java-api]: https://github.com/clightning4j/JRPClightning
-[jitrebalance]: https://github.com/lightningd/plugins/tree/master/Unmaintained/jitrebalance
+[jitrebalance]: https://github.com/lightningd/plugins/tree/master/archived/jitrebalance
 [js-api]: https://github.com/lightningd/clightningjs
 [kotlin-example]: https://vincenzopalazzo.medium.com/a-day-in-a-c-lightning-plugin-with-koltin-c8bbd4fa0406
 [lightning-qt]: https://github.com/darosior/pylightning-qt
 [listmempoolfunds]: https://github.com/andrewtoth/listmempoolfunds
 [monitor]: https://github.com/renepickhardt/plugins/tree/master/monitor
 [nloop]: https://github.com/bitbankinc/NLoop
-[noise]: https://github.com/lightningd/plugins/tree/master/Unmaintained/noise
+[noise]: https://github.com/lightningd/plugins/tree/master/archived/noise
 [nostrify]: https://github.com/joelklabo/nostrify
-[paytest]: https://github.com/lightningd/plugins/tree/master/Unmaintained/paytest
+[paytest]: https://github.com/lightningd/plugins/tree/master/archived/paytest
 [paythrough]: https://github.com/andrewtoth/paythrough
 [pers-chans]: https://github.com/lightningd/plugins/tree/master/persistent-channels
 [plugin-docs]: https://lightning.readthedocs.io/PLUGINS.html
 [poncho]: https://github.com/fiatjaf/poncho
-[probe]: https://github.com/lightningd/plugins/tree/master/Unmaintained/probe
-[prometheus]: https://github.com/lightningd/plugins/tree/master/Unmaintained/prometheus
+[probe]: https://github.com/lightningd/plugins/tree/master/archived/probe
+[prometheus]: https://github.com/lightningd/plugins/tree/master/archived/prometheus
 [pruning]: https://github.com/Start9Labs/c-lightning-pruning-plugin
 [python-api]: https://github.com/ElementsProject/lightning/tree/master/contrib/pylightning
 [python-api-pypi]: https://pypi.org/project/pylightning/
 [python-teos]: https://github.com/talaia-labs/python-teos
-[rebalance]: https://github.com/lightningd/plugins/tree/master/Unmaintained/rebalance
+[rebalance]: https://github.com/lightningd/plugins/tree/master/archived/rebalance
 [reckless]: https://github.com/darosior/reckless
 [reporter]: https://github.com/LNOpenMetrics/go-lnmetrics.reporter
 [sauron]: https://github.com/lightningd/plugins/tree/master/sauron
 [sitzprobe]: https://github.com/niftynei/sitzprobe
 [sparko]: https://github.com/fiatjaf/sparko
-[summary]: https://github.com/lightningd/plugins/tree/master/Unmaintained/summary
+[summary]: https://github.com/lightningd/plugins/tree/master/archived/summary
 [trustedcoin]: https://github.com/fiatjaf/trustedcoin
 [ts-api]: https://github.com/runcitadel/c-lightning.ts
 [watchtower-client]: https://github.com/talaia-labs/rust-teos/tree/master/watchtower-plugin
