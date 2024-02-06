@@ -28,7 +28,7 @@ Community curated plugins for Core-Lightning.
 | [listmempoolfunds][listmempoolfunds] | Track unconfirmed wallet deposits                                                           |
 | [monitor][monitor]                   | helps you analyze the health of your peers and channels                                     |
 | [noise][noise]                       | Chat with your fellow node operators                                                        |
-| [nostrify][nostrify]                 | Send CLN events to Nostr                                                                    |
+| [nostr-control][nostr-control]       | Allows you to see events and interact with your node over Nostr DM                          |
 | [paythrough][paythrough]             | Pay an invoice through a specific channel, regardless of better routes                      |
 | [persistent-channels][pers-chans]    | Maintains a number of channels to peers                                                     |
 | [poncho][poncho]                     | Turns CLN into a [hosted channels][blip12] provider                                         |
@@ -205,7 +205,7 @@ Python plugins developers must ensure their plugin to work with all Python versi
 [js-api]: https://github.com/lightningd/clightningjs
 [ts-api]: https://github.com/runcitadel/c-lightning.ts
 [monitor]: https://github.com/renepickhardt/plugins/tree/master/monitor
-[nostrify]: https://github.com/joelklabo/nostrify 
+[nostr-control]: https://github.com/joelklabo/nostr-control
 [reckless]: https://github.com/darosior/reckless
 [request-invoice]: https://github.com/lightningd/plugins/tree/master/request-invoice
 [sauron]: https://github.com/lightningd/plugins/tree/master/sauron
