@@ -326,9 +326,9 @@ def init(options: dict, configuration: dict, plugin: Plugin, **kwargs):
     }
     plugin.fee_strategy = fee_strategy_switch.get(options.get("feeadjuster-feestrategy"), get_fees_global)
     plugin.median_multiplier = float(options.get("feeadjuster-median-multiplier"))
-    config = plugin.rpc.listconfigs()
-    plugin.adj_basefee = config["fee-base"]
-    plugin.adj_ppmfee = config["fee-per-satoshi"]
+    config = plugin.rpc.listconfigs()["configs"]
+    plugin.adj_basefee = config["fee-base"]["value_int"]
+    plugin.adj_ppmfee = config["fee-per-satoshi"]["value_int"]
 
     # normalize the imbalance percentage value to 0%-50%
     if plugin.imbalance < 0 or plugin.imbalance > 1:
