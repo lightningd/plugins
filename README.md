@@ -2,7 +2,7 @@
 
 Community curated plugins for Core-Lightning.
 
-![Integration Tests](https://github.com/lightningd/plugins/workflows/Integration%20Tests/badge.svg)
+![Integration Tests](https://github.com/lightningd/plugins/actions/workflows/main.yml/badge.svg)
 
 ## Available plugins
 
