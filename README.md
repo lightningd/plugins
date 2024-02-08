@@ -8,7 +8,6 @@ Community curated plugins for Core-Lightning.
 
 | Name                                 | Short description                                                                           |
 | ------------------------------------ | ------------------------------------------------------------------------------------------- |
-| [autopilot][autopilot]               | An autopilot that suggests channels that should be established                              |
 | [boltz-channel-creation][boltz]      | A Core-Lightning plugin for Boltz Channel Creation Swaps                                    |
 | [btcli4j][btcli4j]                   | A Bitcoin Backend to enable safely the pruning mode, and support also rest APIs.            |
 | [circular][circular]                 | A smart rebalancing plugin for Core Lightning routing nodes                                 |
@@ -16,7 +15,6 @@ Community curated plugins for Core-Lightning.
 | [cln-ntfy][cln-ntfy]                 | Core Lightning plugin for sending `ntfy` alerts.                                            |
 | [csvexportpays][csvexportpays]       | A plugin that exports all payments to a CSV file                                            |
 | [currencyrate][currencyrate]         | A plugin to convert other currencies to BTC using web requests                              |
-| [drain][drain]                       | Draining, filling and balancing channels with automatic chunks.                             |
 | [event-websocket][event-websocket]   | Exposes notifications over a Websocket                                                      |
 | [feeadjuster][feeadjuster]           | Dynamic fees to keep your channels more balanced                                            |
 | [go-lnmetrics.reporter][reporter]    | Collect and report of the lightning node metrics                                            |
@@ -31,12 +29,10 @@ Community curated plugins for Core-Lightning.
 | [poncho][poncho]                     | Turns CLN into a [hosted channels][blip12] provider                                         |
 | [pruning][pruning]                   | This plugin manages pruning of bitcoind such that it can always sync                        |
 | [python-teos][python-teos]           | The Eye of Satoshi - Lightning Watchtower                                                   |
-| [rebalance][rebalance]               | Keeps your channels balanced                                                                |
 | [reckless][reckless]                 | An **experimental** plugin manager (search/install plugins)                                 |
 | [sauron][sauron]                     | A Bitcoin backend relying on [Esplora][esplora]'s API                                       |
 | [sitzprobe][sitzprobe]               | A Lightning Network payment rehearsal utility                                               |
 | [sparko][sparko]                     | RPC over HTTP with fine-grained permissions, SSE and spark-wallet support                   |
-| [summary][summary]                   | Print a nice summary of the node status                                                     |
 | [trustedcoin][trustedcoin]           | Replace your Bitcoin Core with data from public block explorers                             |
 | [watchtower][watchtower-client]      | Watchtower client for The Eye of Satoshi                                                    |
 | [webhook][webhook]                   | Dispatches webhooks based from [event notifications][event-notifications]                   |
