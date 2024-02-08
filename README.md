@@ -18,6 +18,7 @@ Community curated plugins for Core-Lightning.
 | [currencyrate][currencyrate]         | A plugin to convert other currencies to BTC using web requests                              |
 | [drain][drain]                       | Draining, filling and balancing channels with automatic chunks.                             |
 | [event-websocket][event-websocket]   | Exposes notifications over a Websocket                                                      |
+| [feeadjuster][feeadjuster]           | Dynamic fees to keep your channels more balanced                                            |
 | [go-lnmetrics.reporter][reporter]    | Collect and report of the lightning node metrics                                            |
 | [graphql][graphql]                   | Exposes the Core-Lightning API over [graphql][graphql-spec]                                 |
 | [invoice-queue][invoice-queue]       | Listen to lightning invoices from multiple nodes and send to a redis queue for processing   |
@@ -55,7 +56,6 @@ If you like a plugin from that list, feel free to update and fix it, so we can u
 | [commando][commando]                 | This plugin allows to send commands between nodes                                           |
 | [donations][donations]               | A simple donations page to accept donations from the web                                    |
 | [drain][drain]                       | Draining, filling and balancing channels with automatic chunks.                             |
-| [feeadjuster][feeadjuster]           | Dynamic fees to keep your channels more balanced                                            |
 | [helpme][helpme]                     | This plugin is designed to walk you through setting up a fresh Core-Lightning node          |
 | [historian][historian]               | Archiving the Lightning Network                                                             |
 | [jitrebalance][jitrebalance]         | The JITrebalance plugin                                                                     |
@@ -215,7 +215,7 @@ Python plugins developers must ensure their plugin to work with all Python versi
 [esplora]: https://github.com/Blockstream/esplora
 [event-notifications]: https://lightning.readthedocs.io/PLUGINS.html#event-notifications
 [event-websocket]: https://github.com/rbndg/c-lightning-events
-[feeadjuster]: https://github.com/lightningd/plugins/tree/master/archived/feeadjuster
+[feeadjuster]: https://github.com/lightningd/plugins/tree/master/feeadjuster
 [go-api]: https://github.com/niftynei/glightning
 [graphql]: https://github.com/nettijoe96/c-lightning-graphql
 [graphql-spec]: https://graphql.org/
