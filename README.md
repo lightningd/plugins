@@ -21,6 +21,7 @@ Community curated plugins for Core-Lightning.
 | [feeadjuster][feeadjuster]           | Dynamic fees to keep your channels more balanced                                            |
 | [go-lnmetrics.reporter][reporter]    | Collect and report of the lightning node metrics                                            |
 | [graphql][graphql]                   | Exposes the Core-Lightning API over [graphql][graphql-spec]                                 |
+| [holdinvoice][holdinvoice]           | Holds htlcs for invoices until settle or cancel is called (aka Hodlinvoices) via RPC/GRPC   |
 | [invoice-queue][invoice-queue]       | Listen to lightning invoices from multiple nodes and send to a redis queue for processing   |
 | [lightning-qt][lightning-qt]         | A bitcoin-qt-like GUI for lightningd                                                        |
 | [listmempoolfunds][listmempoolfunds] | Track unconfirmed wallet deposits                                                           |
@@ -217,6 +218,7 @@ Python plugins developers must ensure their plugin to work with all Python versi
 [graphql-spec]: https://graphql.org/
 [helpme]: https://github.com/lightningd/plugins/tree/master/archived/helpme
 [historian]: https://github.com/lightningd/plugins/tree/master/archived/historian
+[holdinvoice]: https://github.com/daywalker90/holdinvoice
 [invoice-queue]: https://github.com/rbndg/Lightning-Invoice-Queue
 [java-api]: https://github.com/clightning4j/JRPClightning
 [jitrebalance]: https://github.com/lightningd/plugins/tree/master/archived/jitrebalance

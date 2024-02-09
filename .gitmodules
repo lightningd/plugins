@@ -40,3 +40,6 @@
 [submodule "python-teos"]
 	path = python-teos
 	url = https://github.com/talaia-labs/python-teos
+[submodule "holdinvoice"]
+	path = holdinvoice
+	url = https://github.com/daywalker90/holdinvoice.git
