@@ -200,7 +200,7 @@ def prepare_generic(p: Plugin, directory: Path):
     if p.details['setup'].exists():
         print(f"Running setup script from {p.details['setup']}")
         subprocess.check_call(
-            ['bash',  p.details['setup']],
+            ['bash',  p.details['setup'], f'TEST_DIR={directory}'],
             stderr=subprocess.STDOUT,
         )
     install_pyln_testing(pip_path)
