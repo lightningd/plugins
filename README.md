@@ -15,6 +15,7 @@ Community curated plugins for Core-Lightning.
 | [cln-ntfy][cln-ntfy]                 | Core Lightning plugin for sending `ntfy` alerts.                                            |
 | [csvexportpays][csvexportpays]       | A plugin that exports all payments to a CSV file                                            |
 | [currencyrate][currencyrate]         | A plugin to convert other currencies to BTC using web requests                              |
+| [donations][donations]               | A simple donations page to accept donations from the web                                    |
 | [event-websocket][event-websocket]   | Exposes notifications over a Websocket                                                      |
 | [feeadjuster][feeadjuster]           | Dynamic fees to keep your channels more balanced                                            |
 | [go-lnmetrics.reporter][reporter]    | Collect and report of the lightning node metrics                                            |
@@ -50,7 +51,6 @@ If you like a plugin from that list, feel free to update and fix it, so we can u
 | [autopilot][autopilot]               | An autopilot that suggests channels that should be established                              |
 | [backup][backup]                     | A simple and reliable backup plugin                                                         |
 | [commando][commando]                 | This plugin allows to send commands between nodes                                           |
-| [donations][donations]               | A simple donations page to accept donations from the web                                    |
 | [drain][drain]                       | Draining, filling and balancing channels with automatic chunks.                             |
 | [helpme][helpme]                     | This plugin is designed to walk you through setting up a fresh Core-Lightning node          |
 | [historian][historian]               | Archiving the Lightning Network                                                             |
