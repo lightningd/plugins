@@ -7,16 +7,17 @@ license = "MIT"
 readme = "README.md"
 
 [tool.poetry.dependencies]
-python = "^3.7"
+python = "^3.8"
 qrcode = "6.1"
 flask = "2.0.3"
-pyln-client = "0.12.1"
+pyln-client = "^23.11"
 flask-bootstrap = "^3.3.7.1"
 flask-wtf = "0.15.1"
+werkzeug = "<3"
 wtforms = "2.3.3"
 
 [tool.poetry.dev-dependencies]
-pyln-testing = "0.12.1"
+pyln-testing = "^23.11"
 
 [build-system]
 requires = ["poetry-core"]
