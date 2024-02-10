@@ -8,6 +8,7 @@ Community curated plugins for Core-Lightning.
 
 | Name                                 | Short description                                                                           |
 | ------------------------------------ | ------------------------------------------------------------------------------------------- |
+| [backup][backup]                     | A simple and reliable backup plugin                                                         |
 | [boltz-channel-creation][boltz]      | A Core-Lightning plugin for Boltz Channel Creation Swaps                                    |
 | [btcli4j][btcli4j]                   | A Bitcoin Backend to enable safely the pruning mode, and support also rest APIs.            |
 | [circular][circular]                 | A smart rebalancing plugin for Core Lightning routing nodes                                 |
@@ -49,7 +50,6 @@ If you like a plugin from that list, feel free to update and fix it, so we can u
 | Name                                 | Short description                                                                           |
 | ------------------------------------ | ------------------------------------------------------------------------------------------- |
 | [autopilot][autopilot]               | An autopilot that suggests channels that should be established                              |
-| [backup][backup]                     | A simple and reliable backup plugin                                                         |
 | [commando][commando]                 | This plugin allows to send commands between nodes                                           |
 | [drain][drain]                       | Draining, filling and balancing channels with automatic chunks.                             |
 | [helpme][helpme]                     | This plugin is designed to walk you through setting up a fresh Core-Lightning node          |
