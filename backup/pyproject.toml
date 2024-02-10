@@ -5,19 +5,20 @@ description = "Keep your Core-Lightning node save by backing it up, in real-time
 authors = ["Christian Decker <decker@blockstream.com>"]
 
 [tool.poetry.dependencies]
-python = "^3.7"
-pyln-client = "0.12.1"
+python = "^3.8"
+pyln-client = "^23.11"
 click = "^8.0.4"
 tqdm = "^4.62.3"
-psutil = "5.9.4"
-flask = "2.2.2"
+psutil = "^5.9.4"
+flask = "^2.2"
+werkzeug = "<3"
 
 [tool.poetry.group.dev.dependencies]
-pyln-testing = "0.12.1"
+pyln-testing = "^23.11"
 flaky = "^3.7.0"
-pytest-timeout = "^2.1.0"
+pytest-timeout = "^2.2.0"
 pytest-xdist = "^3.1.0"
 
 [build-system]
-requires = ["poetry-core>=1.0.0"]
+requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
