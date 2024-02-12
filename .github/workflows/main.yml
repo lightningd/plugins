@@ -48,9 +48,10 @@ jobs:
 
     - name: Download & install c-lightning binaries
       run: |
-        curl -s -L $(curl -s https://api.github.com/repos/ElementsProject/lightning/releases/latest | jq '.assets[] | select(.name | contains("22.04")) | .browser_download_url' | tr -d '\"') | tar xJ -C .
-        sudo mv usr/bin/* /usr/local/bin
-        rm -r usr
+        url=$(curl -s https://api.github.com/repos/ElementsProject/lightning/releases/latest | jq '.assets[] | select(.name | contains("22.04")) | .browser_download_url' | tr -d '\"')
+        wget $url
+        sudo tar -xvf ${url##*/} -C /usr/local --strip-components=2
+
         export EXPERIMENTAL_FEATURES=${{ matrix.experimental }}
         export COMPAT=${{ matrix.deprecated }}
         export VALGRIND=0
