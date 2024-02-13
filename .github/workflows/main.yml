@@ -96,6 +96,7 @@ jobs:
         # Collect the plugins that have changed
         echo "Using git diff ${{github.base_ref}} ${{github.sha}}"
         plugin_dirs=$(git diff --name-only ${{ github.base_ref }} ${{ github.event.after }} | cut -d "/" -f1 | uniq | grep -v '^\.' | while read -r line; do [ -d "$line" ] && [[ "$line" != "archived" ]] && echo $line; done)
+        git checkout v23.11
 
         # Run the tests
         echo Testing plugins: $(echo "$plugin_dirs")
