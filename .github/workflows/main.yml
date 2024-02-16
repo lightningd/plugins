@@ -1,4 +1,4 @@
-name: Integration Tests
+name: Integration Tests (latest)
 
 # Cancel duplicate jobs
 concurrency:
@@ -12,7 +12,7 @@ on:
 
 jobs:
   build-and-test:
-    name: Test PY=${{ matrix.python-version }}, BCD=${{ matrix.bitcoind-version }}, CLN=${{ matrix.cln-version }}, EXP=${{ matrix.experimental }}, DEP=${{ matrix.deprecated }}
+    name: Test PY=${{ matrix.python-version }}, BCD=${{ matrix.bitcoind-version }}, EXP=${{ matrix.experimental }}, DEP=${{ matrix.deprecated }}
     runs-on: ubuntu-latest
     timeout-minutes: 60
     strategy:
@@ -20,7 +20,6 @@ jobs:
       matrix:
         python-version: ["3.8", "3.9", "3.10", "3.11", "3.12"]
         bitcoind-version: ["26.0"]
-        cln-version: ["master", "v23.11"]
         experimental: [1]
         deprecated: [0]
 
@@ -29,16 +28,7 @@ jobs:
       with:
         submodules: recursive
 
-    - name: Checkout c-lightning@${{ matrix.cln-version }}
-      uses: actions/checkout@v4
-      with:
-        repository: 'ElementsProject/lightning'
-        path: 'lightning'
-        ref: ${{ matrix.cln-version }}
-        submodules: 'recursive'
-        fetch-depth: 0  # Required for pyln versions to be recognized
-
-    - name: Download runtime dependencies
+    - name: Download Bitcoin ${{ matrix.bitcoind-version }} & install binaries
       run: |
         export BITCOIND_VERSION=${{ matrix.bitcoind-version }}
         wget https://bitcoincore.org/bin/bitcoin-core-${BITCOIND_VERSION}/bitcoin-${BITCOIND_VERSION}-x86_64-linux-gnu.tar.gz
@@ -46,23 +36,30 @@ jobs:
         sudo mv bitcoin-${BITCOIND_VERSION}/bin/* /usr/local/bin
         rm -rf bitcoin-${BITCOIND_VERSION}-x86_64-linux-gnu.tar.gz bitcoin-${BITCOIND_VERSION}
 
-    - name: Compile & install c-lightning@master
+    - name: Download Core Lightning latest & install binaries
+      id: cln-latest-install
       run: |
-        export EXPERIMENTAL_FEATURES=${{ matrix.experimental }}
-        export COMPAT=${{ matrix.deprecated }}
-        export VALGRIND=0
+        url=$(curl -s https://api.github.com/repos/ElementsProject/lightning/releases/latest \
+          | jq '.assets[] | select(.name | contains("22.04")) | .browser_download_url' \
+          | tr -d '\"')
+        wget $url
+        sudo tar -xvf ${url##*/} -C /usr/local --strip-components=2
+        echo "CLN_VERSION=$(lightningd --version)" >> "$GITHUB_OUTPUT"
+
+    - name: Checkout Core Lightning latest
+      uses: actions/checkout@v4
+      with:
+        repository: 'ElementsProject/lightning'
+        path: 'lightning'
+        ref: ${{ steps.cln-latest-install.outputs.CLN_VERSION }}
+        fetch-depth: 0  # Fetch all history for all branches and tags
+        submodules: 'recursive'
+
+    - name: Install Core Lightning Python package dependencies
+      run: |
         sudo apt-get install -y \
-          build-essential \
-          gettext \
-          libpq-dev \
-          libsodium-dev \
-          libsqlite3-dev \
-          net-tools \
-          postgresql \
-          protobuf-compiler \
           python3 \
           python3-pip \
-          zlib1g-dev
 
         cd lightning
         pip3 install --user -U \
@@ -79,26 +76,48 @@ jobs:
         pip install --user -U -r requirements.txt
         pip install --user contrib/pyln-client contrib/pyln-testing flaky
 
-        ./configure --disable-valgrind
-        make -j 16
-        sudo make install
-
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v5
       with:
         python-version: ${{ matrix.python-version }}
 
-    - name: Test with pytest
+    - name: Run pytest tests
       run: |
-        export EXPERIMENTAL_FEATURES=${{ matrix.experimental }}
+        export CLN_PATH=${{ github.workspace }}/lightning
         export COMPAT=${{ matrix.deprecated }}
+        export EXPERIMENTAL_FEATURES=${{ matrix.experimental }}
         export SLOW_MACHINE=1
         export TEST_DEBUG=1
         export TRAVIS=1
-        export CLN_PATH=${{ github.workspace }}/lightning
+        export VALGRIND=0
+
         pip3 install --upgrade pip
         pip3 install --user -U virtualenv pip > /dev/null
-        python3 .ci/test.py
+
+        plugin_dirs=''
+
+        if [[ ${{ github.event_name }} == 'pull_request' ]]; then
+          # Fetch and checkout branches to permit the 'git diff' below.
+          git fetch && git checkout ${{ github.base_ref }}
+
+          source_repo="${{ github.event.pull_request.head.repo.full_name }}"
+          # Fetch and update local head ref if the source repository is not ours.
+          if [[ $source_repo != ${{ github.repository }} ]]; then
+            git fetch https://github.com/$source_repo.git ${{ github.head_ref }}:${{ github.head_ref }}
+          fi
+          git checkout ${{ github.head_ref }}
+
+          # Collect the plugins that have changed.
+          plugin_dirs=$(git diff --name-only ${{ github.base_ref }} ${{ github.head_ref }} \
+            | cut -d '/' -f1 \
+            | grep -v '^\.' \
+            | grep -v 'archived' \
+            | xargs -I {} find {} -maxdepth 0 -type d)
+        fi
+
+        # Run the tests: In the case of a 'pull_request' event only the plugins in `plugin_dirs`
+        # are going to be tested; otherwise ('push' event) we test all plugins.
+        python3 .ci/test.py $(echo "$plugin_dirs")
 
   gather:
     # A dummy task that depends on the full matrix of tests, and
