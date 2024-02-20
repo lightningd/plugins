@@ -6,7 +6,7 @@ This plugin will maintain clean database backups to another location. It uses
 the `db_write` hook to make sure to always have a backup that is not missing any
 state updates and is not potentially harmful.
 
-Related info about backup solutions: https://github.com/ElementsProject/lightning/blob/master/doc/beginners-guide/backup-and-recovery.md
+Related info about backup solutions: https://github.com/ElementsProject/lightning/blob/master/doc/beginners-guide/backup.md
 
 ## Installation
 
