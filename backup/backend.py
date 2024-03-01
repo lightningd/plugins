@@ -4,7 +4,6 @@ import re
 from typing import Iterator
 
 import sqlite3
-from tqdm import tqdm
 
 # A 'transaction' that was proposed by Core-Lightning and that needs saving to the
 # backup. `version` is the `data_version` of the database **after** `transaction`
@@ -117,7 +116,7 @@ class Backend(object):
             os.unlink(dest)
 
         self.db = self._db_open(dest)
-        for c in tqdm(self.stream_changes(), total=self.version_count):
+        for c in self.stream_changes():
             if c.snapshot is not None:
                 self._restore_snapshot(c.snapshot, dest)
             if c.transaction is not None:
