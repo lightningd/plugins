@@ -69,7 +69,9 @@ def getchaininfo(plugin, **kwargs):
         "000000000933ea01ad0ee984209779baaec3ced90fa3f408719526f8d77f4943":
         "test",
         "0f9188f13cb7b2c71f2a335e3a4fc328bf5beb436012afca590b1a11466e2206":
-        "regtest"
+        "regtest",
+        "00000008819873e925422c1ff0f99f7cc9bbb232af63a077a480a3633bee1ef6":
+        "signet"
     }
 
     genesis_req = fetch(blockhash_url)
@@ -191,7 +193,7 @@ def estimatefees(plugin, **kwargs):
     feerate_req = fetch(feerate_url)
     assert feerate_req.status_code == 200
     feerates = feerate_req.json()
-    if plugin.sauron_network == "test":
+    if plugin.sauron_network == "test" or plugin.sauron_network == "signet":
         # FIXME: remove the hack if the test API is "fixed"
         feerate = feerates.get("144", 1)
         slow = normal = urgent = very_urgent = int(feerate * 10**3)
