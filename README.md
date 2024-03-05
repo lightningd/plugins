@@ -33,6 +33,7 @@ Community curated plugins for Core-Lightning.
 | [poncho][poncho]                     | Turns CLN into a [hosted channels][blip12] provider                                         |
 | [pruning][pruning]                   | This plugin manages pruning of bitcoind such that it can always sync                        |
 | [python-teos][python-teos]           | The Eye of Satoshi - Lightning Watchtower                                                   |
+| [rebalance][rebalance]               | Keeps your channels balanced                                                                |
 | [reckless][reckless]                 | An **experimental** plugin manager (search/install plugins)                                 |
 | [sauron][sauron]                     | A Bitcoin backend relying on [Esplora][esplora]'s API                                       |
 | [sitzprobe][sitzprobe]               | A Lightning Network payment rehearsal utility                                               |
@@ -62,7 +63,6 @@ If you like a plugin from that list, feel free to update and fix it, so we can u
 | [paytest][paytest]                   | A plugin to benchmark the performance of the ~pay~ plugin                                   |
 | [probe][probe]                       | Regularly probes the network for stability                                                  |
 | [prometheus][prometheus]             | Lightning node exporter for the prometheus timeseries server                                |
-| [rebalance][rebalance]               | Keeps your channels balanced                                                                |
 | [summary][summary]                   | Print a nice summary of the node status                                                     |
 
 ## Installation
@@ -242,7 +242,7 @@ Python plugins developers must ensure their plugin to work with all Python versi
 [python-api]: https://github.com/ElementsProject/lightning/tree/master/contrib/pylightning
 [python-api-pypi]: https://pypi.org/project/pylightning/
 [python-teos]: https://github.com/talaia-labs/python-teos
-[rebalance]: https://github.com/lightningd/plugins/tree/master/archived/rebalance
+[rebalance]: https://github.com/lightningd/plugins/tree/master/rebalance
 [reckless]: https://github.com/darosior/reckless
 [reporter]: https://github.com/LNOpenMetrics/go-lnmetrics.reporter
 [sauron]: https://github.com/lightningd/plugins/tree/master/sauron
