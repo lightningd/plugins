@@ -1,0 +1,107 @@
+name: Nightly Integration Tests (master)
+
+on:
+  schedule:
+    - cron: "21 2 * * *"
+
+jobs:
+  nightly-build-and-test:
+    name: Test PY=${{ matrix.python-version }}, BCD=${{ matrix.bitcoind-version }}, EXP=${{ matrix.experimental }}, DEP=${{ matrix.deprecated }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.8", "3.9", "3.10", "3.11", "3.12"]
+        bitcoind-version: ["26.0"]
+        experimental: [1]
+        deprecated: [0]
+
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        submodules: recursive
+
+    - name: Download Bitcoin & install binaries
+      run: |
+        export BITCOIND_VERSION=${{ matrix.bitcoind-version }}
+        wget https://bitcoincore.org/bin/bitcoin-core-${BITCOIND_VERSION}/bitcoin-${BITCOIND_VERSION}-x86_64-linux-gnu.tar.gz
+        tar -xzf bitcoin-${BITCOIND_VERSION}-x86_64-linux-gnu.tar.gz
+        sudo mv bitcoin-${BITCOIND_VERSION}/bin/* /usr/local/bin
+        rm -rf bitcoin-${BITCOIND_VERSION}-x86_64-linux-gnu.tar.gz bitcoin-${BITCOIND_VERSION}
+
+    - name: Checkout Core Lightning
+      uses: actions/checkout@v4
+      with:
+        repository: 'ElementsProject/lightning'
+        path: 'lightning'
+        ref: master
+        submodules: 'recursive'
+        fetch-depth: 0  # Required for pyln versions to be recognized
+
+    - name: Compile & install Core Lightning
+      run: |
+        export EXPERIMENTAL_FEATURES=${{ matrix.experimental }}
+        export COMPAT=${{ matrix.deprecated }}
+        export VALGRIND=0
+        sudo apt-get install -y \
+          build-essential \
+          gettext \
+          libpq-dev \
+          libsodium-dev \
+          libsqlite3-dev \
+          net-tools \
+          postgresql \
+          protobuf-compiler \
+          python3 \
+          python3-pip \
+          zlib1g-dev
+
+        cd lightning
+        pip3 install --user -U \
+          pip \
+          poetry \
+          wheel \
+          blinker \
+          pytest-custom-exit-code==0.3.0 \
+          pytest-json-report
+
+        poetry install
+        poetry update
+        poetry export --without-hashes -f requirements.txt --output requirements.txt
+        pip install --user -U -r requirements.txt
+        pip install --user contrib/pyln-client contrib/pyln-testing flaky
+
+        ./configure --disable-valgrind
+        make -j 16
+        sudo make install
+
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: Test with pytest
+      run: |
+        export EXPERIMENTAL_FEATURES=${{ matrix.experimental }}
+        export COMPAT=${{ matrix.deprecated }}
+        export SLOW_MACHINE=1
+        export TEST_DEBUG=1
+        export TRAVIS=1
+        export CLN_PATH=${{ github.workspace }}/lightning
+        pip3 install --upgrade pip
+        pip3 install --user -U virtualenv pip > /dev/null
+        python3 .ci/test.py
+
+  gather:
+    # A dummy task that depends on the full matrix of tests, and
+    # signals successful completion. Used for the PR status to pass
+    # before merging.
+    name: CI completion
+    runs-on: ubuntu-22.04
+    needs:
+      - nightly-build-and-test
+    steps:
+      - name: Complete
+        run: |
+          echo Nightly CI completed successfully
