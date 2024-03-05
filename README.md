@@ -2,7 +2,8 @@
 
 Community curated plugins for Core-Lightning.
 
-![Integration Tests](https://github.com/lightningd/plugins/actions/workflows/main.yml/badge.svg)
+![Integration Tests (latest)](https://github.com/lightningd/plugins/actions/workflows/main.yml/badge.svg)
+![Nightly Integration Tests (master)](https://github.com/lightningd/plugins/actions/workflows/nightly.yml/badge.svg)
 
 ## Available plugins
 
@@ -241,7 +242,7 @@ Python plugins developers must ensure their plugin to work with all Python versi
 [python-api]: https://github.com/ElementsProject/lightning/tree/master/contrib/pylightning
 [python-api-pypi]: https://pypi.org/project/pylightning/
 [python-teos]: https://github.com/talaia-labs/python-teos
-[rebalance]: https://github.com/lightningd/plugins/tree/master/archived/rebalance
+[rebalance]: https://github.com/lightningd/plugins/tree/master/rebalance
 [reckless]: https://github.com/darosior/reckless
 [reporter]: https://github.com/LNOpenMetrics/go-lnmetrics.reporter
 [sauron]: https://github.com/lightningd/plugins/tree/master/sauron
