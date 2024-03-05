@@ -474,14 +474,14 @@ def check_liquidity_threshold(channels: list, threshold: Millisatoshi):
     total = sum(ch["total_msat"] for ch in channels)
     required = Millisatoshi(0)
     for ch in channels:
-        required += min(threshold, ch["total_msat"] / 2)
+        required += min(threshold, Millisatoshi(ch["total_msat"]) / 2)
     return required < our and required < total - our
 
 
 def get_enough_liquidity_threshold(channels: list):
     low = Millisatoshi(0)
     biggest_channel = max(channels, key=lambda ch: ch["total_msat"])
-    high = biggest_channel["total_msat"] / 2
+    high = Millisatoshi(biggest_channel["total_msat"]) / 2
     while True:
         mid = (low + high) / 2
         if high - low < Millisatoshi("1sat"):
@@ -498,20 +498,20 @@ def get_ideal_ratio(channels: list, enough_liquidity: Millisatoshi):
     # small channels should have a 50/50 liquidity ratio to be usable
     # and big channels can store the remaining liquidity above the threshold
     assert len(channels) > 0
-    our = sum(ch["to_us_msat"] for ch in channels)
-    total = sum(ch["total_msat"] for ch in channels)
+    our = sum(Millisatoshi(ch["to_us_msat"]) for ch in channels)
+    total = sum(Millisatoshi(ch["total_msat"]) for ch in channels)
     chs = list(channels)  # get a copy!
     while len(chs) > 0:
         ratio = int(our) / int(total)
         smallest_channel = min(chs, key=lambda ch: ch["total_msat"])
-        if smallest_channel["total_msat"] * min(ratio, 1 - ratio) > enough_liquidity:
+        if Millisatoshi(smallest_channel["total_msat"]) * min(ratio, 1 - ratio) > enough_liquidity:
             break
-        min_liquidity = min(smallest_channel["total_msat"] / 2, enough_liquidity)
-        diff = smallest_channel["total_msat"] * ratio
+        min_liquidity = min(Millisatoshi(smallest_channel["total_msat"]) / 2, enough_liquidity)
+        diff = Millisatoshi(smallest_channel["total_msat"]) * ratio
         diff = max(diff, min_liquidity)
-        diff = min(diff, smallest_channel["total_msat"] - min_liquidity)
+        diff = min(diff, Millisatoshi(smallest_channel["total_msat"]) - min_liquidity)
         our -= diff
-        total -= smallest_channel["total_msat"]
+        total -= Millisatoshi(smallest_channel["total_msat"])
         chs.remove(smallest_channel)
     assert 0 <= ratio and ratio <= 1
     return ratio
@@ -552,14 +552,14 @@ def get_chan(scid: str):
 
 def liquidity_info(channel, enough_liquidity: Millisatoshi, ideal_ratio: float):
     liquidity = {
-        "our": channel["to_us_msat"],
-        "their": channel["total_msat"] - channel["to_us_msat"],
-        "min": min(enough_liquidity, channel["total_msat"] / 2),
-        "max": max(a_minus_b(channel["total_msat"], enough_liquidity), channel["total_msat"] / 2),
+        "our": Millisatoshi(channel["to_us_msat"]),
+        "their": Millisatoshi(channel["total_msat"] - channel["to_us_msat"]),
+        "min": min(enough_liquidity, Millisatoshi(channel["total_msat"]) / 2),
+        "max": max(a_minus_b(Millisatoshi(channel["total_msat"]), enough_liquidity), Millisatoshi(channel["total_msat"]) / 2),
         "ideal": {}
     }
-    liquidity["ideal"]["our"] = min(max(channel["total_msat"] * ideal_ratio, liquidity["min"]), liquidity["max"])
-    liquidity["ideal"]["their"] = min(max(channel["total_msat"] * (1 - ideal_ratio), liquidity["min"]), liquidity["max"])
+    liquidity["ideal"]["our"] = min(max(Millisatoshi(channel["total_msat"]) * ideal_ratio, liquidity["min"]), liquidity["max"])
+    liquidity["ideal"]["their"] = min(max(Millisatoshi(channel["total_msat"]) * (1 - ideal_ratio), liquidity["min"]), liquidity["max"])
     return liquidity
 
 
