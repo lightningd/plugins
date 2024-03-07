@@ -109,13 +109,15 @@ jobs:
             git remote add other-remote https://github.com/$source_repo
             git fetch other-remote
             head_ref="other-remote/${{ github.head_ref }}"
-          else
-            git checkout ${{ github.head_ref }}
           fi
+
+          # Restore original state
+          git checkout ${{ github.head_ref }}
 
           # Collect the plugins that have changed.
           plugin_dirs=$(git diff --name-only ${{ github.base_ref }} $head_ref \
             | cut -d '/' -f1 \
+            | uniq \
             | grep -v '^\.' \
             | grep -v 'archived' \
             | xargs -I {} find {} -maxdepth 0 -type d)
