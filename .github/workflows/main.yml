@@ -96,33 +96,6 @@ jobs:
 
         plugin_dirs=''
 
-        if [[ '${{ github.event_name }}' == 'pull_request' ]]
-        then
-          # Fetch and checkout branches to permit the 'git diff' below.
-          git fetch && git checkout ${{ github.base_ref }}
-
-          head_ref='${{ github.head_ref }}'
-          source_repo="${{ github.event.pull_request.head.repo.full_name }}"
-          # Fetch and update local head ref if the source repository is not ours.
-          if [[ "$source_repo" != "${{ github.repository }}" ]]
-          then
-            git remote add other-remote https://github.com/$source_repo
-            git fetch other-remote
-            head_ref="other-remote/${{ github.head_ref }}"
-          fi
-
-          # Restore original state
-          git checkout ${{ github.head_ref }}
-
-          # Collect the plugins that have changed.
-          plugin_dirs=$(git diff --name-only ${{ github.base_ref }} $head_ref \
-            | cut -d '/' -f1 \
-            | uniq \
-            | grep -v '^\.' \
-            | grep -v 'archived' \
-            | xargs -I {} find {} -maxdepth 0 -type d)
-        fi
-
         # Run the tests: In the case of a 'pull_request' event only the plugins in `plugin_dirs`
         # are going to be tested; otherwise ('push' event) we test all plugins.
         python3 .ci/test.py $(echo "$plugin_dirs")
