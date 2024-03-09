@@ -46,3 +46,6 @@
 [submodule "sling"]
 	path = sling
 	url = https://github.com/daywalker90/sling
+[submodule "summars"]
+	path = summars
+	url = https://github.com/daywalker90/summars.git
