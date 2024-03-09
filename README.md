@@ -38,6 +38,7 @@ Community curated plugins for Core-Lightning.
 | [sitzprobe][sitzprobe]               | A Lightning Network payment rehearsal utility                                               |
 | [sling][sling]                       | Rebalance your channels with smart rules and built-in background tasks                      |
 | [sparko][sparko]                     | RPC over HTTP with fine-grained permissions, SSE and spark-wallet support                   |
+| [summars][summars]                   | Print configurable summary of node, channels and optionally forwards, invoices, payments    |
 | [trustedcoin][trustedcoin]           | Replace your Bitcoin Core with data from public block explorers                             |
 | [watchtower][watchtower-client]      | Watchtower client for The Eye of Satoshi                                                    |
 | [webhook][webhook]                   | Dispatches webhooks based from [event notifications][event-notifications]                   |
@@ -249,6 +250,7 @@ Python plugins developers must ensure their plugin to work with all Python versi
 [sitzprobe]: https://github.com/niftynei/sitzprobe
 [sling]: https://github.com/daywalker90/sling
 [sparko]: https://github.com/fiatjaf/sparko
+[summars]: https://github.com/daywalker90/summars
 [summary]: https://github.com/lightningd/plugins/tree/master/archived/summary
 [trustedcoin]: https://github.com/fiatjaf/trustedcoin
 [ts-api]: https://github.com/runcitadel/c-lightning.ts
