@@ -23,16 +23,25 @@ def test_rebalance_starts(node_factory):
     l1 = node_factory.get_node()
     # Test dynamically
     l1.rpc.plugin_start(plugin_path)
+    l1.daemon.wait_for_log("Plugin rebalance initialized.*")
     l1.rpc.plugin_stop(plugin_path)
     l1.rpc.plugin_start(plugin_path)
+    l1.daemon.wait_for_log("Plugin rebalance initialized.*")
     l1.stop()
     # Then statically
     l1.daemon.opts["plugin"] = plugin_path
     l1.start()
+    # Start at 0 and 're-await' the two inits above. Otherwise this is flaky.
+    l1.daemon.logsearch_start = 0
+    l1.daemon.wait_for_logs(["Plugin rebalance initialized.*",
+                             "Plugin rebalance initialized.*",
+                             "Plugin rebalance initialized.*"])
 
 
 def test_rebalance_manual(node_factory, bitcoind):
     l1, l2, l3 = node_factory.line_graph(3, opts=plugin_opt)
+    l1.daemon.logsearch_start = 0
+    l1.daemon.wait_for_log("Plugin rebalance initialized.*")
     nodes = [l1, l2, l3]
 
     # form a circle so we can do rebalancing
@@ -85,6 +94,8 @@ def test_rebalance_manual(node_factory, bitcoind):
 
 def test_rebalance_all(node_factory, bitcoind):
     l1, l2, l3 = node_factory.line_graph(3, opts=plugin_opt)
+    l1.daemon.logsearch_start = 0
+    l1.daemon.wait_for_log("Plugin rebalance initialized.*")
     nodes = [l1, l2, l3]
 
     # check we get an error if theres just one channel
