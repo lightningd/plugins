@@ -1,15 +1,15 @@
-from pathlib import Path
-import subprocess
-from pprint import pprint
-from collections import namedtuple
-from typing import Generator
-
+import json
 import logging
+import os
+import shlex
 import shutil
+import subprocess
 import sys
 import tempfile
-import shlex
-import os
+from collections import namedtuple
+from pathlib import Path, PosixPath
+from typing import Generator, List
+from itertools import chain
 
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 
@@ -18,8 +18,8 @@ exclude = [
     '.ci',
     '.git',
     '.github',
+    'archived',
     'lightning',
-    'feeadjuster'
 ]
 
 global_dependencies = [
@@ -42,6 +42,10 @@ Plugin = namedtuple(
 )
 
 
+def list_plugins(plugins):
+    return ", ".join([p.name for p in sorted(plugins)])
+
+
 def enumerate_plugins(basedir: Path) -> Generator[Plugin, None, None]:
     plugins = list([
         x for x in basedir.iterdir() \
@@ -50,13 +54,17 @@ def enumerate_plugins(basedir: Path) -> Generator[Plugin, None, None]:
     pip_pytest = [
         x for x in plugins if (x / Path('requirements.txt')).exists()
     ]
+    print(f"Pip plugins: {list_plugins(pip_pytest)}")
 
     poetry_pytest = [
         x for x in plugins if (x / Path("pyproject.toml")).exists()
     ]
-    print(poetry_pytest)
+    print(f"Poetry plugins: {list_plugins(poetry_pytest)}")
 
-    other_plugins = [x for x in plugins if x not in pip_pytest and x not in poetry_pytest]
+    other_plugins = [
+        x for x in plugins if x not in pip_pytest and x not in poetry_pytest
+    ]
+    print(f"Other plugins: {list_plugins(other_plugins)}")
 
     for p in sorted(pip_pytest):
         yield Plugin(
@@ -227,20 +235,24 @@ def install_pyln_testing(pip_path):
         stderr=subprocess.STDOUT,
     )
 
-def run_one(p: Plugin) -> bool:
-    print("Running tests on plugin {p.name}".format(p=p))
-
-    testfiles = [
+def get_testfiles(p: Plugin) -> List[PosixPath]:
+    return [
         x for x in p.path.iterdir()
         if (x.is_dir() and x.name == 'tests')
         or (x.name.startswith("test_") and x.name.endswith('.py'))
     ]
 
-    if len(testfiles) == 0:
+def has_testfiles(p: Plugin) -> bool:
+    return len(get_testfiles(p)) > 0
+
+def run_one(p: Plugin) -> bool:
+    print("Running tests on plugin {p.name}".format(p=p))
+
+    if not has_testfiles(p):
         print("No test files found, skipping plugin {p.name}".format(p=p))
         return True
 
-    print("Found {ctestfiles} test files, creating virtualenv and running tests".format(ctestfiles=len(testfiles)))
+    print("Found {ctestfiles} test files, creating virtualenv and running tests".format(ctestfiles=len(get_testfiles(p))))
     print("##[group]{p.name}".format(p=p))
 
     # Create a virtual env
@@ -295,8 +307,65 @@ def run_one(p: Plugin) -> bool:
     finally:
         print("##[endgroup]")
 
+def configure_git():
+    # Git requires some user and email to be configured in order to work in the context of GitHub Actions.
+    subprocess.run(
+        ["git", "config", "--global", "user.email", '"lightningd@github.plugins.repo"']
+    )
+    subprocess.run(["git", "config", "--global", "user.name", '"lightningd"'])
 
-def run_all(args):
+
+# gather data
+def collect_gather_data(results, success):
+    gather_data = {}
+    for t in results:
+        p = t[0]
+        if has_testfiles(p):
+            if success or t[1]:
+                gather_data[p.name] = "passed"
+            else:
+                gather_data[p.name] = "failed"
+    return gather_data
+
+
+def push_gather_data(data, workflow, python_version):
+    print("Pushing gather data...")
+    configure_git()
+    subprocess.run(["git", "fetch"])
+    subprocess.run(["git", "checkout", "badges"])
+    filenames_to_add = []
+    for plugin_name, result in data.items():
+        filenames_to_add.append(git_add_gather_data(
+            plugin_name, result, workflow, python_version
+        ))
+    output = subprocess.check_output(list(chain(["git", "add", "-v"], filenames_to_add))).decode("utf-8")
+    print(f"output from git add: {output}")
+    if output != "":
+        output = subprocess.check_output(
+            [
+                "git",
+                "commit",
+                "-m",
+                f"Update test result for Python{python_version} to ({workflow} workflow)",
+            ]
+        ).decode("utf-8")
+        print(f"output from git commit: {output}")
+        subprocess.run(["git", "push", "origin", "badges"])
+    print("Done.")
+
+
+def git_add_gather_data(plugin_name, result, workflow, python_version):
+    _dir = f".badges/gather_data/{workflow}/{plugin_name}"
+    filename = os.path.join(_dir, f"python{python_version}.txt")
+    os.makedirs(_dir, exist_ok=True)
+    with open(filename, "w") as file:
+        print(f"Writing {filename}")
+        file.write(result)
+
+    return filename
+
+
+def run_all(workflow, python_version, update_badges, plugin_names):
     root_path = subprocess.check_output([
         'git',
         'rev-parse',
@@ -306,8 +375,8 @@ def run_all(args):
     root = Path(root_path)
 
     plugins = list(enumerate_plugins(root))
-    if args != []:
-        plugins = [p for p in plugins if p.name in args]
+    if plugin_names != []:
+        plugins = [p for p in plugins if p.name in plugin_names]
         print("Testing the following plugins: {names}".format(names=[p.name for p in plugins]))
     else:
         print("Testing all plugins in {root}".format(root=root))
@@ -315,11 +384,26 @@ def run_all(args):
     results = [(p, run_one(p)) for p in plugins]
     success = all([t[1] for t in results])
 
+    if update_badges:
+        push_gather_data(collect_gather_data(results, success), workflow, python_version)
+
     if not success:
         print("The following tests failed:")
         for t in filter(lambda t: not t[1], results):
             print(" - {p.name} ({p.path})".format(p=t[0]))
         sys.exit(1)
+    else:
+        print("All tests passed.")
+
 
 if __name__ == "__main__":
-    run_all(sys.argv[1:])
+    import argparse
+
+    parser = argparse.ArgumentParser(description='Plugins test script')
+    parser.add_argument("workflow", type=str, help="Name of the GitHub workflow")
+    parser.add_argument("python_version", type=str, help="Python version")
+    parser.add_argument("--update-badges", action='store_true', help="Whether badges data should be updated")
+    parser.add_argument("plugins", nargs="*", default=[], help="List of plugins")
+    args = parser.parse_args()
+
+    run_all(args.workflow, args.python_version, args.update_badges, args.plugins)
