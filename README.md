@@ -10,7 +10,6 @@ Community curated plugins for Core-Lightning.
 | Name                                 | Short description                                                                           |
 | ------------------------------------ | ------------------------------------------------------------------------------------------- |
 | [backup][backup]                     | A simple and reliable backup plugin                                                         |
-| [boltz-channel-creation][boltz]      | A Core-Lightning plugin for Boltz Channel Creation Swaps                                    |
 | [btcli4j][btcli4j]                   | A Bitcoin Backend to enable safely the pruning mode, and support also rest APIs.            |
 | [circular][circular]                 | A smart rebalancing plugin for Core Lightning routing nodes                                 |
 | [clearnet][clearnet]                 | A plugin that can be used to enforce clearnet connections when possible                     |
@@ -197,7 +196,6 @@ Python plugins developers must ensure their plugin to work with all Python versi
 [autopilot]: https://github.com/lightningd/plugins/tree/master/archived/autopilot
 [backup]: https://github.com/lightningd/plugins/tree/master/archived/backup
 [blip12]: https://github.com/lightning/blips/blob/42cec1d0f66eb68c840443abb609a5a9acb34f8e/blip-0012.md
-[boltz]: https://github.com/BoltzExchange/channel-creation-plugin
 [btcli4j]: https://github.com/clightning4j/btcli4j
 [c-api]: https://github.com/ElementsProject/lightning/blob/master/plugins/libplugin.h
 [circular]: https://github.com/giovannizotta/circular
