@@ -10,9 +10,6 @@
 [submodule "lightning-qt"]
 	path = lightning-qt
 	url = https://github.com/darosior/pylightning-qt.git
-[submodule "sparko"]
-	path = sparko
-	url = https://github.com/fiatjaf/sparko.git
 [submodule "trustedcoin"]
 	path = trustedcoin
 	url = https://github.com/fiatjaf/trustedcoin.git
