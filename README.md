@@ -36,7 +36,6 @@ Community curated plugins for Core-Lightning.
 | [sauron][sauron]                     | A Bitcoin backend relying on [Esplora][esplora]'s API                                       |        |         |
 | [sitzprobe][sitzprobe]               | A Lightning Network payment rehearsal utility                                               |        |         |
 | [sling][sling]                       | Rebalance your channels with smart rules and built-in background tasks                      | ![](https://img.shields.io/endpoint?url=https%3A%2F%2Flightningd.github.io%2Fplugins%2F.badges%2Fsling_main.json) | ![](https://img.shields.io/endpoint?url=https%3A%2F%2Flightningd.github.io%2Fplugins%2F.badges%2Fsling_nightly.json) |
-| [sparko][sparko]                     | RPC over HTTP with fine-grained permissions, SSE and spark-wallet support                   |        |         |
 | [summars][summars]                   | Print configurable summary of node, channels and optionally forwards, invoices, payments    | ![](https://img.shields.io/endpoint?url=https%3A%2F%2Flightningd.github.io%2Fplugins%2F.badges%2Fsummars_main.json) | ![](https://img.shields.io/endpoint?url=https%3A%2F%2Flightningd.github.io%2Fplugins%2F.badges%2Fsummars_nightly.json) |
 | [trustedcoin][trustedcoin]           | Replace your Bitcoin Core with data from public block explorers                             |        |         |
 | [watchtower-client][watchtower-client]      | Watchtower client for The Eye of Satoshi                                                    |        |         |
@@ -62,6 +61,7 @@ If you like a plugin from that list, feel free to update and fix it, so we can u
 | [paytest][paytest]                   | A plugin to benchmark the performance of the ~pay~ plugin                                   |
 | [probe][probe]                       | Regularly probes the network for stability                                                  |
 | [prometheus][prometheus]             | Lightning node exporter for the prometheus timeseries server                                |
+| [sparko][sparko]                     | RPC over HTTP with fine-grained permissions, SSE and spark-wallet support                   |
 | [summary][summary]                   | Print a nice summary of the node status                                                     |
 
 ## Installation
