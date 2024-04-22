@@ -43,3 +43,6 @@
 [submodule "watchtower-client"]
 	path = watchtower-client
 	url = https://github.com/talaia-labs/rust-teos
+[submodule "cln-ntfy"]
+	path = cln-ntfy
+	url = https://github.com/yukibtc/cln-ntfy.git
