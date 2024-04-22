@@ -15,7 +15,6 @@ Community curated plugins for Core-Lightning.
 | [circular][circular]                 | A smart rebalancing plugin for Core Lightning routing nodes                                 |
 | [clearnet][clearnet]                 | A plugin that can be used to enforce clearnet connections when possible                     |
 | [cln-ntfy][cln-ntfy]                 | Core Lightning plugin for sending `ntfy` alerts.                                            |
-| [csvexportpays][csvexportpays]       | A plugin that exports all payments to a CSV file                                            |
 | [currencyrate][currencyrate]         | A plugin to convert other currencies to BTC using web requests                              |
 | [donations][donations]               | A simple donations page to accept donations from the web                                    |
 | [event-websocket][event-websocket]   | Exposes notifications over a Websocket                                                      |
@@ -207,7 +206,6 @@ Python plugins developers must ensure their plugin to work with all Python versi
 [commando]: https://github.com/lightningd/plugins/tree/master/archived/commando
 [cpp-api]: https://github.com/darosior/lightningcpp
 [csharp-example]: https://github.com/joemphilips/DotNetLightning/tree/master/examples/HelloWorldPlugin
-[csvexportpays]: https://github.com/0xB10C/c-lightning-plugin-csvexportpays
 [currencyrate]: https://github.com/lightningd/plugins/tree/master/currencyrate
 [donations]: https://github.com/lightningd/plugins/tree/master/archived/donations
 [drain]: https://github.com/lightningd/plugins/tree/master/archived/drain
