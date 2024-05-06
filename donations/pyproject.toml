@@ -13,7 +13,7 @@ flask = "2.0.3"
 pyln-client = "^23.11"
 flask-bootstrap = "^3.3.7.1"
 flask-wtf = "0.15.1"
-werkzeug = "<3"
+werkzeug = "<4"
 wtforms = "2.3.3"
 
 [tool.poetry.dev-dependencies]
