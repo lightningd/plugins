@@ -10,7 +10,7 @@ pyln-client = "^23.11"
 click = "^8.0.4"
 psutil = "^5.9.4"
 flask = "^2.2"
-werkzeug = "<3"
+werkzeug = "<4"
 
 [tool.poetry.group.dev.dependencies]
 pyln-testing = "^23.11"
