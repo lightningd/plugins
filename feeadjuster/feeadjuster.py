@@ -15,6 +15,7 @@ plugin.adj_balances = {}
 plugin.our_node_id = None
 plugin.peerchannels = None
 plugin.channels = None
+plugin.excludelist = None
 # Users can configure this
 plugin.update_threshold = 0.05
 # forward_event must wait for init
@@ -204,6 +205,8 @@ def significant_update(plugin: Plugin, scid: str):
 def maybe_adjust_fees(plugin: Plugin, scids: list):
     channels_adjusted = 0
     for scid in scids:
+        if scid in plugin.exclude_list or get_peer_id_for_scid(plugin, scid) in plugin.exclude_list:
+            continue
         our = plugin.adj_balances[scid]["our"]
         total = plugin.adj_balances[scid]["total"]
         percentage = our / total
@@ -310,10 +313,10 @@ def feeadjust(plugin: Plugin, scid: str = None):
     if plugin.fee_strategy == get_fees_median and not plugin.listchannels_by_dst:
         plugin.channels = plugin.rpc.listchannels()['channels']
     channels_adjusted = 0
-    exclude_list = read_excludelist()
+    plugin.exclude_list = read_excludelist()
 
     for chan in plugin.peerchannels:
-        if scid in exclude_list or chan["peer_id"] in exclude_list:
+        if scid in plugin.exclude_list or chan["peer_id"] in plugin.exclude_list:
             continue
         if chan["state"] == "CHANNELD_NORMAL":
             _scid = chan.get("short_channel_id")
