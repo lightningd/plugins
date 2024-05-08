@@ -226,39 +226,50 @@ def maybe_adjust_fees(plugin: Plugin, scids: list):
             plugin.log(f"Adjusted fees of {scid} with a ratio of {ratio}:   ppm {int(ppm * ratio)}   base {base}msat   max_htlc {max_htlc}")
             plugin.adj_balances[scid]["last_liquidity"] = our
             channels_adjusted += 1
+    plugin.log("maybe_adjust_fees done", "debug")
     return channels_adjusted
 
 
-def maybe_add_new_balances(plugin: Plugin, scids: list):
-    for scid in scids:
+def get_new_balance(plugin: Plugin, scid: str):
+    i = 0
+    while i < 5:
+        chan = get_peerchannel(plugin, scid)
+        assert chan is not None
         if scid not in plugin.adj_balances:
+            time.sleep(5)
+            plugin.peerchannels = get_peerchannels(plugin)
             chan = get_peerchannel(plugin, scid)
-            assert chan is not None
             plugin.adj_balances[scid] = {
                 "our": int(chan["to_us_msat"]),
-                "total": int(chan["total_msat"])
+                "total": int(chan["total_msat"]),
             }
+            return
+        elif (
+            int(chan["to_us_msat"]) != plugin.adj_balances[scid]["our"]
+            or int(chan["total_msat"]) != plugin.adj_balances[scid]["total"]
+        ):
+            plugin.adj_balances[scid]["our"] = int(chan["to_us_msat"])
+            plugin.adj_balances[scid]["total"] = int(chan["total_msat"])
+            return
+        else:
+            time.sleep(1)
+            plugin.peerchannels = get_peerchannels(plugin)
+            i += 1
 
 
 @plugin.subscribe("forward_event")
 def forward_event(plugin: Plugin, forward_event: dict, **kwargs):
     if not plugin.forward_event_subscription:
         return
-    plugin.mutex.acquire(blocking=True)
-    plugin.peerchannels = get_peerchannels(plugin)
-    if plugin.fee_strategy == get_fees_median and not plugin.listchannels_by_dst:
-        plugin.channels = plugin.rpc.listchannels()['channels']
     if forward_event["status"] == "settled":
+        plugin.mutex.acquire(blocking=True)
+        plugin.peerchannels = get_peerchannels(plugin)
+        if plugin.fee_strategy == get_fees_median and not plugin.listchannels_by_dst:
+            plugin.channels = plugin.rpc.listchannels()['channels']
         in_scid = forward_event["in_channel"]
         out_scid = forward_event["out_channel"]
-        maybe_add_new_balances(plugin, [in_scid, out_scid])
-
-        if plugin.rpcversion[0] == 0 and plugin.rpcversion[1] < 12:
-            plugin.adj_balances[in_scid]["our"] += int(Millisatoshi(forward_event["in_msatoshi"]))
-            plugin.adj_balances[out_scid]["our"] -= int(Millisatoshi(forward_event["out_msatoshi"]))
-        else:
-            plugin.adj_balances[in_scid]["our"] += int(Millisatoshi(forward_event["in_msat"]))
-            plugin.adj_balances[out_scid]["our"] -= int(Millisatoshi(forward_event["out_msat"]))
+        get_new_balance(plugin, in_scid)
+        get_new_balance(plugin, out_scid)
 
         try:
             # Pseudo-randomly add some hysterisis to the update
@@ -267,7 +278,7 @@ def forward_event(plugin: Plugin, forward_event: dict, **kwargs):
             maybe_adjust_fees(plugin, [in_scid, out_scid])
         except Exception as e:
             plugin.log("Adjusting fees: " + str(e), level="error")
-    plugin.mutex.release()
+        plugin.mutex.release()
 
 
 @plugin.method("feeadjust")
