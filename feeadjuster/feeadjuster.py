@@ -81,6 +81,30 @@ def get_peerchannels(plugin: Plugin):
     return channels
 
 
+def get_config(plugin: Plugin, config: str):
+    """ Helper to reconstruct `listconfigs` for older CLN versions """
+    # versions >=23.08 return a configs object and value_* fields
+    if plugin.rpcversion[0] > 23 or plugin.rpcversion[0] == 23 and plugin.rpcversion[1] >= 8:
+        result = plugin.rpc.listconfigs(config)["configs"]
+        assert len(result)>0
+        conf_obj = result[config]
+        if "value_str" in conf_obj:
+            return conf_obj["value_str"]
+        elif "value_msat" in conf_obj:
+            return conf_obj["value_msat"]
+        elif "value_int" in conf_obj:
+            return conf_obj["value_int"]
+        elif "value_bool" in conf_obj:
+            return conf_obj["value_bool"]
+        else:
+            return None
+
+    # now < 23.08
+    result = plugin.rpc.listconfigs(config)
+    assert len(result)>0
+    return result[config]
+
+
 def get_peer_id_for_scid(plugin: Plugin, scid: str):
     for ch in plugin.peerchannels:
         if ch.get('short_channel_id') == scid:
@@ -326,9 +350,10 @@ def init(options: dict, configuration: dict, plugin: Plugin, **kwargs):
     }
     plugin.fee_strategy = fee_strategy_switch.get(options.get("feeadjuster-feestrategy"), get_fees_global)
     plugin.median_multiplier = float(options.get("feeadjuster-median-multiplier"))
-    config = plugin.rpc.listconfigs()["configs"]
-    plugin.adj_basefee = config["fee-base"]["value_int"]
-    plugin.adj_ppmfee = config["fee-per-satoshi"]["value_int"]
+    plugin.adj_basefee = get_config(plugin, "fee-base")
+    assert plugin.adj_basefee is not None
+    plugin.adj_ppmfee = get_config(plugin, "fee-per-satoshi")
+    assert plugin.adj_ppmfee is not None
 
     # normalize the imbalance percentage value to 0%-50%
     if plugin.imbalance < 0 or plugin.imbalance > 1:
