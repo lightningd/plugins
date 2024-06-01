@@ -134,7 +134,7 @@ def push_badges_data(workflow, num_of_python_versions):
     any_changes = False
     for plugin in plugins:
         results = []
-        _dir = f".badges/gather_data/main/{plugin.name}"
+        _dir = f".badges/gather_data/{workflow}/{plugin.name}"
         if os.path.exists(_dir):
             for child in Path(_dir).iterdir():
                 result = child.read_text().strip()

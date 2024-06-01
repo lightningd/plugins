@@ -91,7 +91,7 @@ jobs:
         export CLN_PATH=${{ github.workspace }}/lightning
         pip3 install --upgrade pip
         pip3 install --user -U virtualenv pip > /dev/null
-        python3 .ci/test.py nightly --update-badges
+        python3 .ci/test.py nightly ${{ matrix.python-version }} --update-badges
 
   gather:
     # A dummy task that depends on the full matrix of tests, and signals completion.
@@ -110,6 +110,6 @@ jobs:
           python-version: ${{ matrix.python-version }}
       - name: Complete
         run: |
-          echo "Updating badges data..."
-          python3 .ci/update_badges.py main 5  # We test for 5 distinct Python versions
-          echo "CI completed"
+          echo "Updating badges data for nightly..."
+          python3 .ci/update_badges.py nightly 5  # We test for 5 distinct Python versions
+          echo "CI completed."
