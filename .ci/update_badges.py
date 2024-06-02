@@ -1,108 +1,13 @@
 import json
 import os
 import subprocess
-from collections import namedtuple
-from pathlib import Path, PosixPath
-from typing import Generator, List
+from pathlib import Path
 
-Plugin = namedtuple(
-    "Plugin",
-    [
-        "name",
-        "path",
-        "language",
-        "framework",
-        "details",
-    ],
-)
-
-exclude = [
-    ".ci",
-    ".git",
-    ".github",
-    "archived",
-    "lightning",
-]
+from utils import configure_git, enumerate_plugins
 
 
-def configure_git():
-    # Git needs some user and email to be configured in order to work in the context of GitHub Actions.
-    subprocess.run(
-        ["git", "config", "--global", "user.email", '"lightningd@github.plugins.repo"']
-    )
-    subprocess.run(["git", "config", "--global", "user.name", '"lightningd"'])
-
-
-def get_testfiles(p: Plugin) -> List[PosixPath]:
-    return [
-        x
-        for x in p.path.iterdir()
-        if (x.is_dir() and x.name == "tests")
-        or (x.name.startswith("test_") and x.name.endswith(".py"))
-    ]
-
-
-def has_testfiles(p: Plugin) -> bool:
-    return len(get_testfiles(p)) > 0
-
-
-def list_plugins(plugins):
-    return ", ".join([p.name for p in sorted(plugins)])
-
-
-def enumerate_plugins(basedir: Path) -> Generator[Plugin, None, None]:
-    plugins = list(
-        [x for x in basedir.iterdir() if x.is_dir() and x.name not in exclude]
-    )
-    pip_pytest = [x for x in plugins if (x / Path("requirements.txt")).exists()]
-    print(f"Pip plugins: {list_plugins(pip_pytest)}")
-
-    poetry_pytest = [x for x in plugins if (x / Path("pyproject.toml")).exists()]
-    print(f"Poetry plugins: {list_plugins(poetry_pytest)}")
-
-    other_plugins = [
-        x for x in plugins if x not in pip_pytest and x not in poetry_pytest
-    ]
-    print(f"Other plugins: {list_plugins(other_plugins)}")
-
-    for p in sorted(pip_pytest):
-        yield Plugin(
-            name=p.name,
-            path=p,
-            language="python",
-            framework="pip",
-            details={
-                "requirements": p / Path("requirements.txt"),
-                "devrequirements": p / Path("requirements-dev.txt"),
-            },
-        )
-
-    for p in sorted(poetry_pytest):
-        yield Plugin(
-            name=p.name,
-            path=p,
-            language="python",
-            framework="poetry",
-            details={
-                "pyproject": p / Path("pyproject.toml"),
-            },
-        )
-
-    for p in sorted(other_plugins):
-        yield Plugin(
-            name=p.name,
-            path=p,
-            language="other",
-            framework="generic",
-            details={
-                "requirements": p / Path("tests/requirements.txt"),
-                "setup": p / Path("tests/setup.sh"),
-            },
-        )
-
-
-def update_and_commit_badge(plugin_name, passed, workflow):
-    json_data = { "schemaVersion": 1, "label": "", "message": " ✔ ", "color": "green" }
+def update_and_commit_badge(plugin_name: str, passed: bool, workflow: str) -> bool:
+    json_data = {"schemaVersion": 1, "label": "", "message": " ✔ ", "color": "green"}
     if not passed:
         json_data.update({"message": "✗", "color": "red"})
 
@@ -112,12 +17,19 @@ def update_and_commit_badge(plugin_name, passed, workflow):
 
     output = subprocess.check_output(["git", "add", "-v", filename]).decode("utf-8")
     if output != "":
-        subprocess.run(["git", "commit", "-m", f'Update {plugin_name} badge to {"passed" if passed else "failed"} ({workflow})'])
+        subprocess.run(
+            [
+                "git",
+                "commit",
+                "-m",
+                f'Update {plugin_name} badge to {"passed" if passed else "failed"} ({workflow})',
+            ]
+        )
         return True
     return False
 
 
-def push_badges_data(workflow, num_of_python_versions):
+def push_badges_data(workflow: str, num_of_python_versions: int):
     print("Pushing badges data...")
     configure_git()
     subprocess.run(["git", "fetch"])
