@@ -1,26 +1,15 @@
-import json
 import logging
 import os
-import shlex
-import shutil
 import subprocess
 import sys
 import tempfile
-from collections import namedtuple
-from pathlib import Path, PosixPath
-from typing import Generator, List
 from itertools import chain
+from pathlib import Path
+
+from utils import (Plugin, configure_git, enumerate_plugins, get_testfiles,
+                   has_testfiles)
 
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
-
-# Directories that are not plugins
-exclude = [
-    '.ci',
-    '.git',
-    '.github',
-    'archived',
-    'lightning',
-]
 
 global_dependencies = [
     'pytest',
@@ -30,84 +19,12 @@ global_dependencies = [
 
 pip_opts = ['-qq']
 
-Plugin = namedtuple(
-    'Plugin',
-    [
-        'name',
-        'path',
-        'language',
-        'framework',
-        'details',
-    ]
-)
-
-
-def list_plugins(plugins):
-    return ", ".join([p.name for p in sorted(plugins)])
-
-
-def enumerate_plugins(basedir: Path) -> Generator[Plugin, None, None]:
-    plugins = list([
-        x for x in basedir.iterdir() \
-        if x.is_dir() and x.name not in exclude
-    ])
-    pip_pytest = [
-        x for x in plugins if (x / Path('requirements.txt')).exists()
-    ]
-    print(f"Pip plugins: {list_plugins(pip_pytest)}")
-
-    poetry_pytest = [
-        x for x in plugins if (x / Path("pyproject.toml")).exists()
-    ]
-    print(f"Poetry plugins: {list_plugins(poetry_pytest)}")
-
-    other_plugins = [
-        x for x in plugins if x not in pip_pytest and x not in poetry_pytest
-    ]
-    print(f"Other plugins: {list_plugins(other_plugins)}")
-
-    for p in sorted(pip_pytest):
-        yield Plugin(
-            name=p.name,
-            path=p,
-            language="python",
-            framework="pip",
-            details={
-                "requirements": p/Path('requirements.txt'),
-                "devrequirements": p/Path('requirements-dev.txt'),
-            }
-        )
-
-    for p in sorted(poetry_pytest):
-        yield Plugin(
-            name=p.name,
-            path=p,
-            language="python",
-            framework="poetry",
-            details={
-                "pyproject": p / Path("pyproject.toml"),
-            }
-        )
-
-    for p in sorted(other_plugins):
-        yield Plugin(
-            name=p.name,
-            path=p,
-            language="other",
-            framework="generic",
-            details={
-                "requirements": p / Path("tests/requirements.txt"),
-                "setup": p / Path("tests/setup.sh"),
-            }
-        )
 
 def prepare_env(p: Plugin, directory: Path) -> bool:
     """ Returns whether we can run at all. Raises error if preparing failed.
     """
     subprocess.check_call(['python3', '-m', 'venv', '--clear', directory])
     os.environ['PATH'] += f":{directory}"
-    pip_path = directory / 'bin' / 'pip3'
-    python_path = directory / 'bin' / 'python'
 
     if p.framework == "pip":
         return prepare_env_pip(p, directory)
@@ -118,8 +35,9 @@ def prepare_env(p: Plugin, directory: Path) -> bool:
     else:
         raise ValueError(f"Unknown framework {p.framework}")
 
+
 def prepare_env_poetry(p: Plugin, directory: Path) -> bool:
-    logging.info(f"Installing a new poetry virtualenv")
+    logging.info("Installing a new poetry virtualenv")
 
     pip3 = directory / 'bin' / 'pip3'
     poetry = directory / 'bin' / 'poetry'
@@ -149,7 +67,6 @@ def prepare_env_poetry(p: Plugin, directory: Path) -> bool:
         poetry, 'config', 'virtualenvs.create', 'false'
     ], cwd=workdir)
 
-
     # Now we can proceed with the actual implementation
     logging.info(f"Installing poetry {poetry} dependencies from {p.details['pyproject']}")
     subprocess.check_call([
@@ -158,6 +75,7 @@ def prepare_env_poetry(p: Plugin, directory: Path) -> bool:
 
     subprocess.check_call([pip3, 'freeze'])
     return True
+
 
 def prepare_env_pip(p: Plugin, directory: Path):
     pip_path = directory / 'bin' / 'pip3'
@@ -185,6 +103,7 @@ def prepare_env_pip(p: Plugin, directory: Path):
         )
     install_pyln_testing(pip_path)
     return True
+
 
 def prepare_generic(p: Plugin, directory: Path):
     pip_path = directory / 'bin' / 'pip3'
@@ -235,15 +154,6 @@ def install_pyln_testing(pip_path):
         stderr=subprocess.STDOUT,
     )
 
-def get_testfiles(p: Plugin) -> List[PosixPath]:
-    return [
-        x for x in p.path.iterdir()
-        if (x.is_dir() and x.name == 'tests')
-        or (x.name.startswith("test_") and x.name.endswith('.py'))
-    ]
-
-def has_testfiles(p: Plugin) -> bool:
-    return len(get_testfiles(p)) > 0
 
 def run_one(p: Plugin) -> bool:
     print("Running tests on plugin {p.name}".format(p=p))
@@ -302,21 +212,14 @@ def run_one(p: Plugin) -> bool:
         )
         return True
     except Exception as e:
-        logging.warning(f"Error while executing ")
+        logging.warning(f"Error while executing: {e}")
         return False
     finally:
         print("##[endgroup]")
 
-def configure_git():
-    # Git requires some user and email to be configured in order to work in the context of GitHub Actions.
-    subprocess.run(
-        ["git", "config", "--global", "user.email", '"lightningd@github.plugins.repo"']
-    )
-    subprocess.run(["git", "config", "--global", "user.name", '"lightningd"'])
-
 
 # gather data
-def collect_gather_data(results, success):
+def collect_gather_data(results: list, success: bool) -> dict:
     gather_data = {}
     for t in results:
         p = t[0]
@@ -328,16 +231,17 @@ def collect_gather_data(results, success):
     return gather_data
 
 
-def push_gather_data(data, workflow, python_version):
+def push_gather_data(data: dict, workflow: str, python_version: str):
     print("Pushing gather data...")
     configure_git()
     subprocess.run(["git", "fetch"])
     subprocess.run(["git", "checkout", "badges"])
     filenames_to_add = []
     for plugin_name, result in data.items():
-        filenames_to_add.append(git_add_gather_data(
+        filename = write_gather_data_file(
             plugin_name, result, workflow, python_version
-        ))
+        )
+        filenames_to_add.append(filename)
     output = subprocess.check_output(list(chain(["git", "add", "-v"], filenames_to_add))).decode("utf-8")
     print(f"output from git add: {output}")
     if output != "":
@@ -354,7 +258,7 @@ def push_gather_data(data, workflow, python_version):
     print("Done.")
 
 
-def git_add_gather_data(plugin_name, result, workflow, python_version):
+def write_gather_data_file(plugin_name: str, result, workflow: str, python_version: str) -> str:
     _dir = f".badges/gather_data/{workflow}/{plugin_name}"
     filename = os.path.join(_dir, f"python{python_version}.txt")
     os.makedirs(_dir, exist_ok=True)
@@ -365,7 +269,7 @@ def git_add_gather_data(plugin_name, result, workflow, python_version):
     return filename
 
 
-def run_all(workflow, python_version, update_badges, plugin_names):
+def run_all(workflow: str, python_version: str, update_badges: bool, plugin_names: list):
     root_path = subprocess.check_output([
         'git',
         'rev-parse',
