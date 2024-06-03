@@ -15,11 +15,23 @@ plugin.adj_balances = {}
 plugin.our_node_id = None
 plugin.peerchannels = None
 plugin.channels = None
+plugin.excludelist = None
 # Users can configure this
 plugin.update_threshold = 0.05
 # forward_event must wait for init
 plugin.mutex = Lock()
 plugin.mutex.acquire()
+
+
+def read_excludelist():
+    try:
+        with open('feeadjuster-exclude.list') as file:
+            exclude_list = [l.rstrip("\n") for l in file]
+            print("Excluding the channels with the nodes:", exclude_list)
+    except FileNotFoundError:
+        exclude_list = []
+        print("There is no feeadjuster-exclude.list given, applying the options to the channels with all peers.")
+    return exclude_list
 
 
 def get_adjusted_percentage(plugin: Plugin, scid: str):
@@ -79,6 +91,31 @@ def get_peerchannels(plugin: Plugin):
             ch['peer_id'] = peer['id']  # all we need is to set the 'peer_id'
         channels.extend(newchans)
     return channels
+
+
+def get_config(plugin: Plugin, config: str):
+    """ Helper to reconstruct `listconfigs` for older CLN versions """
+    # versions >=23.08 return a configs object and value_* fields
+    if plugin.rpcversion[0] > 23 or plugin.rpcversion[0] == 23 and plugin.rpcversion[1] >= 8:
+        result = plugin.rpc.listconfigs(config)["configs"]
+        assert len(result)>0
+        conf_obj = result[config]
+        if "value_str" in conf_obj:
+            return conf_obj["value_str"]
+        elif "value_msat" in conf_obj:
+            return conf_obj["value_msat"]
+        elif "value_int" in conf_obj:
+            return conf_obj["value_int"]
+        elif "value_bool" in conf_obj:
+            return conf_obj["value_bool"]
+        else:
+            return None
+
+    # now < 23.08
+    result = plugin.rpc.listconfigs(config)
+    if len(result) == 0:
+        return None
+    return result[config]
 
 
 def get_peer_id_for_scid(plugin: Plugin, scid: str):
@@ -168,6 +205,8 @@ def significant_update(plugin: Plugin, scid: str):
 def maybe_adjust_fees(plugin: Plugin, scids: list):
     channels_adjusted = 0
     for scid in scids:
+        if scid in plugin.exclude_list or get_peer_id_for_scid(plugin, scid) in plugin.exclude_list:
+            continue
         our = plugin.adj_balances[scid]["our"]
         total = plugin.adj_balances[scid]["total"]
         percentage = our / total
@@ -177,8 +216,9 @@ def maybe_adjust_fees(plugin: Plugin, scids: list):
         # select ideal values per channel
         fees = plugin.fee_strategy(plugin, scid)
         if fees is not None:
-            base = int(fees['base'])
             ppm = int(fees['ppm'])
+            if plugin.basefee:
+                base = int(fees['base'])
 
         # reset to normal fees if imbalance is not high enough
         if (percentage > plugin.imbalance and percentage < 1 - plugin.imbalance):
@@ -202,39 +242,50 @@ def maybe_adjust_fees(plugin: Plugin, scids: list):
             plugin.log(f"Adjusted fees of {scid} with a ratio of {ratio}:   ppm {int(ppm * ratio)}   base {base}msat   max_htlc {max_htlc}")
             plugin.adj_balances[scid]["last_liquidity"] = our
             channels_adjusted += 1
+    plugin.log("maybe_adjust_fees done", "debug")
     return channels_adjusted
 
 
-def maybe_add_new_balances(plugin: Plugin, scids: list):
-    for scid in scids:
+def get_new_balance(plugin: Plugin, scid: str):
+    i = 0
+    while i < 5:
+        chan = get_peerchannel(plugin, scid)
+        assert chan is not None
         if scid not in plugin.adj_balances:
+            time.sleep(5)
+            plugin.peerchannels = get_peerchannels(plugin)
             chan = get_peerchannel(plugin, scid)
-            assert chan is not None
             plugin.adj_balances[scid] = {
                 "our": int(chan["to_us_msat"]),
-                "total": int(chan["total_msat"])
+                "total": int(chan["total_msat"]),
             }
+            return
+        elif (
+            int(chan["to_us_msat"]) != plugin.adj_balances[scid]["our"]
+            or int(chan["total_msat"]) != plugin.adj_balances[scid]["total"]
+        ):
+            plugin.adj_balances[scid]["our"] = int(chan["to_us_msat"])
+            plugin.adj_balances[scid]["total"] = int(chan["total_msat"])
+            return
+        else:
+            time.sleep(1)
+            plugin.peerchannels = get_peerchannels(plugin)
+            i += 1
 
 
 @plugin.subscribe("forward_event")
 def forward_event(plugin: Plugin, forward_event: dict, **kwargs):
     if not plugin.forward_event_subscription:
         return
-    plugin.mutex.acquire(blocking=True)
-    plugin.peerchannels = get_peerchannels(plugin)
-    if plugin.fee_strategy == get_fees_median and not plugin.listchannels_by_dst:
-        plugin.channels = plugin.rpc.listchannels()['channels']
     if forward_event["status"] == "settled":
+        plugin.mutex.acquire(blocking=True)
+        plugin.peerchannels = get_peerchannels(plugin)
+        if plugin.fee_strategy == get_fees_median and not plugin.listchannels_by_dst:
+            plugin.channels = plugin.rpc.listchannels()['channels']
         in_scid = forward_event["in_channel"]
         out_scid = forward_event["out_channel"]
-        maybe_add_new_balances(plugin, [in_scid, out_scid])
-
-        if plugin.rpcversion[0] == 0 and plugin.rpcversion[1] < 12:
-            plugin.adj_balances[in_scid]["our"] += int(Millisatoshi(forward_event["in_msatoshi"]))
-            plugin.adj_balances[out_scid]["our"] -= int(Millisatoshi(forward_event["out_msatoshi"]))
-        else:
-            plugin.adj_balances[in_scid]["our"] += int(Millisatoshi(forward_event["in_msat"]))
-            plugin.adj_balances[out_scid]["our"] -= int(Millisatoshi(forward_event["out_msat"]))
+        get_new_balance(plugin, in_scid)
+        get_new_balance(plugin, out_scid)
 
         try:
             # Pseudo-randomly add some hysterisis to the update
@@ -243,7 +294,7 @@ def forward_event(plugin: Plugin, forward_event: dict, **kwargs):
             maybe_adjust_fees(plugin, [in_scid, out_scid])
         except Exception as e:
             plugin.log("Adjusting fees: " + str(e), level="error")
-    plugin.mutex.release()
+        plugin.mutex.release()
 
 
 @plugin.method("feeadjust")
@@ -253,23 +304,19 @@ def feeadjust(plugin: Plugin, scid: str = None):
     This method is automatically called in plugin init, or can be called manually after a successful payment.
     Otherwise, the plugin keeps the fees up-to-date.
 
-    To stop setting the channels with a list of nodes place a file called `feeadjuster-exclude.list` in the
-    lightningd data directory with a simple line-by-line list of pubkeys.
+    To stop adjusting the channels for a set PeerIDs or SCIDs, place a file
+    called `feeadjuster-exclude.list` in the lightningd data directory with a
+    simple line-by-line list of PeerIDs (pubkeys) or SCIDs.
     """
     plugin.mutex.acquire(blocking=True)
     plugin.peerchannels = get_peerchannels(plugin)
     if plugin.fee_strategy == get_fees_median and not plugin.listchannels_by_dst:
         plugin.channels = plugin.rpc.listchannels()['channels']
     channels_adjusted = 0
-    try:
-        with open('feeadjuster-exclude.list') as file:
-            exclude_list = [l.rstrip("\n") for l in file]
-            print("Excluding the channels with the nodes:", exclude_list)
-    except FileNotFoundError:
-        exclude_list = []
-        print("There is no feeadjuster-exclude.list given, applying the options to the channels with all peers.")
+    plugin.exclude_list = read_excludelist()
+
     for chan in plugin.peerchannels:
-        if chan["peer_id"] in exclude_list:
+        if scid in plugin.exclude_list or chan["peer_id"] in plugin.exclude_list:
             continue
         if chan["state"] == "CHANNELD_NORMAL":
             _scid = chan.get("short_channel_id")
@@ -314,6 +361,7 @@ def init(options: dict, configuration: dict, plugin: Plugin, **kwargs):
     plugin.big_enough_liquidity = Millisatoshi(options.get("feeadjuster-enough-liquidity"))
     plugin.imbalance = float(options.get("feeadjuster-imbalance"))
     plugin.max_htlc_steps = int(options.get("feeadjuster-max-htlc-steps"))
+    plugin.basefee = bool(options.get("feeadjuster-basefee"))
     adjustment_switch = {
         "soft": get_ratio_soft,
         "hard": get_ratio_hard,
@@ -326,9 +374,12 @@ def init(options: dict, configuration: dict, plugin: Plugin, **kwargs):
     }
     plugin.fee_strategy = fee_strategy_switch.get(options.get("feeadjuster-feestrategy"), get_fees_global)
     plugin.median_multiplier = float(options.get("feeadjuster-median-multiplier"))
-    config = plugin.rpc.listconfigs()["configs"]
-    plugin.adj_basefee = config["fee-base"]["value_int"]
-    plugin.adj_ppmfee = config["fee-per-satoshi"]["value_int"]
+    plugin.adj_basefee = get_config(plugin, "fee-base")
+    if plugin.adj_basefee is None:
+        plugin.adj_basefee = 1000
+    plugin.adj_ppmfee = get_config(plugin, "fee-per-satoshi")
+    if plugin.adj_ppmfee is None:
+        plugin.adj_ppmfee = 10
 
     # normalize the imbalance percentage value to 0%-50%
     if plugin.imbalance < 0 or plugin.imbalance > 1:
@@ -359,7 +410,8 @@ def init(options: dict, configuration: dict, plugin: Plugin, **kwargs):
                f"adjustment_method: {plugin.get_ratio.__name__}, "
                f"fee_strategy: {plugin.fee_strategy.__name__}, "
                f"listchannels_by_dst: {plugin.listchannels_by_dst},"
-               f"max_htlc_steps: {plugin.max_htlc_steps}")
+               f"max_htlc_steps: {plugin.max_htlc_steps},"
+               f"basefee: {plugin.basefee}")
     plugin.mutex.release()
     feeadjust(plugin)
 
@@ -439,5 +491,11 @@ plugin.add_option(
     "liquidity, which can reduce local routing channel failures."
     "A value of 0 disables the stepping.",
     "string"
+)
+plugin.add_option(
+    "feeadjuster-basefee",
+    False,
+    "Also adjust base fee dynamically. Currently only affects median strategy.",
+    "bool"
 )
 plugin.run()

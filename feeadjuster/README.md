@@ -22,3 +22,4 @@ the median fees from peers of peer.
 'median'. This allows over- or underbidding other nodes by a constant factor (default: 1.0).
 - `feeadjuster-max-htlc-steps` Default 0 (turned off). Sets the number of max htlc adjustment steps. If our local channel balance drops below a step level
 it will reduce the max htlc to that level, which can reduce local routing channel failures.  A value of 0 disables the stepping.
+- `feeadjuster-basefee` Default False, Also adjust base fee dynamically. Currently only affects median strategy.
