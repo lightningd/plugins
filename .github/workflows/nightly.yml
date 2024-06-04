@@ -91,17 +91,25 @@ jobs:
         export CLN_PATH=${{ github.workspace }}/lightning
         pip3 install --upgrade pip
         pip3 install --user -U virtualenv pip > /dev/null
-        python3 .ci/test.py
+        python3 .ci/test.py nightly ${{ matrix.python-version }} --update-badges
 
   gather:
-    # A dummy task that depends on the full matrix of tests, and
-    # signals successful completion. Used for the PR status to pass
-    # before merging.
+    # A dummy task that depends on the full matrix of tests, and signals completion.
     name: CI completion
     runs-on: ubuntu-22.04
+    if: ${{ always() }}
     needs:
       - nightly-build-and-test
     steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
       - name: Complete
         run: |
-          echo Nightly CI completed successfully
+          echo "Updating badges data for nightly workflow..."
+          python3 .ci/update_badges.py nightly 5  # We test for 5 distinct Python versions
+          echo "CI completed."
