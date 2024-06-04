@@ -45,4 +45,4 @@
 	url = https://github.com/yukibtc/cln-ntfy.git
 [submodule "bolt12-prism"]
 	path = bolt12-prism
-	url = git@github.com:gudnuf/bolt12-prism.git
+	url = https://github.com/gudnuf/bolt12-prism.git
