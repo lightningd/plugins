@@ -233,7 +233,7 @@ Python plugins developers must ensure their plugin to work with all Python versi
 [paytest]: https://github.com/lightningd/plugins/tree/master/archived/paytest
 [paythrough]: https://github.com/andrewtoth/paythrough
 [pers-chans]: https://github.com/lightningd/plugins/tree/master/persistent-channels
-[plugin-docs]: https://lightning.readthedocs.io/PLUGINS.html
+[plugin-docs]: https://docs.corelightning.org/docs/plugin-development
 [poncho]: https://github.com/fiatjaf/poncho
 [probe]: https://github.com/lightningd/plugins/tree/master/archived/probe
 [prometheus]: https://github.com/lightningd/plugins/tree/master/archived/prometheus
