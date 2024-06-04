@@ -1,26 +1,15 @@
-from pathlib import Path
-import subprocess
-from pprint import pprint
-from collections import namedtuple
-from typing import Generator
-
 import logging
-import shutil
+import os
+import subprocess
 import sys
 import tempfile
-import shlex
-import os
+from itertools import chain
+from pathlib import Path
+
+from utils import (Plugin, configure_git, enumerate_plugins, get_testfiles,
+                   has_testfiles)
 
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
-
-# Directories that are not plugins
-exclude = [
-    '.ci',
-    '.git',
-    '.github',
-    'lightning',
-    'feeadjuster'
-]
 
 global_dependencies = [
     'pytest',
@@ -30,76 +19,12 @@ global_dependencies = [
 
 pip_opts = ['-qq']
 
-Plugin = namedtuple(
-    'Plugin',
-    [
-        'name',
-        'path',
-        'language',
-        'framework',
-        'details',
-    ]
-)
-
-
-def enumerate_plugins(basedir: Path) -> Generator[Plugin, None, None]:
-    plugins = list([
-        x for x in basedir.iterdir() \
-        if x.is_dir() and x.name not in exclude
-    ])
-    pip_pytest = [
-        x for x in plugins if (x / Path('requirements.txt')).exists()
-    ]
-
-    poetry_pytest = [
-        x for x in plugins if (x / Path("pyproject.toml")).exists()
-    ]
-    print(poetry_pytest)
-
-    other_plugins = [x for x in plugins if x not in pip_pytest and x not in poetry_pytest]
-
-    for p in sorted(pip_pytest):
-        yield Plugin(
-            name=p.name,
-            path=p,
-            language="python",
-            framework="pip",
-            details={
-                "requirements": p/Path('requirements.txt'),
-                "devrequirements": p/Path('requirements-dev.txt'),
-            }
-        )
-
-    for p in sorted(poetry_pytest):
-        yield Plugin(
-            name=p.name,
-            path=p,
-            language="python",
-            framework="poetry",
-            details={
-                "pyproject": p / Path("pyproject.toml"),
-            }
-        )
-
-    for p in sorted(other_plugins):
-        yield Plugin(
-            name=p.name,
-            path=p,
-            language="other",
-            framework="generic",
-            details={
-                "requirements": p / Path("tests/requirements.txt"),
-                "setup": p / Path("tests/setup.sh"),
-            }
-        )
 
 def prepare_env(p: Plugin, directory: Path) -> bool:
     """ Returns whether we can run at all. Raises error if preparing failed.
     """
     subprocess.check_call(['python3', '-m', 'venv', '--clear', directory])
     os.environ['PATH'] += f":{directory}"
-    pip_path = directory / 'bin' / 'pip3'
-    python_path = directory / 'bin' / 'python'
 
     if p.framework == "pip":
         return prepare_env_pip(p, directory)
@@ -110,8 +35,9 @@ def prepare_env(p: Plugin, directory: Path) -> bool:
     else:
         raise ValueError(f"Unknown framework {p.framework}")
 
+
 def prepare_env_poetry(p: Plugin, directory: Path) -> bool:
-    logging.info(f"Installing a new poetry virtualenv")
+    logging.info("Installing a new poetry virtualenv")
 
     pip3 = directory / 'bin' / 'pip3'
     poetry = directory / 'bin' / 'poetry'
@@ -141,7 +67,6 @@ def prepare_env_poetry(p: Plugin, directory: Path) -> bool:
         poetry, 'config', 'virtualenvs.create', 'false'
     ], cwd=workdir)
 
-
     # Now we can proceed with the actual implementation
     logging.info(f"Installing poetry {poetry} dependencies from {p.details['pyproject']}")
     subprocess.check_call([
@@ -150,6 +75,7 @@ def prepare_env_poetry(p: Plugin, directory: Path) -> bool:
 
     subprocess.check_call([pip3, 'freeze'])
     return True
+
 
 def prepare_env_pip(p: Plugin, directory: Path):
     pip_path = directory / 'bin' / 'pip3'
@@ -177,6 +103,7 @@ def prepare_env_pip(p: Plugin, directory: Path):
         )
     install_pyln_testing(pip_path)
     return True
+
 
 def prepare_generic(p: Plugin, directory: Path):
     pip_path = directory / 'bin' / 'pip3'
@@ -227,20 +154,15 @@ def install_pyln_testing(pip_path):
         stderr=subprocess.STDOUT,
     )
 
+
 def run_one(p: Plugin) -> bool:
     print("Running tests on plugin {p.name}".format(p=p))
 
-    testfiles = [
-        x for x in p.path.iterdir()
-        if (x.is_dir() and x.name == 'tests')
-        or (x.name.startswith("test_") and x.name.endswith('.py'))
-    ]
-
-    if len(testfiles) == 0:
+    if not has_testfiles(p):
         print("No test files found, skipping plugin {p.name}".format(p=p))
         return True
 
-    print("Found {ctestfiles} test files, creating virtualenv and running tests".format(ctestfiles=len(testfiles)))
+    print("Found {ctestfiles} test files, creating virtualenv and running tests".format(ctestfiles=len(get_testfiles(p))))
     print("##[group]{p.name}".format(p=p))
 
     # Create a virtual env
@@ -290,13 +212,64 @@ def run_one(p: Plugin) -> bool:
         )
         return True
     except Exception as e:
-        logging.warning(f"Error while executing ")
+        logging.warning(f"Error while executing: {e}")
         return False
     finally:
         print("##[endgroup]")
 
 
-def run_all(args):
+# gather data
+def collect_gather_data(results: list, success: bool) -> dict:
+    gather_data = {}
+    for t in results:
+        p = t[0]
+        if has_testfiles(p):
+            if success or t[1]:
+                gather_data[p.name] = "passed"
+            else:
+                gather_data[p.name] = "failed"
+    return gather_data
+
+
+def push_gather_data(data: dict, workflow: str, python_version: str):
+    print("Pushing gather data...")
+    configure_git()
+    subprocess.run(["git", "fetch"])
+    subprocess.run(["git", "checkout", "badges"])
+    filenames_to_add = []
+    for plugin_name, result in data.items():
+        filename = write_gather_data_file(
+            plugin_name, result, workflow, python_version
+        )
+        filenames_to_add.append(filename)
+    output = subprocess.check_output(list(chain(["git", "add", "-v"], filenames_to_add))).decode("utf-8")
+    print(f"output from git add: {output}")
+    if output != "":
+        output = subprocess.check_output(
+            [
+                "git",
+                "commit",
+                "-m",
+                f"Update test result for Python{python_version} to ({workflow} workflow)",
+            ]
+        ).decode("utf-8")
+        print(f"output from git commit: {output}")
+        subprocess.run(["git", "push", "origin", "badges"])
+    print("Done.")
+
+
+def write_gather_data_file(plugin_name: str, result, workflow: str, python_version: str) -> str:
+    _dir = f".badges/gather_data/{workflow}/{plugin_name}"
+    filename = os.path.join(_dir, f"python{python_version}.txt")
+    os.makedirs(_dir, exist_ok=True)
+    with open(filename, "w") as file:
+        print(f"Writing {filename}")
+        file.write(result)
+
+    return filename
+
+
+def run_all(workflow: str, python_version: str, update_badges: bool, plugin_names: list):
     root_path = subprocess.check_output([
         'git',
         'rev-parse',
@@ -306,8 +279,8 @@ def run_all(args):
     root = Path(root_path)
 
     plugins = list(enumerate_plugins(root))
-    if args != []:
-        plugins = [p for p in plugins if p.name in args]
+    if plugin_names != []:
+        plugins = [p for p in plugins if p.name in plugin_names]
         print("Testing the following plugins: {names}".format(names=[p.name for p in plugins]))
     else:
         print("Testing all plugins in {root}".format(root=root))
@@ -315,11 +288,26 @@ def run_all(args):
     results = [(p, run_one(p)) for p in plugins]
     success = all([t[1] for t in results])
 
+    if update_badges:
+        push_gather_data(collect_gather_data(results, success), workflow, python_version)
+
     if not success:
         print("The following tests failed:")
         for t in filter(lambda t: not t[1], results):
             print(" - {p.name} ({p.path})".format(p=t[0]))
         sys.exit(1)
+    else:
+        print("All tests passed.")
+
 
 if __name__ == "__main__":
-    run_all(sys.argv[1:])
+    import argparse
+
+    parser = argparse.ArgumentParser(description='Plugins test script')
+    parser.add_argument("workflow", type=str, help="Name of the GitHub workflow")
+    parser.add_argument("python_version", type=str, help="Python version")
+    parser.add_argument("--update-badges", action='store_true', help="Whether badges data should be updated")
+    parser.add_argument("plugins", nargs="*", default=[], help="List of plugins")
+    args = parser.parse_args()
+
+    run_all(args.workflow, args.python_version, args.update_badges, args.plugins)
