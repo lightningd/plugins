@@ -49,3 +49,6 @@
 [submodule "clnrod"]
 	path = clnrod
 	url = https://github.com/daywalker90/clnrod.git
+[submodule "paythrough"]
+	path = paythrough
+	url = https://github.com/andrewtoth/paythrough
