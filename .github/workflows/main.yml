@@ -81,6 +81,27 @@ jobs:
       with:
         python-version: ${{ matrix.python-version }}
 
+    - name: Get changed files
+      id: get_changed_files
+      if: ${{ github.event_name == 'pull_request' }}
+      uses: tj-actions/changed-files@v44
+      with:
+          files: '**/*'
+  
+    - name: Set plugin_dirs
+      id: set_plugin_dirs
+      if: ${{ github.event_name == 'pull_request' }}
+      run: |
+          changed_files=$(echo "${{ steps.get_changed_files.outputs.all_changed_files }}" | tr ',' '\n')
+          plugin_dirs=""
+          for file in $changed_files; do
+            dir=$(dirname "$file" | cut -d'/' -f1)
+            if [[ "$dir" != "." && "${dir:0:1}" != "." && ! " ${plugin_dirs[@]} " =~ " ${dir} " ]]; then
+              plugin_dirs="${plugin_dirs} ${dir}"
+            fi
+          done
+          echo "plugin_dirs=${plugin_dirs}" >> "$GITHUB_OUTPUT"
+
     - name: Run pytest tests
       id: pytest_tests
       run: |
@@ -95,7 +116,11 @@ jobs:
         pip3 install --upgrade pip
         pip3 install --user -U virtualenv pip > /dev/null
 
-        plugin_dirs=''
+        if [[ "${{ github.event_name }}" == 'pull_request' ]]; then
+          plugin_dirs="${{ steps.set_plugin_dirs.outputs.plugin_dirs }}"
+        else
+          plugin_dirs=""
+        fi
 
         # Run the tests: In the case of a 'pull_request' event only the plugins in `plugin_dirs`
         # are going to be tested; otherwise ('push' event) we test all plugins.
@@ -106,7 +131,12 @@ jobs:
             update_badges='--update-badges'
         fi
 
-        python3 .ci/test.py main ${{ matrix.python-version }} $update_badges $(echo "$plugin_dirs")
+        if [[ -z "$plugin_dirs" ]]; then
+            # Test all plugins if no specific plugins were changed
+            python3 .ci/test.py main ${{ matrix.python-version }} $update_badges
+        else
+            python3 .ci/test.py main ${{ matrix.python-version }} $update_badges $(echo "$plugin_dirs")
+        fi
 
   gather:
     # A dummy task that depends on the full matrix of tests, and signals completion.
