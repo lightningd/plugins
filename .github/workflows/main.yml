@@ -8,7 +8,25 @@ concurrency:
 on:
   push:
     branches: [ master ]
+    paths-ignore:
+      - '*.md'
+      - '*.toml'
+      - '*.yml'
+      - '*.lock'
+      - 'Dockerfile'
+      - '.gitignore'
+      - 'LICENSE'
+      - 'archived/**'
   pull_request:
+    paths-ignore:
+      - '*.md'
+      - '*.toml'
+      - '*.yml'
+      - '*.lock'
+      - 'Dockerfile'
+      - '.gitignore'
+      - 'LICENSE'
+      - 'archived/**'
 
 jobs:
   build-and-test:
