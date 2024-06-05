@@ -34,7 +34,6 @@ Community curated plugins for Core-Lightning.
 | [poncho][poncho]                     | Turns CLN into a [hosted channels][blip12] provider                                         |        |         |
 | [pruning][pruning]                   | This plugin manages pruning of bitcoind such that it can always sync                        |        |         |
 | [rebalance][rebalance]               | Keeps your channels balanced                                                                | ![](https://img.shields.io/endpoint?url=https%3A%2F%2Flightningd.github.io%2Fplugins%2F.badges%2Frebalance_main.json) | ![](https://img.shields.io/endpoint?url=https%3A%2F%2Flightningd.github.io%2Fplugins%2F.badges%2Frebalance_nightly.json) |
-| [reckless][reckless]                 | An **experimental** plugin manager (search/install plugins)                                 |        |         |
 | [sauron][sauron]                     | A Bitcoin backend relying on [Esplora][esplora]'s API                                       |        |         |
 | [sitzprobe][sitzprobe]               | A Lightning Network payment rehearsal utility                                               |        |         |
 | [sling][sling]                       | Rebalance your channels with smart rules and built-in background tasks                      | ![](https://img.shields.io/endpoint?url=https%3A%2F%2Flightningd.github.io%2Fplugins%2F.badges%2Fsling_main.json) | ![](https://img.shields.io/endpoint?url=https%3A%2F%2Flightningd.github.io%2Fplugins%2F.badges%2Fsling_nightly.json) |
@@ -43,6 +42,15 @@ Community curated plugins for Core-Lightning.
 | [watchtower-client][watchtower-client]      | Watchtower client for The Eye of Satoshi                                                    |        |         |
 | [webhook][webhook]                   | Dispatches webhooks based from [event notifications][event-notifications]                   |        |         |
 | [zmq][zmq]                           | Publishes notifications via [ZeroMQ][zmq-home] to configured endpoints                      | ![](https://img.shields.io/endpoint?url=https%3A%2F%2Flightningd.github.io%2Fplugins%2F.badges%2Fzmq_main.json) | ![](https://img.shields.io/endpoint?url=https%3A%2F%2Flightningd.github.io%2Fplugins%2F.badges%2Fzmq_nightly.json) |
+
+## Plugin Managers
+
+This is a list of plugin managers that can help you install these plugins:
+
+| Name                                 | Short description                                                                           |
+| ------------------------------------ | ------------------------------------------------------------------------------------------- |
+| [coffee][coffee]                     | Reference implementation for a flexible core lightning plugin manager                       |
+| [reckless][reckless]                 | Comes with CLN. Reckless currently supports python and javascript plugins.                  |
 
 ## Archived plugins
 
@@ -206,6 +214,7 @@ Python plugins developers must ensure their plugin to work with all Python versi
 [clearnet]: https://github.com/lightningd/plugins/tree/master/clearnet
 [cln-ntfy]: https://github.com/yukibtc/cln-ntfy
 [clnrod]: https://github.com/daywalker90/clnrod
+[coffee]: https://github.com/coffee-tools/coffee
 [commando]: https://github.com/lightningd/plugins/tree/master/archived/commando
 [cpp-api]: https://github.com/darosior/lightningcpp
 [csharp-example]: https://github.com/joemphilips/DotNetLightning/tree/master/examples/HelloWorldPlugin
@@ -244,7 +253,7 @@ Python plugins developers must ensure their plugin to work with all Python versi
 [python-api]: https://github.com/ElementsProject/lightning/tree/master/contrib/pylightning
 [python-api-pypi]: https://pypi.org/project/pylightning/
 [rebalance]: https://github.com/lightningd/plugins/tree/master/rebalance
-[reckless]: https://github.com/darosior/reckless
+[reckless]: https://docs.corelightning.org/reference/reckless
 [reporter]: https://github.com/LNOpenMetrics/go-lnmetrics.reporter
 [sauron]: https://github.com/lightningd/plugins/tree/master/sauron
 [sitzprobe]: https://github.com/niftynei/sitzprobe
