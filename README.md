@@ -15,6 +15,7 @@ Community curated plugins for Core-Lightning.
 | [circular][circular]                 | A smart rebalancing plugin for Core Lightning routing nodes                                 | ![](https://img.shields.io/endpoint?url=https%3A%2F%2Flightningd.github.io%2Fplugins%2F.badges%2Fcircular_main.json) | ![](https://img.shields.io/endpoint?url=https%3A%2F%2Flightningd.github.io%2Fplugins%2F.badges%2Fcircular_nightly.json) |
 | [clearnet][clearnet]                 | A plugin that can be used to enforce clearnet connections when possible                     | ![](https://img.shields.io/endpoint?url=https%3A%2F%2Flightningd.github.io%2Fplugins%2F.badges%2Fclearnet_main.json) | ![](https://img.shields.io/endpoint?url=https%3A%2F%2Flightningd.github.io%2Fplugins%2F.badges%2Fclearnet_nightly.json) |
 | [cln-ntfy][cln-ntfy]                 | Core Lightning plugin for sending `ntfy` alerts.                                            | ![](https://img.shields.io/endpoint?url=https%3A%2F%2Flightningd.github.io%2Fplugins%2F.badges%2Fcln-ntfy_main.json) | ![](https://img.shields.io/endpoint?url=https%3A%2F%2Flightningd.github.io%2Fplugins%2F.badges%2Fcln-ntfy_nightly.json) |
+| [clnrod][clnrod]                     | Channel acceptor plugin. Configurable with external data from amboss/1ml and notifications  | ![](https://img.shields.io/endpoint?url=https%3A%2F%2Flightningd.github.io%2Fplugins%2F.badges%2Fclnrod_main.json) | ![](https://img.shields.io/endpoint?url=https%3A%2F%2Flightningd.github.io%2Fplugins%2F.badges%2Fclnrod_nightly.json) |
 | [currencyrate][currencyrate]         | A plugin to convert other currencies to BTC using web requests                              |        |         |
 | [datastore][datastore]               | The Datastore Plugin                                                                        | ![](https://img.shields.io/endpoint?url=https%3A%2F%2Flightningd.github.io%2Fplugins%2F.badges%2Fdatastore_main.json) | ![](https://img.shields.io/endpoint?url=https%3A%2F%2Flightningd.github.io%2Fplugins%2F.badges%2Fdatastore_nightly.json) |
 | [donations][donations]               | A simple donations page to accept donations from the web                                    | ![](https://img.shields.io/endpoint?url=https%3A%2F%2Flightningd.github.io%2Fplugins%2F.badges%2Fdonations_main.json) | ![](https://img.shields.io/endpoint?url=https%3A%2F%2Flightningd.github.io%2Fplugins%2F.badges%2Fdonations_nightly.json) |
@@ -204,6 +205,7 @@ Python plugins developers must ensure their plugin to work with all Python versi
 [circular]: https://github.com/giovannizotta/circular
 [clearnet]: https://github.com/lightningd/plugins/tree/master/clearnet
 [cln-ntfy]: https://github.com/yukibtc/cln-ntfy
+[clnrod]: https://github.com/daywalker90/clnrod
 [commando]: https://github.com/lightningd/plugins/tree/master/archived/commando
 [cpp-api]: https://github.com/darosior/lightningcpp
 [csharp-example]: https://github.com/joemphilips/DotNetLightning/tree/master/examples/HelloWorldPlugin
