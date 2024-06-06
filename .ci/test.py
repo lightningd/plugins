@@ -3,6 +3,7 @@ import os
 import subprocess
 import sys
 import tempfile
+import time
 from itertools import chain
 from pathlib import Path
 
@@ -254,7 +255,18 @@ def push_gather_data(data: dict, workflow: str, python_version: str):
             ]
         ).decode("utf-8")
         print(f"output from git commit: {output}")
-        subprocess.run(["git", "push", "origin", "badges"])
+        for _ in range(5):
+            subprocess.run(["git", "fetch"])
+            subprocess.run(["git", "checkout", "badges"])
+            output = subprocess.run(["git", "push", "origin", "badges"])
+            if output.returncode == 0:
+                print("Push successful")
+                break
+            else:
+                print(
+                    f"Push failed with return code {output.returncode}, retrying in 2 seconds..."
+                )
+                time.sleep(2)
     print("Done.")
 
 
