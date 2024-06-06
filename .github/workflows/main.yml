@@ -20,6 +20,7 @@ jobs:
       matrix:
         python-version: ["3.8", "3.9", "3.10", "3.11", "3.12"]
         bitcoind-version: ["26.0"]
+        cln-version: ["24.05"]
         experimental: [1]
         deprecated: [0]
 
@@ -64,8 +65,24 @@ jobs:
             echo "run_ci=false" >> "$GITHUB_OUTPUT"
           fi
 
-    - name: Download Bitcoin ${{ matrix.bitcoind-version }} & install binaries
+    - name: Create cache paths
       if: ${{ github.event_name == 'push' || steps.set_plugin_dirs.outputs.run_ci == 'true' }}
+      run: |
+        sudo mkdir /usr/local/libexec
+        sudo mkdir /usr/local/libexec/c-lightning
+        sudo mkdir /usr/local/libexec/c-lightning/plugins
+        sudo chown -R $USER /usr/local/libexec
+
+    - name: Restore bitcoind cache
+      id: cache-bitcoind
+      if: ${{ github.event_name == 'push' || steps.set_plugin_dirs.outputs.run_ci == 'true' }}
+      uses: actions/cache@v4
+      with:
+        path: /usr/local/bin/bitcoin*
+        key: cache-bitcoind-${{ matrix.bitcoind-version }}-${{ runner.os }}
+
+    - name: Download Bitcoin ${{ matrix.bitcoind-version }} & install binaries
+      if: ${{ steps.cache-bitcoind.outputs.cache-hit != 'true' && (github.event_name == 'push' || steps.set_plugin_dirs.outputs.run_ci == 'true') }}
       run: |
         export BITCOIND_VERSION=${{ matrix.bitcoind-version }}
         wget https://bitcoincore.org/bin/bitcoin-core-${BITCOIND_VERSION}/bitcoin-${BITCOIND_VERSION}-x86_64-linux-gnu.tar.gz
@@ -73,34 +90,72 @@ jobs:
         sudo mv bitcoin-${BITCOIND_VERSION}/bin/* /usr/local/bin
         rm -rf bitcoin-${BITCOIND_VERSION}-x86_64-linux-gnu.tar.gz bitcoin-${BITCOIND_VERSION}
 
-    - name: Download Core Lightning latest & install binaries
+    - name: Save bitcoind cache
+      uses: actions/cache/save@v4
+      if: ${{ steps.cache-bitcoind.outputs.cache-hit != 'true' && github.event_name == 'push' }}
+      with:
+          path: /usr/local/bin/bitcoin*
+          key: cache-bitcoind-${{ matrix.bitcoind-version }}-${{ runner.os }}
+
+    - name: Restore CLN cache
+      id: cache-cln
       if: ${{ github.event_name == 'push' || steps.set_plugin_dirs.outputs.run_ci == 'true' }}
-      id: cln-latest-install
+      uses: actions/cache@v4
+      with:
+        path: |
+          /usr/local/bin/lightning*
+          /usr/local/libexec/c-lightning
+          ./lightning
+        key: cache-cln-${{ matrix.cln-version }}-${{ runner.os }}
+
+    - name: Download Core Lightning ${{ matrix.cln-version }} & install binaries
+      if: ${{ steps.cache-cln.outputs.cache-hit != 'true' && (github.event_name == 'push' || steps.set_plugin_dirs.outputs.run_ci == 'true') }}
+      id: cln-install
       run: |
-        url=$(curl -s https://api.github.com/repos/ElementsProject/lightning/releases/latest \
+        url=$(curl -s https://api.github.com/repos/ElementsProject/lightning/releases/tags/v${{ matrix.cln-version }} \
           | jq '.assets[] | select(.name | contains("22.04")) | .browser_download_url' \
           | tr -d '\"')
         wget $url
         sudo tar -xvf ${url##*/} -C /usr/local --strip-components=2
         echo "CLN_VERSION=$(lightningd --version)" >> "$GITHUB_OUTPUT"
 
-    - name: Checkout Core Lightning latest
-      if: ${{ github.event_name == 'push' || steps.set_plugin_dirs.outputs.run_ci == 'true' }}
+    - name: Checkout Core Lightning ${{ matrix.cln-version }}
+      if: ${{ steps.cache-cln.outputs.cache-hit != 'true' && (github.event_name == 'push' || steps.set_plugin_dirs.outputs.run_ci == 'true') }}
       uses: actions/checkout@v4
       with:
         repository: 'ElementsProject/lightning'
         path: 'lightning'
-        ref: ${{ steps.cln-latest-install.outputs.CLN_VERSION }}
+        ref: ${{ steps.cln-install.outputs.CLN_VERSION }}
         fetch-depth: 0  # Fetch all history for all branches and tags
         submodules: 'recursive'
 
-    - name: Install Core Lightning Python package dependencies
-      if: ${{ github.event_name == 'push' || steps.set_plugin_dirs.outputs.run_ci == 'true' }}
-      run: |
-        sudo apt-get install -y \
-          python3 \
-          python3-pip \
+    - name: Save CLN cache
+      uses: actions/cache/save@v4
+      if: ${{ steps.cache-cln.outputs.cache-hit != 'true' && github.event_name == 'push' }}
+      with:
+          path: |
+            /usr/local/bin/lightning*
+            /usr/local/libexec/c-lightning
+            ./lightning
+          key: cache-cln-${{ matrix.cln-version }}-${{ runner.os }}
 
+    - name: Set up Python ${{ matrix.python-version }}
+      if: ${{ github.event_name == 'push' || steps.set_plugin_dirs.outputs.run_ci == 'true' }}
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: Restore python dependencies cache
+      id: cache-python-deps
+      if: ${{ github.event_name == 'push' || steps.set_plugin_dirs.outputs.run_ci == 'true' }}
+      uses: actions/cache@v4
+      with:
+        path: ~/.local/lib/python${{ matrix.python-version }}/site-packages
+        key: cache-python-deps-${{ matrix.python-version }}-${{ matrix.cln-version }}-${{ runner.os }}
+
+    - name: Install Core Lightning Python package dependencies
+      if: ${{ steps.cache-python-deps.outputs.cache-hit != 'true' && (github.event_name == 'push' || steps.set_plugin_dirs.outputs.run_ci == 'true') }}
+      run: |
         cd lightning
         pip3 install --user -U \
           pip \
@@ -116,11 +171,15 @@ jobs:
         pip install --user -U -r requirements.txt
         pip install --user contrib/pyln-client contrib/pyln-testing flaky
 
-    - name: Set up Python ${{ matrix.python-version }}
-      if: ${{ github.event_name == 'push' || steps.set_plugin_dirs.outputs.run_ci == 'true' }}
-      uses: actions/setup-python@v5
+        pip3 install --upgrade pip
+        pip3 install --user -U virtualenv pip > /dev/null
+
+    - name: Save python dependencies cache
+      uses: actions/cache/save@v4
+      if: ${{ steps.cache-python-deps.outputs.cache-hit != 'true' && github.event_name == 'push' }}
       with:
-        python-version: ${{ matrix.python-version }}
+          path: ~/.local/lib/python${{ matrix.python-version }}/site-packages
+          key: cache-python-deps-${{ matrix.python-version }}-${{ matrix.cln-version }}-${{ runner.os }}
 
     - name: Run pytest tests
       id: pytest_tests
@@ -133,9 +192,6 @@ jobs:
         export TEST_DEBUG=1
         export TRAVIS=1
         export VALGRIND=0
-
-        pip3 install --upgrade pip
-        pip3 install --user -U virtualenv pip > /dev/null
 
         if [[ "${{ github.event_name }}" == 'pull_request' ]]; then
           plugin_dirs="${{ steps.set_plugin_dirs.outputs.plugin_dirs }}"
