@@ -8,25 +8,7 @@ concurrency:
 on:
   push:
     branches: [ master ]
-    paths-ignore:
-      - '*.md'
-      - '*.toml'
-      - '*.yml'
-      - '*.lock'
-      - 'Dockerfile'
-      - '.gitignore'
-      - 'LICENSE'
-      - 'archived/**'
   pull_request:
-    paths-ignore:
-      - '*.md'
-      - '*.toml'
-      - '*.yml'
-      - '*.lock'
-      - 'Dockerfile'
-      - '.gitignore'
-      - 'LICENSE'
-      - 'archived/**'
 
 jobs:
   build-and-test:
@@ -46,7 +28,44 @@ jobs:
       with:
         submodules: recursive
 
+    - name: Get changed files
+      id: get_changed_files
+      if: ${{ github.event_name == 'pull_request' }}
+      uses: tj-actions/changed-files@v44
+      with:
+          files: '**/*'
+          files_ignore: |
+            *.md
+            *.toml
+            *.yml
+            *.lock
+            Dockerfile
+            .gitignore
+            LICENSE
+            archived/**
+
+    - name: Set plugin_dirs
+      id: set_plugin_dirs
+      if: ${{ github.event_name == 'pull_request' }}
+      run: |
+          changed_files=$(echo "${{ steps.get_changed_files.outputs.all_changed_files }}" | tr ',' '\n')
+          plugin_dirs=""
+          for file in $changed_files; do
+            dir=$(dirname "$file" | cut -d'/' -f1)
+            if [[ "$dir" != "." && "${dir:0:1}" != "." && ! " ${plugin_dirs[@]} " =~ " ${dir} " ]]; then
+              plugin_dirs="${plugin_dirs} ${dir}"
+            fi
+          done
+          echo "plugin_dirs=${plugin_dirs}" >> "$GITHUB_OUTPUT"
+
+          if [[ -n "${{ steps.get_changed_files.outputs.all_changed_files }}" ]]; then
+            echo "run_ci=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "run_ci=false" >> "$GITHUB_OUTPUT"
+          fi
+
     - name: Download Bitcoin ${{ matrix.bitcoind-version }} & install binaries
+      if: ${{ github.event_name == 'push' || steps.set_plugin_dirs.outputs.run_ci == 'true' }}
       run: |
         export BITCOIND_VERSION=${{ matrix.bitcoind-version }}
         wget https://bitcoincore.org/bin/bitcoin-core-${BITCOIND_VERSION}/bitcoin-${BITCOIND_VERSION}-x86_64-linux-gnu.tar.gz
@@ -55,6 +74,7 @@ jobs:
         rm -rf bitcoin-${BITCOIND_VERSION}-x86_64-linux-gnu.tar.gz bitcoin-${BITCOIND_VERSION}
 
     - name: Download Core Lightning latest & install binaries
+      if: ${{ github.event_name == 'push' || steps.set_plugin_dirs.outputs.run_ci == 'true' }}
       id: cln-latest-install
       run: |
         url=$(curl -s https://api.github.com/repos/ElementsProject/lightning/releases/latest \
@@ -65,6 +85,7 @@ jobs:
         echo "CLN_VERSION=$(lightningd --version)" >> "$GITHUB_OUTPUT"
 
     - name: Checkout Core Lightning latest
+      if: ${{ github.event_name == 'push' || steps.set_plugin_dirs.outputs.run_ci == 'true' }}
       uses: actions/checkout@v4
       with:
         repository: 'ElementsProject/lightning'
@@ -74,6 +95,7 @@ jobs:
         submodules: 'recursive'
 
     - name: Install Core Lightning Python package dependencies
+      if: ${{ github.event_name == 'push' || steps.set_plugin_dirs.outputs.run_ci == 'true' }}
       run: |
         sudo apt-get install -y \
           python3 \
@@ -95,33 +117,14 @@ jobs:
         pip install --user contrib/pyln-client contrib/pyln-testing flaky
 
     - name: Set up Python ${{ matrix.python-version }}
+      if: ${{ github.event_name == 'push' || steps.set_plugin_dirs.outputs.run_ci == 'true' }}
       uses: actions/setup-python@v5
       with:
         python-version: ${{ matrix.python-version }}
 
-    - name: Get changed files
-      id: get_changed_files
-      if: ${{ github.event_name == 'pull_request' }}
-      uses: tj-actions/changed-files@v44
-      with:
-          files: '**/*'
-  
-    - name: Set plugin_dirs
-      id: set_plugin_dirs
-      if: ${{ github.event_name == 'pull_request' }}
-      run: |
-          changed_files=$(echo "${{ steps.get_changed_files.outputs.all_changed_files }}" | tr ',' '\n')
-          plugin_dirs=""
-          for file in $changed_files; do
-            dir=$(dirname "$file" | cut -d'/' -f1)
-            if [[ "$dir" != "." && "${dir:0:1}" != "." && ! " ${plugin_dirs[@]} " =~ " ${dir} " ]]; then
-              plugin_dirs="${plugin_dirs} ${dir}"
-            fi
-          done
-          echo "plugin_dirs=${plugin_dirs}" >> "$GITHUB_OUTPUT"
-
     - name: Run pytest tests
       id: pytest_tests
+      if: ${{ github.event_name == 'push' || steps.set_plugin_dirs.outputs.run_ci == 'true' }}
       run: |
         export CLN_PATH=${{ github.workspace }}/lightning
         export COMPAT=${{ matrix.deprecated }}
@@ -160,7 +163,7 @@ jobs:
     # A dummy task that depends on the full matrix of tests, and signals completion.
     name: CI completion
     runs-on: ubuntu-22.04
-    if: ${{ always() }}
+    if: ${{ always() && github.event_name == 'push' }}
     needs:
       - build-and-test
     steps:
