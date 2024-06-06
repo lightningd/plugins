@@ -1,4 +1,4 @@
-ARG CLN_VERSION="23.11.2"
+ARG CLN_VERSION="24.02.2"
 
 FROM elementsproject/lightningd:v${CLN_VERSION}
 
