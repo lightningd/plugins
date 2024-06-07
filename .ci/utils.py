@@ -1,3 +1,4 @@
+import re
 import subprocess
 from collections import namedtuple
 from pathlib import Path, PosixPath
@@ -32,16 +33,36 @@ def configure_git():
 
 
 def get_testfiles(p: Plugin) -> List[PosixPath]:
-    return [
-        x
-        for x in p.path.iterdir()
-        if (x.is_dir() and x.name == "tests")
-        or (x.name.startswith("test_") and x.name.endswith(".py"))
-    ]
+    if p.framework == "make":
+        return [p.details["makefile"]]
+    else:
+        return [
+            x
+            for x in p.path.iterdir()
+            if (x.is_dir() and x.name == "tests")
+            or (x.name.startswith("test_") and x.name.endswith(".py"))
+        ]
 
 
 def has_testfiles(p: Plugin) -> bool:
     return len(get_testfiles(p)) > 0
+
+
+def has_check_command(makefile_path):
+    try:
+        with open(makefile_path, 'r') as file:
+            contents = file.read()
+
+        pattern = re.compile(r'^check:', re.MULTILINE)
+        match = pattern.search(contents)
+
+        return match is not None
+    except FileNotFoundError:
+        print(f"Error: The file {makefile_path} was not found.")
+        return False
+    except Exception as e:
+        print(f"An error occurred: {e}")
+        return False
 
 
 def list_plugins(plugins: list) -> str:
@@ -58,8 +79,11 @@ def enumerate_plugins(basedir: Path) -> Generator[Plugin, None, None]:
     poetry_pytest = [x for x in plugins if (x / Path("pyproject.toml")).exists()]
     print(f"Poetry plugins: {list_plugins(poetry_pytest)}")
 
+    makefile_plugins = [x for x in plugins if ((x / Path("Makefile")).exists() and has_check_command(x / Path("Makefile")) and x not in pip_pytest and x not in poetry_pytest)]
+    print(f"Makefile plugins: {list_plugins(makefile_plugins)}")
+
     other_plugins = [
-        x for x in plugins if x not in pip_pytest and x not in poetry_pytest
+        x for x in plugins if x not in pip_pytest and x not in poetry_pytest and x not in makefile_plugins
     ]
     print(f"Other plugins: {list_plugins(other_plugins)}")
 
@@ -83,6 +107,18 @@ def enumerate_plugins(basedir: Path) -> Generator[Plugin, None, None]:
             framework="poetry",
             details={
                 "pyproject": p / Path("pyproject.toml"),
+            },
+        )
+
+    for p in sorted(makefile_plugins):
+        yield Plugin(
+            name=p.name,
+            path=p,
+            language="other",
+            framework="make",
+            details={
+                "makefile": p / Path("Makefile"),
+                "setup": p / Path("tests/setup.sh"),
             },
         )
 

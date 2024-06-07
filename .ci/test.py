@@ -30,6 +30,8 @@ def prepare_env(p: Plugin, directory: Path) -> bool:
         return prepare_env_pip(p, directory)
     elif p.framework == "poetry":
         return prepare_env_poetry(p, directory)
+    elif p.framework == "make":
+        return prepare_make(p, directory)
     elif p.framework == "generic":
         return prepare_generic(p, directory)
     else:
@@ -102,6 +104,16 @@ def prepare_env_pip(p: Plugin, directory: Path):
             stderr=subprocess.STDOUT,
         )
     install_pyln_testing(pip_path)
+    return True
+
+
+def prepare_make(p: Plugin, directory: Path):
+    if p.details['setup'].exists():
+        print(f"Running setup script from {p.details['setup']}")
+        subprocess.check_call(
+            ['bash',  p.details['setup'], f'TEST_DIR={directory}'],
+            stderr=subprocess.STDOUT,
+        )
     return True
 
 
@@ -194,13 +206,17 @@ def run_one(p: Plugin) -> bool:
         'LC_ALL': 'C.UTF-8',
         'LANG': 'C.UTF-8',
     })
-    cmd = [str(p) for p in pytest] + [
-        '-vvv',
-        '--timeout=600',
-        '--timeout-method=thread',
-        '--color=yes',
-        '-n=5',
-    ]
+
+    if p.framework == "make":
+        cmd = ['make', 'check']
+    else:
+        cmd = [str(p) for p in pytest] + [
+            '-vvv',
+            '--timeout=600',
+            '--timeout-method=thread',
+            '--color=yes',
+            '-n=5',
+        ]
 
     logging.info(f"Running `{' '.join(cmd)}` in directory {p.path.resolve()}")
     try:
