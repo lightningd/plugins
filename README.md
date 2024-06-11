@@ -54,25 +54,10 @@ This is a list of plugin managers that can help you install these plugins:
 
 ## Archived plugins
 
-The following is a list of archived plugins that are no longer maintained and reside inside the 'archived' subdirectory.
-Any plugins that fail CI will be archived.
+Plugins are archived when they start to fail integration testing with latest CLN release, at which point they will be considered unmaintained.
 
-If you like a plugin from that list, feel free to update and fix it, so we can un-archive it.
+The old archived plugins section is now on a new separate file. You can find it [here](archived.md).
 
-| Name                                 | Short description                                                                           |
-| ------------------------------------ | ------------------------------------------------------------------------------------------- |
-| [autopilot][autopilot]               | An autopilot that suggests channels that should be established                              |
-| [commando][commando]                 | This plugin allows to send commands between nodes                                           |
-| [drain][drain]                       | Draining, filling and balancing channels with automatic chunks.                             |
-| [helpme][helpme]                     | This plugin is designed to walk you through setting up a fresh Core-Lightning node          |
-| [historian][historian]               | Archiving the Lightning Network                                                             |
-| [jitrebalance][jitrebalance]         | The JITrebalance plugin                                                                     |
-| [noise][noise]                       | Chat with your fellow node operators                                                        |
-| [paytest][paytest]                   | A plugin to benchmark the performance of the ~pay~ plugin                                   |
-| [probe][probe]                       | Regularly probes the network for stability                                                  |
-| [prometheus][prometheus]             | Lightning node exporter for the prometheus timeseries server                                |
-| [sparko][sparko]                     | RPC over HTTP with fine-grained permissions, SSE and spark-wallet support                   |
-| [summary][summary]                   | Print a nice summary of the node status                                                     |
 
 ## Installation
 
@@ -204,7 +189,6 @@ Python plugins developers must ensure their plugin to work with all Python versi
  - [C# Plugin Guideline and example project][csharp-example] by @joemphilips
  - [Kotlin plugin guideline and example][kotlin-example] by @vincenzopalazzo
 
-[autopilot]: https://github.com/lightningd/plugins/tree/master/archived/autopilot
 [backup]: https://github.com/lightningd/plugins/tree/master/backup
 [blip12]: https://github.com/lightning/blips/blob/42cec1d0f66eb68c840443abb609a5a9acb34f8e/blip-0012.md
 [bolt12-prism]: https://github.com/gudnuf/bolt12-prism
@@ -215,13 +199,11 @@ Python plugins developers must ensure their plugin to work with all Python versi
 [cln-ntfy]: https://github.com/yukibtc/cln-ntfy
 [clnrod]: https://github.com/daywalker90/clnrod
 [coffee]: https://github.com/coffee-tools/coffee
-[commando]: https://github.com/lightningd/plugins/tree/master/archived/commando
 [cpp-api]: https://github.com/darosior/lightningcpp
 [csharp-example]: https://github.com/joemphilips/DotNetLightning/tree/master/examples/HelloWorldPlugin
 [currencyrate]: https://github.com/lightningd/plugins/tree/master/currencyrate
 [datastore]: https://github.com/lightningd/plugins/tree/master/datastore
 [donations]: https://github.com/lightningd/plugins/tree/master/donations
-[drain]: https://github.com/lightningd/plugins/tree/master/archived/drain
 [esplora]: https://github.com/Blockstream/esplora
 [event-notifications]: https://lightning.readthedocs.io/PLUGINS.html#event-notifications
 [event-websocket]: https://github.com/rbndg/c-lightning-events
@@ -229,26 +211,19 @@ Python plugins developers must ensure their plugin to work with all Python versi
 [go-api]: https://github.com/niftynei/glightning
 [graphql]: https://github.com/nettijoe96/c-lightning-graphql
 [graphql-spec]: https://graphql.org/
-[helpme]: https://github.com/lightningd/plugins/tree/master/archived/helpme
-[historian]: https://github.com/lightningd/plugins/tree/master/archived/historian
 [holdinvoice]: https://github.com/daywalker90/holdinvoice
 [invoice-queue]: https://github.com/rbndg/Lightning-Invoice-Queue
 [java-api]: https://github.com/clightning4j/JRPClightning
-[jitrebalance]: https://github.com/lightningd/plugins/tree/master/archived/jitrebalance
 [js-api]: https://github.com/lightningd/clightningjs
 [kotlin-example]: https://vincenzopalazzo.medium.com/a-day-in-a-c-lightning-plugin-with-koltin-c8bbd4fa0406
 [lightning-qt]: https://github.com/darosior/pylightning-qt
 [listmempoolfunds]: https://github.com/andrewtoth/listmempoolfunds
 [monitor]: https://github.com/renepickhardt/plugins/tree/master/monitor
 [nloop]: https://github.com/bitbankinc/NLoop
-[noise]: https://github.com/lightningd/plugins/tree/master/archived/noise
-[paytest]: https://github.com/lightningd/plugins/tree/master/archived/paytest
 [paythrough]: https://github.com/andrewtoth/paythrough
 [pers-chans]: https://github.com/lightningd/plugins/tree/master/persistent-channels
 [plugin-docs]: https://docs.corelightning.org/docs/plugin-development
 [poncho]: https://github.com/fiatjaf/poncho
-[probe]: https://github.com/lightningd/plugins/tree/master/archived/probe
-[prometheus]: https://github.com/lightningd/plugins/tree/master/archived/prometheus
 [pruning]: https://github.com/Start9Labs/c-lightning-pruning-plugin
 [python-api]: https://github.com/ElementsProject/lightning/tree/master/contrib/pylightning
 [python-api-pypi]: https://pypi.org/project/pylightning/
@@ -258,9 +233,7 @@ Python plugins developers must ensure their plugin to work with all Python versi
 [sauron]: https://github.com/lightningd/plugins/tree/master/sauron
 [sitzprobe]: https://github.com/niftynei/sitzprobe
 [sling]: https://github.com/daywalker90/sling
-[sparko]: https://github.com/fiatjaf/sparko
 [summars]: https://github.com/daywalker90/summars
-[summary]: https://github.com/lightningd/plugins/tree/master/archived/summary
 [trustedcoin]: https://github.com/fiatjaf/trustedcoin
 [ts-api]: https://github.com/runcitadel/c-lightning.ts
 [watchtower-client]: https://github.com/talaia-labs/rust-teos/tree/master/watchtower-plugin
