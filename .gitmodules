@@ -49,3 +49,21 @@
 [submodule "clnrod"]
 	path = clnrod
 	url = https://github.com/daywalker90/clnrod.git
+[submodule "c-lightning-events"]
+	path = c-lightning-events
+	url = https://github.com/rbndg/c-lightning-events
+[submodule "Lightning-Invoice-Queue"]
+	path = Lightning-Invoice-Queue
+	url = https://github.com/rbndg/Lightning-Invoice-Queue
+[submodule "listmempoolfunds"]
+	path = listmempoolfunds
+	url = https://github.com/andrewtoth/listmempoolfunds
+[submodule "NLoop"]
+	path = NLoop
+	url = https://github.com/bitbankinc/NLoop
+[submodule "paythrough"]
+	path = paythrough
+	url = https://github.com/andrewtoth/paythrough
+[submodule "c-lightning-pruning-plugin"]
+	path = c-lightning-pruning-plugin
+	url = https://github.com/Start9Labs/c-lightning-pruning-plugin
