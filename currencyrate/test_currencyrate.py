@@ -2,6 +2,7 @@ import logging
 import os
 import re
 
+from pyln.client import Millisatoshi
 from pyln.testing.fixtures import *  # noqa: F401,F403
 
 plugin_dir = os.path.dirname(__file__)
@@ -13,14 +14,17 @@ deprecated_apis = False
 
 
 def extract_digits(value):
-    pattern = r"^(\d+)msat$"
-    regex = re.compile(pattern)
-    match = regex.match(value)
-    if match:
-        digits = match.group(1)
-        return int(digits)
+    if isinstance(value, Millisatoshi):
+        return int(value)
     else:
-        return None
+        pattern = r"^(\d+)msat$"
+        regex = re.compile(pattern)
+        match = regex.match(value)
+        if match:
+            digits = match.group(1)
+            return int(digits)
+        else:
+            return None
 
 
 def test_currencyrate(node_factory):
