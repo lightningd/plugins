@@ -1,15 +1,18 @@
 import json
 import os
 import subprocess
+import time
 from pathlib import Path
 
 from utils import configure_git, enumerate_plugins
 
 
-def update_and_commit_badge(plugin_name: str, passed: bool, workflow: str) -> bool:
-    json_data = {"schemaVersion": 1, "label": "", "message": " ✔ ", "color": "green"}
+def update_and_commit_badge(plugin_name: str, passed: bool, workflow: str, has_tests: bool) -> bool:
+    json_data = {"schemaVersion": 1, "label": "", "message": "✔", "color": "green"}
     if not passed:
         json_data.update({"message": "✗", "color": "red"})
+    if not has_tests:
+        json_data.update({"message": "?", "color": "orange"})
 
     filename = os.path.join(".badges", f"{plugin_name}_{workflow}.json")
     with open(filename, "w") as file:
@@ -57,12 +60,28 @@ def push_badges_data(workflow: str, num_of_python_versions: int):
             if (
                 len(set(results)) == 1
                 and results[0] == "passed"
-                # and len(results) == num_of_python_versions  # TODO: Disabled as gather data for python versions is missing sporadingly.
+                and len(results) == num_of_python_versions
             ):
                 passed = True
-            any_changes |= update_and_commit_badge(plugin.name, passed, workflow)
+            any_changes |= update_and_commit_badge(plugin.name, passed, workflow, True)
+        else:
+            any_changes |= update_and_commit_badge(plugin.name, False, workflow, False)
 
     if any_changes:
+        for _ in range(10):
+            subprocess.run(["git", "pull", "--rebase"])
+            output = subprocess.run(["git", "push", "origin", "badges"],
+                capture_output=True,
+                text=True)
+            if output.returncode == 0:
+                print("Push successful")
+                break
+            else:
+                print(
+                    f"Push failed with return code {output.returncode}, retrying in 2 seconds..."
+                )
+                print(f"Push failure message: {output.stderr}")
+                time.sleep(2)
         subprocess.run(["git", "push", "origin", "badges"])
     print("Done.")
 

@@ -256,10 +256,11 @@ def push_gather_data(data: dict, workflow: str, python_version: str):
             ]
         ).decode("utf-8")
         print(f"output from git commit: {output}")
-        for _ in range(5):
-            subprocess.run(["git", "fetch"])
-            subprocess.run(["git", "checkout", "badges"])
-            output = subprocess.run(["git", "push", "origin", "badges"])
+        for _ in range(10):
+            subprocess.run(["git", "pull", "--rebase"])
+            output = subprocess.run(["git", "push", "origin", "badges"],
+                capture_output=True,
+                text=True)
             if output.returncode == 0:
                 print("Push successful")
                 break
@@ -267,6 +268,7 @@ def push_gather_data(data: dict, workflow: str, python_version: str):
                 print(
                     f"Push failed with return code {output.returncode}, retrying in 2 seconds..."
                 )
+                print(f"Push failure message: {output.stderr}")
                 time.sleep(2)
     print("Done.")
 
