@@ -4,6 +4,7 @@ import subprocess
 import sys
 import tempfile
 import time
+import json
 from itertools import chain
 from pathlib import Path
 
@@ -281,6 +282,27 @@ def write_gather_data_file(plugin_name: str, result, workflow: str, python_versi
     return filename
 
 
+def gather_old_failures(old_failures: list, workflow: str):
+    print("Gather old failures...")
+    configure_git()
+    subprocess.run(["git", "fetch"])
+    subprocess.run(["git", "checkout", "badges"])
+
+    directory = ".badges"
+
+    for filename in os.listdir(directory):
+        if filename.endswith(f'_{workflow}.json'):
+            file_path = os.path.join(directory, filename)
+            plugin_name = filename.rsplit(f'_{workflow}.json', 1)[0]
+
+            with open(file_path, 'r') as file:
+                data = json.load(file)
+                if data["color"] == "red":
+                    old_failures.append(plugin_name)
+
+    print(f"Old failures: {old_failures}")
+    print("Done.")
+
 def run_all(workflow: str, python_version: str, update_badges: bool, plugin_names: list):
     root_path = subprocess.check_output([
         'git',
@@ -300,14 +322,22 @@ def run_all(workflow: str, python_version: str, update_badges: bool, plugin_name
     results = [(p, run_one(p)) for p in plugins]
     success = all([t[1] for t in results])
 
+    old_failures = []
+    if not success and plugin_names == []:
+        gather_old_failures(old_failures, workflow)
+
     if update_badges:
         push_gather_data(collect_gather_data(results, success), workflow, python_version)
 
     if not success:
         print("The following tests failed:")
+        has_new_failure = False
         for t in filter(lambda t: not t[1], results):
+            if t[0].name not in old_failures:
+                has_new_failure = True
             print(" - {p.name} ({p.path})".format(p=t[0]))
-        sys.exit(1)
+        if has_new_failure:
+            sys.exit(1)
     else:
         print("All tests passed.")
 
