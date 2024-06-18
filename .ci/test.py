@@ -8,8 +8,7 @@ import json
 from itertools import chain
 from pathlib import Path
 
-from utils import (Plugin, configure_git, enumerate_plugins, get_testfiles,
-                   has_testfiles)
+from utils import (Plugin, configure_git, enumerate_plugins)
 
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 
@@ -160,11 +159,11 @@ def install_pyln_testing(pip_path):
 def run_one(p: Plugin) -> bool:
     print("Running tests on plugin {p.name}".format(p=p))
 
-    if not has_testfiles(p):
+    if not p.testfiles:
         print("No test files found, skipping plugin {p.name}".format(p=p))
         return True
 
-    print("Found {ctestfiles} test files, creating virtualenv and running tests".format(ctestfiles=len(get_testfiles(p))))
+    print("Found {ctestfiles} test files, creating virtualenv and running tests".format(ctestfiles=len(p.testfiles)))
     print("##[group]{p.name}".format(p=p))
 
     # Create a virtual env
@@ -225,7 +224,7 @@ def collect_gather_data(results: list, success: bool) -> dict:
     gather_data = {}
     for t in results:
         p = t[0]
-        if has_testfiles(p):
+        if p.testfiles:
             if success or t[1]:
                 gather_data[p.name] = "passed"
             else:
