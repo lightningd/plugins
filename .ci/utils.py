@@ -10,6 +10,7 @@ Plugin = namedtuple(
         "path",
         "language",
         "framework",
+        "testfiles",
         "details",
     ],
 )
@@ -31,18 +32,14 @@ def configure_git():
     subprocess.run(["git", "config", "--global", "user.name", '"lightningd"'])
 
 
-def get_testfiles(p: Plugin) -> List[PosixPath]:
+def get_testfiles(p: Path) -> List[PosixPath]:
     test_files = []
-    for x in p.path.iterdir():
+    for x in p.iterdir():
         if x.is_dir() and x.name == "tests":
             test_files.extend([y for y in x.iterdir() if y.is_file() and y.name.startswith("test_") and y.name.endswith(".py")])
         elif x.is_file() and x.name.startswith("test_") and x.name.endswith(".py"):
             test_files.append(x)
     return test_files
-
-
-def has_testfiles(p: Plugin) -> bool:
-    return len(get_testfiles(p)) > 0
 
 
 def list_plugins(plugins: list) -> str:
@@ -70,6 +67,7 @@ def enumerate_plugins(basedir: Path) -> Generator[Plugin, None, None]:
             path=p,
             language="python",
             framework="pip",
+            testfiles=get_testfiles(p),
             details={
                 "requirements": p / Path("requirements.txt"),
                 "devrequirements": p / Path("requirements-dev.txt"),
@@ -82,6 +80,7 @@ def enumerate_plugins(basedir: Path) -> Generator[Plugin, None, None]:
             path=p,
             language="python",
             framework="poetry",
+            testfiles=get_testfiles(p),
             details={
                 "pyproject": p / Path("pyproject.toml"),
             },
@@ -93,6 +92,7 @@ def enumerate_plugins(basedir: Path) -> Generator[Plugin, None, None]:
             path=p,
             language="other",
             framework="generic",
+            testfiles=get_testfiles(p),
             details={
                 "requirements": p / Path("tests/requirements.txt"),
                 "setup": p / Path("tests/setup.sh"),
