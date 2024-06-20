@@ -96,7 +96,7 @@ jobs:
   gather:
     # A dummy task that depends on the full matrix of tests, and signals completion.
     name: CI completion
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     if: ${{ always() }}
     needs:
       - nightly-build-and-test
@@ -110,6 +110,7 @@ jobs:
           python-version: "3.12"
       - name: Complete
         run: |
+          python_versions='3.8 3.9 3.10 3.11 3.12'
           echo "Updating badges data for nightly workflow..."
-          python3 .ci/update_badges.py nightly 5  # We test for 5 distinct Python versions
+          python3 .ci/update_badges.py nightly $(echo "$python_versions")
           echo "CI completed."
