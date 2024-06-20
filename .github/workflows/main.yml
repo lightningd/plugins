@@ -18,7 +18,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["3.8", "3.12"]
+        python-version: ["3.8", "3.11"]
         bitcoind-version: ["26.0"]
         cln-version: ["24.05", "24.02.2", "23.11.2"]
         experimental: [1]
@@ -65,6 +65,22 @@ jobs:
             echo "run_ci=false" >> "$GITHUB_OUTPUT"
           fi
 
+    - name: Set up Python ${{ matrix.python-version }}
+      if: ${{ github.event_name == 'push' || steps.set_plugin_dirs.outputs.run_ci == 'true' }}
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: Extract exact python and os version
+      id: exact_versions
+      run: |
+        PYTHON_VERSION=$(python --version 2>&1 | grep -oP '(?<=Python )\d+\.\d+(\.\d+)?')
+        echo "Python version: $PYTHON_VERSION"
+        echo "python_version=$PYTHON_VERSION" >> "$GITHUB_OUTPUT"
+        OS_VERSION=$(lsb_release -rs)
+        echo "OS version: $OS_VERSION"
+        echo "os_version=$OS_VERSION" >> $GITHUB_OUTPUT
+
     - name: Create cache paths
       if: ${{ github.event_name == 'push' || steps.set_plugin_dirs.outputs.run_ci == 'true' }}
       run: |
@@ -79,7 +95,7 @@ jobs:
       uses: actions/cache@v4
       with:
         path: /usr/local/bin/bitcoin*
-        key: cache-bitcoind-${{ matrix.bitcoind-version }}-${{ runner.os }}
+        key: cache-bitcoind-${{ matrix.bitcoind-version }}-${{ steps.exact_versions.outputs.os_version }}
 
     - name: Download Bitcoin ${{ matrix.bitcoind-version }} & install binaries
       if: ${{ steps.cache-bitcoind.outputs.cache-hit != 'true' && (github.event_name == 'push' || steps.set_plugin_dirs.outputs.run_ci == 'true') }}
@@ -95,7 +111,7 @@ jobs:
       if: ${{ steps.cache-bitcoind.outputs.cache-hit != 'true' && github.event_name == 'push' }}
       with:
           path: /usr/local/bin/bitcoin*
-          key: cache-bitcoind-${{ matrix.bitcoind-version }}-${{ runner.os }}
+          key: cache-bitcoind-${{ matrix.bitcoind-version }}-${{ steps.exact_versions.outputs.os_version }}
 
     - name: Restore CLN cache
       id: cache-cln
@@ -106,7 +122,7 @@ jobs:
           /usr/local/bin/lightning*
           /usr/local/libexec/c-lightning
           ./lightning
-        key: cache-cln-${{ matrix.cln-version }}-${{ runner.os }}
+        key: cache-cln-${{ matrix.cln-version }}-${{ steps.exact_versions.outputs.os_version }}
 
     - name: Download Core Lightning ${{ matrix.cln-version }} & install binaries
       if: ${{ steps.cache-cln.outputs.cache-hit != 'true' && (github.event_name == 'push' || steps.set_plugin_dirs.outputs.run_ci == 'true') }}
@@ -137,13 +153,7 @@ jobs:
             /usr/local/bin/lightning*
             /usr/local/libexec/c-lightning
             ./lightning
-          key: cache-cln-${{ matrix.cln-version }}-${{ runner.os }}
-
-    - name: Set up Python ${{ matrix.python-version }}
-      if: ${{ github.event_name == 'push' || steps.set_plugin_dirs.outputs.run_ci == 'true' }}
-      uses: actions/setup-python@v5
-      with:
-        python-version: ${{ matrix.python-version }}
+          key: cache-cln-${{ matrix.cln-version }}-${{ steps.exact_versions.outputs.os_version }}
 
     - name: Restore python dependencies cache
       id: cache-python-deps
@@ -151,7 +161,7 @@ jobs:
       uses: actions/cache@v4
       with:
         path: ~/.local/lib/python${{ matrix.python-version }}/site-packages
-        key: cache-python-deps-${{ matrix.python-version }}-${{ matrix.cln-version }}-${{ runner.os }}
+        key: cache-python-deps-${{ steps.exact_versions.outputs.python_version }}-${{ matrix.cln-version }}-${{ steps.exact_versions.outputs.os_version }}
 
     - name: Install Core Lightning Python package dependencies
       if: ${{ steps.cache-python-deps.outputs.cache-hit != 'true' && (github.event_name == 'push' || steps.set_plugin_dirs.outputs.run_ci == 'true') }}
@@ -179,7 +189,7 @@ jobs:
       if: ${{ steps.cache-python-deps.outputs.cache-hit != 'true' && github.event_name == 'push' }}
       with:
           path: ~/.local/lib/python${{ matrix.python-version }}/site-packages
-          key: cache-python-deps-${{ matrix.python-version }}-${{ matrix.cln-version }}-${{ runner.os }}
+          key: cache-python-deps-${{ steps.exact_versions.outputs.python_version }}-${{ matrix.cln-version }}-${{ steps.exact_versions.outputs.os_version }}
 
     - name: Run pytest tests
       id: pytest_tests
@@ -218,7 +228,7 @@ jobs:
   gather:
     # A dummy task that depends on the full matrix of tests, and signals completion.
     name: CI completion
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     if: ${{ always() && github.event_name == 'push' }}
     needs:
       - build-and-test
@@ -236,6 +246,7 @@ jobs:
           python-version: "3.12"
       - name: Complete
         run: |
+          python_versions='3.8 3.11'
           echo "Updating badges data for ${{ matrix.cln-version }} workflow..."
-          python3 .ci/update_badges.py ${{ matrix.cln-version }} 2  # Set the distinct number of Python versions we test for
+          python3 .ci/update_badges.py ${{ matrix.cln-version }} $(echo "$python_versions")
           echo "CI completed."

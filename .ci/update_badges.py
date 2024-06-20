@@ -32,12 +32,31 @@ def update_and_commit_badge(plugin_name: str, passed: bool, workflow: str, has_t
     return False
 
 
-def push_badges_data(workflow: str, num_of_python_versions: int):
+def cleanup_old_results(plugin_name: str, file: Path) -> bool:
+    os.remove(file)
+    print(f"Removed deprecated result {file.name} for {plugin_name}, we no longer test for this version!")
+    subprocess.run(["git", "add", "-v", file])
+    subprocess.run(
+            [
+                "git",
+                "commit",
+                "-m",
+                f'Remove deprecated result {file.name}',
+            ]
+        )
+    return True
+
+
+def check_wanted_result(result_file: str, python_versions_tested: list) -> bool:
+    for version in python_versions_tested:
+        if version in result_file:
+            return True
+    return False
+
+
+def push_badges_data(workflow: str, python_versions_tested: list):
     print("Pushing badges data...")
     configure_git()
-    subprocess.run(["git", "fetch"])
-    subprocess.run(["git", "checkout", "badges"])
-    subprocess.run(["git", "pull"])
 
     root_path = (
         subprocess.check_output(["git", "rev-parse", "--show-toplevel"])
@@ -46,12 +65,19 @@ def push_badges_data(workflow: str, num_of_python_versions: int):
     )
     plugins = list(enumerate_plugins(Path(root_path)))
 
+    subprocess.run(["git", "fetch"])
+    subprocess.run(["git", "checkout", "badges"])
+    subprocess.run(["git", "pull"])
+
     any_changes = False
     for plugin in plugins:
         results = []
         _dir = f".badges/gather_data/{workflow}/{plugin.name}"
         if os.path.exists(_dir):
             for child in Path(_dir).iterdir():
+                if not check_wanted_result(child.name, python_versions_tested):
+                    any_changes |= cleanup_old_results(plugin.name, child)
+                    continue
                 result = child.read_text().strip()
                 results.append(result)
                 print(f"Results for {child}: {result}")
@@ -60,7 +86,7 @@ def push_badges_data(workflow: str, num_of_python_versions: int):
             if (
                 len(set(results)) == 1
                 and results[0] == "passed"
-                and len(results) == num_of_python_versions
+                and len(results) == len(python_versions_tested)
             ):
                 passed = True
             any_changes |= update_and_commit_badge(plugin.name, passed, workflow, True)
@@ -82,7 +108,6 @@ def push_badges_data(workflow: str, num_of_python_versions: int):
                 )
                 print(f"Push failure message: {output.stderr}")
                 time.sleep(2)
-        subprocess.run(["git", "push", "origin", "badges"])
     print("Done.")
 
 
@@ -92,8 +117,8 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Plugins completion script")
     parser.add_argument("workflow", type=str, help="Name of the GitHub workflow")
     parser.add_argument(
-        "num_of_python_versions", type=str, help="Number of Python versions"
+        "python_versions_tested", nargs="*", type=str, default=[], help="Python versions tested"
     )
     args = parser.parse_args()
 
-    push_badges_data(args.workflow, int(args.num_of_python_versions))
+    push_badges_data(args.workflow, args.python_versions_tested)
