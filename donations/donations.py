@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-""" A small donation service so that users can request ln invoices
+"""A small donation service so that users can request ln invoices
 
 This plugin spins up a small flask server that provides a form to
 users who wish to donate some money to the owner of the lightning
@@ -15,6 +15,7 @@ you can see a demo of the plugin (and leave a tip) directly at:
 
 LICENSE: MIT / APACHE
 """
+
 import base64
 import multiprocessing
 import qrcode
@@ -34,11 +35,14 @@ plugin = Plugin()
 
 
 class DonationForm(FlaskForm):
-    """Form for donations """
-    amount = IntegerField("Enter how many Satoshis you want to donate!",
-                          validators=[DataRequired(), NumberRange(min=1, max=16666666)])
+    """Form for donations"""
+
+    amount = IntegerField(
+        "Enter how many Satoshis you want to donate!",
+        validators=[DataRequired(), NumberRange(min=1, max=16666666)],
+    )
     description = StringField("Leave a comment (displayed publically)")
-    submit = SubmitField('Donate')
+    submit = SubmitField("Donate")
 
 
 def make_base64_qr_code(bolt11):
@@ -94,18 +98,26 @@ def donation_form():
                 donations.append((ts, satoshis, description))
 
     if b11 is not None:
-        return render_template("donation.html", donations=sorted(donations, reverse=True), form=form, bolt11=b11, qr=qr, label=label)
+        return render_template(
+            "donation.html",
+            donations=sorted(donations, reverse=True),
+            form=form,
+            bolt11=b11,
+            qr=qr,
+            label=label,
+        )
     else:
-        return render_template("donation.html", donations=sorted(donations, reverse=True), form=form)
+        return render_template(
+            "donation.html", donations=sorted(donations, reverse=True), form=form
+        )
 
 
 def worker(port):
     app = Flask(__name__)
     # FIXME: use hexlified hsm secret or something else
-    app.config['SECRET_KEY'] = 'you-will-never-guess-this'
-    app.add_url_rule('/donation', 'donation',
-                     donation_form, methods=["GET", "POST"])
-    app.add_url_rule('/is_invoice_paid/<label>', 'ajax', ajax)
+    app.config["SECRET_KEY"] = "you-will-never-guess-this"
+    app.add_url_rule("/donation", "donation", donation_form, methods=["GET", "POST"])
+    app.add_url_rule("/is_invoice_paid/<label>", "ajax", ajax)
     Bootstrap(app)
     app.run(host="0.0.0.0", port=port)
     return
@@ -119,7 +131,8 @@ def start_server(port):
         return False, "server already running"
 
     p = multiprocessing.Process(
-        target=worker, args=[port], name="server on port {}".format(port))
+        target=worker, args=[port], name="server on port {}".format(port)
+    )
     p.daemon = True
 
     jobs[port] = p
@@ -138,7 +151,7 @@ def stop_server(port):
         return False
 
 
-@plugin.method('donationserver')
+@plugin.method("donationserver")
 def donationserver(command="start", port=8088):
     """Starts a donationserver with {start/stop/restart} on {port}.
 
@@ -159,14 +172,18 @@ def donationserver(command="start", port=8088):
     try:
         port = int(port)
     except Exception:
-        port = int(plugin.options['donations-web-port']['value'])
+        port = int(plugin.options["donations-web-port"]["value"])
 
     if command == "list":
         return "servers running on the following ports: {}".format(list(jobs.keys()))
 
     if command == "start":
         if port in jobs:
-            return "Server already running on port {}. Maybe restart the server?".format(port)
+            return (
+                "Server already running on port {}. Maybe restart the server?".format(
+                    port
+                )
+            )
         suc = start_server(port)
         if suc:
             return "started server successfully on port {}".format(port)
@@ -189,23 +206,19 @@ def donationserver(command="start", port=8088):
 
 
 plugin.add_option(
-    'donations-autostart',
-    'true',
-    'Should the donation server start automatically'
+    "donations-autostart", "true", "Should the donation server start automatically"
 )
 
 plugin.add_option(
-    'donations-web-port',
-    '8088',
-    'Which port should the donation server listen to?'
+    "donations-web-port", "8088", "Which port should the donation server listen to?"
 )
 
 
 @plugin.init()
 def init(options, configuration, plugin):
-    port = int(options['donations-web-port'])
+    port = int(options["donations-web-port"])
 
-    if options['donations-autostart'].lower() in ['true', '1']:
+    if options["donations-autostart"].lower() in ["true", "1"]:
         start_server(port)
 
 

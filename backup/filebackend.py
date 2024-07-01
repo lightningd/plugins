@@ -18,9 +18,13 @@ class FileBackend(Backend):
         self.url = urlparse(self.destination)
 
         if os.path.exists(self.url.path) and create:
-            raise ValueError("Attempted to create a FileBackend, but file already exists.")
+            raise ValueError(
+                "Attempted to create a FileBackend, but file already exists."
+            )
         if not os.path.exists(self.url.path) and not create:
-            raise ValueError("Attempted to open a FileBackend but file doesn't already exists, use `backup-cli init` to initialize it first.")
+            raise ValueError(
+                "Attempted to open a FileBackend but file doesn't already exists, use `backup-cli init` to initialize it first."
+            )
         if create:
             # Initialize a new backup file
             self.version, self.prev_version = 0, 0
@@ -32,12 +36,18 @@ class FileBackend(Backend):
         return self.read_metadata()
 
     def write_metadata(self):
-        blob = struct.pack("!IIQIQQ", 0x01, self.version, self.offsets[0],
-                           self.prev_version, self.offsets[1],
-                           self.version_count)
+        blob = struct.pack(
+            "!IIQIQQ",
+            0x01,
+            self.version,
+            self.offsets[0],
+            self.prev_version,
+            self.offsets[1],
+            self.version_count,
+        )
 
         # Pad the header
-        blob += b'\x00' * (512 - len(blob))
+        blob += b"\x00" * (512 - len(blob))
         mode = "rb+" if os.path.exists(self.url.path) else "wb+"
 
         with open(self.url.path, mode) as f:
@@ -46,31 +56,41 @@ class FileBackend(Backend):
             f.flush()
 
     def read_metadata(self):
-        with open(self.url.path, 'rb') as f:
+        with open(self.url.path, "rb") as f:
             blob = f.read(512)
             if len(blob) != 512:
-                logging.warn("Corrupt FileBackend header, expected 512 bytes, got {} bytes".format(len(blob)))
+                logging.warn(
+                    "Corrupt FileBackend header, expected 512 bytes, got {} bytes".format(
+                        len(blob)
+                    )
+                )
                 return False
 
-            file_version, = struct.unpack_from("!I", blob)
+            (file_version,) = struct.unpack_from("!I", blob)
             if file_version != 1:
                 logging.warn("Unknown FileBackend version {}".format(file_version))
                 return False
 
-            self.version, self.offsets[0], self.prev_version, self.offsets[1], self.version_count, = struct.unpack_from("!IQIQQ", blob, offset=4)
+            (
+                self.version,
+                self.offsets[0],
+                self.prev_version,
+                self.offsets[1],
+                self.version_count,
+            ) = struct.unpack_from("!IQIQQ", blob, offset=4)
 
         return True
 
     def add_change(self, entry: Change) -> bool:
-        typ = b'\x01' if entry.snapshot is None else b'\x02'
-        if typ == b'\x01':
-            payload = b'\x00'.join([t.encode('UTF-8') for t in entry.transaction])
-        elif typ == b'\x02':
+        typ = b"\x01" if entry.snapshot is None else b"\x02"
+        if typ == b"\x01":
+            payload = b"\x00".join([t.encode("UTF-8") for t in entry.transaction])
+        elif typ == b"\x02":
             payload = entry.snapshot
 
         length = struct.pack("!I", len(payload))
         version = struct.pack("!I", entry.version)
-        with open(self.url.path, 'ab') as f:
+        with open(self.url.path, "ab") as f:
             f.seek(self.offsets[0])
             f.write(length)
             f.write(version)
@@ -100,7 +120,7 @@ class FileBackend(Backend):
     def stream_changes(self) -> Iterator[Change]:
         self.read_metadata()
         version = -1
-        with open(self.url.path, 'rb') as f:
+        with open(self.url.path, "rb") as f:
             # Skip the header
             f.seek(512)
             while version < self.version:
@@ -110,7 +130,7 @@ class FileBackend(Backend):
                     yield Change(
                         version=version,
                         snapshot=None,
-                        transaction=[t.decode('UTF-8') for t in payload.split(b'\x00')]
+                        transaction=[t.decode("UTF-8") for t in payload.split(b"\x00")],
                     )
                 elif typ == 2:
                     yield Change(version=version, snapshot=payload, transaction=None)
@@ -118,7 +138,11 @@ class FileBackend(Backend):
                     raise ValueError("Unknown FileBackend entry type {}".format(typ))
 
             if version != self.version:
-                raise ValueError("Versions do not match up: restored version {}, backend version {}".format(version, self.version))
+                raise ValueError(
+                    "Versions do not match up: restored version {}, backend version {}".format(
+                        version, self.version
+                    )
+                )
             assert version == self.version
 
     def compact(self):
@@ -137,9 +161,9 @@ class FileBackend(Backend):
         snapshotpath = os.path.join(tmp.name, "lightningd.sqlite3")
 
         stats = {
-            'before': {
-                'backupsize': os.stat(self.url.path).st_size,
-                'version_count': self.version_count,
+            "before": {
+                "backupsize": os.stat(self.url.path).st_size,
+                "version_count": self.version_count,
             },
         }
 
@@ -178,13 +202,14 @@ class FileBackend(Backend):
 
         snapshot = Change(
             version=change.version - 1,
-            snapshot=open(snapshotpath, 'rb').read(),
-            transaction=None
+            snapshot=open(snapshotpath, "rb").read(),
+            transaction=None,
         )
-        print("Adding intial snapshot with {} bytes for version {}".format(
-            len(snapshot.snapshot),
-            snapshot.version
-        ))
+        print(
+            "Adding intial snapshot with {} bytes for version {}".format(
+                len(snapshot.snapshot), snapshot.version
+            )
+        )
         clone.add_change(snapshot)
 
         assert clone.version == change.version - 1
@@ -194,15 +219,17 @@ class FileBackend(Backend):
         assert self.version == clone.version
         assert self.prev_version == clone.prev_version
 
-        stats['after'] = {
-            'version_count': clone.version_count,
-            'backupsize': os.stat(clonepath).st_size,
+        stats["after"] = {
+            "version_count": clone.version_count,
+            "backupsize": os.stat(clonepath).st_size,
         }
 
-        print("Compacted {} changes, saving {} bytes, swapping backups".format(
-            stats['before']['version_count'] - stats['after']['version_count'],
-            stats['before']['backupsize'] - stats['after']['backupsize'],
-        ))
+        print(
+            "Compacted {} changes, saving {} bytes, swapping backups".format(
+                stats["before"]["version_count"] - stats["after"]["version_count"],
+                stats["before"]["backupsize"] - stats["after"]["backupsize"],
+            )
+        )
         shutil.move(clonepath, self.url.path)
 
         # Re-initialize ourselves so we have the correct metadata

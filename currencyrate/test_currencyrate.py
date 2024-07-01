@@ -34,9 +34,7 @@ def test_currencyrate(node_factory):
         "disable-source": "bitstamp",
     }
     l1 = node_factory.get_node(options=opts)
-    plugins = [
-        os.path.basename(p["name"]) for p in l1.rpc.plugin("list")["plugins"]
-    ]
+    plugins = [os.path.basename(p["name"]) for p in l1.rpc.plugin("list")["plugins"]]
     assert "currencyrate.py" in plugins
 
     rates = l1.rpc.call("currencyrates", ["USD"])

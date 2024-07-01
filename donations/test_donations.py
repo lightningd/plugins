@@ -18,11 +18,11 @@ def test_donation_starts(node_factory):
 
 
 def test_donation_server(node_factory):
-    pluginopt = {'plugin': plugin_path, 'donations-autostart': False}
+    pluginopt = {"plugin": plugin_path, "donations-autostart": False}
     l1 = node_factory.get_node(options=pluginopt, allow_warning=True)
     port = reserve()
-    l1.rpc.donationserver('start', port)
+    l1.rpc.donationserver("start", port)
     l1.daemon.wait_for_log("plugin-donations.py:.*Serving Flask app 'donations'")
     l1.daemon.wait_for_log("plugin-donations.py:.*Running on all addresses")
     msg = l1.rpc.donationserver("stop", port)
-    assert msg == f'stopped server on port {port}'
+    assert msg == f"stopped server on port {port}"

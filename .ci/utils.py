@@ -36,7 +36,15 @@ def get_testfiles(p: Path) -> List[PosixPath]:
     test_files = []
     for x in p.iterdir():
         if x.is_dir() and x.name == "tests":
-            test_files.extend([y for y in x.iterdir() if y.is_file() and y.name.startswith("test_") and y.name.endswith(".py")])
+            test_files.extend(
+                [
+                    y
+                    for y in x.iterdir()
+                    if y.is_file()
+                    and y.name.startswith("test_")
+                    and y.name.endswith(".py")
+                ]
+            )
         elif x.is_file() and x.name.startswith("test_") and x.name.endswith(".py"):
             test_files.append(x)
     return test_files

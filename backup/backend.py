@@ -11,7 +11,7 @@ import sqlite3
 # This is used by the plugin from time to time to allow the backend to compress
 # the changelog and forms a new basis for the backup.
 # If `Change` contains a snapshot and a transaction, they apply in that order.
-Change = namedtuple('Change', ['version', 'snapshot', 'transaction'])
+Change = namedtuple("Change", ["version", "snapshot", "transaction"])
 
 
 class Backend(object):
@@ -37,14 +37,11 @@ class Backend(object):
         raise NotImplementedError
 
     def initialize(self) -> bool:
-        """Set up any resources needed by this backend.
-
-        """
+        """Set up any resources needed by this backend."""
         raise NotImplementedError
 
     def stream_changes(self) -> Iterator[Change]:
-        """Retrieve changes from the backend in order to perform a restore.
-        """
+        """Retrieve changes from the backend in order to perform a restore."""
         raise NotImplementedError
 
     def rewind(self) -> bool:
@@ -63,8 +60,7 @@ class Backend(object):
         raise NotImplementedError
 
     def compact(self):
-        """Apply some incremental changes to the snapshot to reduce our size.
-        """
+        """Apply some incremental changes to the snapshot to reduce our size."""
         raise NotImplementedError
 
     def _db_open(self, dest: str) -> sqlite3.Connection:
@@ -75,7 +71,7 @@ class Backend(object):
     def _restore_snapshot(self, snapshot: bytes, dest: str):
         if os.path.exists(dest):
             os.unlink(dest)
-        with open(dest, 'wb') as f:
+        with open(dest, "wb") as f:
             f.write(snapshot)
         self.db = self._db_open(dest)
 
@@ -87,8 +83,12 @@ class Backend(object):
         re-inserts the space.
 
         """
-        stmt = re.sub(r'reserved_til=([0-9]+)WHERE', r'reserved_til=\1 WHERE', stmt)
-        stmt = re.sub(r'peer_id=([0-9]+)WHERE channels.id=', r'peer_id=\1 WHERE channels.id=', stmt)
+        stmt = re.sub(r"reserved_til=([0-9]+)WHERE", r"reserved_til=\1 WHERE", stmt)
+        stmt = re.sub(
+            r"peer_id=([0-9]+)WHERE channels.id=",
+            r"peer_id=\1 WHERE channels.id=",
+            stmt,
+        )
         return stmt
 
     def _restore_transaction(self, tx: Iterator[str]):
@@ -109,9 +109,7 @@ class Backend(object):
         if os.path.exists(dest):
             if not remove_existing:
                 raise ValueError(
-                    "Destination for backup restore exists: {dest}".format(
-                        dest=dest
-                    )
+                    "Destination for backup restore exists: {dest}".format(dest=dest)
                 )
             os.unlink(dest)
 
