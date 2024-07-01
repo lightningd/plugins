@@ -42,17 +42,19 @@ from txzmq import ZmqSubConnection
 
 ###############################################################################
 
-NOTIFICATION_TYPE_NAMES = ['channel_opened',
-                           'connect',
-                           'disconnect',
-                           'invoice_payment',
-                           'warning',
-                           'forward_event',
-                           'sendpay_success',
-                           'sendpay_failure']
+NOTIFICATION_TYPE_NAMES = [
+    "channel_opened",
+    "connect",
+    "disconnect",
+    "invoice_payment",
+    "warning",
+    "forward_event",
+    "sendpay_success",
+    "sendpay_failure",
+]
 
 
-class NotificationType():
+class NotificationType:
     def __init__(self, notification_type_name):
         self.notification_type_name = notification_type_name
 
@@ -71,15 +73,16 @@ NOTIFICATION_TYPES = [NotificationType(n) for n in NOTIFICATION_TYPE_NAMES]
 ###############################################################################
 
 
-class Subscriber():
+class Subscriber:
     def __init__(self):
         self.factory = ZmqFactory()
 
     def _log_message(self, message, tag):
         tag = tag.decode("utf8")
-        message = json.dumps(json.loads(message.decode("utf8")), indent=1,
-                             sort_keys=True)
-        current_time = time.strftime('%X %x %Z')
+        message = json.dumps(
+            json.loads(message.decode("utf8")), indent=1, sort_keys=True
+        )
+        current_time = time.strftime("%X %x %Z")
         print("{} - {}\n{}".format(current_time, tag, message))
 
     def _load_setup(self, setup):
@@ -109,7 +112,7 @@ class Subscriber():
 parser = argparse.ArgumentParser(prog="example-subscriber.py")
 for nt in NOTIFICATION_TYPES:
     h = "subscribe to {} events published from this endpoint".format(nt)
-    parser.add_argument('--' + nt.endpoint_option(), type=str, help=h)
+    parser.add_argument("--" + nt.endpoint_option(), type=str, help=h)
 settings = parser.parse_args()
 
 subscriber = Subscriber()
