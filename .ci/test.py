@@ -21,18 +21,18 @@ global_dependencies = [
 pip_opts = ['-qq']
 
 
-def prepare_env(p: Plugin, directory: Path) -> bool:
+def prepare_env(p: Plugin, directory: Path, env: dict, workflow: str) -> bool:
     """ Returns whether we can run at all. Raises error if preparing failed.
     """
     subprocess.check_call(['python3', '-m', 'venv', '--clear', directory])
     os.environ['PATH'] += f":{directory}"
 
     if p.framework == "pip":
-        return prepare_env_pip(p, directory)
+        return prepare_env_pip(p, directory, workflow)
     elif p.framework == "poetry":
         return prepare_env_poetry(p, directory)
     elif p.framework == "generic":
-        return prepare_generic(p, directory)
+        return prepare_generic(p, directory, env, workflow)
     else:
         raise ValueError(f"Unknown framework {p.framework}")
 
@@ -47,7 +47,7 @@ def prepare_env_poetry(p: Plugin, directory: Path) -> bool:
     subprocess.check_call(['which', 'python3'])
 
     subprocess.check_call([
-        pip3, 'install', '-U', *pip_opts, 'pip', 'wheel', 'poetry==1.7.1'
+        pip3, 'install', '-U', *pip_opts, 'pip', 'wheel', 'poetry'
     ], cwd=p.path.parent)
 
     # Install pytest (eventually we'd want plugin authors to include
@@ -63,59 +63,56 @@ def prepare_env_poetry(p: Plugin, directory: Path) -> bool:
 
     logging.info(f"Using poetry at {poetry} ({python3}) to run tests in {workdir}")
 
-    # Don't let poetry create a self-managed virtualenv (paths get confusing)
+    # Now we can proceed with the actual implementation
+    logging.info(f"Exporting poetry {poetry} dependencies from {p.details['pyproject']}")
     subprocess.check_call([
-        poetry, 'config', 'virtualenvs.create', 'false'
+        poetry, 'export', '--with=dev', '--without-hashes', '-f', 'requirements.txt',
+        '--output', 'requirements.txt'
     ], cwd=workdir)
 
-    # Now we can proceed with the actual implementation
-    logging.info(f"Installing poetry {poetry} dependencies from {p.details['pyproject']}")
     subprocess.check_call([
-        poetry, 'install', '--with=dev', '--no-interaction',
-    ], cwd=workdir)
+        pip3, 'install', *pip_opts, '-r', str(workdir) + "/requirements.txt",
+    ], stderr=subprocess.STDOUT)
 
     subprocess.check_call([pip3, 'freeze'])
     return True
 
 
-def prepare_env_pip(p: Plugin, directory: Path):
+def prepare_env_pip(p: Plugin, directory: Path, workflow: str) -> bool:
+    print("Installing a new pip virtualenv")
     pip_path = directory / 'bin' / 'pip3'
 
-    # Install pytest (eventually we'd want plugin authors to include
-    # it in their requirements-dev.txt, but for now let's help them a
-    # bit).
-    subprocess.check_call(
-        [pip_path, 'install', *pip_opts, *global_dependencies],
-        stderr=subprocess.STDOUT,
-    )
+    if workflow == "nightly":
+        install_dev_pyln_testing(pip_path)
+    else:
+        install_pyln_testing(pip_path)
 
     # Now install all the requirements
     print(f"Installing requirements from {p.details['requirements']}")
     subprocess.check_call(
-        [pip_path, 'install', '-U', *pip_opts, '-r', p.details['requirements']],
+        [pip_path, 'install', *pip_opts, '-r', p.details['requirements']],
         stderr=subprocess.STDOUT,
     )
 
     if p.details['devrequirements'].exists():
         print(f"Installing requirements from {p.details['devrequirements']}")
         subprocess.check_call(
-            [pip_path, 'install', '-U', *pip_opts, '-r', p.details['devrequirements']],
+            [pip_path, 'install', *pip_opts, '-r', p.details['devrequirements']],
             stderr=subprocess.STDOUT,
         )
-    install_pyln_testing(pip_path)
+
+    subprocess.check_call([pip_path, 'freeze'])
     return True
 
 
-def prepare_generic(p: Plugin, directory: Path):
+def prepare_generic(p: Plugin, directory: Path, env: dict, workflow: str) -> bool:
+    print("Installing a new generic virtualenv")
     pip_path = directory / 'bin' / 'pip3'
 
-    # Install pytest (eventually we'd want plugin authors to include
-    # it in their requirements-dev.txt, but for now let's help them a
-    # bit).
-    subprocess.check_call(
-        [pip_path, 'install', *pip_opts, *global_dependencies],
-        stderr=subprocess.STDOUT,
-    )
+    if workflow == "nightly":
+        install_dev_pyln_testing(pip_path)
+    else:
+        install_pyln_testing(pip_path)
 
     # Now install all the requirements
     if p.details['requirements'].exists():
@@ -129,16 +126,26 @@ def prepare_generic(p: Plugin, directory: Path):
         print(f"Running setup script from {p.details['setup']}")
         subprocess.check_call(
             ['bash',  p.details['setup'], f'TEST_DIR={directory}'],
+            env=env,
             stderr=subprocess.STDOUT,
         )
-    install_pyln_testing(pip_path)
+
+    subprocess.check_call([pip_path, 'freeze'])
     return True
 
 
 def install_pyln_testing(pip_path):
     # Many plugins only implicitly depend on pyln-testing, so let's help them
     cln_path = os.environ['CLN_PATH']
-    pip_opts = ['-qq']
+
+    # Install pytest (eventually we'd want plugin authors to include
+    # it in their requirements-dev.txt, but for now let's help them a
+    # bit).
+    subprocess.check_call(
+        [pip_path, 'install', *pip_opts, *global_dependencies],
+        stderr=subprocess.STDOUT,
+    )
+
     subprocess.check_call(
         [pip_path, 'install', '-U', *pip_opts, 'pip', 'wheel'],
         stderr=subprocess.STDOUT,
@@ -146,7 +153,7 @@ def install_pyln_testing(pip_path):
 
     subprocess.check_call(
         [
-            pip_path, 'install', '-U', *pip_opts,
+            pip_path, 'install', *pip_opts,
             cln_path + "/contrib/pyln-client",
             cln_path + "/contrib/pyln-testing",
             "MarkupSafe>=2.0",
@@ -156,7 +163,16 @@ def install_pyln_testing(pip_path):
     )
 
 
-def run_one(p: Plugin) -> bool:
+def install_dev_pyln_testing(pip_path):
+    # Many plugins only implicitly depend on pyln-testing, so let's help them
+    cln_path = os.environ['CLN_PATH']
+
+    subprocess.check_call([
+        pip_path, 'install', *pip_opts, '-r', cln_path + "/requirements.txt",
+    ], stderr=subprocess.STDOUT)
+
+
+def run_one(p: Plugin, workflow: str) -> bool:
     print("Running tests on plugin {p.name}".format(p=p))
 
     if not p.testfiles:
@@ -164,28 +180,14 @@ def run_one(p: Plugin) -> bool:
         return True
 
     print("Found {ctestfiles} test files, creating virtualenv and running tests".format(ctestfiles=len(p.testfiles)))
-    print("##[group]{p.name}".format(p=p))
+    print("::group::{p.name}".format(p=p))
 
     # Create a virtual env
     vdir = tempfile.TemporaryDirectory()
     vpath = Path(vdir.name)
 
-    if not prepare_env(p, vpath):
-        # Skipping is counted as a success
-        return True
-
     bin_path = vpath / 'bin'
     pytest_path = vpath / 'bin' / 'pytest'
-    poetry_path = vpath / 'bin' / 'poetry'
-
-    pytest = [str(pytest_path)]
-    if p.framework == "poetry":
-        pytest = [poetry_path, 'run', 'pytest']
-
-    if p.framework == "poetry":
-        subprocess.check_call([poetry_path, 'env', 'info'])
-    else:
-        logging.info(f"Virtualenv at {vpath}")
 
     env = os.environ.copy()
     env.update({
@@ -195,7 +197,20 @@ def run_one(p: Plugin) -> bool:
         'LC_ALL': 'C.UTF-8',
         'LANG': 'C.UTF-8',
     })
-    cmd = [str(p) for p in pytest] + [
+
+    try:
+        if not prepare_env(p, vpath, env, workflow):
+            # Skipping is counted as a success
+            return True
+    except Exception as e:
+        print(f"Error creating test environment: {e}")
+        print("::endgroup::")
+        return False
+
+    logging.info(f"Virtualenv at {vpath}")
+
+    cmd = [
+        str(pytest_path),
         '-vvv',
         '--timeout=600',
         '--timeout-method=thread',
@@ -216,7 +231,7 @@ def run_one(p: Plugin) -> bool:
         logging.warning(f"Error while executing: {e}")
         return False
     finally:
-        print("##[endgroup]")
+        print("::endgroup::")
 
 
 # gather data
@@ -320,7 +335,7 @@ def run_all(workflow: str, python_version: str, update_badges: bool, plugin_name
     else:
         print("Testing all plugins in {root}".format(root=root))
 
-    results = [(p, run_one(p)) for p in plugins]
+    results = [(p, run_one(p, workflow)) for p in plugins]
     success = all([t[1] for t in results])
 
     old_failures = []
