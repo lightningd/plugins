@@ -17,6 +17,6 @@ def test_monitor_starts(node_factory):
 
 
 def test_monitor(node_factory):
-    pluginopt = {'plugin': plugin_path}
+    pluginopt = {"plugin": plugin_path}
     l1, l2 = node_factory.line_graph(2, opts=pluginopt)
     assert l1.rpc.monitor()

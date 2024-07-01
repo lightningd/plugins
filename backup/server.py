@@ -6,7 +6,14 @@ import sys
 from typing import Tuple
 
 from backend import Backend
-from protocol import PacketType, PKT_CHANGE_TYPES, change_from_packet, packet_from_change, send_packet, recv_packet
+from protocol import (
+    PacketType,
+    PKT_CHANGE_TYPES,
+    change_from_packet,
+    packet_from_change,
+    send_packet,
+    recv_packet,
+)
 
 
 class SystemdHandler(logging.Handler):
@@ -19,7 +26,7 @@ class SystemdHandler(logging.Handler):
         # NOTICE <5>
         logging.INFO: "<6>",
         logging.DEBUG: "<7>",
-        logging.NOTSET: "<7>"
+        logging.NOTSET: "<7>",
     }
 
     def __init__(self, stream=sys.stdout):
@@ -39,12 +46,12 @@ def setup_server_logging(mode, level):
     root_logger = logging.getLogger()
     root_logger.setLevel(level.upper())
     mode = mode.lower()
-    if mode == 'systemd':
+    if mode == "systemd":
         # replace handler with systemd one
         root_logger.handlers = []
         root_logger.addHandler(SystemdHandler())
     else:
-        assert mode == 'plain'
+        assert mode == "plain"
 
 
 class SocketServer:
@@ -63,67 +70,77 @@ class SocketServer:
 
     def _handle_conn(self, conn) -> None:
         # Can only handle one connection at a time
-        logging.info('Servicing incoming connection')
+        logging.info("Servicing incoming connection")
         self.sock = conn
         while True:
             try:
                 (typ, payload) = self._recv_packet()
             except IOError:
-                logging.info('Connection closed')
+                logging.info("Connection closed")
                 break
             if typ in PKT_CHANGE_TYPES:
                 change = change_from_packet(typ, payload)
                 if typ == PacketType.CHANGE:
-                    logging.debug('Received CHANGE {}'.format(change.version))
+                    logging.debug("Received CHANGE {}".format(change.version))
                 else:
-                    logging.info('Received SNAPSHOT {}'.format(change.version))
+                    logging.info("Received SNAPSHOT {}".format(change.version))
                 self.backend.add_change(change)
-                self._send_packet(PacketType.ACK, struct.pack("!I", self.backend.version))
+                self._send_packet(
+                    PacketType.ACK, struct.pack("!I", self.backend.version)
+                )
             elif typ == PacketType.REWIND:
-                logging.info('Received REWIND')
-                to_version, = struct.unpack('!I', payload)
+                logging.info("Received REWIND")
+                (to_version,) = struct.unpack("!I", payload)
                 if to_version != self.backend.prev_version:
-                    logging.info('Cannot rewind to version {}'.format(to_version))
-                    self._send_packet(PacketType.NACK, struct.pack("!I", self.backend.version))
+                    logging.info("Cannot rewind to version {}".format(to_version))
+                    self._send_packet(
+                        PacketType.NACK, struct.pack("!I", self.backend.version)
+                    )
                 else:
                     self.backend.rewind()
-                    self._send_packet(PacketType.ACK, struct.pack("!I", self.backend.version))
+                    self._send_packet(
+                        PacketType.ACK, struct.pack("!I", self.backend.version)
+                    )
             elif typ == PacketType.REQ_METADATA:
-                logging.debug('Received REQ_METADATA')
-                blob = struct.pack("!IIIQ", 0x01, self.backend.version,
-                                   self.backend.prev_version,
-                                   self.backend.version_count)
+                logging.debug("Received REQ_METADATA")
+                blob = struct.pack(
+                    "!IIIQ",
+                    0x01,
+                    self.backend.version,
+                    self.backend.prev_version,
+                    self.backend.version_count,
+                )
                 self._send_packet(PacketType.METADATA, blob)
             elif typ == PacketType.RESTORE:
-                logging.info('Received RESTORE')
+                logging.info("Received RESTORE")
                 for change in self.backend.stream_changes():
                     (typ, payload) = packet_from_change(change)
                     self._send_packet(typ, payload)
-                self._send_packet(PacketType.DONE, b'')
+                self._send_packet(PacketType.DONE, b"")
             elif typ == PacketType.COMPACT:
-                logging.info('Received COMPACT')
+                logging.info("Received COMPACT")
                 stats = self.backend.compact()
                 self._send_packet(PacketType.COMPACT_RES, json.dumps(stats).encode())
             elif typ == PacketType.ACK:
-                logging.debug('Received ACK')
+                logging.debug("Received ACK")
             elif typ == PacketType.NACK:
-                logging.debug('Received NACK')
+                logging.debug("Received NACK")
             elif typ == PacketType.METADATA:
-                logging.debug('Received METADATA')
+                logging.debug("Received METADATA")
             elif typ == PacketType.COMPACT_RES:
-                logging.debug('Received COMPACT_RES')
+                logging.debug("Received COMPACT_RES")
             else:
-                raise Exception('Unknown or unexpected packet type {}'.format(typ))
+                raise Exception("Unknown or unexpected packet type {}".format(typ))
         self.conn = None
 
     def run(self) -> None:
         self.bind.listen(1)
-        logging.info('Waiting for connection on {}'.format(self.addr))
+        logging.info("Waiting for connection on {}".format(self.addr))
         while True:
             conn, _ = self.bind.accept()
             try:
                 self._handle_conn(conn)
             except Exception:
-                logging.exception('Got exception')
+                logging.exception("Got exception")
             finally:
                 conn.close()

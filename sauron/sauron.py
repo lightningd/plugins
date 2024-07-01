@@ -29,7 +29,7 @@ def fetch(url):
         backoff_factor=1,
         total=10,
         status_forcelist=[429, 500, 502, 503, 504],
-        method_whitelist=["HEAD", "GET", "OPTIONS"]
+        method_whitelist=["HEAD", "GET", "OPTIONS"],
     )
     adapter = HTTPAdapter(max_retries=retry_strategy)
 
@@ -64,29 +64,28 @@ def getchaininfo(plugin, **kwargs):
     blockhash_url = "{}/block-height/0".format(plugin.api_endpoint)
     blockcount_url = "{}/blocks/tip/height".format(plugin.api_endpoint)
     chains = {
-        "000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f":
-        "main",
-        "000000000933ea01ad0ee984209779baaec3ced90fa3f408719526f8d77f4943":
-        "test",
-        "0f9188f13cb7b2c71f2a335e3a4fc328bf5beb436012afca590b1a11466e2206":
-        "regtest",
-        "00000008819873e925422c1ff0f99f7cc9bbb232af63a077a480a3633bee1ef6":
-        "signet"
+        "000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f": "main",
+        "000000000933ea01ad0ee984209779baaec3ced90fa3f408719526f8d77f4943": "test",
+        "0f9188f13cb7b2c71f2a335e3a4fc328bf5beb436012afca590b1a11466e2206": "regtest",
+        "00000008819873e925422c1ff0f99f7cc9bbb232af63a077a480a3633bee1ef6": "signet",
     }
 
     genesis_req = fetch(blockhash_url)
     if not genesis_req.status_code == 200:
-        raise SauronError("Endpoint at {} returned {} ({}) when trying to "
-                          "get genesis block hash."
-                          .format(blockhash_url, genesis_req.status_code,
-                                  genesis_req.text))
+        raise SauronError(
+            "Endpoint at {} returned {} ({}) when trying to "
+            "get genesis block hash.".format(
+                blockhash_url, genesis_req.status_code, genesis_req.text
+            )
+        )
 
     blockcount_req = fetch(blockcount_url)
     if not blockcount_req.status_code == 200:
-        raise SauronError("Endpoint at {} returned {} ({}) when trying to "
-                          "get blockcount.".format(blockcount_url,
-                                                   blockcount_req.status_code,
-                                                   blockcount_req.text))
+        raise SauronError(
+            "Endpoint at {} returned {} ({}) when trying to " "get blockcount.".format(
+                blockcount_url, blockcount_req.status_code, blockcount_req.text
+            )
+        )
     if genesis_req.text not in chains.keys():
         raise SauronError("Unsupported network")
     plugin.sauron_network = chains[genesis_req.text]
@@ -128,8 +127,7 @@ def getrawblock(plugin, height, **kwargs):
             break
         if int(content_len) == len(block_req.content):
             break
-        plugin.log("Esplora gave us an incomplete block, retrying in 2s",
-                   level="error")
+        plugin.log("Esplora gave us an incomplete block, retrying in 2s", level="error")
         time.sleep(2)
 
     return {
@@ -162,16 +160,18 @@ def getutxout(plugin, txid, vout, **kwargs):
 
     gettx_req = fetch(gettx_url)
     if not gettx_req.status_code == 200:
-        raise SauronError("Endpoint at {} returned {} ({}) when trying to "
-                          "get transaction.".format(gettx_url,
-                                                    gettx_req.status_code,
-                                                    gettx_req.text))
+        raise SauronError(
+            "Endpoint at {} returned {} ({}) when trying to " "get transaction.".format(
+                gettx_url, gettx_req.status_code, gettx_req.text
+            )
+        )
     status_req = fetch(status_url)
     if not status_req.status_code == 200:
-        raise SauronError("Endpoint at {} returned {} ({}) when trying to "
-                          "get utxo status.".format(status_url,
-                                                    status_req.status_code,
-                                                    status_req.text))
+        raise SauronError(
+            "Endpoint at {} returned {} ({}) when trying to " "get utxo status.".format(
+                status_url, status_req.status_code, status_req.text
+            )
+        )
 
     if status_req.json()["spent"]:
         return {
@@ -219,7 +219,7 @@ def estimatefees(plugin, **kwargs):
 plugin.add_option(
     "sauron-api-endpoint",
     "",
-    "The URL of the esplora instance to hit (including '/api')."
+    "The URL of the esplora instance to hit (including '/api').",
 )
 
 plugin.add_option(
@@ -227,7 +227,7 @@ plugin.add_option(
     "",
     "Tor's SocksPort address in the form address:port, don't specify the"
     " protocol.  If you didn't modify your torrc you want to put"
-    "'localhost:9050' here."
+    "'localhost:9050' here.",
 )
 
 
