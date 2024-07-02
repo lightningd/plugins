@@ -31,7 +31,7 @@ def test_currencyrate(node_factory):
     opts = {
         "plugin": plugin_path,
         "allow-deprecated-apis": deprecated_apis,
-        "disable-source": "bitstamp",
+        "disable-source": ["bitstamp", "coinbase"],
     }
     l1 = node_factory.get_node(options=opts)
     plugins = [os.path.basename(p["name"]) for p in l1.rpc.plugin("list")["plugins"]]
@@ -40,6 +40,7 @@ def test_currencyrate(node_factory):
     rates = l1.rpc.call("currencyrates", ["USD"])
     LOGGER.info(rates)
     assert "bitstamp" not in rates
+    assert "coinbase" not in rates
     assert "coingecko" in rates
     assert extract_digits(rates["coingecko"]) > 0
 
