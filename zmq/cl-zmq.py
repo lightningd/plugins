@@ -40,20 +40,22 @@ from pyln.client import Plugin
 
 ###############################################################################
 
-NOTIFICATION_TYPE_NAMES = ['channel_opened',
-                           'connect',
-                           'disconnect',
-                           'invoice_payment',
-                           'warning',
-                           'forward_event',
-                           'sendpay_success',
-                           'sendpay_failure']
+NOTIFICATION_TYPE_NAMES = [
+    "channel_opened",
+    "connect",
+    "disconnect",
+    "invoice_payment",
+    "warning",
+    "forward_event",
+    "sendpay_success",
+    "sendpay_failure",
+]
 
 
-class NotificationType():
-    """ Wrapper for notification type string to generate the corresponding
-        plugin option strings. By convention of lightningd, the cli options
-        use dashes in place of rather than underscores or no spaces."""
+class NotificationType:
+    """Wrapper for notification type string to generate the corresponding
+    plugin option strings. By convention of lightningd, the cli options
+    use dashes in place of rather than underscores or no spaces."""
 
     def __init__(self, notification_type_name):
         self.notification_type_name = notification_type_name
@@ -73,11 +75,11 @@ NOTIFICATION_TYPES = [NotificationType(n) for n in NOTIFICATION_TYPE_NAMES]
 ###############################################################################
 
 
-class Publisher():
-    """ Holds the connection state and accepts incoming notifications that
-        come from the subscription. If there is an associated publishing
-        endpoint connected, it will encode and pass the contents of the
-        notification. """
+class Publisher:
+    """Holds the connection state and accepts incoming notifications that
+    come from the subscription. If there is an associated publishing
+    endpoint connected, it will encode and pass the contents of the
+    notification."""
 
     def __init__(self):
         self.factory = ZmqFactory()
@@ -86,9 +88,9 @@ class Publisher():
     def load_setup(self, setup):
         for e, s in setup.items():
             endpoint = ZmqEndpoint(ZmqEndpointType.bind, e)
-            ZmqPubConnection.highWaterMark = s['high_water_mark']
+            ZmqPubConnection.highWaterMark = s["high_water_mark"]
             connection = ZmqPubConnection(self.factory, endpoint)
-            for n in s['notification_type_names']:
+            for n in s["notification_type_names"]:
                 self.connection_map[n] = connection
 
     def publish_notification(self, notification_type_name, *args, **kwargs):
@@ -104,15 +106,17 @@ publisher = Publisher()
 
 ###############################################################################
 
-ZMQ_TRANSPORT_PREFIXES = ['tcp://', "ipc://", 'inproc://', "pgm://", "epgm://"]
+ZMQ_TRANSPORT_PREFIXES = ["tcp://", "ipc://", "inproc://", "pgm://", "epgm://"]
 
 
-class Setup():
-    """ Does some light validation of the plugin option input and generates a
-        dictionary to configure the Twisted and ZeroMQ setup """
+class Setup:
+    """Does some light validation of the plugin option input and generates a
+    dictionary to configure the Twisted and ZeroMQ setup"""
+
     def _at_least_one_binding(options):
-        n_bindings = sum(1 for o, v in options.items() if
-                         not o.endswith("-hwm") and v != "null")
+        n_bindings = sum(
+            1 for o, v in options.items() if not o.endswith("-hwm") and v != "null"
+        )
         return n_bindings > 0
 
     def _iter_endpoints_not_ok(options):
@@ -120,18 +124,29 @@ class Setup():
             endpoint_opt = nt.endpoint_option()
             endpoint = options[endpoint_opt]
             if endpoint != "null":
-                if len([1 for prefix in ZMQ_TRANSPORT_PREFIXES if
-                        endpoint.startswith(prefix)]) != 0:
+                if (
+                    len(
+                        [
+                            1
+                            for prefix in ZMQ_TRANSPORT_PREFIXES
+                            if endpoint.startswith(prefix)
+                        ]
+                    )
+                    != 0
+                ):
                     continue
                 yield endpoint
 
     def check_option_warnings(options, plugin):
         if not Setup._at_least_one_binding(options):
-            plugin.log("No zmq publish sockets are bound as per launch args",
-                       level='warn')
+            plugin.log(
+                "No zmq publish sockets are bound as per launch args", level="warn"
+            )
         for endpoint in Setup._iter_endpoints_not_ok(options):
-            plugin.log(("Endpoint option {} doesn't appear to be recognized"
-                        ).format(endpoint), level='warn')
+            plugin.log(
+                ("Endpoint option {} doesn't appear to be recognized").format(endpoint),
+                level="warn",
+            )
 
     ###########################################################################
 
@@ -149,21 +164,21 @@ class Setup():
         setup = {}
         for e, nt, hwm in Setup._iter_endpoint_setup(options):
             if e not in setup:
-                setup[e] = {'notification_type_names': [],
-                            'high_water_mark': hwm}
-            setup[e]['notification_type_names'].append(str(nt))
+                setup[e] = {"notification_type_names": [], "high_water_mark": hwm}
+            setup[e]["notification_type_names"].append(str(nt))
             # use the lowest high water mark given for the endpoint
-            setup[e]['high_water_mark'] = min(
-                setup[e]['high_water_mark'], hwm)
+            setup[e]["high_water_mark"] = min(setup[e]["high_water_mark"], hwm)
         return setup
 
     ###########################################################################
 
     def log_setup_dict(setup, plugin):
         for e, s in setup.items():
-            m = ("Endpoint {} will get events from {} subscriptions "
-                 "published with high water mark {}")
-            m = m.format(e, s['notification_type_names'], s['high_water_mark'])
+            m = (
+                "Endpoint {} will get events from {} subscriptions "
+                "published with high water mark {}"
+            )
+            m = m.format(e, s["notification_type_names"], s["high_water_mark"])
             plugin.log(m)
 
 
@@ -183,8 +198,9 @@ def init(options, configuration, plugin, **kwargs):
 def on_notification(notification_type_name, plugin, *args, **kwargs):
     if len(args) != 0:
         plugin.log("got unexpected args: {}".format(args), level="warn")
-    reactor.callFromThread(publisher.publish_notification,
-                           notification_type_name, *args, **kwargs)
+    reactor.callFromThread(
+        publisher.publish_notification, notification_type_name, *args, **kwargs
+    )
 
 
 DEFAULT_HIGH_WATER_MARK = 1000
@@ -197,13 +213,13 @@ for nt in NOTIFICATION_TYPES:
     # zmq socket binding option
     endpoint_opt = nt.endpoint_option()
     endpoint_desc = "Enable publish {} info to ZMQ socket endpoint".format(nt)
-    plugin.add_option(endpoint_opt, None, endpoint_desc, opt_type='string')
+    plugin.add_option(endpoint_opt, None, endpoint_desc, opt_type="string")
     # high water mark option
     hwm_opt = nt.hwm_option()
-    hwm_desc = ("Set publish {} info message high water mark "
-                "(default: {})".format(nt, DEFAULT_HIGH_WATER_MARK))
-    plugin.add_option(hwm_opt, DEFAULT_HIGH_WATER_MARK, hwm_desc,
-                      opt_type='int')
+    hwm_desc = "Set publish {} info message high water mark " "(default: {})".format(
+        nt, DEFAULT_HIGH_WATER_MARK
+    )
+    plugin.add_option(hwm_opt, DEFAULT_HIGH_WATER_MARK, hwm_desc, opt_type="int")
 
 ###############################################################################
 

@@ -7,7 +7,9 @@ from pathlib import Path
 from utils import configure_git, enumerate_plugins
 
 
-def update_and_commit_badge(plugin_name: str, passed: bool, workflow: str, has_tests: bool) -> bool:
+def update_and_commit_badge(
+    plugin_name: str, passed: bool, workflow: str, has_tests: bool
+) -> bool:
     json_data = {"schemaVersion": 1, "label": "", "message": "✔", "color": "green"}
     if not passed:
         json_data.update({"message": "✗", "color": "red"})
@@ -34,16 +36,18 @@ def update_and_commit_badge(plugin_name: str, passed: bool, workflow: str, has_t
 
 def cleanup_old_results(plugin_name: str, file: Path) -> bool:
     os.remove(file)
-    print(f"Removed deprecated result {file.name} for {plugin_name}, we no longer test for this version!")
+    print(
+        f"Removed deprecated result {file.name} for {plugin_name}, we no longer test for this version!"
+    )
     subprocess.run(["git", "add", "-v", file])
     subprocess.run(
-            [
-                "git",
-                "commit",
-                "-m",
-                f'Remove deprecated result {file.name}',
-            ]
-        )
+        [
+            "git",
+            "commit",
+            "-m",
+            f"Remove deprecated result {file.name}",
+        ]
+    )
     return True
 
 
@@ -96,9 +100,9 @@ def push_badges_data(workflow: str, python_versions_tested: list):
     if any_changes:
         for _ in range(10):
             subprocess.run(["git", "pull", "--rebase"])
-            output = subprocess.run(["git", "push", "origin", "badges"],
-                capture_output=True,
-                text=True)
+            output = subprocess.run(
+                ["git", "push", "origin", "badges"], capture_output=True, text=True
+            )
             if output.returncode == 0:
                 print("Push successful")
                 break
@@ -117,7 +121,11 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Plugins completion script")
     parser.add_argument("workflow", type=str, help="Name of the GitHub workflow")
     parser.add_argument(
-        "python_versions_tested", nargs="*", type=str, default=[], help="Python versions tested"
+        "python_versions_tested",
+        nargs="*",
+        type=str,
+        default=[],
+        help="Python versions tested",
     )
     args = parser.parse_args()
 

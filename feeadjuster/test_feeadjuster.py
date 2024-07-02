@@ -2,7 +2,6 @@ import os
 import random
 import string
 
-import unittest
 from pyln.testing.fixtures import *  # noqa: F401,F403
 from pyln.testing.utils import wait_for
 
@@ -25,9 +24,13 @@ def test_feeadjuster_starts(node_factory):
     l1.start()
     # Start at 0 and 're-await' the two inits above. Otherwise this is flaky.
     l1.daemon.logsearch_start = 0
-    l1.daemon.wait_for_logs(["Plugin feeadjuster initialized.*",
-                             "Plugin feeadjuster initialized.*",
-                             "Plugin feeadjuster initialized.*"])
+    l1.daemon.wait_for_logs(
+        [
+            "Plugin feeadjuster initialized.*",
+            "Plugin feeadjuster initialized.*",
+            "Plugin feeadjuster initialized.*",
+        ]
+    )
     l1.rpc.plugin_stop(plugin_path)
 
     # We adjust fees in init
@@ -35,8 +38,9 @@ def test_feeadjuster_starts(node_factory):
     scid_A = l2.rpc.listpeerchannels(l1.info["id"])["channels"][0]["short_channel_id"]
     scid_B = l2.rpc.listpeerchannels(l3.info["id"])["channels"][0]["short_channel_id"]
     l2.rpc.plugin_start(plugin_path)
-    l2.daemon.wait_for_logs([f"Adjusted fees of {scid_A}.*",
-                             f"Adjusted fees of {scid_B}.*"])
+    l2.daemon.wait_for_logs(
+        [f"Adjusted fees of {scid_A}.*", f"Adjusted fees of {scid_B}.*"]
+    )
 
 
 def get_chan_fees(l, scid):
@@ -56,10 +60,14 @@ def wait_for_not_fees(l, scids, fees):
 
 
 def pay(l, ll, amount):
-    label = ''.join(random.choices(string.ascii_letters, k=20))
+    label = "".join(random.choices(string.ascii_letters, k=20))
     invoice = ll.rpc.invoice(amount, label, "desc")
     route = l.rpc.getroute(ll.info["id"], amount, riskfactor=0, fuzzpercent=0)
-    l.rpc.sendpay(route["route"], invoice["payment_hash"], payment_secret=invoice.get('payment_secret'))
+    l.rpc.sendpay(
+        route["route"],
+        invoice["payment_hash"],
+        payment_secret=invoice.get("payment_secret"),
+    )
     l.rpc.waitsendpay(invoice["payment_hash"])
     l.wait_for_htlcs()
 
@@ -89,10 +97,13 @@ def test_feeadjuster_adjusts(node_factory):
         "fee-per-satoshi": ppm_fee,
         "plugin": plugin_path,
         "feeadjuster-deactivate-fuzz": None,
-        'may_reconnect': True,
+        "may_reconnect": True,
     }
-    l1, l2, l3 = node_factory.line_graph(3, opts=[{'may_reconnect': True}, l2_opts, {'may_reconnect': True}],
-                                         wait_for_announce=True)
+    l1, l2, l3 = node_factory.line_graph(
+        3,
+        opts=[{"may_reconnect": True}, l2_opts, {"may_reconnect": True}],
+        wait_for_announce=True,
+    )
 
     chan_A = l2.rpc.listpeerchannels(l1.info["id"])["channels"][0]
     chan_B = l2.rpc.listpeerchannels(l3.info["id"])["channels"][0]
@@ -102,8 +113,7 @@ def test_feeadjuster_adjusts(node_factory):
     scids = [scid_A, scid_B]
 
     # Fees don't get updated until there is a forwarding event!
-    assert all([get_chan_fees(l2, scid) == (base_fee, ppm_fee)
-                for scid in scids])
+    assert all([get_chan_fees(l2, scid) == (base_fee, ppm_fee) for scid in scids])
 
     chan_total = int(chan_A["total_msat"])
     assert chan_total == int(chan_B["total_msat"])
@@ -111,15 +121,20 @@ def test_feeadjuster_adjusts(node_factory):
     # The first payment will trigger fee adjustment, no matter its value
     amount = int(chan_total * 0.04)
     pay(l1, l3, amount)
-    wait_for(lambda: all([get_chan_fees(l2, scid) != (base_fee, ppm_fee)
-                          for scid in scids]))
+    wait_for(
+        lambda: all([get_chan_fees(l2, scid) != (base_fee, ppm_fee) for scid in scids])
+    )
     wait_for(lambda: l2.daemon.is_in_log("maybe_adjust_fees done"))
 
     # Send most of the balance to the other side..
     amount = int(chan_total * 0.8)
     pay(l1, l3, amount)
-    l2.daemon.wait_for_logs([f'Adjusted fees of {scid_A} with a ratio of 0.2',
-                             f'Adjusted fees of {scid_B} with a ratio of 3.'])
+    l2.daemon.wait_for_logs(
+        [
+            f"Adjusted fees of {scid_A} with a ratio of 0.2",
+            f"Adjusted fees of {scid_B} with a ratio of 3.",
+        ]
+    )
 
     # ..And back, but first reconnect so old cln nodes gossip properly
     l2.rpc.disconnect(l1.info["id"], True)
@@ -128,8 +143,12 @@ def test_feeadjuster_adjusts(node_factory):
     l2.rpc.connect(l3.info["id"], "localhost", l3.port)
     sync_gossip(nodes, scids)
     pay(l3, l1, amount)
-    l2.daemon.wait_for_logs([f'Adjusted fees of {scid_A} with a ratio of 6.',
-                             f'Adjusted fees of {scid_B} with a ratio of 0.1'])
+    l2.daemon.wait_for_logs(
+        [
+            f"Adjusted fees of {scid_A} with a ratio of 6.",
+            f"Adjusted fees of {scid_B} with a ratio of 0.1",
+        ]
+    )
 
     # Sending a payment worth 3% of the channel balance should not trigger
     # fee adjustment
@@ -151,8 +170,12 @@ def test_feeadjuster_adjusts(node_factory):
     # But sending another 3%-worth payment does trigger adjustment (total sent
     # since last adjustment is >5%)
     pay(l1, l3, amount)
-    l2.daemon.wait_for_logs([f'Adjusted fees of {scid_A} with a ratio of 4.',
-                             f'Adjusted fees of {scid_B} with a ratio of 0.2'])
+    l2.daemon.wait_for_logs(
+        [
+            f"Adjusted fees of {scid_A} with a ratio of 4.",
+            f"Adjusted fees of {scid_B} with a ratio of 0.2",
+        ]
+    )
 
 
 def test_feeadjuster_imbalance(node_factory):
@@ -174,8 +197,9 @@ def test_feeadjuster_imbalance(node_factory):
         "feeadjuster-deactivate-fuzz": None,
         "feeadjuster-imbalance": 0.7,  # should be normalized to 30/70
     }
-    l1, l2, l3 = node_factory.line_graph(3, opts=[{}, l2_opts, {}],
-                                         wait_for_announce=True)
+    l1, l2, l3 = node_factory.line_graph(
+        3, opts=[{}, l2_opts, {}], wait_for_announce=True
+    )
 
     chan_A = l2.rpc.listpeerchannels(l1.info["id"])["channels"][0]
     chan_B = l2.rpc.listpeerchannels(l3.info["id"])["channels"][0]
@@ -187,25 +211,24 @@ def test_feeadjuster_imbalance(node_factory):
     chan_total = int(chan_A["total_msat"])
     assert chan_total == int(chan_B["total_msat"])
     l2.daemon.logsearch_start = 0
-    l2.daemon.wait_for_log('imbalance of 30%/70%')
+    l2.daemon.wait_for_log("imbalance of 30%/70%")
 
     # we force feeadjust initially to test this method and check if it applies
     # default fees when balancing the channel below
     l2.rpc.feeadjust()
-    l2.daemon.wait_for_logs([
-        f"Adjusted fees.*{scid_A}",
-        f"Adjusted fees.*{scid_B}"
-    ])
+    l2.daemon.wait_for_logs([f"Adjusted fees.*{scid_A}", f"Adjusted fees.*{scid_B}"])
     log_offset = len(l2.daemon.logs)
     wait_for_not_fees(l2, scids, default_fees[0])
 
     # First bring channel to somewhat of a balance
     amount = int(chan_total * 0.5)
     pay(l1, l3, amount)
-    l2.daemon.wait_for_logs([
-        f'Set default fees as imbalance is too low for {scid_A}',
-        f'Set default fees as imbalance is too low for {scid_B}'
-    ])
+    l2.daemon.wait_for_logs(
+        [
+            f"Set default fees as imbalance is too low for {scid_A}",
+            f"Set default fees as imbalance is too low for {scid_B}",
+        ]
+    )
     wait_for_fees(l2, scids, default_fees[0])
 
     # Because of the 70/30 imbalance limiter, a 15% payment must not yet trigger
@@ -216,18 +239,17 @@ def test_feeadjuster_imbalance(node_factory):
 
     # Sending another 20% must now trigger because the imbalance
     pay(l1, l3, amount)
-    l2.daemon.wait_for_logs([
-        f"Adjusted fees.*{scid_A}",
-        f"Adjusted fees.*{scid_B}"
-    ])
+    l2.daemon.wait_for_logs([f"Adjusted fees.*{scid_A}", f"Adjusted fees.*{scid_B}"])
     wait_for_not_fees(l2, scids, default_fees[0])
 
     # Bringing it back must cause default fees
     pay(l3, l1, amount)
-    l2.daemon.wait_for_logs([
-        f'Set default fees as imbalance is too low for {scid_A}',
-        f'Set default fees as imbalance is too low for {scid_B}'
-    ])
+    l2.daemon.wait_for_logs(
+        [
+            f"Set default fees as imbalance is too low for {scid_A}",
+            f"Set default fees as imbalance is too low for {scid_B}",
+        ]
+    )
     wait_for_fees(l2, scids, default_fees[0])
 
 
@@ -254,8 +276,9 @@ def test_feeadjuster_big_enough_liquidity(node_factory):
     }
     # channels' size: 0.01btc
     # between 0.001btc and 0.009btc the liquidity is big enough
-    l1, l2, l3 = node_factory.line_graph(3, fundamount=10**6, opts=[{}, l2_opts, {}],
-                                         wait_for_announce=True)
+    l1, l2, l3 = node_factory.line_graph(
+        3, fundamount=10**6, opts=[{}, l2_opts, {}], wait_for_announce=True
+    )
 
     chan_A = l2.rpc.listpeerchannels(l1.info["id"])["channels"][0]
     chan_B = l2.rpc.listpeerchannels(l3.info["id"])["channels"][0]
@@ -267,24 +290,23 @@ def test_feeadjuster_big_enough_liquidity(node_factory):
     chan_total = int(chan_A["total_msat"])
     assert chan_total == int(chan_B["total_msat"])
     l2.daemon.logsearch_start = 0
-    l2.daemon.wait_for_log('enough_liquidity: 100000000msat')
+    l2.daemon.wait_for_log("enough_liquidity: 100000000msat")
 
     # we force feeadjust initially to test this method and check if it applies
     # default fees when balancing the channel below
     l2.rpc.feeadjust()
-    l2.daemon.wait_for_logs([
-        f"Adjusted fees.*{scid_A}",
-        f"Adjusted fees.*{scid_B}"
-    ])
+    l2.daemon.wait_for_logs([f"Adjusted fees.*{scid_A}", f"Adjusted fees.*{scid_B}"])
     wait_for_not_fees(l2, scids, default_fees[0])
 
     # Bring channels to beyond big enough liquidity with 0.003btc
     amount = 300000000
     pay(l1, l3, amount)
-    l2.daemon.wait_for_logs([
-        f"Adjusted fees of {scid_A} with a ratio of 1.0",
-        f"Adjusted fees of {scid_B} with a ratio of 1.0"
-    ])
+    l2.daemon.wait_for_logs(
+        [
+            f"Adjusted fees of {scid_A} with a ratio of 1.0",
+            f"Adjusted fees of {scid_B} with a ratio of 1.0",
+        ]
+    )
     log_offset = len(l2.daemon.logs)
     wait_for_fees(l2, scids, default_fees[0])
 
@@ -298,10 +320,7 @@ def test_feeadjuster_big_enough_liquidity(node_factory):
     # It must trigger because the remaining liquidity is not big enough
     amount = 330000000
     pay(l1, l3, amount)
-    l2.daemon.wait_for_logs([
-        f"Adjusted fees.*{scid_A}",
-        f"Adjusted fees.*{scid_B}"
-    ])
+    l2.daemon.wait_for_logs([f"Adjusted fees.*{scid_A}", f"Adjusted fees.*{scid_B}"])
     wait_for_not_fees(l2, scids, default_fees[0])
 
 
@@ -329,45 +348,52 @@ def test_feeadjuster_median(node_factory):
         "feeadjuster-feestrategy": "median",
         "feeadjuster-basefee": True,
     }
-    l1, l2, l3, _ = node_factory.line_graph(4, opts=[opts, l2_opts, opts, opts],
-                                            wait_for_announce=True)
+    l1, l2, l3, _ = node_factory.line_graph(
+        4, opts=[opts, l2_opts, opts, opts], wait_for_announce=True
+    )
 
     scid_a = l2.rpc.listpeerchannels(l1.info["id"])["channels"][0]["short_channel_id"]
     scid_b = l2.rpc.listpeerchannels(l3.info["id"])["channels"][0]["short_channel_id"]
 
     # we do a manual feeadjust
     l2.rpc.feeadjust()
-    l2.daemon.wait_for_logs([
-        f"Adjusted fees.*{scid_a}",
-        f"Adjusted fees.*{scid_b}"
-    ])
+    l2.daemon.wait_for_logs([f"Adjusted fees.*{scid_a}", f"Adjusted fees.*{scid_b}"])
 
     # since there is only l4 with channel c towards l3, l2 should take that value
-    chan_b = l2.rpc.listpeerchannels(l3.info['id'])['channels'][0]
-    assert chan_b['fee_base_msat'] == 1337
-    assert chan_b['fee_proportional_millionths'] < 42  # we could do the actual ratio math, but meh
+    chan_b = l2.rpc.listpeerchannels(l3.info["id"])["channels"][0]
+    assert chan_b["fee_base_msat"] == 1337
+    assert (
+        chan_b["fee_proportional_millionths"] < 42
+    )  # we could do the actual ratio math, but meh
 
 
 def test_excludelist(node_factory, directory):
-    opts1 = {'may_reconnect': True}
-    opts2 = {'may_reconnect': True, "plugin": plugin_path,
+    opts1 = {"may_reconnect": True}
+    opts2 = {
+        "may_reconnect": True,
+        "plugin": plugin_path,
         "feeadjuster-deactivate-fee-update": None,
         "feeadjuster-deactivate-fuzz": None,
-        "feeadjuster-imbalance": 0.5}
-    l1, l2, l3 = node_factory.line_graph(3, opts=[opts1, opts2, opts1], wait_for_announce=True)
+        "feeadjuster-imbalance": 0.5,
+    }
+    l1, l2, l3 = node_factory.line_graph(
+        3, opts=[opts1, opts2, opts1], wait_for_announce=True
+    )
 
     scid_a = l2.rpc.listpeerchannels(l1.info["id"])["channels"][0]["short_channel_id"]
     scid_b = l2.rpc.listpeerchannels(l3.info["id"])["channels"][0]["short_channel_id"]
 
     # without exclude list a notification is printed
     assert l2.rpc.feeadjust(scid_a) == "1 channel(s) adjusted"
-    assert l2.daemon.is_in_log("There is no feeadjuster-exclude.list given, applying the options to the channels with all peers.")
+    assert l2.daemon.is_in_log(
+        "There is no feeadjuster-exclude.list given, applying the options to the channels with all peers."
+    )
 
     # stop l2, create a exlude list file containing [l1_id] and restart l2
     l2.stop()
-    l2path = os.path.join(directory, 'lightning-2', 'regtest')
-    file = open(os.path.join(l2path, 'feeadjuster-exclude.list'), 'w+')
-    file.write(l1.info['id'])
+    l2path = os.path.join(directory, "lightning-2", "regtest")
+    file = open(os.path.join(l2path, "feeadjuster-exclude.list"), "w+")
+    file.write(l1.info["id"])
     file.close()
     l2.start()
     l2.daemon.is_in_log(f"Excluding the channels with the nodes: ['{l1.info['id']}']")
