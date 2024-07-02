@@ -1,7 +1,7 @@
 # Currencyrate plugin
 
 This plugin provides Bitcoin currency conversion functions using various
-different backends and taking the median.  It caches results for an hour.
+different backends and taking the median. It caches results for an hour.
 
 ## Installation
 
@@ -17,8 +17,7 @@ For general plugin installation instructions see the repos main
   would be "USD,last_trade".
 * --disable-source: Disable the source with this name.
 
-For c-lightning versions 0.9.3 and above, you can specify these
-options multiple times to add or disable multiple sources.
+You can specify these options multiple times to add or disable multiple sources.
 
 ## Commands
 
@@ -27,7 +26,7 @@ options multiple times to add or disable multiple sources.
 ```
 $ lightning-cli currencyrates USD
 {
-   "localbitcoins": "5347227msat",
+   "coindesk": "5347227msat",
    "bitstamp": "5577515msat",
    "coingecko": "5579273msat",
 }
@@ -48,7 +47,6 @@ $ lightning-cli currencyconvert 100 USD
 Thanks to those services who provide this information.  Coindesk require
 a blurb, so I did that for everyone (quoting from their front page):
 
-* localbitcoins.com: "Buy and Sell Bitcoin Everywhere"
 * www.bitstamp.net: "The original global crypto exchange."
 * api.coingecko.com: "The world's most comprehensive cryptocurrency API"
 * api.coindesk.com: "Powered by CoinDesk: https://www.coindesk.com/price/bitcoin"

@@ -1,12 +1,27 @@
 #!/usr/bin/env python3
-from pyln.client import Plugin
-from collections import namedtuple
-from pyln.client import Millisatoshi
-from cachetools import cached, TTLCache
-from requests.adapters import HTTPAdapter
-from requests.packages.urllib3.util.retry import Retry
-import requests
-import statistics
+try:
+    import statistics
+    from collections import namedtuple
+
+    import requests
+    from cachetools import TTLCache, cached
+    from pyln.client import Millisatoshi, Plugin
+    from requests.adapters import HTTPAdapter
+    from urllib3.util import Retry
+except ModuleNotFoundError as err:
+    # OK, something is not installed?
+    import json
+    import sys
+
+    getmanifest = json.loads(sys.stdin.readline())
+    print(
+        json.dumps({
+            "jsonrpc": "2.0",
+            "id": getmanifest["id"],
+            "result": {"disable": str(err)},
+        })
+    )
+    sys.exit(1)
 
 plugin = Plugin()
 
@@ -141,18 +156,12 @@ def init(options, configuration, plugin):
     set_proxies(plugin)
 
     sourceopts = options["add-source"]
-    # Prior to 0.9.3, 'multi' was unsupported.
-    if type(sourceopts) is not list:
-        sourceopts = [sourceopts]
     if sourceopts != [""]:
         for s in sourceopts:
             parts = s.split(",")
             sources.append(Source(parts[0], parts[1], parts[2:]))
 
     disableopts = options["disable-source"]
-    # Prior to 0.9.3, 'multi' was unsupported.
-    if type(disableopts) is not list:
-        disableopts = [disableopts]
     if disableopts != [""]:
         for s in sources[:]:
             if s.name in disableopts:
@@ -164,13 +173,13 @@ plugin.add_option(
     name="add-source",
     default="",
     description="Add source name,urlformat,resultmembers...",
+    multi=True,
 )
 plugin.add_option(
-    name="disable-source", default="", description="Disable source by name"
+    name="disable-source",
+    default="",
+    description="Disable source by name",
+    multi=True,
 )
-
-# This has an effect only for recent pyln versions (0.9.3+).
-plugin.options["add-source"]["multi"] = True
-plugin.options["disable-source"]["multi"] = True
 
 plugin.run()
