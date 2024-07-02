@@ -1,4 +1,5 @@
-pyln-client>=0.7.3
-requests>=2.10.0
-requests[socks]>=2.10.0
-cachetools
+pyln-client>=23
+requests>=2.32.2
+requests[socks]>=2.32.2
+urllib3>=2.2.2
+cachetools>=5.3.3
