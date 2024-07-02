@@ -10,14 +10,14 @@ def cln_parse_rpcversion(string):
     make sure we can read all of them for (the next 80 years).
     """
     rpcversion = string
-    if rpcversion.startswith('v'):  # strip leading 'v'
+    if rpcversion.startswith("v"):  # strip leading 'v'
         rpcversion = rpcversion[1:]
-    if rpcversion.find('-') != -1:  # strip mods
-        rpcversion = rpcversion[:rpcversion.find('-')]
-    if re.search('.*(rc[\\d]*)$', rpcversion):  # strip release candidates
-        rpcversion = rpcversion[:rpcversion.find('rc')]
-    if rpcversion.count('.') == 1:  # imply patch version 0 if not given
-        rpcversion = rpcversion + '.0'
+    if rpcversion.find("-") != -1:  # strip mods
+        rpcversion = rpcversion[: rpcversion.find("-")]
+    if re.search(".*(rc[\\d]*)$", rpcversion):  # strip release candidates
+        rpcversion = rpcversion[: rpcversion.find("rc")]
+    if rpcversion.count(".") == 1:  # imply patch version 0 if not given
+        rpcversion = rpcversion + ".0"
 
     # split and convert numeric string parts to actual integers
-    return list(map(int, rpcversion.split('.')))
+    return list(map(int, rpcversion.split(".")))

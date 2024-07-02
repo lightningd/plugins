@@ -17,7 +17,7 @@ root.setLevel(logging.INFO)
 
 handler = logging.StreamHandler(sys.stdout)
 handler.setLevel(logging.DEBUG)
-formatter = logging.Formatter('%(message)s')
+formatter = logging.Formatter("%(message)s")
 handler.setFormatter(formatter)
 root.addHandler(handler)
 
@@ -37,9 +37,11 @@ def check_first_write(plugin, data_version):
     """
     backend = plugin.backend
 
-    logging.info("Comparing backup version {} versus first write version {}".format(
-        backend.version, data_version
-    ))
+    logging.info(
+        "Comparing backup version {} versus first write version {}".format(
+            backend.version, data_version
+        )
+    )
 
     if backend.version == data_version - 1:
         logging.info("Versions match up")
@@ -50,13 +52,15 @@ def check_first_write(plugin, data_version):
         return True
 
     elif backend.prev_version > data_version - 1:
-        kill("Core-Lightning seems to have lost some state (failed restore?). Emergency shutdown.")
+        kill(
+            "Core-Lightning seems to have lost some state (failed restore?). Emergency shutdown."
+        )
 
     else:
         kill("Backup is out of date, we cannot continue safely. Emergency shutdown.")
 
 
-@plugin.hook('db_write')
+@plugin.hook("db_write")
 def on_db_write(writes, data_version, plugin, **kwargs):
     change = Change(data_version, None, writes)
     if not plugin.initialized:
@@ -85,14 +89,14 @@ def compact(plugin):
 
 @plugin.init()
 def on_init(options, **kwargs):
-    dest = options.get('backup-destination', 'null')
-    if dest != 'null':
+    dest = options.get("backup-destination", "null")
+    if dest != "null":
         plugin.log(
             "The `--backup-destination` option is deprecated and will be "
             "removed in future versions of the backup plugin. Please remove "
             "it from your configuration. The destination is now determined by "
             "the `backup.lock` file in the lightning directory",
-            level="warn"
+            level="warn",
         )
 
     # IMPORTANT NOTE
@@ -109,12 +113,9 @@ def kill(message: str):
     # Search for lightningd in my ancestor processes:
     procs = [p for p in psutil.Process(os.getpid()).parents()]
     for p in procs:
-        if p.name() != 'lightningd':
+        if p.name() != "lightningd":
             continue
-        plugin.log("Killing process {name} ({pid})".format(
-            name=p.name(),
-            pid=p.pid
-        ))
+        plugin.log("Killing process {name} ({pid})".format(name=p.name(), pid=p.pid))
         p.kill()
 
     # Sleep forever, just in case the master doesn't die on us...
@@ -123,8 +124,9 @@ def kill(message: str):
 
 
 plugin.add_option(
-    'backup-destination', None,
-    'UNUSED. Kept for backward compatibility only. Please update your configuration to remove this option.'
+    "backup-destination",
+    None,
+    "UNUSED. Kept for backward compatibility only. Please update your configuration to remove this option.",
 )
 
 
@@ -135,10 +137,10 @@ if __name__ == "__main__":
         kill("Could not find backup.lock in the lightning-dir")
 
     try:
-        d = json.load(open("backup.lock", 'r'))
-        destination = d['backend_url']
+        d = json.load(open("backup.lock", "r"))
+        destination = d["backend_url"]
         plugin.backend = get_backend(destination, require_init=True)
         plugin.run()
     except Exception:
-        logging.exception('Exception while initializing backup plugin')
-        kill('Exception while initializing plugin, terminating lightningd')
+        logging.exception("Exception while initializing backup plugin")
+        kill("Exception while initializing plugin, terminating lightningd")
