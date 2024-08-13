@@ -1,2 +1,0 @@
-prometheus-client==0.6.0
-pyln-client~=0.9.3
