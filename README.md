@@ -70,6 +70,8 @@ lightningd --plugin=/path/to/plugin/directory/plugin_file_name.py
 Notes:
  - The `plugin_file_name.py` must have executable permissions:
    `chmod a+x plugin_file_name.py`
+   - You must have git core.fileMode set to true to reflect the permissions in git
+   - On Windows you might need to do the _git add_ command in WSL to be able to change the permissions
  - A plugin can be written in any programming language, as it interacts with
    `lightningd` purely using stdin/stdout pipes.
 
