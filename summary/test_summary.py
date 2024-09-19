@@ -280,7 +280,7 @@ def test_summary_exclude(node_factory):
     for k, v in expected.items():
         assert(s[k] == v)
 
-    scid = l1.rpc.listchannels()['channels'][0]['short_channel_id']
+    scid = l1.rpc.listpeerchannels()['channels'][0]['short_channel_id']
     s = l1.rpc.summary(exclude=scid)
     expected = {
         'format-hint': 'simple',
