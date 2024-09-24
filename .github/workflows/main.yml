@@ -20,7 +20,7 @@ jobs:
       matrix:
         python-version: ["3.8", "3.11"]
         bitcoind-version: ["27.1"]
-        cln-version: ["24.05", "24.02.2", "23.11.2"]
+        cln-version: ["24.08.1", "24.05", "24.02.2"]
         experimental: [1]
         deprecated: [0]
 
@@ -235,7 +235,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        cln-version: ["24.05", "24.02.2", "23.11.2"]
+        cln-version: ["24.08.1", "24.05", "24.02.2"]
     steps:
       - uses: actions/checkout@v4
         with:
