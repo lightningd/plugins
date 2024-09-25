@@ -133,7 +133,6 @@ jobs:
           | tr -d '\"')
         wget $url
         sudo tar -xvf ${url##*/} -C /usr/local --strip-components=2
-        echo "CLN_VERSION=$(lightningd --version)" >> "$GITHUB_OUTPUT"
 
     - name: Checkout Core Lightning ${{ matrix.cln-version }}
       if: ${{ steps.cache-cln.outputs.cache-hit != 'true' && (github.event_name == 'push' || steps.set_plugin_dirs.outputs.run_ci == 'true') }}
@@ -141,7 +140,7 @@ jobs:
       with:
         repository: 'ElementsProject/lightning'
         path: 'lightning'
-        ref: ${{ steps.cln-install.outputs.CLN_VERSION }}
+        ref: 'v${{ matrix.cln-version }}'
         fetch-depth: 0  # Fetch all history for all branches and tags
         submodules: 'recursive'
 
