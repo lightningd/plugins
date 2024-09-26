@@ -29,7 +29,7 @@ RUN mkdir /tmp/plugins-enabled/ && cd /tmp/plugins && \
     git submodule update --init --recursive && pip3 install setuptools && \
     find -name requirements.txt -print0 | xargs -0 -n 1 pip3 install -r && \
     ls */ && \
-    for plgn in `find . -type f | grep -E '/([^/]+)/\1\.py$'|grep -Ev 'archived|backup|donations|qt'`; do \
+    for plgn in `find . -type f | grep -E '/([^/]+)/\1\.py$'|grep -Ev 'archived|backup|donations|qt|listmempoolfunds'`; do \
         cd /tmp/plugins-enabled && \
         ln -s /tmp/plugins/${plgn}; \
     done
