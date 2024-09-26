@@ -194,7 +194,11 @@ Edit your config file, `$HOME/.bitcoin/bitcoin.conf`, and be sure the following 
 ```
 <network_name>=1
 ```
-
+Build the image:
+```
+docker build . -t mycln-plugins
+```
+Run the container:
 |  network  | network\_name | command |
 |-----------|---------------|---------|
 |  bitcoin  |    bitcoin    |`docker run -it --rm --network=host -v $HOME/.lightning:/root/.lightning -v $HOME/.bitcoin:/root/.bitcoin mycln-plugins --disable-plugin=bcli --log-level=debug --database-upgrade=true --sauron-api-endpoint https://blockstream.info/api/`|
