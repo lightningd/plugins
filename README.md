@@ -187,6 +187,22 @@ plugin name: One subject line
 more detailed description (if any)
 ```
 
+### `docker`
+
+#### Choosing a bitcoin network
+Edit your config file, `$HOME/.bitcoin/bitcoin.conf`, and be sure the following line is in it:
+```
+<network_name>=1
+```
+
+|  network  | network\_name | command |
+|-----------|---------------|---------|
+|  bitcoin  |    bitcoin    |`docker run -it --rm --network=host -v $HOME/.lightning:/root/.lightning -v $HOME/.bitcoin:/root/.bitcoin mycln-plugins --disable-plugin=bcli --log-level=debug --database-upgrade=true --sauron-api-endpoint https://blockstream.info/api/`|
+| mutinynet |     signet    |`docker run -it --rm --network=host -v $HOME/.lightning:/root/.lightning -v $HOME/.bitcoin:/root/.bitcoin -e LIGHTNINGD_NETWORK=signet mycln-plugins --signet --disable-plugin=bcli --log-level=debug --database-upgrade=true --sauron-api-endpoint https://mutinynet.com/api/`|
+|  testnet  |    testnet    |`docker run -it --rm --network=host -v $HOME/.lightning:/root/.lightning -v $HOME/.bitcoin:/root/.bitcoin -e LIGHTNINGD_NETWORK=testnet mycln-plugins --testnet --disable-plugin=bcli --log-level=debug --database-upgrade=true --sauron-api-endpoint https://mempool.space/testnet/api`|
+
+
+
 ## More Plugins from the Community
 
  - [@conscott's plugins](https://github.com/conscott/c-lightning-plugins)

@@ -1,4 +1,4 @@
-ARG CLN_VERSION="24.02.2"
+ARG CLN_VERSION="24.08.1"
 
 FROM elementsproject/lightningd:v${CLN_VERSION}
 
@@ -24,14 +24,15 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     python3 -m pip install --upgrade pip
 
 COPY . /tmp/plugins
-RUN mkdir /tmp/oldplugins && mv /usr/local/libexec/c-lightning/plugins/* /tmp/oldplugins/ && \
-    cd /usr/local/libexec/c-lightning/plugins && \
-    git clone --depth 1 --shallow-submodules -j4 \
-        ${EXTRA_PLUGINS} \
-        file:///tmp/plugins . && \
-    pip3 install setuptools && \
+
+RUN mkdir /tmp/plugins-enabled/ && cd /tmp/plugins && \
+    git submodule update --init --recursive && pip3 install setuptools && \
     find -name requirements.txt -print0 | xargs -0 -n 1 pip3 install -r && \
-    mv /tmp/oldplugins/* /usr/local/libexec/c-lightning/plugins && rmdir /tmp/oldplugins
+    ls */ && \
+    for plgn in `find . -type f | grep -E '/([^/]+)/\1\.py$'|grep -Ev 'archived|backup|donations|qt'`; do \
+        cd /tmp/plugins-enabled && \
+        ln -s /tmp/plugins/${plgn}; \
+    done
 
 EXPOSE 9735 9835
 ENTRYPOINT  [ "/usr/bin/tini", "-g", "--", "./entrypoint.sh" ]
