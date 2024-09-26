@@ -5,7 +5,7 @@ import os
 
 from pyln.client import Plugin
 from pyln.testing.fixtures import *  # noqa: F401,F403
-from pyln.testing.utils import DEVELOPER, wait_for
+from pyln.testing.utils import wait_for
 
 from .summary_avail import trace_availability
 
@@ -264,7 +264,6 @@ def test_summary_opts(directory):
         assert(o in help_out)
 
 
-@unittest.skipIf(not DEVELOPER, "We need fast gossip for line_graph")
 def test_summary_exclude(node_factory):
     l1, l2 = node_factory.line_graph(2, opts=pluginopt)
 
@@ -281,7 +280,7 @@ def test_summary_exclude(node_factory):
     for k, v in expected.items():
         assert(s[k] == v)
 
-    scid = l1.rpc.listchannels()['channels'][0]['short_channel_id']
+    scid = l1.rpc.listpeerchannels()['channels'][0]['short_channel_id']
     s = l1.rpc.summary(exclude=scid)
     expected = {
         'format-hint': 'simple',

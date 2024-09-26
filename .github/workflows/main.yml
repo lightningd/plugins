@@ -20,7 +20,7 @@ jobs:
       matrix:
         python-version: ["3.8", "3.11"]
         bitcoind-version: ["27.1"]
-        cln-version: ["24.05", "24.02.2", "23.11.2"]
+        cln-version: ["24.08.1", "24.05", "24.02.2"]
         experimental: [1]
         deprecated: [0]
 
@@ -133,7 +133,6 @@ jobs:
           | tr -d '\"')
         wget $url
         sudo tar -xvf ${url##*/} -C /usr/local --strip-components=2
-        echo "CLN_VERSION=$(lightningd --version)" >> "$GITHUB_OUTPUT"
 
     - name: Checkout Core Lightning ${{ matrix.cln-version }}
       if: ${{ steps.cache-cln.outputs.cache-hit != 'true' && (github.event_name == 'push' || steps.set_plugin_dirs.outputs.run_ci == 'true') }}
@@ -141,7 +140,7 @@ jobs:
       with:
         repository: 'ElementsProject/lightning'
         path: 'lightning'
-        ref: ${{ steps.cln-install.outputs.CLN_VERSION }}
+        ref: 'v${{ matrix.cln-version }}'
         fetch-depth: 0  # Fetch all history for all branches and tags
         submodules: 'recursive'
 
@@ -235,7 +234,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        cln-version: ["24.05", "24.02.2", "23.11.2"]
+        cln-version: ["24.08.1", "24.05", "24.02.2"]
     steps:
       - uses: actions/checkout@v4
         with:

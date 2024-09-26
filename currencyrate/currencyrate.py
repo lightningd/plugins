@@ -29,9 +29,6 @@ Source = namedtuple("Source", ["name", "urlformat", "replymembers"])
 
 sources = [
     # e.g. {"high": "18502.56", "last": "17970.41", "timestamp": "1607650787", "bid": "17961.87", "vwap": "18223.42", "volume": "7055.63066541", "low": "17815.92", "ask": "17970.41", "open": "18250.30"}
-    Source(
-        "bitstamp", "https://www.bitstamp.net/api/v2/ticker/btc{currency_lc}/", ["last"]
-    ),
     # e.g. {"bitcoin":{"usd":17885.84}}
     Source(
         "coingecko",
@@ -47,7 +44,7 @@ sources = [
     # e.g. {"data":{"base":"BTC","currency":"USD","amount":"19414.63"}}
     Source(
         "coinbase",
-        "https://api.coinbase.com/v2/prices/spot?currency={currency}",
+        "https://api.coinbase.com/v2/prices/BTC-{currency}/spot",
         ["data", "amount"],
     ),
     # e.g. {  "USD" : {"15m" : 6650.3, "last" : 6650.3, "buy" : 6650.3, "sell" : 6650.3, "symbol" : "$"},  "AUD" : {"15m" : 10857.19, "last" : 10857.19, "buy" : 10857.19, "sell" : 10857.19, "symbol" : "$"},...

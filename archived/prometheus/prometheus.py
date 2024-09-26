@@ -48,10 +48,10 @@ class FundsCollector(BaseLnCollector):
         funds = self.rpc.listfunds()
         print(funds['outputs'])
         output_funds = sum(
-            [o['amount_msat'].to_satoshi() for o in funds['outputs']]
+            [o['amount_msat'] // 1000 for o in funds['outputs']]
         )
         channel_funds = sum(
-            [c['our_amount_msat'].to_satoshi() for c in funds['channels']]
+            [c['our_amount_msat'] // 1000 for c in funds['channels']]
         )
         total = output_funds + channel_funds
 
@@ -181,10 +181,10 @@ class ChannelsCollector(BaseLnCollector):
                 alias = 'unknown'
 
             labels = [c['peer_id'], c.get('short_channel_id', c.get('channel_id')), alias]
-            balance_gauge.add_metric(labels, c['to_us_msat'].to_satoshi())
+            balance_gauge.add_metric(labels, c['to_us_msat'] // 1000)
             spendable_gauge.add_metric(labels,
-                                       c['spendable_msat'].to_satoshi())
-            total_gauge.add_metric(labels, c['total_msat'].to_satoshi())
+                                       c['spendable_msat'] // 1000)
+            total_gauge.add_metric(labels, c['total_msat'] // 1000)
             htlc_gauge.add_metric(labels, len(c['htlcs']))
 
             in_payments_offered_gauge.add_metric(labels, c['in_payments_offered'])

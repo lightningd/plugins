@@ -67,3 +67,12 @@
 [submodule "c-lightning-pruning-plugin"]
 	path = c-lightning-pruning-plugin
 	url = https://github.com/Start9Labs/c-lightning-pruning-plugin
+[submodule "ln-address-pay"]
+	path = ln-address-pay
+	url = https://github.com/nosedam/ln-address-pay
+[submodule "torq-plugin"]
+	path = torq-plugin
+	url = https://github.com/lncapital/torq-cln-plugin
+[submodule "hold"]
+	path = hold
+	url = https://github.com/BoltzExchange/hold

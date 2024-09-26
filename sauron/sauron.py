@@ -29,7 +29,7 @@ def fetch(url):
         backoff_factor=1,
         total=10,
         status_forcelist=[429, 500, 502, 503, 504],
-        method_whitelist=["HEAD", "GET", "OPTIONS"],
+        allowed_methods=["HEAD", "GET", "OPTIONS"],
     )
     adapter = HTTPAdapter(max_retries=retry_strategy)
 
@@ -200,9 +200,17 @@ def estimatefees(plugin, **kwargs):
     else:
         # It returns sat/vB, we want sat/kVB, so multiply everything by 10**3
         slow = int(feerates["144"] * 10**3)
-        normal = int(feerates["5"] * 10**3)
-        urgent = int(feerates["3"] * 10**3)
+        normal = int(feerates["12"] * 10**3)
+        urgent = int(feerates["6"] * 10**3)
         very_urgent = int(feerates["2"] * 10**3)
+
+    feerate_floor = int(feerates["1008"] * 10**3)
+    feerates = [
+        {"blocks": 2, "feerate": very_urgent},
+        {"blocks": 6, "feerate": urgent},
+        {"blocks": 12, "feerate": normal},
+        {"blocks": 144, "feerate": slow}
+    ]
 
     return {
         "opening": normal,
@@ -213,6 +221,8 @@ def estimatefees(plugin, **kwargs):
         "penalty": urgent,
         "min_acceptable": slow // 2,
         "max_acceptable": very_urgent * 10,
+        "feerate_floor": feerate_floor,
+        "feerates": feerates
     }
 
 
