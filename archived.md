@@ -9,6 +9,7 @@ If you like a plugin from that list, feel free to update and fix it, so we can u
 | ------------------------------------ | ------------------------------------------------------------------------------------------- |
 | [autopilot][autopilot]               | An autopilot that suggests channels that should be established                              |
 | [balance-AMP-pay][bal-amp-pay]       | Computes an optimal split of a payment amount for the use of AMP. Helps keep funds balanced |
+| [circular][circular]                 | A smart rebalancing plugin for Core Lightning routing nodes                                 |
 | [commando][commando]                 | This plugin allows to send commands between nodes                                           |
 | [drain][drain]                       | Draining, filling and balancing channels with automatic chunks.                             |
 | [fixroute][fixroute]                 | Constructs a route object (using sendpay) which goes over a sequence of node ids            |
@@ -26,6 +27,7 @@ If you like a plugin from that list, feel free to update and fix it, so we can u
 
 [autopilot]: https://github.com/lightningd/plugins/tree/master/archived/autopilot
 [bal-amp-pay]: https://github.com/renepickhardt/plugins/tree/balanced_pay/balanced_amp_payments
+[circular]: https://github.com/giovannizotta/circular
 [commando]: https://github.com/lightningd/plugins/tree/master/archived/commando
 [drain]: https://github.com/lightningd/plugins/tree/master/archived/drain
 [fixroute]: https://github.com/renepickhardt/plugins/tree/fixroute/fixroute
