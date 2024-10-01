@@ -25,9 +25,6 @@
 [submodule "poncho"]
 	path = poncho
 	url = https://github.com/fiatjaf/poncho
-[submodule "circular"]
-	path = circular
-	url = https://github.com/giovannizotta/circular.git
 [submodule "holdinvoice"]
 	path = holdinvoice
 	url = https://github.com/daywalker90/holdinvoice.git
