@@ -52,9 +52,6 @@
 [submodule "Lightning-Invoice-Queue"]
 	path = Lightning-Invoice-Queue
 	url = https://github.com/rbndg/Lightning-Invoice-Queue
-[submodule "listmempoolfunds"]
-	path = listmempoolfunds
-	url = https://github.com/andrewtoth/listmempoolfunds
 [submodule "NLoop"]
 	path = NLoop
 	url = https://github.com/bitbankinc/NLoop
