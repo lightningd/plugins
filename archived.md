@@ -20,6 +20,7 @@ If you like a plugin from that list, feel free to update and fix it, so we can u
 | [noise][noise]                       | Chat with your fellow node operators                                                        |
 | [nostr-control][nostr-control]       | Allows you to talk to your node oand send you events from your node over nostr DMs             |
 | [paytest][paytest]                   | A plugin to benchmark the performance of the ~pay~ plugin                                   |
+| [paythrough][paythrough]             | Pay an invoice through a specific channel, regardless of better routes                      |
 | [probe][probe]                       | Regularly probes the network for stability                                                  |
 | [prometheus][prometheus]             | Lightning node exporter for the prometheus timeseries server                                |
 | [spark-commando][spark-commando]     | Heavily inspired by Rusty's commando plugin                                                 |
@@ -39,6 +40,7 @@ If you like a plugin from that list, feel free to update and fix it, so we can u
 [noise]: https://github.com/lightningd/plugins/tree/master/archived/noise
 [nostr-control]: https://github.com/joelklabo/plugins/tree/nostr-control
 [paytest]: https://github.com/lightningd/plugins/tree/master/archived/paytest
+[paythrough]: https://github.com/andrewtoth/paythrough
 [probe]: https://github.com/lightningd/plugins/tree/master/archived/probe
 [prometheus]: https://github.com/lightningd/plugins/tree/master/archived/prometheus
 [spark-commando]: https://github.com/adi2011/plugins/tree/master/spark-commando
