@@ -55,7 +55,7 @@ def init(plugin, options, **kwargs):
         }
         plugin.log("Using proxy {} for requests".format(socks5_proxy))
 
-    api = "mempool.space" if plugin.is_mempoolspace else "Esplora"
+    api = "mempool.space" if "mutinynet.com" in plugin.api_endpoint else "Esplora"
     plugin.log(f"Sauron plugin initialized using {api} API")
     plugin.log(sauron_eye)
 
