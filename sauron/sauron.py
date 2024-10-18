@@ -46,22 +46,16 @@ def init(plugin, options, **kwargs):
         raise SauronError("You need to specify the sauron-api-endpoint option.")
         sys.exit(1)
 
-    # Test for Esplora or mempoolspace
+    # Testing for Esplora or mempool.space API
     try:
-        # Esplora API
-        feerate_url = "{}/fee-estimates".format(plugin.api_endpoint)
+        # MutinyNet API
+        feerate_url = "{}/v1/fees/recommended".format(plugin.api_endpoint)
         feerate_req = fetch(feerate_url)
-        assert feerate_req.status_code == 200 and feerate_req.content != b'{}'
-        plugin.is_mempoolspace = False
+        assert feerate_req.status_code == 200
+        plugin.is_mempoolspace = True
     except AssertionError:
-        try:
-            # MutinyNet API
-            feerate_url = "{}/v1/fees/recommended".format(plugin.api_endpoint)
-            feerate_req = fetch(feerate_url)
-            assert feerate_req.status_code == 200
-            plugin.is_mempoolspace = True
-        except AssertionError as e1:
-            raise Exception("Sauron API cannot be reached") from e1
+        # Esplora API
+        plugin.is_mempoolspace = False
 
     if options["sauron-tor-proxy"]:
         address, port = options["sauron-tor-proxy"].split(":")

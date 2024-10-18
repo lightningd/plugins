@@ -2,17 +2,18 @@
 
 import os
 
-os.environ["TEST_NETWORK"] = "bitcoin"
 import pyln
 import pytest
 from pyln.testing import utils
-from util import *  # noqa: F403
+from pyln.testing.fixtures import *  # noqa: F403
+from util import LightningD
 
 pyln.testing.fixtures.network_daemons["bitcoin"] = utils.BitcoinD
 
 
 class LightningNode(utils.LightningNode):
     def __init__(self, *args, **kwargs):
+        pyln.testing.utils.TEST_NETWORK = "bitcoin"
         utils.LightningNode.__init__(self, *args, **kwargs)
         lightning_dir = args[1]
 
@@ -32,14 +33,17 @@ class LightningNode(utils.LightningNode):
 
 
 @pytest.fixture
-def node_cls():
+def node_cls(monkeypatch):
+    monkeypatch.setenv("TEST_NETWORK", "bitcoin")
     yield LightningNode
 
 
-def test_tor_proxy(ln_node):
+@pytest.mark.skip(reason="TODO: Add mock for tor proxy")
+def test_tor_proxy(node_factory):
     """
     Test for tor proxy
     """
+    ln_node = node_factory.get_node()
 
     assert ln_node.daemon.opts["sauron-tor-proxy"] == "localhost:9050"
     assert ln_node.daemon.is_in_log("Using proxy socks5h://localhost:9050 for requests")
