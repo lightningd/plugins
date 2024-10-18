@@ -241,13 +241,14 @@ def run_one(p: Plugin, workflow: str) -> bool:
 
     logging.info(f"Virtualenv at {vpath}")
 
+    num_workers = 1 if p.name == "sauron" else 5
     cmd = [
         str(pytest_path),
         "-vvv",
         "--timeout=600",
         "--timeout-method=thread",
         "--color=yes",
-        "-n=5",
+        f"-n={num_workers}",
     ]
 
     logging.info(f"Running `{' '.join(cmd)}` in directory {p.path.resolve()}")
