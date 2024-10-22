@@ -1,2 +1,2 @@
-pyln-client>=23.2
+pyln-client>=23.2,<=24.5
 requests[socks]>=2.23.0
