@@ -163,12 +163,23 @@ pip3 install -r requirements.txt
 Note: You might need to also specify the `--user` command line flag depending on
 your environment.
 
+### Contributing
+
 #### Minimum supported Python version
 
 The minimum supported version of Python for this repository is currently `3.8.x` (14 Oct 2019).
 Python plugins users must ensure to have a version `>= 3.8`.
 Python plugins developers must ensure their plugin to work with all Python versions `>= 3.8`.
 
+#### Recommended commits format
+
+Whenever submitting code contributions for this repository, we should try to stick to the format 'lightning' uses, something like:
+
+```
+plugin name: One subject line
+        (empty line)
+more detailed description (if any)
+```
 
 ## More Plugins from the Community
 
