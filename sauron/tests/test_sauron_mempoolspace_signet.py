@@ -16,8 +16,7 @@ class LightningNode(utils.LightningNode):
         pyln.testing.utils.TEST_NETWORK = "signet"
         utils.LightningNode.__init__(self, *args, **kwargs)
         lightning_dir = args[1]
-
-        self.daemon = LightningD(lightning_dir, None)  # noqa: F405
+        self.daemon = LightningD(lightning_dir, None, port=self.daemon.port)  # noqa: F405
         options = {
             "disable-plugin": "bcli",
             "network": "signet",

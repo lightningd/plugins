@@ -16,8 +16,7 @@ class LightningNode(utils.LightningNode):
         pyln.testing.utils.TEST_NETWORK = "bitcoin"
         utils.LightningNode.__init__(self, *args, **kwargs)
         lightning_dir = args[1]
-
-        self.daemon = LightningD(lightning_dir, None)  # noqa: F405
+        self.daemon = LightningD(lightning_dir, None, port=self.daemon.port)  # noqa: F405
         options = {
             "disable-plugin": "bcli",
             "network": "bitcoin",
@@ -111,6 +110,7 @@ def test_rpc_estimatefees(node_factory):
     """
     Test estimatefees
     """
+
     ln_node = node_factory.get_node()
 
     # Sample response
@@ -132,6 +132,8 @@ def test_rpc_estimatefees(node_factory):
     #     ]
     # }
     response = ln_node.rpc.call("estimatefees")
+
+   
 
     expected_response_keys = [
         "opening",
