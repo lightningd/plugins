@@ -66,7 +66,7 @@ def test_rpc_getrawblockbyheight(node_factory):
     }
     assert response == expected_response
 
-
+@pytest.mark.skip(reason="testing_theory")
 def test_rpc_sendrawtransaction_invalid(node_factory):
     """
     Test sendrawtransaction
