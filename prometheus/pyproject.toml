@@ -1,0 +1,20 @@
+[tool.poetry]
+name = "prometheus"
+version = "0.1.0"
+description = "A plugin that reports metrics to be collected by prometheus"
+authors = ["Christian Decker <decker@blockstream.com>"]
+license = "MIT"
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.8"
+prometheus-client = "^0.20.0"
+pyln-client = "^24.5"
+
+
+[tool.poetry.group.dev.dependencies]
+pyln-testing = "^24.5"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
