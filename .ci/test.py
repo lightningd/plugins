@@ -135,7 +135,7 @@ def prepare_generic(p: Plugin, directory: Path, env: dict, workflow: str) -> boo
     if p.details["requirements"].exists():
         print(f"Installing requirements from {p.details['requirements']}")
         subprocess.check_call(
-            [pip_path, "install", "-U", *pip_opts, "-r", p.details["requirements"]],
+            [pip_path, "install", *pip_opts, "-r", p.details["requirements"]],
             stderr=subprocess.STDOUT,
         )
 
