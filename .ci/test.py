@@ -29,14 +29,14 @@ def prepare_env(p: Plugin, directory: Path, env: dict, workflow: str) -> bool:
     if p.framework == "pip":
         return prepare_env_pip(p, directory, workflow)
     elif p.framework == "poetry":
-        return prepare_env_poetry(p, directory)
+        return prepare_env_poetry(p, directory, workflow)
     elif p.framework == "generic":
         return prepare_generic(p, directory, env, workflow)
     else:
         raise ValueError(f"Unknown framework {p.framework}")
 
 
-def prepare_env_poetry(p: Plugin, directory: Path) -> bool:
+def prepare_env_poetry(p: Plugin, directory: Path, workflow: str) -> bool:
     logging.info("Installing a new poetry virtualenv")
 
     pip3 = directory / "bin" / "pip3"
@@ -91,6 +91,11 @@ def prepare_env_poetry(p: Plugin, directory: Path) -> bool:
         stderr=subprocess.STDOUT,
     )
 
+    if workflow == "nightly":
+        install_dev_pyln_testing(pip3)
+    else:
+        install_pyln_testing(pip3)
+
     subprocess.check_call([pip3, "freeze"])
     return True
 
@@ -98,11 +103,6 @@ def prepare_env_poetry(p: Plugin, directory: Path) -> bool:
 def prepare_env_pip(p: Plugin, directory: Path, workflow: str) -> bool:
     print("Installing a new pip virtualenv")
     pip_path = directory / "bin" / "pip3"
-
-    if workflow == "nightly":
-        install_dev_pyln_testing(pip_path)
-    else:
-        install_pyln_testing(pip_path)
 
     # Now install all the requirements
     print(f"Installing requirements from {p.details['requirements']}")
@@ -118,6 +118,11 @@ def prepare_env_pip(p: Plugin, directory: Path, workflow: str) -> bool:
             stderr=subprocess.STDOUT,
         )
 
+    if workflow == "nightly":
+        install_dev_pyln_testing(pip_path)
+    else:
+        install_pyln_testing(pip_path)
+
     subprocess.check_call([pip_path, "freeze"])
     return True
 
@@ -125,11 +130,6 @@ def prepare_env_pip(p: Plugin, directory: Path, workflow: str) -> bool:
 def prepare_generic(p: Plugin, directory: Path, env: dict, workflow: str) -> bool:
     print("Installing a new generic virtualenv")
     pip_path = directory / "bin" / "pip3"
-
-    if workflow == "nightly":
-        install_dev_pyln_testing(pip_path)
-    else:
-        install_pyln_testing(pip_path)
 
     # Now install all the requirements
     if p.details["requirements"].exists():
@@ -146,6 +146,11 @@ def prepare_generic(p: Plugin, directory: Path, env: dict, workflow: str) -> boo
             env=env,
             stderr=subprocess.STDOUT,
         )
+
+    if workflow == "nightly":
+        install_dev_pyln_testing(pip_path)
+    else:
+        install_pyln_testing(pip_path)
 
     subprocess.check_call([pip_path, "freeze"])
     return True
