@@ -1,9 +1,10 @@
 import os
 import shelve
 import time
+
 import pytest
-from pyln.testing.fixtures import *  # noqa: F401,F403
 from pyln.client import RpcError
+from pyln.testing.fixtures import *  # noqa: F401,F403
 from pyln.testing.utils import only_one, wait_for
 
 plugin_path = os.path.join(os.path.dirname(__file__), "datastore.py")
@@ -15,7 +16,9 @@ def test_datastore(node_factory):
     time.sleep(5)
 
     # Starts empty
-    assert l1.rpc.listdatastore() == {"datastore": []}
+    assert l1.rpc.listdatastore() == {"datastore": []} or l1.rpc.listdatastore() == {
+        "datastore": [{"key": ["askrene"]}]
+    }
     assert l1.rpc.listdatastore("somekey") == {"datastore": []}
 
     # Add entries.
@@ -28,7 +31,7 @@ def test_datastore(node_factory):
     }
     assert l1.rpc.datastore(key="somekey", hex=somedata) == somedata_expect
 
-    assert l1.rpc.listdatastore() == {"datastore": [somedata_expect]}
+    assert somedata_expect in l1.rpc.listdatastore()["datastore"]
     assert l1.rpc.listdatastore("somekey") == {"datastore": [somedata_expect]}
     assert l1.rpc.listdatastore("otherkey") == {"datastore": []}
 
@@ -54,7 +57,7 @@ def test_datastore(node_factory):
 
     # Generation will have increased due to three ops above.
     somedata_expect["generation"] += 3
-    assert l1.rpc.listdatastore() == {"datastore": [somedata_expect]}
+    assert somedata_expect in l1.rpc.listdatastore()["datastore"]
 
     # Can't replace or append non-existing records if we say not to
     with pytest.raises(RpcError, match="does not exist"):
@@ -79,18 +82,17 @@ def test_datastore(node_factory):
     assert l1.rpc.listdatastore("otherkey") == {"datastore": [otherdata_expect]}
     assert l1.rpc.listdatastore("badkey") == {"datastore": []}
 
-    ds = l1.rpc.listdatastore()
+    ds = l1.rpc.listdatastore()["datastore"]
     # Order is undefined!
-    assert ds == {"datastore": [somedata_expect, otherdata_expect]} or ds == {
-        "datastore": [otherdata_expect, somedata_expect]
-    }
+    assert somedata_expect in ds
+    assert otherdata_expect in ds
 
     assert l1.rpc.deldatastore("somekey") == somedata_expect
-    assert l1.rpc.listdatastore() == {"datastore": [otherdata_expect]}
+    assert otherdata_expect in l1.rpc.listdatastore()["datastore"]
     assert l1.rpc.listdatastore("somekey") == {"datastore": []}
     assert l1.rpc.listdatastore("otherkey") == {"datastore": [otherdata_expect]}
     assert l1.rpc.listdatastore("badkey") == {"datastore": []}
-    assert l1.rpc.listdatastore() == {"datastore": [otherdata_expect]}
+    assert otherdata_expect in l1.rpc.listdatastore()["datastore"]
 
     # if it's not a string, won't print
     badstring_expect = {"key": ["badstring"], "generation": 0, "hex": "00"}
@@ -101,7 +103,7 @@ def test_datastore(node_factory):
     # It's persistent
     l1.restart()
 
-    assert l1.rpc.listdatastore() == {"datastore": [otherdata_expect]}
+    assert otherdata_expect in l1.rpc.listdatastore()["datastore"]
 
     # We can insist generation match on update.
     with pytest.raises(RpcError, match="generation is different"):
@@ -124,7 +126,7 @@ def test_datastore(node_factory):
         )
         == otherdata_expect
     )
-    assert l1.rpc.listdatastore() == {"datastore": [otherdata_expect]}
+    assert otherdata_expect in l1.rpc.listdatastore()["datastore"]
 
     # We can insist generation match on delete.
     with pytest.raises(RpcError, match="generation is different"):
@@ -136,7 +138,9 @@ def test_datastore(node_factory):
         l1.rpc.deldatastore(key="otherkey", generation=otherdata_expect["generation"])
         == otherdata_expect
     )
-    assert l1.rpc.listdatastore() == {"datastore": []}
+    assert l1.rpc.listdatastore() == {"datastore": []} or l1.rpc.listdatastore() == {
+        "datastore": [{"key": ["askrene"]}]
+    }
 
 
 def test_upgrade(node_factory):
@@ -178,7 +182,9 @@ def test_datastore_keylist(node_factory):
     time.sleep(5)
 
     # Starts empty
-    assert l1.rpc.listdatastore() == {"datastore": []}
+    assert l1.rpc.listdatastore() == {"datastore": []} or l1.rpc.listdatastore() == {
+        "datastore": [{"key": ["askrene"]}]
+    }
     assert l1.rpc.listdatastore(["a"]) == {"datastore": []}
     assert l1.rpc.listdatastore(["a", "b"]) == {"datastore": []}
 
@@ -192,7 +198,7 @@ def test_datastore_keylist(node_factory):
 
     # Create child key.
     l1.rpc.datastore(key=["a", "b"], string="abval")
-    assert l1.rpc.listdatastore() == {"datastore": [{"key": ["a"]}]}
+    assert {"key": ["a"]} in l1.rpc.listdatastore()["datastore"]
     assert l1.rpc.listdatastore(key=["a"]) == {
         "datastore": [
             {
@@ -210,7 +216,7 @@ def test_datastore_keylist(node_factory):
 
     # Can create another key.
     l1.rpc.datastore(key=["a", "b2"], string="ab2val")
-    assert l1.rpc.listdatastore() == {"datastore": [{"key": ["a"]}]}
+    assert {"key": ["a"]} in l1.rpc.listdatastore()["datastore"]
     assert l1.rpc.listdatastore(key=["a"]) == {
         "datastore": [
             {
@@ -230,7 +236,7 @@ def test_datastore_keylist(node_factory):
 
     # Can create subkey.
     l1.rpc.datastore(key=["a", "b3", "c"], string="ab2val")
-    assert l1.rpc.listdatastore() == {"datastore": [{"key": ["a"]}]}
+    assert {"key": ["a"]} in l1.rpc.listdatastore()["datastore"]
     assert l1.rpc.listdatastore(key=["a"]) == {
         "datastore": [
             {
