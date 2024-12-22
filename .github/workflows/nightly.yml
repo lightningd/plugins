@@ -79,8 +79,8 @@ jobs:
         pip install --user contrib/pyln-client contrib/pyln-testing flaky
 
         ./configure --disable-valgrind
-        make -j 16
-        sudo make install
+        make -j $(nproc)
+        sudo -E bash -c "source $HOME/.cargo/env && rustup default stable && make install"
 
     - name: Test with pytest
       run: |
