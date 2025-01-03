@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "cln-plugins-donations"
-version = "0.1.0"
+version = "0.2.0"
 description = ""
 authors = ["Christian Decker <decker.christian@gmail.com>"]
 license = "MIT"
@@ -8,16 +8,16 @@ readme = "README.md"
 
 [tool.poetry.dependencies]
 python = "^3.8"
-qrcode = "6.1"
-flask = "2.0.3"
-pyln-client = "^23.11"
+qrcode = "7.4.2"
+flask = "2.3.3"
+pyln-client = ">=24.2"
 flask-bootstrap = "^3.3.7.1"
-flask-wtf = "0.15.1"
-werkzeug = "<3"
-wtforms = "2.3.3"
+flask-wtf = "1.2.1"
+werkzeug = "3.0.6"
+wtforms = "3.1.2"
 
 [tool.poetry.dev-dependencies]
-pyln-testing = "^23.11"
+pyln-testing = ">=24.2"
 
 [build-system]
 requires = ["poetry-core"]
