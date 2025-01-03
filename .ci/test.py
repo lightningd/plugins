@@ -139,6 +139,11 @@ def prepare_generic(p: Plugin, directory: Path, env: dict, workflow: str) -> boo
             stderr=subprocess.STDOUT,
         )
 
+    if workflow == "nightly":
+        install_dev_pyln_testing(pip_path)
+    else:
+        install_pyln_testing(pip_path)
+
     if p.details["setup"].exists():
         print(f"Running setup script from {p.details['setup']}")
         subprocess.check_call(
@@ -146,11 +151,6 @@ def prepare_generic(p: Plugin, directory: Path, env: dict, workflow: str) -> boo
             env=env,
             stderr=subprocess.STDOUT,
         )
-
-    if workflow == "nightly":
-        install_dev_pyln_testing(pip_path)
-    else:
-        install_pyln_testing(pip_path)
 
     subprocess.check_call([pip_path, "freeze"])
     return True
