@@ -67,6 +67,7 @@ jobs:
         pip3 install --user -U \
           pip \
           poetry \
+          poetry-plugin-export \
           wheel \
           blinker \
           pytest-custom-exit-code==0.3.0 \
