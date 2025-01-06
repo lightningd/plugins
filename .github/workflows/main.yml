@@ -175,7 +175,7 @@ jobs:
           pytest-custom-exit-code==0.3.0 \
           pytest-json-report
 
-        poetry install
+        poetry install --no-root
         poetry update
         poetry export --without-hashes -f requirements.txt --output requirements.txt
         pip install --user -U -r requirements.txt
