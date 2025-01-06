@@ -16,6 +16,7 @@ global_dependencies = [
     "pytest",
     "pytest-xdist",
     "pytest-timeout",
+    "poetry-plugin-export",
 ]
 
 pip_opts = ["-qq"]
