@@ -58,16 +58,20 @@ def enumerate_plugins(basedir: Path) -> Generator[Plugin, None, None]:
     plugins = list(
         [x for x in basedir.iterdir() if x.is_dir() and x.name not in exclude]
     )
-    pip_pytest = [x for x in plugins if (x / Path("requirements.txt")).exists()]
+    # Explicitly detect rust in case there's python testing code
+    rust_plugins = [x for x in plugins if (x / Path("Cargo.toml")).exists()]
+    print(f"Rust plugins: {list_plugins(rust_plugins)}")
+
+    pip_pytest = [x for x in plugins if (x / Path("requirements.txt")).exists() and x not in rust_plugins]
     print(f"Pip plugins: {list_plugins(pip_pytest)}")
 
-    poetry_pytest = [x for x in plugins if (x / Path("pyproject.toml")).exists()]
+    poetry_pytest = [x for x in plugins if (x / Path("pyproject.toml")).exists() and x not in rust_plugins]
     print(f"Poetry plugins: {list_plugins(poetry_pytest)}")
 
-    other_plugins = [
+    generic_plugins = [
         x for x in plugins if x not in pip_pytest and x not in poetry_pytest
     ]
-    print(f"Other plugins: {list_plugins(other_plugins)}")
+    print(f"Generic plugins (includes Rust): {list_plugins(generic_plugins)}")
 
     for p in sorted(pip_pytest):
         yield Plugin(
@@ -94,7 +98,7 @@ def enumerate_plugins(basedir: Path) -> Generator[Plugin, None, None]:
             },
         )
 
-    for p in sorted(other_plugins):
+    for p in sorted(generic_plugins):
         yield Plugin(
             name=p.name,
             path=p,
