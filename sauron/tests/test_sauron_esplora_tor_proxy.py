@@ -1,7 +1,6 @@
 #!/usr/bin/python
 
 import os
-
 import pyln
 import pytest
 from pyln.testing import utils
@@ -10,21 +9,30 @@ from util import LightningD
 
 pyln.testing.fixtures.network_daemons["bitcoin"] = utils.BitcoinD
 
-
 class LightningNode(utils.LightningNode):
     def __init__(self, *args, **kwargs):
         pyln.testing.utils.TEST_NETWORK = "bitcoin"
         utils.LightningNode.__init__(self, *args, **kwargs)
         lightning_dir = args[1]
-        self.daemon = LightningD(lightning_dir, None, port=self.daemon.port)  # noqa: F405
-        options = {
-            "disable-plugin": "bcli",
+        old_opts = self.daemon.opts
+        self.daemon = LightningD(lightning_dir, None)  # noqa: F405
+        new_opts = {
+            "disable-plugin": ["bcli"],
             "network": "bitcoin",
             "plugin": os.path.join(os.path.dirname(__file__), "../sauron.py"),
             "sauron-api-endpoint": "https://blockstream.info/api",
             "sauron-tor-proxy": "localhost:9050",
         }
-        self.daemon.opts.update(options)
+        self.daemon.opts.update(old_opts)
+        self.daemon.opts.update(new_opts)
+        opts_to_disable = [
+            "bitcoin-datadir",
+            "bitcoin-rpcpassword",
+            "bitcoin-rpcuser",
+            "dev-bitcoind-poll",
+        ]
+        for opt in opts_to_disable:
+            self.daemon.opts.pop(opt)
 
     # Monkey patch
     def set_feerates(self, feerates, wait_for_effect=True):
