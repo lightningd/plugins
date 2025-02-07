@@ -1,7 +1,6 @@
 #!/usr/bin/python
 
 import os
-
 import pyln
 import pytest
 from pyln.testing import utils
@@ -10,20 +9,29 @@ from util import LightningD
 
 pyln.testing.fixtures.network_daemons["bitcoin"] = utils.BitcoinD
 
-
 class LightningNode(utils.LightningNode):
     def __init__(self, *args, **kwargs):
         pyln.testing.utils.TEST_NETWORK = "bitcoin"
         utils.LightningNode.__init__(self, *args, **kwargs)
         lightning_dir = args[1]
-        self.daemon = LightningD(lightning_dir, None, port=self.daemon.port)  # noqa: F405
-        options = {
-            "disable-plugin": "bcli",
+        old_opts = self.daemon.opts
+        self.daemon = LightningD(lightning_dir, None)  # noqa: F405
+        new_opts = {
+            "disable-plugin": ["bcli"],
             "network": "bitcoin",
             "plugin": os.path.join(os.path.dirname(__file__), "../sauron.py"),
             "sauron-api-endpoint": "https://blockstream.info/api",
         }
-        self.daemon.opts.update(options)
+        self.daemon.opts.update(old_opts)
+        self.daemon.opts.update(new_opts)
+        opts_to_disable = [
+            "bitcoin-datadir",
+            "bitcoin-rpcpassword",
+            "bitcoin-rpcuser",
+            "dev-bitcoind-poll",
+        ]
+        for opt in opts_to_disable:
+            self.daemon.opts.pop(opt)
 
     # Monkey patch
     def set_feerates(self, feerates, wait_for_effect=True):
@@ -36,7 +44,7 @@ def node_cls(monkeypatch):
     yield LightningNode
 
 
-def test_rpc_getchaininfo(node_factory):
+def test_esplora_bitcoin_getchaininfo(node_factory):
     """
     Test getchaininfo
     """
@@ -52,7 +60,7 @@ def test_rpc_getchaininfo(node_factory):
     assert not response["ibd"]
 
 
-def test_rpc_getrawblockbyheight(node_factory):
+def test_esplora_bitcoin_getrawblockbyheight(node_factory):
     """
     Test getrawblockbyheight
     """
@@ -67,7 +75,7 @@ def test_rpc_getrawblockbyheight(node_factory):
     assert response == expected_response
 
 @pytest.mark.skip(reason="testing_theory")
-def test_rpc_sendrawtransaction_invalid(node_factory):
+def test_esplora_bitcoin_sendrawtransaction_invalid(node_factory):
     """
     Test sendrawtransaction
     """
@@ -85,7 +93,7 @@ def test_rpc_sendrawtransaction_invalid(node_factory):
     assert response == expected_response
 
 
-def test_rpc_getutxout(node_factory):
+def test_esplora_bitcoin_getutxout(node_factory):
     """
     Test getutxout
     """
@@ -106,7 +114,7 @@ def test_rpc_getutxout(node_factory):
     assert response == expected_response
 
 
-def test_rpc_estimatefees(node_factory):
+def test_esplora_bitcoin_estimatefees(node_factory):
     """
     Test estimatefees
     """
