@@ -43,6 +43,7 @@ def test_currencyrate(node_factory):
     assert "coinbase" not in rates
     assert "coingecko" in rates
     assert extract_digits(rates["coingecko"]) > 0
+    assert extract_digits(rates["coindesk"]) > 0
 
     ln_moscow_time = l1.rpc.call("currencyconvert", [100, "USD"])
     LOGGER.info(ln_moscow_time)
