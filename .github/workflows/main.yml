@@ -29,27 +29,10 @@ jobs:
       with:
         submodules: recursive
 
-    - name: Get changed files
-      id: get_changed_files
-      if: ${{ github.event_name == 'pull_request' }}
-      uses: tj-actions/changed-files@v44
-      with:
-          files: '**/*'
-          files_ignore: |
-            *.md
-            *.toml
-            *.yml
-            *.lock
-            Dockerfile
-            .gitignore
-            LICENSE
-            archived/**
-
     - name: Set plugin_dirs
       id: set_plugin_dirs
       if: ${{ github.event_name == 'pull_request' }}
       run: |
-          changed_files=$(echo "${{ steps.get_changed_files.outputs.all_changed_files }}" | tr ',' '\n')
           plugin_dirs=""
           for file in $changed_files; do
             dir=$(dirname "$file" | cut -d'/' -f1)
@@ -59,11 +42,7 @@ jobs:
           done
           echo "plugin_dirs=${plugin_dirs}" >> "$GITHUB_OUTPUT"
 
-          if [[ -n "${{ steps.get_changed_files.outputs.all_changed_files }}" ]]; then
-            echo "run_ci=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "run_ci=false" >> "$GITHUB_OUTPUT"
-          fi
+          echo "run_ci=true" >> "$GITHUB_OUTPUT"
 
     - name: Set up Python ${{ matrix.python-version }}
       if: ${{ github.event_name == 'push' || steps.set_plugin_dirs.outputs.run_ci == 'true' }}
