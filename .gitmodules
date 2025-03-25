@@ -79,3 +79,6 @@
 [submodule "payany"]
 	path = payany
 	url = https://github.com/daywalker90/payany.git
+[submodule "consolidator"]
+	path = consolidator
+	url = https://github.com/daywalker90/consolidator.git
