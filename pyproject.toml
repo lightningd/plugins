@@ -7,7 +7,7 @@ license = "MIT"
 
 [tool.poetry.dependencies]
 python = "^3.8"
-virtualenv = "^20.25.0"
+virtualenv = "^20.26.6"
 ruff = "^0.5.0"
 
 [tool.poetry.dev-dependencies]
