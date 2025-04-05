@@ -76,3 +76,6 @@
 [submodule "clnaddress"]
 	path = clnaddress
 	url = https://github.com/daywalker90/clnaddress.git
+[submodule "payany"]
+	path = payany
+	url = https://github.com/daywalker90/payany.git
