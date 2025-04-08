@@ -6,14 +6,11 @@ authors = ["Christian Decker <decker@blockstream.io>"]
 license = "MIT"
 
 [tool.poetry.dependencies]
-python = "^3.7"
+python = "^3.9"
 pyln-client = "0.11.1"
 
-[tool.poetry.dev-dependencies]
-pyln-testing = "0.11.1"
-
-
 [tool.poetry.group.dev.dependencies]
+pyln-testing = "0.11.1"
 pytest-timeout = "^2.1.0"
 pytest-rerunfailures = "^10.3"
 pytest-xdist = "^3.1.0"
