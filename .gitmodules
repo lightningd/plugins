@@ -82,3 +82,6 @@
 [submodule "consolidator"]
 	path = consolidator
 	url = https://github.com/daywalker90/consolidator.git
+[submodule "cln-nip47"]
+	path = cln-nip47
+	url = https://github.com/daywalker90/cln-nip47.git
