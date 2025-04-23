@@ -61,7 +61,8 @@ class FileTailer():
 
                 # deleted = (length & 0x80000000 != 0)
                 # important = (length & 0x40000000 != 0)
-                length = length & (~0x80000000) & (~0x40000000)
+                # dying = (length & 0x08000000 != 0)
+                length = length & (~0x80000000) & (~0x40000000) & (~0x08000000)
 
                 msg = f.read(length)
 
