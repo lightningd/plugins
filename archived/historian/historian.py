@@ -87,10 +87,14 @@ class FileTailer():
                     f.seek(self.pos)
                     continue
 
+                if typ in [4102, 4103, 4104, 4105, 4106]:
+                    f.seek(self.pos)
+                    continue
+
                 if length > MAX_MSG_SIZE:
-                    logging.warn(
-                        f"Unreasonably large message type {typ} at position {self.pos} ({length} bytes), skipping"
-                    )
+                    plugin.log(
+                        f"Unreasonably large message type {typ} at position {self.pos} ({length} bytes), skipping",
+                        level="warn")
                     continue
 
                 ev_count += 1
