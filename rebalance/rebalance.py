@@ -65,7 +65,7 @@ def setup_routing_fees(route, msat):
         route_set_msat(r, msat)
         r["delay"] = delay
         channels = plugin.rpc.listchannels(r["channel"]).get("channels")
-        ch = next(c for c in channels if c["destination"] == r["id"]) if channels else None
+        ch = next(c for c in channels if c["destination"] == r["id"])
         fee = Millisatoshi(ch["base_fee_millisatoshi"])
         # BOLT #7 requires fee >= fee_base_msat + ( amount_to_forward * fee_proportional_millionths / 1000000 )
         fee += (
