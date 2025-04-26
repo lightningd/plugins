@@ -132,7 +132,10 @@ def get_node_alias(node_id):
 
 def find_worst_channel(route):
     if len(route) < 4:
-        return None
+        if len(route) == 3:
+            return route[1]
+        else:
+            return None
     start_idx = 2
     worst = route[start_idx]
     worst_val = route_get_msat(route[start_idx - 1]) - route_get_msat(worst)
