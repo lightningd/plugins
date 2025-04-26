@@ -44,11 +44,28 @@ def route_get_msat(r):
 
 def setup_routing_fees(route, msat):
     delay = plugin.cltv_final
-    for r in reversed(route):
+    if plugin.listpeerchannels:
+        loop_first_channel = -2
+        r = route[-1]
         route_set_msat(r, msat)
         r["delay"] = delay
-        channels = plugin.rpc.listchannels(r["channel"])
-        ch = next(c for c in channels.get("channels") if c["destination"] == r["id"])
+        channels = plugin.rpc.listpeerchannels(route[-2]["id"]).get("channels")
+        ch = next(c["updates"]["remote"] for c in channels if c["short_channel_id"] == r["channel"])
+        fee = Millisatoshi(ch["fee_base_msat"])
+        # BOLT #7 requires fee >= fee_base_msat + ( amount_to_forward * fee_proportional_millionths / 1000000 )
+        fee += (
+            msat * ch["fee_proportional_millionths"] + 10**6 - 1
+        ) // 10**6  # integer math trick to round up
+        msat += fee
+        delay += ch["cltv_expiry_delta"]
+    else:
+        loop_first_channel = -1
+
+    for r in route[loop_first_channel:0:-1]:
+        route_set_msat(r, msat)
+        r["delay"] = delay
+        channels = plugin.rpc.listchannels(r["channel"]).get("channels")
+        ch = next(c for c in channels if c["destination"] == r["id"]) if channels else None
         fee = Millisatoshi(ch["base_fee_millisatoshi"])
         # BOLT #7 requires fee >= fee_base_msat + ( amount_to_forward * fee_proportional_millionths / 1000000 )
         fee += (
@@ -56,6 +73,9 @@ def setup_routing_fees(route, msat):
         ) // 10**6  # integer math trick to round up
         msat += fee
         delay += ch["delay"]
+    r = route[0]
+    route_set_msat(r, msat)
+    r["delay"] = delay
 
 
 def get_channel(payload, peer_id, scid, check_state: bool = False):
@@ -109,10 +129,16 @@ def amounts_from_scid(scid):
 
 
 def peer_from_scid(short_channel_id, my_node_id, payload):
-    channels = plugin.rpc.listchannels(short_channel_id).get("channels")
-    for ch in channels:
-        if ch["source"] == my_node_id:
-            return ch["destination"]
+    if plugin.listpeerchannels:
+        channels = plugin.rpc.listpeerchannels().get("channels")
+        for ch in channels:
+            if ch["short_channel_id"] == short_channel_id:
+                return ch["peer_id"]
+    else:
+        channels = plugin.rpc.listchannels(short_channel_id).get("channels")
+        for ch in channels:
+            if ch["source"] == my_node_id:
+                return ch["destination"]
     raise RpcError(
         "rebalance",
         payload,
