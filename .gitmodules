@@ -85,3 +85,6 @@
 [submodule "cln-nip47"]
 	path = cln-nip47
 	url = https://github.com/daywalker90/cln-nip47.git
+[submodule "bumpit"]
+	path = bumpit
+	url = https://github.com/ca-ruz/bumpit.git
