@@ -297,11 +297,16 @@ class Flusher(Thread):
                          gossipd.ChannelAnnouncement,
                          gossipd.NodeAnnouncement]:
             if isinstance(msg, msg_type):
-                self.channel.basic_publish(exchange='router.gossip',
-                                           # unused by fanout exchange
-                                           routing_key='',
-                                           body=serialize(raw, self.node_id,
-                                                          self.network))
+                try:
+                    self.channel.basic_publish(exchange='router.gossip',
+                                               # unused by fanout exchange
+                                               routing_key='',
+                                               body=serialize(raw, self.node_id,
+                                                              self.network))
+
+                except pika.exceptions.StreamLostError:
+                    plugin.log("lost connection to rabbitmq, reconnecting")
+                    self.rabbitmq_connect()
                 return
 
 
