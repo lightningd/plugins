@@ -309,10 +309,13 @@ class Flusher(Thread):
 @plugin.init()
 def init(plugin, configuration, options):
     print(options)
-    engine = create_engine(options['historian-dsn'], echo=False)
-    Base.metadata.create_all(engine)
-    plugin.engine = engine
-    Flusher(engine).start()
+    try:
+        engine = create_engine(options['historian-dsn'], echo=False)
+        Base.metadata.create_all(engine)
+        plugin.engine = engine
+        Flusher(engine).start()
+    finally:
+        engine.dispose()
 
 
 @plugin.method('historian-stats')
