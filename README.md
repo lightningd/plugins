@@ -173,9 +173,9 @@ your environment.
 
 #### Minimum supported Python version
 
-The minimum supported version of Python for this repository is currently `3.8.x` (14 Oct 2019).
-Python plugins users must ensure to have a version `>= 3.8`.
-Python plugins developers must ensure their plugin to work with all Python versions `>= 3.8`.
+The minimum supported version of Python for this repository is currently `3.9.x` (12 June 2025).
+Python plugins users must ensure to have a version `>= 3.9`.
+Python plugins developers must ensure their plugin to work with all Python versions `>= 3.9`.
 
 #### Recommended commits format
 

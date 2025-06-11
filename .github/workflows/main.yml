@@ -18,7 +18,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["3.8", "3.11"]
+        python-version: ["3.9", "3.12"]
         bitcoind-version: ["28.1"]
         cln-version: ["24.11", "24.08.2", "25.02"]
         experimental: [1]
@@ -246,7 +246,7 @@ jobs:
           python-version: "3.12"
       - name: Complete
         run: |
-          python_versions='3.8 3.11'
+          python_versions='3.9 3.12'
           echo "Updating badges data for ${{ matrix.cln-version }} workflow..."
           python3 .ci/update_badges.py ${{ matrix.cln-version }} $(echo "$python_versions")
           echo "CI completed."
