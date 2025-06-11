@@ -7,7 +7,7 @@ license = "MIT"
 readme = "README.md"
 
 [tool.poetry.dependencies]
-python = "^3.8"
+python = "^3.9"
 qrcode = "7.4.2"
 flask = "2.3.3"
 pyln-client = ">=24.2"

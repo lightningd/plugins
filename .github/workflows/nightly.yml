@@ -13,7 +13,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["3.8", "3.9", "3.10", "3.11", "3.12"]
+        python-version: ["3.9", "3.10", "3.11", "3.12"]
         bitcoind-version: ["28.1"]
         experimental: [1]
         deprecated: [0]
@@ -112,7 +112,7 @@ jobs:
           python-version: "3.12"
       - name: Complete
         run: |
-          python_versions='3.8 3.9 3.10 3.11 3.12'
+          python_versions='3.9 3.10 3.11 3.12'
           echo "Updating badges data for nightly workflow..."
           python3 .ci/update_badges.py nightly $(echo "$python_versions")
           echo "CI completed."
