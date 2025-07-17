@@ -105,6 +105,9 @@ class Address(object):
         )
 
     def __len__(self):
+        # 5: DNS hostname; data = [1:hostname_len][hostname_len:hostname][2:port] (length up to 258)
+        if self.typ == 5:
+            return 1 + len(self.addr) + 2
         l = {
             1: 6,
             2: 18,
@@ -234,6 +237,10 @@ def parse_address(b):
         a.addr = b.read(10)
     elif a.typ == 4:
         a.addr = b.read(35)
+    elif a.typ == 5:
+        dns_len = int.from_bytes(b.read(1), "big")
+        assert dns_len <= 255
+        a.addr = b.read(dns_len)
     else:
         print(f"Unknown address type {a.typ}")
         return None
