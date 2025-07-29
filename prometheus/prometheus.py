@@ -1,4 +1,13 @@
-#!/usr/bin/env python3
+#!/usr/bin/env -S uv run --script
+
+# /// script
+# requires-python = ">=3.9"
+# dependencies = [
+#   "prometheus-client>=0.20.0",
+#   "pyln-client>=24.5"
+# ]
+# ///
+
 from pyln.client import Plugin
 from prometheus_client import start_http_server, CollectorRegistry
 from prometheus_client.core import InfoMetricFamily, GaugeMetricFamily
