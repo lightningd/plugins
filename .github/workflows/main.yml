@@ -168,6 +168,7 @@ jobs:
         cd lightning
         pip3 install --user -U \
           pip \
+          uv \
           poetry \
           poetry-plugin-export \
           wheel \
