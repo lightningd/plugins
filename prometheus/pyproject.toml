@@ -9,11 +9,11 @@ readme = "README.md"
 [tool.poetry.dependencies]
 python = "^3.9"
 prometheus-client = "^0.20.0"
-pyln-client = "^24.5"
+pyln-client = "^25.5"
 
 
 [tool.poetry.group.dev.dependencies]
-pyln-testing = "^24.5"
+pyln-testing = "^25.5"
 
 [build-system]
 requires = ["poetry-core"]
