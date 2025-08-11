@@ -13,7 +13,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["3.9", "3.10", "3.11", "3.12"]
+        python-version: ["3.9", "3.10", "3.11", "3.12", "3.13"]
         bitcoind-version: ["28.1"]
         experimental: [1]
         deprecated: [0]
@@ -27,6 +27,9 @@ jobs:
       uses: actions/setup-python@v5
       with:
         python-version: ${{ matrix.python-version }}
+
+    - name: Install uv
+      uses: astral-sh/setup-uv@v6
 
     - name: Download Bitcoin & install binaries
       run: |
@@ -73,14 +76,10 @@ jobs:
           pytest-custom-exit-code==0.3.0 \
           pytest-json-report
 
-        poetry install --with=dev
-        poetry update
-        poetry export --with=dev --without-hashes -f requirements.txt --output requirements.txt
-        pip install --user -U -r requirements.txt
-        pip install --user contrib/pyln-client contrib/pyln-testing flaky
+        uv sync --all-extras --all-groups
 
         ./configure --disable-valgrind
-        make -j $(nproc)
+        uv run make -j $(nproc)
         sudo -E bash -c "source $HOME/.cargo/env && rustup default stable && make install"
 
     - name: Test with pytest
@@ -91,9 +90,7 @@ jobs:
         export TEST_DEBUG=1
         export TRAVIS=1
         export CLN_PATH=${{ github.workspace }}/lightning
-        pip3 install --upgrade pip
-        pip3 install --user -U virtualenv pip > /dev/null
-        python3 .ci/test.py nightly ${{ matrix.python-version }} --update-badges
+        uv run --no-project python3 .ci/test.py nightly ${{ matrix.python-version }} --update-badges
 
   gather:
     # A dummy task that depends on the full matrix of tests, and signals completion.
