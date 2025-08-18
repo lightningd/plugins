@@ -1,12 +1,15 @@
 import logging
 import os
+import re
 import subprocess
 import sys
 import tempfile
 import time
+import shutil
 import json
 from itertools import chain
 from pathlib import Path
+from typing import Tuple
 
 from utils import Plugin, configure_git, enumerate_plugins
 
@@ -22,19 +25,53 @@ global_dependencies = [
 pip_opts = ["-qq"]
 
 
-def prepare_env(p: Plugin, directory: Path, env: dict, workflow: str) -> bool:
-    """Returns whether we can run at all. Raises error if preparing failed."""
-    subprocess.check_call(["python3", "-m", "venv", "--clear", directory])
-    os.environ["PATH"] += f":{directory}"
+def prepare_env(p: Plugin, workflow: str) -> Tuple[dict, tempfile.TemporaryDirectory]:
+    """Returns the environment and the temporary directory object."""
+    vdir = None
+    env = os.environ.copy()
+    directory = p.path / ".venv"
 
-    if p.framework == "pip":
-        return prepare_env_pip(p, directory, workflow)
-    elif p.framework == "poetry":
-        return prepare_env_poetry(p, directory, workflow)
-    elif p.framework == "generic":
-        return prepare_generic(p, directory, env, workflow)
-    else:
-        raise ValueError(f"Unknown framework {p.framework}")
+    if p.framework != "uv":
+        # Create a temporary directory for virtualenv
+        vdir = tempfile.TemporaryDirectory()
+        directory = Path(vdir.name)
+        bin_path = directory / "bin"
+
+        env.update(
+            {
+                # Need to customize PATH so lightningd can find the correct python3
+                "PATH": f"{bin_path}:{os.environ['PATH']}",
+                # Some plugins require a valid locale to be set
+                "LC_ALL": "C.UTF-8",
+                "LANG": "C.UTF-8",
+            }
+        )
+
+        # Create the virtualenv
+        subprocess.check_call(["python3", "-m", "venv", "--clear", str(directory)])
+
+        if p.framework == "pip":
+            if not prepare_env_pip(p, directory, workflow):
+                raise ValueError(f"Failed to prepare pip environment for {p.name}")
+        elif p.framework == "poetry":
+            if not prepare_env_poetry(p, directory, workflow):
+                raise ValueError(f"Failed to prepare poetry environment for {p.name}")
+        elif p.framework == "generic":
+            if not prepare_generic(p, directory, env, workflow):
+                raise ValueError(f"Failed to prepare generic environment for {p.name}")
+        else:
+            raise ValueError(f"Unknown framework {p.framework}")
+
+    setup_path = p.path / "tests" / "setup.sh"
+    if os.path.exists(setup_path):
+        print(f"Running setup script from {setup_path}")
+        subprocess.check_call(
+            ["bash", setup_path, f"TEST_DIR={directory}"],
+            env=env,
+            stderr=subprocess.STDOUT,
+        )
+
+    return env, vdir
 
 
 def prepare_env_poetry(p: Plugin, directory: Path, workflow: str) -> bool:
@@ -67,19 +104,35 @@ def prepare_env_poetry(p: Plugin, directory: Path, workflow: str) -> bool:
     logging.info(
         f"Exporting poetry {poetry} dependencies from {p.details['pyproject']}"
     )
-    subprocess.check_call(
-        [
-            poetry,
-            "export",
-            "--with=dev",
-            "--without-hashes",
-            "-f",
-            "requirements.txt",
-            "--output",
-            "requirements.txt",
-        ],
-        cwd=workdir,
-    )
+
+    try:
+        subprocess.check_call(
+            [
+                poetry,
+                "export",
+                "--with=dev",
+                "--without-hashes",
+                "-f",
+                "requirements.txt",
+                "--output",
+                "requirements.txt",
+            ],
+            cwd=workdir,
+        )
+    except Exception as e:
+        logging.info(f"Poetry export failed: {e}, trying without dev deps")
+        subprocess.check_call(
+            [
+                poetry,
+                "export",
+                "--without-hashes",
+                "-f",
+                "requirements.txt",
+                "--output",
+                "requirements.txt",
+            ],
+            cwd=workdir,
+        )
 
     subprocess.check_call(
         [
@@ -95,7 +148,7 @@ def prepare_env_poetry(p: Plugin, directory: Path, workflow: str) -> bool:
     if workflow == "nightly":
         install_dev_pyln_testing(pip3)
     else:
-        install_pyln_testing(pip3)
+        install_pyln_testing(pip3, workflow)
 
     subprocess.check_call([pip3, "freeze"])
     return True
@@ -122,7 +175,7 @@ def prepare_env_pip(p: Plugin, directory: Path, workflow: str) -> bool:
     if workflow == "nightly":
         install_dev_pyln_testing(pip_path)
     else:
-        install_pyln_testing(pip_path)
+        install_pyln_testing(pip_path, workflow)
 
     subprocess.check_call([pip_path, "freeze"])
     return True
@@ -143,23 +196,14 @@ def prepare_generic(p: Plugin, directory: Path, env: dict, workflow: str) -> boo
     if workflow == "nightly":
         install_dev_pyln_testing(pip_path)
     else:
-        install_pyln_testing(pip_path)
-
-    if p.details["setup"].exists():
-        print(f"Running setup script from {p.details['setup']}")
-        subprocess.check_call(
-            ["bash", p.details["setup"], f"TEST_DIR={directory}"],
-            env=env,
-            stderr=subprocess.STDOUT,
-        )
+        install_pyln_testing(pip_path, workflow)
 
     subprocess.check_call([pip_path, "freeze"])
     return True
 
 
-def install_pyln_testing(pip_path):
+def install_pyln_testing(pip_path, workflow: str):
     # Many plugins only implicitly depend on pyln-testing, so let's help them
-    cln_path = os.environ["CLN_PATH"]
 
     # Install pytest (eventually we'd want plugin authors to include
     # it in their requirements-dev.txt, but for now let's help them a
@@ -174,13 +218,15 @@ def install_pyln_testing(pip_path):
         stderr=subprocess.STDOUT,
     )
 
+    pyln_version = re.sub(r'\.0(\d+)', r'.\1', workflow)
+
     subprocess.check_call(
         [
             pip_path,
             "install",
             *pip_opts,
-            cln_path + "/contrib/pyln-client",
-            cln_path + "/contrib/pyln-testing",
+            f"pyln-client=={pyln_version}",
+            f"pyln-testing=={pyln_version}",
             "MarkupSafe>=2.0",
             "itsdangerous>=2.0",
         ],
@@ -223,43 +269,28 @@ def run_one(p: Plugin, workflow: str) -> bool:
     )
     print("::group::{p.name}".format(p=p))
 
-    # Create a virtual env
-    vdir = tempfile.TemporaryDirectory()
-    vpath = Path(vdir.name)
-
-    bin_path = vpath / "bin"
-    pytest_path = vpath / "bin" / "pytest"
-
-    env = os.environ.copy()
-    env.update(
-        {
-            # Need to customize PATH so lightningd can find the correct python3
-            "PATH": "{}:{}".format(bin_path, os.environ["PATH"]),
-            # Some plugins require a valid locale to be set
-            "LC_ALL": "C.UTF-8",
-            "LANG": "C.UTF-8",
-        }
-    )
-
     try:
-        if not prepare_env(p, vpath, env, workflow):
-            # Skipping is counted as a success
-            return True
+        env, tmp_dir = prepare_env(p, workflow)
     except Exception as e:
         print(f"Error creating test environment: {e}")
         print("::endgroup::")
         return False
 
-    logging.info(f"Virtualenv at {vpath}")
-
     cmd = [
-        str(pytest_path),
         "-vvv",
         "--timeout=600",
         "--timeout-method=thread",
         "--color=yes",
         "-n=5",
     ]
+
+    if p.framework == "uv":
+        cmd = ["uv", "run", "pytest"] + cmd
+    else:
+        pytest_path = shutil.which("pytest", path=env["PATH"])
+        if not pytest_path:
+            raise RuntimeError(f"pytest not found in PATH:{env['PATH']}")
+        cmd = [pytest_path] + cmd
 
     logging.info(f"Running `{' '.join(cmd)}` in directory {p.path.resolve()}")
     try:
