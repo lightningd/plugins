@@ -67,9 +67,6 @@
 [submodule "hold"]
 	path = hold
 	url = https://github.com/BoltzExchange/hold
-[submodule "clnrest-rs"]
-	path = clnrest-rs
-	url = https://github.com/daywalker90/clnrest-rs.git
 [submodule "smaug"]
 	path = smaug
 	url = https://github.com/chrisguida/smaug
