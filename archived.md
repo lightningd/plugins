@@ -12,6 +12,7 @@ If you like a plugin from that list, feel free to update and fix it, so we can u
 | [circular][circular]                 | A smart rebalancing plugin for Core Lightning routing nodes                                 |
 | [clnrest-rs][clnrest-rs]             | Drop-in rust implementation of CLN's clnrest.py, shipped with CLN since v25.02              |
 | [commando][commando]                 | This plugin allows to send commands between nodes                                           |
+| [datastore][datastore]               | The Datastore Plugin                                                                        |
 | [drain][drain]                       | Draining, filling and balancing channels with automatic chunks.                             |
 | [fixroute][fixroute]                 | Constructs a route object (using sendpay) which goes over a sequence of node ids            |
 | [helpme][helpme]                     | This plugin is designed to walk you through setting up a fresh Core-Lightning node          |
@@ -31,6 +32,7 @@ If you like a plugin from that list, feel free to update and fix it, so we can u
 [circular]: https://github.com/giovannizotta/circular
 [clnrest-rs]: https://github.com/daywalker90/clnrest-rs
 [commando]: https://github.com/lightningd/plugins/tree/master/archived/commando
+[datastore]: https://github.com/lightningd/plugins/tree/master/archived/datastore
 [drain]: https://github.com/lightningd/plugins/tree/master/archived/drain
 [fixroute]: https://github.com/renepickhardt/plugins/tree/fixroute/fixroute
 [helpme]: https://github.com/lightningd/plugins/tree/master/archived/helpme
