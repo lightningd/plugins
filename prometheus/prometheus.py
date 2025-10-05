@@ -81,13 +81,11 @@ class FundsCollector(BaseLnCollector):
         )
 
 
-class PeerCollector(BaseLnCollector):
+class PeerChannelsCollector(BaseLnCollector):
     def collect(self):
-        peers = self.rpc.listpeers()['peers']
-
         connected = GaugeMetricFamily(
-            'lightning_peer_connected',
-            'Is the peer currently connected?',
+            'lightning_peer_channel_connected',
+            'Is the channel peer currently connected?',
             labels=['id'],
         )
         count = GaugeMetricFamily(
@@ -234,7 +232,7 @@ def init(options, configuration, plugin):
     start_http_server(addr=ip, port=port, registry=registry)
     registry.register(NodeCollector(plugin.rpc, registry))
     registry.register(FundsCollector(plugin.rpc, registry))
-    registry.register(PeerCollector(plugin.rpc, registry))
+    registry.register(PeerChannelsCollector(plugin.rpc, registry))
     registry.register(ChannelsCollector(plugin.rpc, registry))
 
 
