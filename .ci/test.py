@@ -31,7 +31,20 @@ def prepare_env(p: Plugin, workflow: str) -> Tuple[dict, tempfile.TemporaryDirec
     env = os.environ.copy()
     directory = p.path / ".venv"
 
-    if p.framework != "uv":
+    if p.framework == "uv":
+        if workflow == "nightly":
+            cln_path = os.environ["CLN_PATH"]
+            try:
+                subprocess.check_call(["uv", "add", "--editable", cln_path + "/contrib/pyln-testing", cln_path + "/contrib/pyln-client", cln_path + "/contrib/pyln-proto"], cwd=p.path.resolve())
+            except:  # noqa: E722
+                subprocess.check_call(["uv", "add", "--dev", "--editable", cln_path + "/contrib/pyln-testing", cln_path + "/contrib/pyln-client", cln_path + "/contrib/pyln-proto"], cwd=p.path.resolve())
+        else:
+            pyln_version = re.sub(r'\.0(\d+)', r'.\1', workflow)
+            try:
+                subprocess.check_call(["uv", "add", f"pyln-testing=={pyln_version}", f"pyln-client=={pyln_version}", f"pyln-proto=={pyln_version}"], cwd=p.path.resolve())
+            except:  # noqa: E722
+                subprocess.check_call(["uv", "add", "--dev", f"pyln-testing=={pyln_version}", f"pyln-client=={pyln_version}", f"pyln-proto=={pyln_version}"], cwd=p.path.resolve())
+    else:
         # Create a temporary directory for virtualenv
         vdir = tempfile.TemporaryDirectory()
         directory = Path(vdir.name)
