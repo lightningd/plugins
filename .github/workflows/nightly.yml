@@ -64,7 +64,13 @@ jobs:
           protobuf-compiler \
           python3 \
           python3-pip \
-          zlib1g-dev
+          zlib1g-dev \
+          jq \
+          autoconf \
+          automake \
+          libtool \
+          libffi-dev \
+          lowdown
 
         cd lightning
         pip3 install --user -U \
