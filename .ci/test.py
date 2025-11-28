@@ -390,8 +390,11 @@ def write_gather_data_file(
 def gather_old_failures(old_failures: list, workflow: str):
     print("Gather old failures...")
     configure_git()
-    subprocess.run(["git", "fetch"])
-    subprocess.run(["git", "checkout", "badges"])
+    # restore the pyproject.toml and uv.lock changes from adding the
+    # CLN specific pyln versions so we can switch branches
+    subprocess.run(["git", "reset", "--hard"], check=True)
+    subprocess.run(["git", "fetch", "origin", "badges"], check=True)
+    subprocess.run(["git", "checkout", "badges"], check=True)
 
     directory = ".badges"
 
