@@ -1,7 +1,7 @@
 #!/usr/bin/env -S uv run --script
 
 # /// script
-# requires-python = ">=3.9"
+# requires-python = ">=3.9.2"
 # dependencies = [
 #   "prometheus-client>=0.20.0",
 #   "pyln-client>=24.5"

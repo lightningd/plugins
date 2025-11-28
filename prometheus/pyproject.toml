@@ -1,13 +1,25 @@
-[tool.poetry]
+[project]
 name = "prometheus"
 version = "0.1.0"
 description = "A plugin that reports metrics to be collected by prometheus"
-authors = ["Christian Decker <decker@blockstream.com>"]
-license = "MIT"
 readme = "README.md"
+authors = [{ name = "Christian Decker", email = "<decker@blockstream.io>" }]
+license = "MIT"
+requires-python = ">=3.9.2"
+dependencies = ["prometheus-client>=0.20.0", "pyln-client>=24.5"]
+
+[dependency-groups]
+dev = [
+    "pyln-testing>=24.5",
+    "pytest-rerunfailures>=10.3",
+    "pytest-timeout>=2.1.0",
+    "pytest-xdist>=3.1.0",
+]
+
+[tool.poetry]
 
 [tool.poetry.dependencies]
-python = "^3.9"
+python = "^3.9.2"
 prometheus-client = "^0.20.0"
 pyln-client = "^25.5"
 
