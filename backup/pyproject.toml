@@ -1,19 +1,41 @@
-[tool.poetry]
+[project]
 name = "cln-backup"
 version = "0.1.0"
 description = "Keep your Core-Lightning node save by backing it up, in real-time (allows recovering without channel closures)."
-authors = ["Christian Decker <decker@blockstream.com>"]
+authors = [{ name = "Christian Decker", email = "<decker@blockstream.io>" }]
+requires-python = ">=3.9.2"
+dependencies = [
+    "pyln-client>=25.2.2",
+    "click>=8.0.4",
+    "psutil>=5.9.4",
+    "flask>=2.2",
+    "werkzeug<4",
+]
+
+[dependency-groups]
+dev = [
+    "pyln-testing>=25.2.2",
+    "pytest-timeout>=2.2.0",
+    "pytest-xdist>=3.1.0",
+    "flaky>=3.7.0",
+]
+
+[tool.uv]
+package = false
+
+[tool.poetry]
+package-mode = false
 
 [tool.poetry.dependencies]
-python = "^3.9"
-pyln-client = "^25.5"
+python = "^3.9.2"
+pyln-client = "^25.2.2"
 click = "^8.0.4"
 psutil = "^5.9.4"
 flask = "^2.2"
 werkzeug = "<4"
 
 [tool.poetry.group.dev.dependencies]
-pyln-testing = "^25.5"
+pyln-testing = "^25.2.2"
 flaky = "^3.7.0"
 pytest-timeout = "^2.2.0"
 pytest-xdist = "^3.1.0"
