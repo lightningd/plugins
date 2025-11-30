@@ -5,6 +5,18 @@ and following forwarding events. There is a threshold for balance deltas that mu
 also set the max htlc for channels according to available liquidity. This may reduce transaction failures but it will also reveal
 information about what the current channel balance is.
 
+## Installation
+
+You need [uv](https://docs.astral.sh/uv/getting-started/installation/) to run this
+plugin like a binary. After `uv` is installed you can simply run
+
+```
+lightning-cli plugin start /path/to/feeadjuster.py
+```
+
+For general plugin installation instructions see the repos main
+[README.md](https://github.com/lightningd/plugins/blob/master/README.md#Installation)
+
 ## Options
 
 - `feeadjuster-deactivate-fuzz` boolean (default `False`) deactivates update threshold randomization and hysterisis
