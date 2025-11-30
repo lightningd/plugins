@@ -1,4 +1,18 @@
-#!/usr/bin/env python3
+#!/usr/bin/env -S uv run --script
+
+# /// script
+# requires-python = ">=3.9.2"
+# dependencies = [
+#   "qrcode>=7.4.2",
+#   "flask>=2.3.3",
+#   "pyln-client>=24.11",
+#   "flask-bootstrap>=3.3.7.1",
+#   "flask-wtf>=1.2.1",
+#   "werkzeug>=3.0.6",
+#   "wtforms>=3.1.2",
+# ]
+# ///
+
 """A small donation service so that users can request ln invoices
 
 This plugin spins up a small flask server that provides a form to
@@ -113,7 +127,7 @@ def donation_form():
 
 
 def worker(port):
-    app = Flask(__name__)
+    app = Flask("donations")
     # FIXME: use hexlified hsm secret or something else
     app.config["SECRET_KEY"] = "you-will-never-guess-this"
     app.add_url_rule("/donation", "donation", donation_form, methods=["GET", "POST"])

@@ -1,16 +1,22 @@
+## Installation
+
+You need [uv](https://docs.astral.sh/uv/getting-started/installation/) to run this
+plugin like a binary. After `uv` is installed you can simply run
+
+```
+lightning-cli plugin start /path/to/donations.py
+```
+
+For general plugin installation instructions see the repos main
+[README.md](https://github.com/lightningd/plugins/blob/master/README.md#Installation)
+
 # Invoice Service (for Donations) plugin
 
 This plugin enables c-lightning nodes to start one or several small webserver
 via the command line on specified port. The webserver is based on flask and
 exposes the invoice API call.
 
-Therefor people can query for an invoice which they can use to pay. The plugin
-can be started with `lightningd` by adding the following `--plugin` option
-(adjusting the path to wherever the plugins are actually stored):
-
-```
-lightningd --plugin=/path/to/plugins/donations.py
-```
+Therefor people can query for an invoice which they can use to pay. 
 
 By default the plugin will automatically start a webserver serving the donations page on port `8088`.
 

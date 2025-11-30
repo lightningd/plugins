@@ -1,24 +1,28 @@
-[tool.poetry]
+[project]
 name = "cln-plugins-donations"
 version = "0.2.0"
-description = ""
-authors = ["Christian Decker <decker.christian@gmail.com>"]
+description = "Start one or more webservers for a donation page where visitors can let CLN generate invoices"
+authors = [{ name = "Christian Decker", email = "<decker@blockstream.io>" }]
 license = "MIT"
 readme = "README.md"
+requires-python = ">=3.9.2"
 
-[tool.poetry.dependencies]
-python = "^3.9"
-qrcode = "7.4.2"
-flask = "2.3.3"
-pyln-client = ">=24.2"
-flask-bootstrap = "^3.3.7.1"
-flask-wtf = "1.2.1"
-werkzeug = "3.0.6"
-wtforms = "3.1.2"
+dependencies = [
+    "qrcode>=7.4.2",
+    "flask>=2.3.3",
+    "pyln-client>=24.11",
+    "flask-bootstrap>=3.3.7.1",
+    "flask-wtf>=1.2.1",
+    "werkzeug>=3.0.6",
+    "wtforms>=3.1.2",
+]
 
-[tool.poetry.dev-dependencies]
-pyln-testing = ">=24.2"
-
-[build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"
+[dependency-groups]
+dev = [
+    "pytest>=7.4,<9",
+    "pytest-xdist>=3.7,<4",
+    "pytest-timeout>=2.4,<3",
+    "pyln-testing>=24.11",
+    "pyln-client>=24.11",
+    "pyln-proto>=24.11",
+]
