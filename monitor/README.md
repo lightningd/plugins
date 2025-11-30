@@ -4,6 +4,13 @@ Monitors the health of your peers and helps you to decide if you might want to c
 
 ## Installation
 
+You need [uv](https://docs.astral.sh/uv/getting-started/installation/) to run this
+plugin like a binary. After `uv` is installed you can simply run
+
+```
+lightning-cli plugin start /path/to/monitor.py
+```
+
 For general plugin installation instructions see the repos main
 [README.md](https://github.com/lightningd/plugins/blob/master/README.md#Installation)
 
