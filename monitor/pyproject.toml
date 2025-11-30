@@ -1,0 +1,18 @@
+[project]
+name = "monitor"
+version = "0.1.0"
+description = "Monitors the health of your peers and helps you to decide if you might want to close a channel"
+readme = "README.md"
+requires-python = ">=3.9.2"
+
+dependencies = ["pyln-client>=24.11", "packaging>=24.1"]
+
+[dependency-groups]
+dev = [
+    "pytest>=7.4,<9",
+    "pytest-xdist>=3.7,<4",
+    "pytest-timeout>=2.4,<3",
+    "pyln-testing>=24.11.1",
+    "pyln-client>=24.11.1",
+    "pyln-proto>=24.11.1",
+]
