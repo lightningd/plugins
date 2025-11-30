@@ -5,6 +5,13 @@ different backends and taking the median. It caches results for an hour.
 
 ## Installation
 
+You need [uv](https://docs.astral.sh/uv/getting-started/installation/) to run this
+plugin like a binary. After `uv` is installed you can simply run
+
+```
+lightning-cli plugin start /path/to/currencyrate.py
+```
+
 For general plugin installation instructions see the repos main
 [README.md](https://github.com/lightningd/plugins/blob/master/README.md#Installation)
 

@@ -1,4 +1,15 @@
-#!/usr/bin/env python3
+#!/usr/bin/env -S uv run --script
+
+# /// script
+# requires-python = ">=3.9.2"
+# dependencies = [
+#   "cachetools>=5.3.3",
+#   "pyln-client>=24.11",
+#   "requests[socks]>=2.32.2",
+#   "urllib3>=2.2.2",
+# ]
+# ///
+
 try:
     import statistics
     from collections import namedtuple
@@ -15,11 +26,13 @@ except ModuleNotFoundError as err:
 
     getmanifest = json.loads(sys.stdin.readline())
     print(
-        json.dumps({
-            "jsonrpc": "2.0",
-            "id": getmanifest["id"],
-            "result": {"disable": str(err)},
-        })
+        json.dumps(
+            {
+                "jsonrpc": "2.0",
+                "id": getmanifest["id"],
+                "result": {"disable": str(err)},
+            }
+        )
     )
     sys.exit(1)
 
