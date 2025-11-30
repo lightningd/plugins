@@ -1,4 +1,13 @@
-#!/usr/bin/env python3
+#!/usr/bin/env -S uv run --script
+
+# /// script
+# requires-python = ">=3.9.2"
+# dependencies = [
+#   "pyln-client>=24.11",
+#   "packaging>=24.1"
+# ]
+# ///
+
 """
 This is a quick hack and adapted plugin from the summary.py plugin (orinigally written by Rusty Russell
 This one is adapted by Rene Pickhardt and aims to help you identify inactive channels quickly
