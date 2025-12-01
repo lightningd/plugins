@@ -10,11 +10,15 @@ Related info about backup solutions: https://github.com/ElementsProject/lightnin
 
 ## Installation
 
-There are some Python dependencies. You can install them using `poetry`:
+You need [uv](https://docs.astral.sh/uv/getting-started/installation/) to run this
+plugin like a binary. After `uv` is installed you can simply run
 
-```bash
-poetry install
 ```
+lightning-cli plugin start /path/to/backup.py
+```
+
+For general plugin installation instructions see the repos main
+[README.md](https://github.com/lightningd/plugins/blob/master/README.md#Installation)
 
 
 ## Setup
