@@ -1,4 +1,13 @@
-#!/usr/bin/env python3
+#!/usr/bin/env -S uv run --script
+
+# /// script
+# requires-python = ">=3.9.2"
+# dependencies = [
+#   "pyln-client>=24.11",
+#   "requests[socks]>=2.23.0",
+# ]
+# ///
+
 import requests
 import sys
 import time
@@ -210,7 +219,7 @@ def estimatefees(plugin, **kwargs):
         {"blocks": 2, "feerate": very_urgent},
         {"blocks": 6, "feerate": urgent},
         {"blocks": 12, "feerate": normal},
-        {"blocks": 144, "feerate": slow}
+        {"blocks": 144, "feerate": slow},
     ]
 
     return {
@@ -223,7 +232,7 @@ def estimatefees(plugin, **kwargs):
         "min_acceptable": slow // 2,
         "max_acceptable": very_urgent * 10,
         "feerate_floor": feerate_floor,
-        "feerates": feerates
+        "feerates": feerates,
     }
 
 

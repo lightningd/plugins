@@ -1,5 +1,5 @@
 # Art source: https://textart.io/art/kF4RP1GLcmBNgF2zVV3_JQeF/lord-of-the-rings-eye-of-the-sauron
-sauron_eye = """
+sauron_eye = r"""
 
                      Three::rings
                 for:::the::Elven-Kings

@@ -14,6 +14,7 @@ This is still a WIP, so is the API C-lightning side. So not to be used for real.
 ### Run
 
 You need to:
+- have [uv](https://docs.astral.sh/uv/getting-started/installation/) installed
 - disable the default Bitcoin backend (`bcli`)
 - register sauron
 - provide the API endpoint you want to use
