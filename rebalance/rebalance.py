@@ -1,4 +1,12 @@
-#!/usr/bin/env python3
+#!/usr/bin/env -S uv run --script
+
+# /// script
+# requires-python = ">=3.9.2"
+# dependencies = [
+#   "pyln-client>=24.11",
+# ]
+# ///
+
 from clnutils import cln_parse_rpcversion
 from datetime import timedelta
 from functools import reduce
@@ -50,7 +58,12 @@ def setup_routing_fees(route, msat):
         route_set_msat(r, msat)
         r["delay"] = delay
         channels = plugin.rpc.listpeerchannels(route[-2]["id"]).get("channels")
-        ch = next(c["updates"]["remote"] for c in channels if c["short_channel_id"] == r["channel"] or c["alias"].get("remote") == r["channel"])
+        ch = next(
+            c["updates"]["remote"]
+            for c in channels
+            if c["short_channel_id"] == r["channel"]
+            or c["alias"].get("remote") == r["channel"]
+        )
         fee = Millisatoshi(ch["fee_base_msat"])
         # BOLT #7 requires fee >= fee_base_msat + ( amount_to_forward * fee_proportional_millionths / 1000000 )
         fee += (
@@ -355,10 +368,22 @@ def rebalance(
     my_node_id = plugin.getinfo.get("id")
     outgoing_node_id = peer_from_scid(outgoing_scid, my_node_id, payload)
     incoming_node_id = peer_from_scid(incoming_scid, my_node_id, payload)
-    out_aliases = get_channel(payload, outgoing_node_id, outgoing_scid, True).get("alias")
-    out_alias = out_aliases.get("local") if (out_aliases and out_aliases.get("local")) else outgoing_scid
-    in_aliases = get_channel(payload, incoming_node_id, incoming_scid, True).get("alias")
-    in_alias = in_aliases.get("remote") if (in_aliases and in_aliases.get("remote")) else incoming_scid
+    out_aliases = get_channel(payload, outgoing_node_id, outgoing_scid, True).get(
+        "alias"
+    )
+    out_alias = (
+        out_aliases.get("local")
+        if (out_aliases and out_aliases.get("local"))
+        else outgoing_scid
+    )
+    in_aliases = get_channel(payload, incoming_node_id, incoming_scid, True).get(
+        "alias"
+    )
+    in_alias = (
+        in_aliases.get("remote")
+        if (in_aliases and in_aliases.get("remote"))
+        else incoming_scid
+    )
     out_ours, out_total = amounts_from_scid(outgoing_scid)
     in_ours, in_total = amounts_from_scid(incoming_scid)
 
