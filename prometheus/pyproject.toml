@@ -6,7 +6,6 @@ readme = "README.md"
 authors = [{ name = "Christian Decker", email = "<decker@blockstream.io>" }]
 license = "MIT"
 requires-python = ">=3.9.2"
-dependencies = ["prometheus-client>=0.20.0", "pyln-client>=24.5"]
 
 [dependency-groups]
 dev = [
@@ -15,18 +14,3 @@ dev = [
     "pytest-timeout>=2.1.0",
     "pytest-xdist>=3.1.0",
 ]
-
-[tool.poetry]
-
-[tool.poetry.dependencies]
-python = "^3.9.2"
-prometheus-client = "^0.20.0"
-pyln-client = "^25.5"
-
-
-[tool.poetry.group.dev.dependencies]
-pyln-testing = "^25.5"
-
-[build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"
