@@ -1,4 +1,16 @@
-#!/usr/bin/env python3
+#!/usr/bin/env -S uv run --script
+
+# /// script
+# requires-python = ">=3.9.2"
+# dependencies = [
+#   "pyln-client>=25.2.2",
+#   "click>=8.0.4",
+#   "psutil>=5.9.4",
+#   "flask>=2.2",
+#   "werkzeug<4",
+# ]
+# ///
+
 from pyln.client import Plugin
 import json
 import logging
