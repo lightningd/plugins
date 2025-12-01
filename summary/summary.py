@@ -1,4 +1,14 @@
-#!/usr/bin/env python3
+#!/usr/bin/env -S uv run --script
+
+# /// script
+# requires-python = ">=3.9.2"
+# dependencies = [
+#   "pyln-client>=24.11",
+#   "requests[socks]>=2.10.0",
+#   "packaging>=14.1",
+# ]
+# ///
+
 from pyln.client import Plugin, Millisatoshi
 from packaging import version
 from collections import namedtuple
