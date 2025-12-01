@@ -14,19 +14,15 @@ verbatim in order to maintain their integrity and ensure signatures
 remain valid.
 
 ** Install the plugin
-There are two ways to install the plugin:
+You need [uv](https://docs.astral.sh/uv/getting-started/installation/) to run this
+plugin like a binary. After `uv` is installed you can simply run
 
- - Specify the path to ~historian.py~ with the ~--plugin~ or
-   ~--important-plugin~ options.
- - Add a symbolic link to ~historian.py~ in one of the directories
-   specified as ~--plugin-dir~ or in
-   ~$HOME/.lightning/bitcoin/plugins~.
+```
+lightning-cli plugin start /path/to/historian.py
+```
 
-Notice that copying the entire directory into the plugin-dir will
-cause errors at startup. This is caused by ~lightningd~ attempting to
-start all executables in the plugin-dir, even the ~historian-cli~
-which is not a plugin. The errors are not dangerous, just annoying and
-may delay startup slightly.
+For general plugin installation instructions see the repos main
+[README.md](https://github.com/lightningd/plugins/blob/master/README.md#Installation)
 
 If the plugin starts correctly you should be able to call
 ~lightning-cli historian-stats~ and see that it is starting to store
