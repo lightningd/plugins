@@ -1,4 +1,12 @@
-#!/usr/bin/env python3
+#!/usr/bin/env -S uv run --script
+
+# /// script
+# requires-python = ">=3.9.2"
+# dependencies = [
+#   "pyln-client>=24.11"
+# ]
+# ///
+
 from pyln.client import Plugin, RpcError
 from threading import Timer
 import os
