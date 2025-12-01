@@ -1,0 +1,18 @@
+[project]
+name = "zmq"
+version = "0.1.0"
+description = "Forwards notifications to ZeroMQ endpoints depending on configuration"
+readme = "README.md"
+requires-python = ">=3.9.2"
+
+dependencies = ["Twisted>=20.3.0", "txzmq==0.8.2", "pyln-client>=24.11"]
+
+[dependency-groups]
+dev = [
+    "pytest>=7.4,<9",
+    "pytest-xdist>=3.7,<4",
+    "pytest-timeout>=2.4,<3",
+    "pyln-testing>=24.11.1",
+    "pyln-client>=24.11.1",
+    "pyln-proto>=24.11.1",
+]

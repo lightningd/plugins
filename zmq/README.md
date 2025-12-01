@@ -5,15 +5,14 @@ This module forwards [notifications](https://github.com/ElementsProject/lightnin
 The usage and setup mimics [similar functionality in `bitcoind`](https://github.com/bitcoin/bitcoin/blob/master/doc/zmq.md) for opting-in to notifications and selecting [high water mark (ZMQ\_HWM)](http://api.zeromq.org/2-1:zmq-setsockopt) preferences.
 
 
-## Dependencies
-
-[Twisted](https://twistedmatrix.com) and [txZMQ](https://pypi.org/project/txZMQ/) are used by this plugin.
-
-```
-$ sudo pip3 install -r requirements
-```
-
 ## Installation
+
+You need [uv](https://docs.astral.sh/uv/getting-started/installation/) to run this
+plugin like a binary. After `uv` is installed you can simply run
+
+```
+lightning-cli plugin start /path/to/cl-zmq.py
+```
 
 For general plugin installation instructions see the repos main
 [README.md](https://github.com/lightningd/plugins/blob/master/README.md#Installation)
