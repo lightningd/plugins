@@ -1,4 +1,16 @@
-#!/usr/bin/env python3
+#!/usr/bin/env -S uv run --script
+
+# /// script
+# requires-python = ">=3.9.2"
+# dependencies = [
+#   "inotify>=0.2.12",
+#   "pika>=1.3.2",
+#   "pyln-client>=24.2",
+#   "python-dotenv>=1.1.0",
+#   "sqlalchemy>=2.0.40",
+# ]
+# ///
+
 from inotify import constants
 from inotify.adapters import Inotify
 import os

@@ -1,4 +1,16 @@
-#!/usr/bin/env python3
+#!/usr/bin/env -S uv run --script
+
+# /// script
+# requires-python = ">=3.9.2"
+# dependencies = [
+#   "inotify>=0.2.12",
+#   "pika>=1.3.2",
+#   "pyln-client>=24.2",
+#   "python-dotenv>=1.1.0",
+#   "sqlalchemy>=2.0.40",
+# ]
+# ///
+
 import struct
 from tqdm import tqdm
 import shlex
@@ -121,7 +133,7 @@ def split(snapshot, max_bytes, exec):
             if typ == 257:
                 # NodeAnnouncements are always self-contained, so yield them
                 # individually
-                yield m,
+                yield (m,)
             elif typ == 256:
                 # ChannelAnnouncements indicate the start of a new bundle
                 if bundle is not None:
@@ -245,7 +257,6 @@ def split_gossip(reader: io.BytesIO):
 @click.argument("snapshot", type=click.File("rb"))
 @click.argument("destination", type=LightningAddressParam(), required=False)
 def load(snapshot, destination=None):
-
     if destination is None:
         logging.debug("No destination specified, attempting auto-discovery")
         info = json.loads(subprocess.check_output(["lightning-cli", "getinfo"]))
