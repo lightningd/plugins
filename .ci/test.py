@@ -268,8 +268,9 @@ def install_dev_pyln_testing(pip_path):
     )
 
 
-def run_one(p: Plugin, workflow: str) -> bool:
+def run_one(p: Plugin, workflow: str, timings: dict) -> bool:
     print("Running tests on plugin {p.name}".format(p=p))
+    timings[p.name] = {}
 
     if not p.testfiles:
         print("No test files found, skipping plugin {p.name}".format(p=p))
@@ -282,11 +283,14 @@ def run_one(p: Plugin, workflow: str) -> bool:
     )
     print("::group::{p.name}".format(p=p))
 
+    start_env = time.perf_counter()
     try:
         env, tmp_dir = prepare_env(p, workflow)
+        timings[p.name]["env"] = time.perf_counter() - start_env
     except Exception as e:
         print(f"Error creating test environment: {e}")
         print("::endgroup::")
+        timings[p.name]["env"] = time.perf_counter() - start_env
         return False
 
     cmd = [
@@ -306,6 +310,7 @@ def run_one(p: Plugin, workflow: str) -> bool:
         cmd = [pytest_path] + cmd
 
     logging.info(f"Running `{' '.join(cmd)}` in directory {p.path.resolve()}")
+    start_tests = time.perf_counter()
     try:
         subprocess.check_call(
             cmd,
@@ -313,9 +318,11 @@ def run_one(p: Plugin, workflow: str) -> bool:
             env=env,
             cwd=p.path.resolve(),
         )
+        timings[p.name]["tests"] = time.perf_counter() - start_tests
         return True
     except Exception as e:
         logging.warning(f"Error while executing: {e}")
+        timings[p.name]["tests"] = time.perf_counter() - start_tests
         return False
     finally:
         print("::endgroup::")
@@ -434,8 +441,19 @@ def run_all(
     else:
         print("Testing all plugins in {root}".format(root=root))
 
-    results = [(p, run_one(p, workflow)) for p in plugins]
+    timings = {}
+    results = [(p, run_one(p, workflow, timings)) for p in plugins]
     success = all([t[1] for t in results])
+
+    print("Timings:")
+    for plugin, phases in timings.items():
+        env = phases.get("env")
+        tests = phases.get("tests")
+
+        env_str = f"{env:9.2f}s" if env is not None else " (not run)"
+        tests_str = f"{tests:9.2f}s" if tests is not None else " (not run)"
+        
+        print(f"{plugin:<35} env:{env_str}  tests:{tests_str}")
 
     old_failures = []
     if not success and plugin_names == []:
