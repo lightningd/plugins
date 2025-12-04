@@ -58,7 +58,7 @@ This is a list of plugin managers that can help you install these plugins:
 | Name                                 | Short description                                                                           |
 | ------------------------------------ | ------------------------------------------------------------------------------------------- |
 | [coffee][coffee]                     | Reference implementation for a flexible core lightning plugin manager                       |
-| [reckless][reckless]                 | Comes with CLN. Reckless currently supports python and javascript plugins.                  |
+| [reckless][reckless]                 | Comes with CLN. Reckless support can be checked here: [Reckless](Reckless.md).                  |
 
 ## Archived plugins
 
