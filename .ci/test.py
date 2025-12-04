@@ -281,7 +281,7 @@ def run_one(p: Plugin, workflow: str, timings: dict) -> bool:
             ctestfiles=len(p.testfiles)
         )
     )
-    print("::group::{p.name}".format(p=p))
+    print("::group::{p.name}".format(p=p), flush=True)
 
     start_env = time.perf_counter()
     try:
@@ -325,15 +325,59 @@ def run_one(p: Plugin, workflow: str, timings: dict) -> bool:
         timings[p.name]["tests"] = time.perf_counter() - start_tests
         return False
     finally:
-        print("::endgroup::")
+        print("::endgroup::", flush=True)
+
+
+def run_one_reckless(p: Plugin, workflow: str, timings: dict) -> bool:
+    print("Running reckless with plugin {p.name}".format(p=p))
+
+    print("::group::{p.name}-reckless".format(p=p), flush=True)
+
+    reckles_testing = os.environ["GITHUB_WORKSPACE"] + "/.ci/reckless"
+
+    if workflow == "nightly":
+        cln_path = os.environ["CLN_PATH"]
+        subprocess.check_call(["uv", "add", "--dev", "--editable", cln_path + "/contrib/pyln-testing", cln_path + "/contrib/pyln-client", cln_path + "/contrib/pyln-proto"], cwd=reckles_testing)
+    else:
+        pyln_version = re.sub(r'\.0(\d+)', r'.\1', workflow)
+        subprocess.check_call(["uv", "add", "--dev", f"pyln-testing=={pyln_version}", f"pyln-client=={pyln_version}", f"pyln-proto=={pyln_version}"], cwd=reckles_testing)
+
+    cmd = [
+        "uv",
+        "run",
+        "pytest",
+        "-vvv",
+        "--timeout=600",
+        "--timeout-method=thread",
+        "--color=yes",
+        "test_reckless.py",
+        "--plugin",
+        p.name
+    ]
+
+    start_tests = time.perf_counter()
+    try:
+        subprocess.check_call(
+            cmd,
+            stderr=subprocess.STDOUT,
+            cwd=reckles_testing,
+        )
+        timings[p.name]["reckless"] = time.perf_counter() - start_tests
+        return True
+    except Exception as e:
+        logging.warning(f"Error while executing: {e}")
+        timings[p.name]["reckless"] = time.perf_counter() - start_tests
+        return False
+    finally:
+        print("::endgroup::", flush=True)
 
 
 # gather data
-def collect_gather_data(results: list, success: bool) -> dict:
+def collect_gather_data(results: list, success: bool, need_testfiles: bool = True) -> dict:
     gather_data = {}
     for t in results:
         p = t[0]
-        if p.testfiles:
+        if p.testfiles or  not need_testfiles:
             if success or t[1]:
                 gather_data[p.name] = "passed"
             else:
@@ -341,14 +385,14 @@ def collect_gather_data(results: list, success: bool) -> dict:
     return gather_data
 
 
-def push_gather_data(data: dict, workflow: str, python_version: str):
-    print("Pushing gather data...")
+def push_gather_data(data: dict, workflow: str, python_version: str, suffix: str = ""):
+    print("Pushing" + (f" {suffix}" if suffix else " ") + "gather data...")
     configure_git()
     subprocess.run(["git", "fetch"])
     subprocess.run(["git", "checkout", "badges"])
     filenames_to_add = []
     for plugin_name, result in data.items():
-        filename = write_gather_data_file(plugin_name, result, workflow, python_version)
+        filename = write_gather_data_file(plugin_name, result, workflow, python_version, suffix)
         filenames_to_add.append(filename)
     output = subprocess.check_output(
         list(chain(["git", "add", "-v"], filenames_to_add))
@@ -360,7 +404,7 @@ def push_gather_data(data: dict, workflow: str, python_version: str):
                 "git",
                 "commit",
                 "-m",
-                f"Update test result for Python{python_version} to ({workflow} workflow)",
+                "Update" + (f" {suffix}" if suffix else " ") + f"test result for Python{python_version} to ({workflow} workflow)",
             ]
         ).decode("utf-8")
         print(f"output from git commit: {output}")
@@ -382,9 +426,9 @@ def push_gather_data(data: dict, workflow: str, python_version: str):
 
 
 def write_gather_data_file(
-    plugin_name: str, result, workflow: str, python_version: str
+    plugin_name: str, result, workflow: str, python_version: str, suffix: str = ""
 ) -> str:
-    _dir = f".badges/gather_data/{workflow}/{plugin_name}"
+    _dir = ".badges" + (f"_{suffix}" if suffix else "") + f"/gather_data/{workflow}/{plugin_name}"
     filename = os.path.join(_dir, f"python{python_version}.txt")
     os.makedirs(_dir, exist_ok=True)
     with open(filename, "w") as file:
@@ -394,16 +438,14 @@ def write_gather_data_file(
     return filename
 
 
-def gather_old_failures(old_failures: list, workflow: str):
-    print("Gather old failures...")
+def gather_old_failures(old_failures: list, workflow: str, suffix: str = ""):
+    print("Gather old" + (f" {suffix}" if suffix else " ") + "failures...")
     configure_git()
-    # restore the pyproject.toml and uv.lock changes from adding the
-    # CLN specific pyln versions so we can switch branches
-    subprocess.run(["git", "reset", "--hard"], check=True)
+    
     subprocess.run(["git", "fetch", "origin", "badges"], check=True)
     subprocess.run(["git", "checkout", "badges"], check=True)
 
-    directory = ".badges"
+    directory = ".badges" + (f"_{suffix}" if suffix else "")
 
     for filename in os.listdir(directory):
         if filename.endswith(f"_{workflow}.json"):
@@ -445,33 +487,55 @@ def run_all(
     results = [(p, run_one(p, workflow, timings)) for p in plugins]
     success = all([t[1] for t in results])
 
+    results_reckless = [(p, run_one_reckless(p, workflow, timings)) for p in plugins]
+    success_reckless = all([t[1] for t in results_reckless])
+
+    # restore the pyproject.toml and uv.lock changes from adding the
+    # CLN specific pyln versions so we can switch branches
+    subprocess.run(["git", "reset", "--hard"], check=True)
+
     print("Timings:")
     for plugin, phases in timings.items():
         env = phases.get("env")
         tests = phases.get("tests")
+        reckless = phases.get("reckless")
 
         env_str = f"{env:9.2f}s" if env is not None else " (not run)"
         tests_str = f"{tests:9.2f}s" if tests is not None else " (not run)"
+        reckless_str = f"{reckless:9.2f}s" if reckless is not None else " (not run)"
         
-        print(f"{plugin:<35} env:{env_str}  tests:{tests_str}")
+        print(f"{plugin:<35} env:{env_str}  tests:{tests_str}  reckless:{reckless_str}")
 
     old_failures = []
     if not success and plugin_names == []:
         gather_old_failures(old_failures, workflow)
 
+    old_failures_reckless = []
+    if not success_reckless and plugin_names == []:
+        gather_old_failures(old_failures_reckless, workflow, "reckless")
+
     if update_badges:
         push_gather_data(
             collect_gather_data(results, success), workflow, python_version
         )
+        push_gather_data(
+            collect_gather_data(results_reckless, success_reckless, False), workflow, python_version, "reckless"
+        )
 
-    if not success:
+    if not success or not success_reckless:
         print("The following tests failed:")
         has_new_failure = False
         for t in filter(lambda t: not t[1], results):
             if t[0].name not in old_failures:
                 has_new_failure = True
             print(" - {p.name} ({p.path})".format(p=t[0]))
-        if has_new_failure:
+        print("The following reckless tests failed:")
+        has_new_failure_reckless = False
+        for t in filter(lambda t: not t[1], results_reckless):
+            if t[0].name not in old_failures_reckless:
+                has_new_failure_reckless = True
+            print(" - {p.name}-reckless ({p.path})".format(p=t[0]))
+        if has_new_failure or has_new_failure_reckless:
             sys.exit(1)
     else:
         print("All tests passed.")

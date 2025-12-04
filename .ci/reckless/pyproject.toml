@@ -1,0 +1,15 @@
+[project]
+name = "reckless-testing"
+version = "0.1.0"
+description = "A little helper for testing reckless installs of plugins"
+readme = "README.md"
+requires-python = ">=3.9.2"
+
+[dependency-groups]
+dev = [
+    "pytest>=7.4,<9",
+    "pytest-timeout>=2.4,<3",
+    "pyln-testing>=24.11.1",
+    "pyln-client>=24.11.1",
+    "pyln-proto>=24.11.1",
+]

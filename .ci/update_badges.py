@@ -8,7 +8,7 @@ from utils import configure_git, enumerate_plugins
 
 
 def update_and_commit_badge(
-    plugin_name: str, passed: bool, workflow: str, has_tests: bool
+    plugin_name: str, passed: bool, workflow: str, has_tests: bool, suffix: str = ""
 ) -> bool:
     json_data = {"schemaVersion": 1, "label": "", "message": "✔", "color": "green"}
     if not passed:
@@ -16,7 +16,7 @@ def update_and_commit_badge(
     if not has_tests:
         json_data.update({"message": "?", "color": "orange"})
 
-    filename = os.path.join(".badges", f"{plugin_name}_{workflow}.json")
+    filename = os.path.join(".badges" + (f"_{suffix}" if suffix else ""), f"{plugin_name}_{workflow}.json")
     with open(filename, "w") as file:
         file.write(json.dumps(json_data))
 
@@ -58,8 +58,8 @@ def check_wanted_result(result_file: str, python_versions_tested: list) -> bool:
     return False
 
 
-def push_badges_data(workflow: str, python_versions_tested: list):
-    print("Pushing badges data...")
+def push_badges_data(workflow: str, python_versions_tested: list, suffix: str = ""):
+    print("Pushing" + (f" {suffix}" if suffix else " ") + "badges data...")
     configure_git()
 
     root_path = (
@@ -76,7 +76,7 @@ def push_badges_data(workflow: str, python_versions_tested: list):
     any_changes = False
     for plugin in plugins:
         results = []
-        _dir = f".badges/gather_data/{workflow}/{plugin.name}"
+        _dir = ".badges" + (f"_{suffix}" if suffix else "") + f"/gather_data/{workflow}/{plugin.name}"
         if os.path.exists(_dir):
             for child in Path(_dir).iterdir():
                 if not check_wanted_result(child.name, python_versions_tested):
@@ -93,9 +93,9 @@ def push_badges_data(workflow: str, python_versions_tested: list):
                 and len(results) == len(python_versions_tested)
             ):
                 passed = True
-            any_changes |= update_and_commit_badge(plugin.name, passed, workflow, True)
+            any_changes |= update_and_commit_badge(plugin.name, passed, workflow, True, suffix)
         else:
-            any_changes |= update_and_commit_badge(plugin.name, False, workflow, False)
+            any_changes |= update_and_commit_badge(plugin.name, False, workflow, False, suffix)
 
     if any_changes:
         for _ in range(10):
@@ -130,3 +130,4 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     push_badges_data(args.workflow, args.python_versions_tested)
+    push_badges_data(args.workflow, args.python_versions_tested, "reckless")

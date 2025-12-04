@@ -123,6 +123,7 @@ jobs:
       with:
         path: |
           /usr/local/bin/lightning*
+          /usr/local/bin/reckless
           /usr/local/libexec/c-lightning
         key: cache-cln-${{ matrix.cln-version }}-${{ steps.exact_versions.outputs.os_version }}
 
@@ -142,6 +143,7 @@ jobs:
       with:
           path: |
             /usr/local/bin/lightning*
+            /usr/local/bin/reckless
             /usr/local/libexec/c-lightning
           key: cache-cln-${{ matrix.cln-version }}-${{ steps.exact_versions.outputs.os_version }}
 
