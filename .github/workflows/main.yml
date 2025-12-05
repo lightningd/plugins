@@ -20,19 +20,19 @@ jobs:
       matrix:
         python-version: ["3.9", "3.13"]
         bitcoind-version: ["28.1"]
-        cln-version: ["25.09.1", "25.05", "25.02.2"]
+        cln-version: ["25.09.3", "25.05", "25.12"]
         experimental: [1]
         deprecated: [0]
 
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6
       with:
         submodules: recursive
 
     - name: Get changed files
       id: get_changed_files
       if: ${{ github.event_name == 'pull_request' }}
-      uses: tj-actions/changed-files@v46
+      uses: tj-actions/changed-files@v47
       with:
           files: '**/*'
           files_ignore: |
@@ -67,12 +67,12 @@ jobs:
 
     - name: Set up Python ${{ matrix.python-version }}
       if: ${{ github.event_name == 'push' || steps.set_plugin_dirs.outputs.run_ci == 'true' }}
-      uses: actions/setup-python@v5
+      uses: actions/setup-python@v6
       with:
         python-version: ${{ matrix.python-version }}
 
     - name: Install uv
-      uses: astral-sh/setup-uv@v6
+      uses: astral-sh/setup-uv@v7
 
     - name: Extract exact python and os version
       id: exact_versions
@@ -191,13 +191,13 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        cln-version: ["25.09.1", "25.05", "25.02.2"]
+        cln-version: ["25.09.3", "25.05", "25.12"]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           submodules: recursive
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: "3.13"
       - name: Complete
