@@ -130,4 +130,5 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     push_badges_data(args.workflow, args.python_versions_tested)
+    subprocess.run(["git", "checkout", "master"])
     push_badges_data(args.workflow, args.python_versions_tested, "reckless")
