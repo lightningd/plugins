@@ -59,4 +59,3 @@ a blurb, so I did that for everyone (quoting from their front page):
 * api.coindesk.com: "Powered by CoinDesk: https://www.coindesk.com/price/bitcoin"
 * api.coinbase.com: "The easiest place to buy, sell, and manage your cryptocurrency portfolio."
 * blockchain.info: "The World's Most Popular Way to Buy, Hold, and Use Crypto"
-
