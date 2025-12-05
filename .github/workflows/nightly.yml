@@ -19,12 +19,12 @@ jobs:
         deprecated: [0]
 
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6
       with:
         submodules: recursive
 
     - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v5
+      uses: actions/setup-python@v6
       with:
         python-version: ${{ matrix.python-version }}
 
@@ -42,7 +42,7 @@ jobs:
         rm -rf bitcoin-${BITCOIND_VERSION}-x86_64-linux-gnu.tar.gz bitcoin-${BITCOIND_VERSION}
 
     - name: Checkout Core Lightning
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
       with:
         repository: 'ElementsProject/lightning'
         path: 'lightning'
@@ -108,11 +108,11 @@ jobs:
     needs:
       - nightly-build-and-test
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           submodules: recursive
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: "3.12"
       - name: Complete
