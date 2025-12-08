@@ -1,6 +1,3 @@
-[submodule "graphql"]
-	path = graphql
-	url = https://github.com/nettijoe96/c-lightning-graphql.git
 [submodule "jwt-factory"]
 	path = jwt-factory
 	url = https://github.com/nettijoe96/jwt-factory.git
