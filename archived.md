@@ -17,6 +17,7 @@ If you like a plugin from that list, feel free to update and fix it, so we can u
 | [fixroute][fixroute]                 | Constructs a route object (using sendpay) which goes over a sequence of node ids            |
 | [helpme][helpme]                     | This plugin is designed to walk you through setting up a fresh Core-Lightning node          |
 | [historian][historian]               | Archiving the Lightning Network                                                             |
+| [holdinvoice][holdinvoice]           | Holds htlcs for invoices until settle or cancel is called (aka Hodlinvoices) via RPC/GRPC   |
 | [jitrebalance][jitrebalance]         | The JITrebalance plugin                                                                     |
 | [listmempoolfunds][listmempoolfunds] | Track unconfirmed wallet deposits                                                           |
 | [noise][noise]                       | Chat with your fellow node operators                                                        |
@@ -37,6 +38,7 @@ If you like a plugin from that list, feel free to update and fix it, so we can u
 [fixroute]: https://github.com/renepickhardt/plugins/tree/fixroute/fixroute
 [helpme]: https://github.com/lightningd/plugins/tree/master/archived/helpme
 [historian]: https://github.com/lightningd/plugins/tree/master/archived/historian
+[holdinvoice]: https://github.com/daywalker90/holdinvoice
 [jitrebalance]: https://github.com/lightningd/plugins/tree/master/archived/jitrebalance
 [listmempoolfunds]: https://github.com/andrewtoth/listmempoolfunds
 [noise]: https://github.com/lightningd/plugins/tree/master/archived/noise
