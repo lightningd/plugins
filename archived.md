@@ -26,6 +26,7 @@ If you like a plugin from that list, feel free to update and fix it, so we can u
 | [probe][probe]                       | Regularly probes the network for stability                                                  |
 | [spark-commando][spark-commando]     | Heavily inspired by Rusty's commando plugin                                                 |
 | [sparko][sparko]                     | RPC over HTTP with fine-grained permissions, SSE and spark-wallet support                   |
+| [torq-plugin][torq-plugin]           | Better CLN integration into [Torq](https://github.com/lncapital/torq)                       |
 
 [autopilot]: https://github.com/lightningd/plugins/tree/master/archived/autopilot
 [bal-amp-pay]: https://github.com/renepickhardt/plugins/tree/balanced_pay/balanced_amp_payments
@@ -46,3 +47,4 @@ If you like a plugin from that list, feel free to update and fix it, so we can u
 [probe]: https://github.com/lightningd/plugins/tree/master/archived/probe
 [spark-commando]: https://github.com/adi2011/plugins/tree/master/spark-commando
 [sparko]: https://github.com/fiatjaf/sparko
+[torq-plugin]: https://github.com/lncapital/torq-cln-plugin
