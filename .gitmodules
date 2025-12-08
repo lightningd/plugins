@@ -28,9 +28,6 @@
 [submodule "clnrod"]
 	path = clnrod
 	url = https://github.com/daywalker90/clnrod.git
-[submodule "c-lightning-events"]
-	path = c-lightning-events
-	url = https://github.com/rbndg/c-lightning-events
 [submodule "NLoop"]
 	path = NLoop
 	url = https://github.com/bitbankinc/NLoop
