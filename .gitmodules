@@ -16,9 +16,6 @@
 [submodule "webhook"]
 	path = webhook
 	url = https://github.com/fiatjaf/lightningd-webhook.git
-[submodule "btcli4j"]
-	path = btcli4j
-	url = https://github.com/clightning4j/btcli4j.git
 [submodule "go-lnmetrics.reporter"]
 	path = go-lnmetrics.reporter
 	url = https://github.com/LNOpenMetrics/go-lnmetrics.reporter.git
