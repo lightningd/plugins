@@ -20,6 +20,7 @@ If you like a plugin from that list, feel free to update and fix it, so we can u
 | [holdinvoice][holdinvoice]           | Holds htlcs for invoices until settle or cancel is called (aka Hodlinvoices) via RPC/GRPC   |
 | [invoice-queue][Lightning-Invoice-Queue]       | Listen to lightning invoices from multiple nodes and send to a redis queue for processing   |
 | [jitrebalance][jitrebalance]         | The JITrebalance plugin                                                                     |
+| [lightning-qt][lightning-qt]         | A bitcoin-qt-like GUI for lightningd                                                        |
 | [listmempoolfunds][listmempoolfunds] | Track unconfirmed wallet deposits                                                           |
 | [noise][noise]                       | Chat with your fellow node operators                                                        |
 | [nostr-control][nostr-control]       | Allows you to talk to your node oand send you events from your node over nostr DMs             |
@@ -42,6 +43,7 @@ If you like a plugin from that list, feel free to update and fix it, so we can u
 [holdinvoice]: https://github.com/daywalker90/holdinvoice
 [jitrebalance]: https://github.com/lightningd/plugins/tree/master/archived/jitrebalance
 [Lightning-Invoice-Queue]: https://github.com/rbndg/Lightning-Invoice-Queue
+[lightning-qt]: https://github.com/darosior/pylightning-qt
 [listmempoolfunds]: https://github.com/andrewtoth/listmempoolfunds
 [noise]: https://github.com/lightningd/plugins/tree/master/archived/noise
 [nostr-control]: https://github.com/joelklabo/plugins/tree/nostr-control
