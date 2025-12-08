@@ -14,13 +14,14 @@ If you like a plugin from that list, feel free to update and fix it, so we can u
 | [commando][commando]                 | This plugin allows to send commands between nodes                                           |
 | [datastore][datastore]               | The Datastore Plugin                                                                        |
 | [drain][drain]                       | Draining, filling and balancing channels with automatic chunks.                             |
+| [event-websocket][c-lightning-events]| Exposes notifications over a Websocket                                                      |
 | [fixroute][fixroute]                 | Constructs a route object (using sendpay) which goes over a sequence of node ids            |
 | [helpme][helpme]                     | This plugin is designed to walk you through setting up a fresh Core-Lightning node          |
 | [historian][historian]               | Archiving the Lightning Network                                                             |
 | [jitrebalance][jitrebalance]         | The JITrebalance plugin                                                                     |
 | [listmempoolfunds][listmempoolfunds] | Track unconfirmed wallet deposits                                                           |
 | [noise][noise]                       | Chat with your fellow node operators                                                        |
-| [nostr-control][nostr-control]       | Allows you to talk to your node oand send you events from your node over nostr DMs             |
+| [nostr-control][nostr-control]       | Allows you to talk to your node oand send you events from your node over nostr DMs          |
 | [paytest][paytest]                   | A plugin to benchmark the performance of the ~pay~ plugin                                   |
 | [paythrough][paythrough]             | Pay an invoice through a specific channel, regardless of better routes                      |
 | [probe][probe]                       | Regularly probes the network for stability                                                  |
@@ -29,6 +30,7 @@ If you like a plugin from that list, feel free to update and fix it, so we can u
 
 [autopilot]: https://github.com/lightningd/plugins/tree/master/archived/autopilot
 [bal-amp-pay]: https://github.com/renepickhardt/plugins/tree/balanced_pay/balanced_amp_payments
+[c-lightning-events]: https://github.com/rbndg/c-lightning-events
 [circular]: https://github.com/giovannizotta/circular
 [clnrest-rs]: https://github.com/daywalker90/clnrest-rs
 [commando]: https://github.com/lightningd/plugins/tree/master/archived/commando
