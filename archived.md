@@ -24,11 +24,13 @@ If you like a plugin from that list, feel free to update and fix it, so we can u
 | [paytest][paytest]                   | A plugin to benchmark the performance of the ~pay~ plugin                                   |
 | [paythrough][paythrough]             | Pay an invoice through a specific channel, regardless of better routes                      |
 | [probe][probe]                       | Regularly probes the network for stability                                                  |
+| [pruning][c-lightning-pruning-plugin]| This plugin manages pruning of bitcoind such that it can always sync                        |
 | [spark-commando][spark-commando]     | Heavily inspired by Rusty's commando plugin                                                 |
 | [sparko][sparko]                     | RPC over HTTP with fine-grained permissions, SSE and spark-wallet support                   |
 
 [autopilot]: https://github.com/lightningd/plugins/tree/master/archived/autopilot
 [bal-amp-pay]: https://github.com/renepickhardt/plugins/tree/balanced_pay/balanced_amp_payments
+[c-lightning-pruning-plugin]: https://github.com/Start9Labs/c-lightning-pruning-plugin
 [circular]: https://github.com/giovannizotta/circular
 [clnrest-rs]: https://github.com/daywalker90/clnrest-rs
 [commando]: https://github.com/lightningd/plugins/tree/master/archived/commando
