@@ -28,6 +28,7 @@ If you like a plugin from that list, feel free to update and fix it, so we can u
 | [paythrough][paythrough]             | Pay an invoice through a specific channel, regardless of better routes                      |
 | [poncho][poncho]                     | Turns CLN into a [hosted channels][blip12] provider                                         |
 | [probe][probe]                       | Regularly probes the network for stability                                                  |
+| [sitzprobe][sitzprobe]               | A Lightning Network payment rehearsal utility                                               |
 | [spark-commando][spark-commando]     | Heavily inspired by Rusty's commando plugin                                                 |
 | [sparko][sparko]                     | RPC over HTTP with fine-grained permissions, SSE and spark-wallet support                   |
 | [webhook][webhook]                   | Dispatches webhooks based from [event notifications][event-notifications]                   |
@@ -55,6 +56,7 @@ If you like a plugin from that list, feel free to update and fix it, so we can u
 [paythrough]: https://github.com/andrewtoth/paythrough
 [poncho]: https://github.com/fiatjaf/poncho
 [probe]: https://github.com/lightningd/plugins/tree/master/archived/probe
+[sitzprobe]: https://github.com/niftynei/sitzprobe
 [spark-commando]: https://github.com/adi2011/plugins/tree/master/spark-commando
 [sparko]: https://github.com/fiatjaf/sparko
 [webhook]: https://github.com/fiatjaf/lightningd-webhook
