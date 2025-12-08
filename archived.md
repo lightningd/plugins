@@ -19,6 +19,7 @@ If you like a plugin from that list, feel free to update and fix it, so we can u
 | [historian][historian]               | Archiving the Lightning Network                                                             |
 | [jitrebalance][jitrebalance]         | The JITrebalance plugin                                                                     |
 | [listmempoolfunds][listmempoolfunds] | Track unconfirmed wallet deposits                                                           |
+| [nloop][NLoop]                       | Generic Lightning Loop for boltz                                                            |
 | [noise][noise]                       | Chat with your fellow node operators                                                        |
 | [nostr-control][nostr-control]       | Allows you to talk to your node oand send you events from your node over nostr DMs             |
 | [paytest][paytest]                   | A plugin to benchmark the performance of the ~pay~ plugin                                   |
@@ -39,6 +40,7 @@ If you like a plugin from that list, feel free to update and fix it, so we can u
 [historian]: https://github.com/lightningd/plugins/tree/master/archived/historian
 [jitrebalance]: https://github.com/lightningd/plugins/tree/master/archived/jitrebalance
 [listmempoolfunds]: https://github.com/andrewtoth/listmempoolfunds
+[NLoop]: https://github.com/bitbankinc/NLoop
 [noise]: https://github.com/lightningd/plugins/tree/master/archived/noise
 [nostr-control]: https://github.com/joelklabo/plugins/tree/nostr-control
 [paytest]: https://github.com/lightningd/plugins/tree/master/archived/paytest
