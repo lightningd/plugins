@@ -15,6 +15,7 @@ If you like a plugin from that list, feel free to update and fix it, so we can u
 | [datastore][datastore]               | The Datastore Plugin                                                                        |
 | [drain][drain]                       | Draining, filling and balancing channels with automatic chunks.                             |
 | [fixroute][fixroute]                 | Constructs a route object (using sendpay) which goes over a sequence of node ids            |
+| [go-lnmetrics.reporter][reporter]    | Collect and report of the lightning node metrics                                            |
 | [helpme][helpme]                     | This plugin is designed to walk you through setting up a fresh Core-Lightning node          |
 | [historian][historian]               | Archiving the Lightning Network                                                             |
 | [jitrebalance][jitrebalance]         | The JITrebalance plugin                                                                     |
@@ -44,5 +45,6 @@ If you like a plugin from that list, feel free to update and fix it, so we can u
 [paytest]: https://github.com/lightningd/plugins/tree/master/archived/paytest
 [paythrough]: https://github.com/andrewtoth/paythrough
 [probe]: https://github.com/lightningd/plugins/tree/master/archived/probe
+[reporter]: https://github.com/LNOpenMetrics/go-lnmetrics.reporter
 [spark-commando]: https://github.com/adi2011/plugins/tree/master/spark-commando
 [sparko]: https://github.com/fiatjaf/sparko
