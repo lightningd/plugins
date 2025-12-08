@@ -33,6 +33,7 @@ If you like a plugin from that list, feel free to update and fix it, so we can u
 | [paythrough][paythrough]             | Pay an invoice through a specific channel, regardless of better routes                      |
 | [poncho][poncho]                     | Turns CLN into a [hosted channels][blip12] provider                                         |
 | [probe][probe]                       | Regularly probes the network for stability                                                  |
+| [pruning][c-lightning-pruning-plugin]| This plugin manages pruning of bitcoind such that it can always sync                        |
 | [sitzprobe][sitzprobe]               | A Lightning Network payment rehearsal utility                                               |
 | [spark-commando][spark-commando]     | Heavily inspired by Rusty's commando plugin                                                 |
 | [sparko][sparko]                     | RPC over HTTP with fine-grained permissions, SSE and spark-wallet support                   |
@@ -43,6 +44,7 @@ If you like a plugin from that list, feel free to update and fix it, so we can u
 [blip12]: https://github.com/lightning/blips/blob/42cec1d0f66eb68c840443abb609a5a9acb34f8e/blip-0012.md
 [btcli4j]: https://github.com/clightning4j/btcli4j
 [c-lightning-events]: https://github.com/rbndg/c-lightning-events
+[c-lightning-pruning-plugin]: https://github.com/Start9Labs/c-lightning-pruning-plugin
 [circular]: https://github.com/giovannizotta/circular
 [clnrest-rs]: https://github.com/daywalker90/clnrest-rs
 [commando]: https://github.com/lightningd/plugins/tree/master/archived/commando
