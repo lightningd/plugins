@@ -52,9 +52,6 @@
 [submodule "Lightning-Invoice-Queue"]
 	path = Lightning-Invoice-Queue
 	url = https://github.com/rbndg/Lightning-Invoice-Queue
-[submodule "NLoop"]
-	path = NLoop
-	url = https://github.com/bitbankinc/NLoop
 [submodule "c-lightning-pruning-plugin"]
 	path = c-lightning-pruning-plugin
 	url = https://github.com/Start9Labs/c-lightning-pruning-plugin
