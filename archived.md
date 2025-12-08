@@ -26,12 +26,14 @@ If you like a plugin from that list, feel free to update and fix it, so we can u
 | [nostr-control][nostr-control]       | Allows you to talk to your node oand send you events from your node over nostr DMs             |
 | [paytest][paytest]                   | A plugin to benchmark the performance of the ~pay~ plugin                                   |
 | [paythrough][paythrough]             | Pay an invoice through a specific channel, regardless of better routes                      |
+| [poncho][poncho]                     | Turns CLN into a [hosted channels][blip12] provider                                         |
 | [probe][probe]                       | Regularly probes the network for stability                                                  |
 | [spark-commando][spark-commando]     | Heavily inspired by Rusty's commando plugin                                                 |
 | [sparko][sparko]                     | RPC over HTTP with fine-grained permissions, SSE and spark-wallet support                   |
 
 [autopilot]: https://github.com/lightningd/plugins/tree/master/archived/autopilot
 [bal-amp-pay]: https://github.com/renepickhardt/plugins/tree/balanced_pay/balanced_amp_payments
+[blip12]: https://github.com/lightning/blips/blob/42cec1d0f66eb68c840443abb609a5a9acb34f8e/blip-0012.md
 [circular]: https://github.com/giovannizotta/circular
 [clnrest-rs]: https://github.com/daywalker90/clnrest-rs
 [commando]: https://github.com/lightningd/plugins/tree/master/archived/commando
@@ -49,6 +51,7 @@ If you like a plugin from that list, feel free to update and fix it, so we can u
 [nostr-control]: https://github.com/joelklabo/plugins/tree/nostr-control
 [paytest]: https://github.com/lightningd/plugins/tree/master/archived/paytest
 [paythrough]: https://github.com/andrewtoth/paythrough
+[poncho]: https://github.com/fiatjaf/poncho
 [probe]: https://github.com/lightningd/plugins/tree/master/archived/probe
 [spark-commando]: https://github.com/adi2011/plugins/tree/master/spark-commando
 [sparko]: https://github.com/fiatjaf/sparko
