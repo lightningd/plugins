@@ -22,9 +22,6 @@
 [submodule "clnrod"]
 	path = clnrod
 	url = https://github.com/daywalker90/clnrod.git
-[submodule "c-lightning-pruning-plugin"]
-	path = c-lightning-pruning-plugin
-	url = https://github.com/Start9Labs/c-lightning-pruning-plugin
 [submodule "ln-address-pay"]
 	path = ln-address-pay
 	url = https://github.com/nosedam/ln-address-pay
