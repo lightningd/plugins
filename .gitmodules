@@ -46,9 +46,6 @@
 [submodule "c-lightning-events"]
 	path = c-lightning-events
 	url = https://github.com/rbndg/c-lightning-events
-[submodule "Lightning-Invoice-Queue"]
-	path = Lightning-Invoice-Queue
-	url = https://github.com/rbndg/Lightning-Invoice-Queue
 [submodule "NLoop"]
 	path = NLoop
 	url = https://github.com/bitbankinc/NLoop
