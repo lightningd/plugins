@@ -37,6 +37,7 @@ If you like a plugin from that list, feel free to update and fix it, so we can u
 | [sitzprobe][sitzprobe]               | A Lightning Network payment rehearsal utility                                               |
 | [spark-commando][spark-commando]     | Heavily inspired by Rusty's commando plugin                                                 |
 | [sparko][sparko]                     | RPC over HTTP with fine-grained permissions, SSE and spark-wallet support                   |
+| [torq-plugin][torq-plugin]           | Better CLN integration into [Torq](https://github.com/lncapital/torq)                       |
 | [webhook][webhook]                   | Dispatches webhooks based from [event notifications][event-notifications]                   |
 
 [autopilot]: https://github.com/lightningd/plugins/tree/master/archived/autopilot
@@ -72,4 +73,5 @@ If you like a plugin from that list, feel free to update and fix it, so we can u
 [sitzprobe]: https://github.com/niftynei/sitzprobe
 [spark-commando]: https://github.com/adi2011/plugins/tree/master/spark-commando
 [sparko]: https://github.com/fiatjaf/sparko
+[torq-plugin]: https://github.com/lncapital/torq-cln-plugin
 [webhook]: https://github.com/fiatjaf/lightningd-webhook
