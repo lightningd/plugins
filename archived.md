@@ -30,6 +30,7 @@ If you like a plugin from that list, feel free to update and fix it, so we can u
 | [probe][probe]                       | Regularly probes the network for stability                                                  |
 | [spark-commando][spark-commando]     | Heavily inspired by Rusty's commando plugin                                                 |
 | [sparko][sparko]                     | RPC over HTTP with fine-grained permissions, SSE and spark-wallet support                   |
+| [webhook][webhook]                   | Dispatches webhooks based from [event notifications][event-notifications]                   |
 
 [autopilot]: https://github.com/lightningd/plugins/tree/master/archived/autopilot
 [bal-amp-pay]: https://github.com/renepickhardt/plugins/tree/balanced_pay/balanced_amp_payments
@@ -39,6 +40,7 @@ If you like a plugin from that list, feel free to update and fix it, so we can u
 [commando]: https://github.com/lightningd/plugins/tree/master/archived/commando
 [datastore]: https://github.com/lightningd/plugins/tree/master/archived/datastore
 [drain]: https://github.com/lightningd/plugins/tree/master/archived/drain
+[event-notifications]: https://lightning.readthedocs.io/PLUGINS.html#event-notifications
 [fixroute]: https://github.com/renepickhardt/plugins/tree/fixroute/fixroute
 [helpme]: https://github.com/lightningd/plugins/tree/master/archived/helpme
 [historian]: https://github.com/lightningd/plugins/tree/master/archived/historian
@@ -55,3 +57,4 @@ If you like a plugin from that list, feel free to update and fix it, so we can u
 [probe]: https://github.com/lightningd/plugins/tree/master/archived/probe
 [spark-commando]: https://github.com/adi2011/plugins/tree/master/spark-commando
 [sparko]: https://github.com/fiatjaf/sparko
+[webhook]: https://github.com/fiatjaf/lightningd-webhook
