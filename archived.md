@@ -17,6 +17,7 @@ If you like a plugin from that list, feel free to update and fix it, so we can u
 | [drain][drain]                       | Draining, filling and balancing channels with automatic chunks.                             |
 | [event-websocket][c-lightning-events]| Exposes notifications over a Websocket                                                      |
 | [fixroute][fixroute]                 | Constructs a route object (using sendpay) which goes over a sequence of node ids            |
+| [go-lnmetrics.reporter][reporter]    | Collect and report of the lightning node metrics                                            |
 | [helpme][helpme]                     | This plugin is designed to walk you through setting up a fresh Core-Lightning node          |
 | [historian][historian]               | Archiving the Lightning Network                                                             |
 | [holdinvoice][holdinvoice]           | Holds htlcs for invoices until settle or cancel is called (aka Hodlinvoices) via RPC/GRPC   |
@@ -60,6 +61,7 @@ If you like a plugin from that list, feel free to update and fix it, so we can u
 [paythrough]: https://github.com/andrewtoth/paythrough
 [poncho]: https://github.com/fiatjaf/poncho
 [probe]: https://github.com/lightningd/plugins/tree/master/archived/probe
+[reporter]: https://github.com/LNOpenMetrics/go-lnmetrics.reporter
 [sitzprobe]: https://github.com/niftynei/sitzprobe
 [spark-commando]: https://github.com/adi2011/plugins/tree/master/spark-commando
 [sparko]: https://github.com/fiatjaf/sparko
