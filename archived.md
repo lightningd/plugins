@@ -18,6 +18,7 @@ If you like a plugin from that list, feel free to update and fix it, so we can u
 | [helpme][helpme]                     | This plugin is designed to walk you through setting up a fresh Core-Lightning node          |
 | [historian][historian]               | Archiving the Lightning Network                                                             |
 | [holdinvoice][holdinvoice]           | Holds htlcs for invoices until settle or cancel is called (aka Hodlinvoices) via RPC/GRPC   |
+| [invoice-queue][Lightning-Invoice-Queue]       | Listen to lightning invoices from multiple nodes and send to a redis queue for processing   |
 | [jitrebalance][jitrebalance]         | The JITrebalance plugin                                                                     |
 | [listmempoolfunds][listmempoolfunds] | Track unconfirmed wallet deposits                                                           |
 | [noise][noise]                       | Chat with your fellow node operators                                                        |
@@ -40,6 +41,7 @@ If you like a plugin from that list, feel free to update and fix it, so we can u
 [historian]: https://github.com/lightningd/plugins/tree/master/archived/historian
 [holdinvoice]: https://github.com/daywalker90/holdinvoice
 [jitrebalance]: https://github.com/lightningd/plugins/tree/master/archived/jitrebalance
+[Lightning-Invoice-Queue]: https://github.com/rbndg/Lightning-Invoice-Queue
 [listmempoolfunds]: https://github.com/andrewtoth/listmempoolfunds
 [noise]: https://github.com/lightningd/plugins/tree/master/archived/noise
 [nostr-control]: https://github.com/joelklabo/plugins/tree/nostr-control
