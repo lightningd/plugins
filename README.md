@@ -45,7 +45,6 @@ Community curated plugins for Core-Lightning.
 | [torq-plugin][torq-plugin]           | Better CLN integration into [Torq](https://github.com/lncapital/torq)                       | ![](https://img.shields.io/endpoint?url=https%3A%2F%2Flightningd.github.io%2Fplugins%2F.badges%2Ftorq-plugin_25.05.json) ![](https://img.shields.io/endpoint?url=https%3A%2F%2Flightningd.github.io%2Fplugins%2F.badges%2Ftorq-plugin_25.09.3.json) ![](https://img.shields.io/endpoint?url=https%3A%2F%2Flightningd.github.io%2Fplugins%2F.badges%2Ftorq-plugin_25.12.json) ![](https://img.shields.io/endpoint?url=https%3A%2F%2Flightningd.github.io%2Fplugins%2F.badges%2Ftorq-plugin_nightly.json) |
 | [trustedcoin][trustedcoin]           | Replace your Bitcoin Core with data from public block explorers                             | ![](https://img.shields.io/endpoint?url=https%3A%2F%2Flightningd.github.io%2Fplugins%2F.badges%2Ftrustedcoin_25.05.json) ![](https://img.shields.io/endpoint?url=https%3A%2F%2Flightningd.github.io%2Fplugins%2F.badges%2Ftrustedcoin_25.09.3.json) ![](https://img.shields.io/endpoint?url=https%3A%2F%2Flightningd.github.io%2Fplugins%2F.badges%2Ftrustedcoin_25.12.json) ![](https://img.shields.io/endpoint?url=https%3A%2F%2Flightningd.github.io%2Fplugins%2F.badges%2Ftrustedcoin_nightly.json) |
 | [watchtower-client][watchtower-client]      | Watchtower client for The Eye of Satoshi                                                    | ![](https://img.shields.io/endpoint?url=https%3A%2F%2Flightningd.github.io%2Fplugins%2F.badges%2Fwatchtower-client_25.05.json) ![](https://img.shields.io/endpoint?url=https%3A%2F%2Flightningd.github.io%2Fplugins%2F.badges%2Fwatchtower-client_25.09.3.json) ![](https://img.shields.io/endpoint?url=https%3A%2F%2Flightningd.github.io%2Fplugins%2F.badges%2Fwatchtower-client_25.12.json) ![](https://img.shields.io/endpoint?url=https%3A%2F%2Flightningd.github.io%2Fplugins%2F.badges%2Fwatchtower-client_nightly.json) |
-| [webhook][webhook]                   | Dispatches webhooks based from [event notifications][event-notifications]                   | ![](https://img.shields.io/endpoint?url=https%3A%2F%2Flightningd.github.io%2Fplugins%2F.badges%2Fwebhook_25.05.json) ![](https://img.shields.io/endpoint?url=https%3A%2F%2Flightningd.github.io%2Fplugins%2F.badges%2Fwebhook_25.09.3.json) ![](https://img.shields.io/endpoint?url=https%3A%2F%2Flightningd.github.io%2Fplugins%2F.badges%2Fwebhook_25.12.json) ![](https://img.shields.io/endpoint?url=https%3A%2F%2Flightningd.github.io%2Fplugins%2F.badges%2Fwebhook_nightly.json) |
 
 ## Plugin Managers
 
@@ -223,7 +222,6 @@ more detailed description (if any)
 [currencyrate]: https://github.com/lightningd/plugins/tree/master/currencyrate
 [donations]: https://github.com/lightningd/plugins/tree/master/donations
 [esplora]: https://github.com/Blockstream/esplora
-[event-notifications]: https://lightning.readthedocs.io/PLUGINS.html#event-notifications
 [feeadjuster]: https://github.com/lightningd/plugins/tree/master/feeadjuster
 [go-api]: https://github.com/niftynei/glightning
 [graphql]: https://github.com/nettijoe96/c-lightning-graphql
@@ -255,5 +253,4 @@ more detailed description (if any)
 [trustedcoin]: https://github.com/fiatjaf/trustedcoin
 [ts-api]: https://github.com/runcitadel/c-lightning.ts
 [watchtower-client]: https://github.com/talaia-labs/rust-teos/tree/master/watchtower-plugin
-[webhook]: https://github.com/fiatjaf/lightningd-webhook
 [zmq-home]: https://zeromq.org/
