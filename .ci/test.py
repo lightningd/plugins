@@ -11,7 +11,7 @@ from itertools import chain
 from pathlib import Path
 from typing import Tuple
 
-from utils import Plugin, configure_git, enumerate_plugins
+from utils import Plugin, configure_git, enumerate_plugins, get_framework_working_dir
 
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 
@@ -32,18 +32,59 @@ def prepare_env(p: Plugin, workflow: str) -> Tuple[dict, tempfile.TemporaryDirec
     directory = p.path / ".venv"
 
     if p.framework == "uv":
+        cwd = p.details["pyproject"].parent.resolve()
         if workflow == "nightly":
             cln_path = os.environ["CLN_PATH"]
             try:
-                subprocess.check_call(["uv", "add", "--editable", cln_path + "/contrib/pyln-testing", cln_path + "/contrib/pyln-client", cln_path + "/contrib/pyln-proto"], cwd=p.path.resolve())
+                subprocess.check_call(
+                    [
+                        "uv",
+                        "add",
+                        "--editable",
+                        cln_path + "/contrib/pyln-testing",
+                        cln_path + "/contrib/pyln-client",
+                        cln_path + "/contrib/pyln-proto",
+                    ],
+                    cwd=cwd,
+                )
             except:  # noqa: E722
-                subprocess.check_call(["uv", "add", "--dev", "--editable", cln_path + "/contrib/pyln-testing", cln_path + "/contrib/pyln-client", cln_path + "/contrib/pyln-proto"], cwd=p.path.resolve())
+                subprocess.check_call(
+                    [
+                        "uv",
+                        "add",
+                        "--dev",
+                        "--editable",
+                        cln_path + "/contrib/pyln-testing",
+                        cln_path + "/contrib/pyln-client",
+                        cln_path + "/contrib/pyln-proto",
+                    ],
+                    cwd=cwd,
+                )
         else:
-            pyln_version = re.sub(r'\.0(\d+)', r'.\1', workflow)
+            pyln_version = re.sub(r"\.0(\d+)", r".\1", workflow)
             try:
-                subprocess.check_call(["uv", "add", f"pyln-testing=={pyln_version}", f"pyln-client=={pyln_version}", f"pyln-proto=={pyln_version}"], cwd=p.path.resolve())
+                subprocess.check_call(
+                    [
+                        "uv",
+                        "add",
+                        f"pyln-testing=={pyln_version}",
+                        f"pyln-client=={pyln_version}",
+                        f"pyln-proto=={pyln_version}",
+                    ],
+                    cwd=cwd,
+                )
             except:  # noqa: E722
-                subprocess.check_call(["uv", "add", "--dev", f"pyln-testing=={pyln_version}", f"pyln-client=={pyln_version}", f"pyln-proto=={pyln_version}"], cwd=p.path.resolve())
+                subprocess.check_call(
+                    [
+                        "uv",
+                        "add",
+                        "--dev",
+                        f"pyln-testing=={pyln_version}",
+                        f"pyln-client=={pyln_version}",
+                        f"pyln-proto=={pyln_version}",
+                    ],
+                    cwd=cwd,
+                )
     else:
         # Create a temporary directory for virtualenv
         vdir = tempfile.TemporaryDirectory()
@@ -109,7 +150,7 @@ def prepare_env_poetry(p: Plugin, directory: Path, workflow: str) -> bool:
     )
 
     # We run all commands in the plugin directory so poetry remembers its settings
-    workdir = p.path.resolve()
+    workdir = p.details["pyproject"].parent.resolve()
 
     logging.info(f"Using poetry at {poetry} ({python3}) to run tests in {workdir}")
 
@@ -199,7 +240,7 @@ def prepare_generic(p: Plugin, directory: Path, env: dict, workflow: str) -> boo
     pip_path = directory / "bin" / "pip3"
 
     # Now install all the requirements
-    if p.details["requirements"].exists():
+    if "requirements" in p.details:
         print(f"Installing requirements from {p.details['requirements']}")
         subprocess.check_call(
             [pip_path, "install", *pip_opts, "-r", p.details["requirements"]],
@@ -231,7 +272,7 @@ def install_pyln_testing(pip_path, workflow: str):
         stderr=subprocess.STDOUT,
     )
 
-    pyln_version = re.sub(r'\.0(\d+)', r'.\1', workflow)
+    pyln_version = re.sub(r"\.0(\d+)", r".\1", workflow)
 
     subprocess.check_call(
         [
@@ -309,14 +350,15 @@ def run_one(p: Plugin, workflow: str, timings: dict) -> bool:
             raise RuntimeError(f"pytest not found in PATH:{env['PATH']}")
         cmd = [pytest_path] + cmd
 
-    logging.info(f"Running `{' '.join(cmd)}` in directory {p.path.resolve()}")
+    cwd = get_framework_working_dir(p)
+    logging.info(f"Running `{' '.join(cmd)}` in directory {cwd}")
     start_tests = time.perf_counter()
     try:
         subprocess.check_call(
             cmd,
             stderr=subprocess.STDOUT,
             env=env,
-            cwd=p.path.resolve(),
+            cwd=cwd,
         )
         timings[p.name]["tests"] = time.perf_counter() - start_tests
         return True
@@ -337,10 +379,31 @@ def run_one_reckless(p: Plugin, workflow: str, timings: dict) -> bool:
 
     if workflow == "nightly":
         cln_path = os.environ["CLN_PATH"]
-        subprocess.check_call(["uv", "add", "--dev", "--editable", cln_path + "/contrib/pyln-testing", cln_path + "/contrib/pyln-client", cln_path + "/contrib/pyln-proto"], cwd=reckles_testing)
+        subprocess.check_call(
+            [
+                "uv",
+                "add",
+                "--dev",
+                "--editable",
+                cln_path + "/contrib/pyln-testing",
+                cln_path + "/contrib/pyln-client",
+                cln_path + "/contrib/pyln-proto",
+            ],
+            cwd=reckles_testing,
+        )
     else:
-        pyln_version = re.sub(r'\.0(\d+)', r'.\1', workflow)
-        subprocess.check_call(["uv", "add", "--dev", f"pyln-testing=={pyln_version}", f"pyln-client=={pyln_version}", f"pyln-proto=={pyln_version}"], cwd=reckles_testing)
+        pyln_version = re.sub(r"\.0(\d+)", r".\1", workflow)
+        subprocess.check_call(
+            [
+                "uv",
+                "add",
+                "--dev",
+                f"pyln-testing=={pyln_version}",
+                f"pyln-client=={pyln_version}",
+                f"pyln-proto=={pyln_version}",
+            ],
+            cwd=reckles_testing,
+        )
 
     cmd = [
         "uv",
@@ -352,7 +415,7 @@ def run_one_reckless(p: Plugin, workflow: str, timings: dict) -> bool:
         "--color=yes",
         "test_reckless.py",
         "--plugin",
-        p.name
+        p.name,
     ]
 
     start_tests = time.perf_counter()
@@ -373,11 +436,13 @@ def run_one_reckless(p: Plugin, workflow: str, timings: dict) -> bool:
 
 
 # gather data
-def collect_gather_data(results: list, success: bool, need_testfiles: bool = True) -> dict:
+def collect_gather_data(
+    results: list, success: bool, need_testfiles: bool = True
+) -> dict:
     gather_data = {}
     for t in results:
         p = t[0]
-        if p.testfiles or  not need_testfiles:
+        if p.testfiles or not need_testfiles:
             if success or t[1]:
                 gather_data[p.name] = "passed"
             else:
@@ -392,7 +457,9 @@ def push_gather_data(data: dict, workflow: str, python_version: str, suffix: str
     subprocess.run(["git", "checkout", "badges"])
     filenames_to_add = []
     for plugin_name, result in data.items():
-        filename = write_gather_data_file(plugin_name, result, workflow, python_version, suffix)
+        filename = write_gather_data_file(
+            plugin_name, result, workflow, python_version, suffix
+        )
         filenames_to_add.append(filename)
     output = subprocess.check_output(
         list(chain(["git", "add", "-v"], filenames_to_add))
@@ -404,7 +471,9 @@ def push_gather_data(data: dict, workflow: str, python_version: str, suffix: str
                 "git",
                 "commit",
                 "-m",
-                "Update" + (f" {suffix}" if suffix else " ") + f"test result for Python{python_version} to ({workflow} workflow)",
+                "Update"
+                + (f" {suffix}" if suffix else " ")
+                + f"test result for Python{python_version} to ({workflow} workflow)",
             ]
         ).decode("utf-8")
         print(f"output from git commit: {output}")
@@ -428,7 +497,11 @@ def push_gather_data(data: dict, workflow: str, python_version: str, suffix: str
 def write_gather_data_file(
     plugin_name: str, result, workflow: str, python_version: str, suffix: str = ""
 ) -> str:
-    _dir = ".badges" + (f"_{suffix}" if suffix else "") + f"/gather_data/{workflow}/{plugin_name}"
+    _dir = (
+        ".badges"
+        + (f"_{suffix}" if suffix else "")
+        + f"/gather_data/{workflow}/{plugin_name}"
+    )
     filename = os.path.join(_dir, f"python{python_version}.txt")
     os.makedirs(_dir, exist_ok=True)
     with open(filename, "w") as file:
@@ -441,7 +514,7 @@ def write_gather_data_file(
 def gather_old_failures(old_failures: list, workflow: str, suffix: str = ""):
     print("Gather old" + (f" {suffix}" if suffix else " ") + "failures...")
     configure_git()
-    
+
     subprocess.run(["git", "fetch", "origin", "badges"], check=True)
     subprocess.run(["git", "checkout", "badges"], check=True)
 
@@ -503,7 +576,7 @@ def run_all(
         env_str = f"{env:9.2f}s" if env is not None else " (not run)"
         tests_str = f"{tests:9.2f}s" if tests is not None else " (not run)"
         reckless_str = f"{reckless:9.2f}s" if reckless is not None else " (not run)"
-        
+
         print(f"{plugin:<35} env:{env_str}  tests:{tests_str}  reckless:{reckless_str}")
 
     old_failures = []
@@ -519,7 +592,10 @@ def run_all(
             collect_gather_data(results, success), workflow, python_version
         )
         push_gather_data(
-            collect_gather_data(results_reckless, success_reckless, False), workflow, python_version, "reckless"
+            collect_gather_data(results_reckless, success_reckless, False),
+            workflow,
+            python_version,
+            "reckless",
         )
 
     if not success or not success_reckless:
