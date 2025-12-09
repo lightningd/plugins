@@ -213,13 +213,14 @@ def prepare_env_pip(p: Plugin, directory: Path, workflow: str) -> bool:
     pip_path = directory / "bin" / "pip3"
 
     # Now install all the requirements
-    print(f"Installing requirements from {p.details['requirements']}")
-    subprocess.check_call(
-        [pip_path, "install", *pip_opts, "-r", p.details["requirements"]],
-        stderr=subprocess.STDOUT,
-    )
+    if "requirements" in p.details:
+        print(f"Installing requirements from {p.details['requirements']}")
+        subprocess.check_call(
+            [pip_path, "install", *pip_opts, "-r", p.details["requirements"]],
+            stderr=subprocess.STDOUT,
+        )
 
-    if p.details["devrequirements"].exists():
+    if "devrequirements" in p.details:
         print(f"Installing requirements from {p.details['devrequirements']}")
         subprocess.check_call(
             [pip_path, "install", *pip_opts, "-r", p.details["devrequirements"]],
