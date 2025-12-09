@@ -50,6 +50,8 @@ def test_plugin_install_raw(node_factory, plugin_name):
         ]
     )
 
+    r, w = os.pipe()
+
     subprocess.check_call(
         [
             "reckless",
@@ -61,7 +63,8 @@ def test_plugin_install_raw(node_factory, plugin_name):
             "regtest",
             "install",
             plugin_name,
-        ]
+        ],
+        stdin=r,
     )
 
     plugin_list = l1.rpc.call("plugin", ["list"])
