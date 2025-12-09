@@ -15,6 +15,7 @@ If you like a plugin from that list, feel free to update and fix it, so we can u
 | [datastore][datastore]               | The Datastore Plugin                                                                        |
 | [drain][drain]                       | Draining, filling and balancing channels with automatic chunks.                             |
 | [fixroute][fixroute]                 | Constructs a route object (using sendpay) which goes over a sequence of node ids            |
+| [graphql][graphql]                   | Exposes the Core-Lightning API over [graphql][graphql-spec]                                 |
 | [helpme][helpme]                     | This plugin is designed to walk you through setting up a fresh Core-Lightning node          |
 | [historian][historian]               | Archiving the Lightning Network                                                             |
 | [holdinvoice][holdinvoice]           | Holds htlcs for invoices until settle or cancel is called (aka Hodlinvoices) via RPC/GRPC   |
@@ -42,6 +43,8 @@ If you like a plugin from that list, feel free to update and fix it, so we can u
 [drain]: https://github.com/lightningd/plugins/tree/master/archived/drain
 [event-notifications]: https://lightning.readthedocs.io/PLUGINS.html#event-notifications
 [fixroute]: https://github.com/renepickhardt/plugins/tree/fixroute/fixroute
+[graphql]: https://github.com/nettijoe96/c-lightning-graphql
+[graphql-spec]: https://graphql.org/
 [helpme]: https://github.com/lightningd/plugins/tree/master/archived/helpme
 [historian]: https://github.com/lightningd/plugins/tree/master/archived/historian
 [holdinvoice]: https://github.com/daywalker90/holdinvoice
