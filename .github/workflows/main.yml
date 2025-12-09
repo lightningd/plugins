@@ -42,6 +42,9 @@ jobs:
             *.lock
             Dockerfile
             .gitignore
+            .gitmodules
+            .github/**
+            .ci/**
             LICENSE
             archived/**
 
@@ -49,6 +52,7 @@ jobs:
       id: set_plugin_dirs
       if: ${{ github.event_name == 'pull_request' }}
       run: |
+          echo "all_changed_files: ${{ steps.get_changed_files.outputs.all_changed_files }}"
           changed_files=$(echo "${{ steps.get_changed_files.outputs.all_changed_files }}" | tr ',' '\n')
           plugin_dirs=""
           for file in $changed_files; do
