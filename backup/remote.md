@@ -28,8 +28,8 @@ Usage
 First initialize an empty file backend on the server side, then start the server:
 
 ```bash
-backup-cli init file:///path/to/backup
-backup-cli server file:///path/to/backup 127.0.0.1:8700
+uv run ./backup-cli init file:///path/to/backup
+uv run ./backup-cli server file:///path/to/backup 127.0.0.1:8700
 ```
 
 On the client side:
@@ -38,7 +38,7 @@ On the client side:
 # Make sure Core-Lightning is not running
 lightning-cli stop
 # Initialize the socket backend (this makes an initial snapshot, and creates a configuration file for the plugin)
-backup-cli init socket:127.0.0.1:8700 --lightning-dir "$HOME/.lightning/bitcoin"
+uv run ./backup-cli init socket:127.0.0.1:8700 --lightning-dir "$HOME/.lightning/bitcoin"
 # Start c-lighting, with the backup plugin as important plugin so that any issue with it stops the daemon
 lightningd ... \
     --important-plugin /path/to/plugins/backup/backup.py
