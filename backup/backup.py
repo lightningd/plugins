@@ -24,14 +24,7 @@ from backends import get_backend
 
 plugin = Plugin()
 
-root = logging.getLogger()
-root.setLevel(logging.INFO)
-
-handler = logging.StreamHandler(sys.stdout)
-handler.setLevel(logging.DEBUG)
-formatter = logging.Formatter("%(message)s")
-handler.setFormatter(formatter)
-root.addHandler(handler)
+logging.getLogger().setLevel(logging.INFO)
 
 
 def check_first_write(plugin, data_version):
@@ -49,18 +42,18 @@ def check_first_write(plugin, data_version):
     """
     backend = plugin.backend
 
-    logging.info(
+    plugin.log(
         "Comparing backup version {} versus first write version {}".format(
             backend.version, data_version
         )
     )
 
     if backend.version == data_version - 1:
-        logging.info("Versions match up")
+        plugin.log("Versions match up")
         return True
 
     elif backend.prev_version == data_version - 1 and plugin.backend.rewind():
-        logging.info("Last changes not applied, rewinding non-committed transaction")
+        plugin.log("Last changes not applied, rewinding non-committed transaction")
         return True
 
     elif backend.prev_version > data_version - 1:
@@ -154,5 +147,5 @@ if __name__ == "__main__":
         plugin.backend = get_backend(destination, require_init=True)
         plugin.run()
     except Exception:
-        logging.exception("Exception while initializing backup plugin")
+        plugin.log("Exception while initializing backup plugin", level="error")
         kill("Exception while initializing plugin, terminating lightningd")
