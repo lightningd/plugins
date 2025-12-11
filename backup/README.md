@@ -40,7 +40,8 @@ Notes:
  - You should use some non-local SSH or NFS mount as destination,
    otherwise any failure of the disk may result in both the original
    as well as the backup being corrupted.
- - Currently only the `file:///` URL scheme is supported.
+ - There is support for local filesystems with the `file:///` URL scheme and
+   remote support with the `socket:` URL scheme (see [remote](remote.md)).
 
 ## IMPORTANT note about hsm_secret
 
@@ -82,5 +83,5 @@ If things really messed up and you need to reinstall clightning, you can
 restore the database backup by using the `backup-cli` utility:
 
 ```bash
-./backup-cli restore file:///mnt/external/location ~/.lightning/bitcoin/lightningd.sqlite3
+uv run ./backup-cli restore file:///mnt/external/location ~/.lightning/bitcoin/lightningd.sqlite3
 ```
