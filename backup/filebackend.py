@@ -167,7 +167,7 @@ class FileBackend(Backend):
             },
         }
 
-        print("Starting compaction: stats={}".format(stats))
+        logging.info("Starting compaction: stats={}".format(stats))
         self.db = self._db_open(snapshotpath)
 
         for change in self.stream_changes():
@@ -205,7 +205,7 @@ class FileBackend(Backend):
             snapshot=open(snapshotpath, "rb").read(),
             transaction=None,
         )
-        print(
+        logging.info(
             "Adding intial snapshot with {} bytes for version {}".format(
                 len(snapshot.snapshot), snapshot.version
             )
@@ -224,7 +224,7 @@ class FileBackend(Backend):
             "backupsize": os.stat(clonepath).st_size,
         }
 
-        print(
+        logging.info(
             "Compacted {} changes, saving {} bytes, swapping backups".format(
                 stats["before"]["version_count"] - stats["after"]["version_count"],
                 stats["before"]["backupsize"] - stats["after"]["backupsize"],

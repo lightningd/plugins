@@ -452,6 +452,8 @@ def test_compact(bitcoind, directory, node_factory):
     l1 = node_factory.get_node(options=opts, cleandir=False)
     l1.rpc.backup_compact()
 
+    l1.daemon.wait_for_log("Starting compaction")
+
     tmp = tempfile.TemporaryDirectory()
     subprocess.check_call([cli_path, "restore", bdest, tmp.name])
 
