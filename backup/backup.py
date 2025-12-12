@@ -4,10 +4,7 @@
 # requires-python = ">=3.9.2"
 # dependencies = [
 #   "pyln-client>=25.2.2",
-#   "click>=8.0.4",
 #   "psutil>=5.9.4",
-#   "flask>=2.2",
-#   "werkzeug<4",
 # ]
 # ///
 

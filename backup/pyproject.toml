@@ -9,8 +9,7 @@ dependencies = [
     "pyln-client>=25.2.2",
     "click>=8.0.4",
     "psutil>=5.9.4",
-    "flask>=2.2",
-    "werkzeug<4",
+    "requests[socks]>=2.32.4",
 ]
 
 [dependency-groups]
