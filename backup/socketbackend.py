@@ -3,6 +3,7 @@ import json
 import logging
 import socket
 import re
+import socks
 import struct
 import time
 from typing import Tuple, Iterator
@@ -124,7 +125,6 @@ class SocketBackend(Backend):
                 self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         else:
             assert self.url.proxytype == ProxyType.SOCKS5
-            import socks
 
             self.sock = socks.socksocket()
             self.sock.set_proxy(
