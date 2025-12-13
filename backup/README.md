@@ -11,7 +11,8 @@ Related info about backup solutions: https://github.com/ElementsProject/lightnin
 ## Installation
 
 You need [uv](https://docs.astral.sh/uv/getting-started/installation/) to run this
-plugin like a binary. After `uv` is installed you can simply run
+plugin and `backup-cli` like a binary. After `uv` is installed and you followed the 
+[Setup](#setup) step you can simply run
 
 ```
 lightning-cli plugin start /path/to/backup.py
@@ -30,7 +31,7 @@ which makes sure no two instances are using the same backup. (Make sure to stop
 your Lightning node before running this command)
 
 ```bash
-uv run ./backup-cli init --lightning-dir ~/.lightning/bitcoin file:///mnt/external/location/file.bkp
+./backup-cli init --lightning-dir ~/.lightning/bitcoin file:///mnt/external/location/file.bkp
 ```
 
 Notes:
@@ -40,7 +41,8 @@ Notes:
  - You should use some non-local SSH or NFS mount as destination,
    otherwise any failure of the disk may result in both the original
    as well as the backup being corrupted.
- - Currently only the `file:///` URL scheme is supported.
+ - There is support for local filesystems with the `file:///` URL scheme and
+   remote support with the `socket:` URL scheme (see [remote](remote.md)).
 
 ## IMPORTANT note about hsm_secret
 

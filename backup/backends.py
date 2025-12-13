@@ -1,6 +1,6 @@
 """Create a backend instance based on URI scheme dispatch."""
 
-from typing import Type
+from typing import Mapping, Type
 from urllib.parse import urlparse
 
 from backend import Backend
