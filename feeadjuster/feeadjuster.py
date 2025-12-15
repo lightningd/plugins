@@ -116,7 +116,7 @@ def get_config(plugin: Plugin, config: str):
         and plugin.rpcversion[1] >= 8
     ):
         result = plugin.rpc.listconfigs(config)["configs"]
-        assert len(result) > 0
+        assert len(result) > 0, "listconfigs returned no result"
         conf_obj = result[config]
         if "value_str" in conf_obj:
             return conf_obj["value_str"]
@@ -152,7 +152,7 @@ def get_peerchannel(plugin: Plugin, scid: str):
 
 def get_chan_fees(plugin: Plugin, scid: str):
     channel = get_peerchannel(plugin, scid)
-    assert channel is not None
+    assert channel is not None, f"channel not found: {scid}"
     return {
         "base": channel["fee_base_msat"],
         "ppm": channel["fee_proportional_millionths"],
@@ -169,7 +169,7 @@ def get_fees_median(plugin: Plugin, scid: str):
     The assumption is that our node competes in fees to other peers of a peer.
     """
     peer_id = get_peer_id_for_scid(plugin, scid)
-    assert peer_id is not None
+    assert peer_id is not None, f"peer_id not found for {scid}"
     if plugin.listchannels_by_dst:
         plugin.channels = plugin.rpc.call("listchannels", {"destination": peer_id})[
             "channels"
@@ -280,7 +280,9 @@ def maybe_adjust_fees(plugin: Plugin, scids: list):
             continue
 
         percentage = get_adjusted_percentage(plugin, scid)
-        assert 0 <= percentage and percentage <= 1
+        assert 0 <= percentage and percentage <= 1, (
+            f"percentage is out of bounds: balances: {plugin.adj_balances[scid]} big_enough_liquidity: {int(plugin.big_enough_liquidity)}"
+        )
         ratio = plugin.get_ratio(percentage)
         if plugin.max_htlc_steps >= 1:
             max_htlc = int(
@@ -304,7 +306,7 @@ def get_new_balance(plugin: Plugin, scid: str):
     i = 0
     while i < 5:
         chan = get_peerchannel(plugin, scid)
-        assert chan is not None
+        assert chan is not None, f"channel not found: {scid}"
         if scid not in plugin.adj_balances:
             time.sleep(5)
             plugin.peerchannels = get_peerchannels(plugin)
@@ -472,7 +474,7 @@ def init(options: dict, configuration: dict, plugin: Plugin, **kwargs):
     plugin.log(
         f"Plugin feeadjuster initialized "
         f"({plugin.adj_basefee} base / {plugin.adj_ppmfee} ppm) with an "
-        f"imbalance of {int(100 * plugin.imbalance)}%/{int(100 * ( 1 - plugin.imbalance))}%, "
+        f"imbalance of {int(100 * plugin.imbalance)}%/{int(100 * (1 - plugin.imbalance))}%, "
         f"update_threshold: {int(100 * plugin.update_threshold)}%, "
         f"update_threshold_abs: {plugin.update_threshold_abs}, "
         f"enough_liquidity: {plugin.big_enough_liquidity}, "
