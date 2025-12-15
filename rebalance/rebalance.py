@@ -482,7 +482,7 @@ def rebalance(
                 "sent": msatoshi + fees,
                 "received": msatoshi,
                 "fee": fees,
-                "fee_percentage": f"{fees/msatoshi*100:.3}%",
+                "fee_percentage": f"{fees / msatoshi * 100:.3}%",
                 "hops": len(route),
                 "outgoing_scid": outgoing_scid,
                 "incoming_scid": incoming_scid,
@@ -599,12 +599,12 @@ def get_open_channels(plugin: Plugin):
     if plugin.listpeerchannels:
         channels = plugin.rpc.listpeerchannels()["channels"]
         for ch in channels:
-            if ch["state"] == "CHANNELD_NORMAL" and not ch["private"]:
+            if ch["state"] == "CHANNELD_NORMAL":
                 result.append(ch)
     else:
         for peer in plugin.rpc.listpeers()["peers"]:
             for ch in peer["channels"]:
-                if ch["state"] == "CHANNELD_NORMAL" and not ch["private"]:
+                if ch["state"] == "CHANNELD_NORMAL":
                     result.append(ch)
     return result
 
@@ -1261,8 +1261,7 @@ plugin.add_option(
 plugin.add_option(
     "rebalance-erringnodes",
     "5",
-    "Exclude nodes from routing that raised N or more errors. "
-    "Note: Use 0 to disable.",
+    "Exclude nodes from routing that raised N or more errors. Note: Use 0 to disable.",
     "string",
 )
 
