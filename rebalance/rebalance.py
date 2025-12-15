@@ -535,10 +535,12 @@ def rebalance(
                 erring_channel = e.error.get("data", {}).get("erring_channel")
                 erring_direction = e.error.get("data", {}).get("erring_direction")
                 if erring_channel == incoming_scid:
+                    plugin.log(f"Error with incoming channel: {e}")
                     raise RpcError(
                         "rebalance", payload, {"message": "Error with incoming channel"}
                     )
                 if erring_channel == outgoing_scid:
+                    plugin.log(f"Error with outgoing channel: {e}")
                     raise RpcError(
                         "rebalance", payload, {"message": "Error with outgoing channel"}
                     )
