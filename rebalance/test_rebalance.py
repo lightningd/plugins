@@ -175,3 +175,122 @@ def test_rebalance_all(node_factory, bitcoind):
     report = l1.rpc.rebalancereport()
     assert report.get("rebalanceall_is_running") is False
     assert report.get("total_successful_rebalances") == 2
+
+
+def test_rebalance_manual_private(node_factory, bitcoind):
+    l1, l2, l3 = node_factory.line_graph(3, opts=plugin_opt)
+    l1.daemon.logsearch_start = 0
+    l1.daemon.wait_for_log("Plugin rebalance initialized.*")
+    nodes = [l1, l2, l3]
+
+    # form a circle so we can do rebalancing
+    l3.connect(l1)
+    l3.fundchannel(l1, announce_channel=False)
+
+    # get scids
+    scid12 = l1.get_channel_scid(l2)
+    scid23 = l2.get_channel_scid(l3)
+    scid31 = l3.get_channel_scid(l1)
+    scids_pub = [scid12, scid23]
+
+    # wait for each others gossip
+    bitcoind.generate_block(6)
+    for n in nodes:
+        for scid in scids_pub:
+            n.wait_channel_active(scid)
+    l1.wait_local_channel_active(scid31)
+
+    result = l1.rpc.rebalance(scid12, scid31)
+    print(result)
+    assert result["status"] == "complete"
+    assert result["outgoing_scid"] == scid12
+    assert result["incoming_scid"] == scid31
+    assert result["hops"] == 3
+    assert result["received"] == "500000000msat"
+
+    # wait until listpeers is up2date
+    wait_for_all_htlcs(nodes)
+
+    # check that channels are now balanced
+    c12 = l1.rpc.listpeerchannels(l2.info["id"])["channels"][0]
+    c13 = l1.rpc.listpeerchannels(l3.info["id"])["channels"][0]
+    assert c13["private"] is True
+    assert (
+        abs(0.5 - (Millisatoshi(c12["to_us_msat"]) / Millisatoshi(c12["total_msat"])))
+        < 0.01
+    )
+    assert (
+        abs(0.5 - (Millisatoshi(c13["to_us_msat"]) / Millisatoshi(c13["total_msat"])))
+        < 0.01
+    )
+
+    # check we can do a manual amount rebalance in the other direction
+    result = l1.rpc.rebalance(scid31, scid12, "250000000msat")
+    assert result["status"] == "complete"
+    assert result["outgoing_scid"] == scid31
+    assert result["incoming_scid"] == scid12
+    assert result["hops"] == 3
+    assert result["received"] == "250000000msat"
+
+    # briefly check rebalancereport works
+    report = l1.rpc.rebalancereport()
+    assert report.get("rebalanceall_is_running") is False
+    assert report.get("total_successful_rebalances") == 2
+
+
+def test_rebalance_all_private(node_factory, bitcoind):
+    l1, l2, l3 = node_factory.line_graph(3, opts=plugin_opt)
+    l1.daemon.logsearch_start = 0
+    l1.daemon.wait_for_log("Plugin rebalance initialized.*")
+    nodes = [l1, l2, l3]
+
+    # now we form a circle so we can do actually rebalanceall
+    l3.connect(l1)
+    l3.fundchannel(l1, announce_channel=False)
+
+    # get scids
+    scid12 = l1.get_channel_scid(l2)
+    scid23 = l2.get_channel_scid(l3)
+    scid31 = l3.get_channel_scid(l1)
+    scids_pub = [scid12, scid23]
+
+    # wait for each others gossip
+    bitcoind.generate_block(6)
+    for n in nodes:
+        for scid in scids_pub:
+            n.wait_channel_active(scid)
+    l1.wait_local_channel_active(scid31)
+
+    # check the rebalanceall starts
+    result = l1.rpc.rebalanceall(feeratio=5.0)  # we need high fees to work
+    assert result["message"].startswith("Rebalance started")
+    l1.daemon.wait_for_logs(
+        [f"tries to rebalance: {scid12} -> {scid31}", "Automatic rebalance finished"]
+    )
+
+    # check additional calls to stop return 'nothing to stop' + last message
+    result = l1.rpc.rebalancestop()["message"]
+    assert result.startswith(
+        "No rebalance is running, nothing to stop. "
+        "Last 'rebalanceall' gave: Automatic rebalance finished"
+    )
+
+    # wait until listpeers is up2date
+    wait_for_all_htlcs(nodes)
+
+    # check that channels are now balanced
+    c12 = l1.rpc.listpeerchannels(l2.info["id"])["channels"][0]
+    c13 = l1.rpc.listpeerchannels(l3.info["id"])["channels"][0]
+    assert (
+        abs(0.5 - (Millisatoshi(c12["to_us_msat"]) / Millisatoshi(c12["total_msat"])))
+        < 0.01
+    )
+    assert (
+        abs(0.5 - (Millisatoshi(c13["to_us_msat"]) / Millisatoshi(c13["total_msat"])))
+        < 0.01
+    )
+
+    # briefly check rebalancereport works
+    report = l1.rpc.rebalancereport()
+    assert report.get("rebalanceall_is_running") is False
+    assert report.get("total_successful_rebalances") == 2
