@@ -41,3 +41,26 @@ Hidden services are also supported :
 ```
 lightningd --testnet --disable-plugin bcli --plugin $PWD/sauron.py --sauron-tor-proxy localhost:9050 --sauron-api-endpoint http://explorerzydxu5ecjrkwceayqybizmpjjznk5izmitf2modhcusuqlid.onion/testnet/api/
 ```
+
+
+If you use `systemd` to start CLN, you must have `uv` in the `PATH` that `systemd` uses, which is likely different than the `PATH` from your shell. Most `uv` installation methods install `uv` into your user's home directory (`~/.local/bin` or `~/.cargo/bin`), which `systemd` cannot access.
+
+You can either:
+
+**Option 1: Install `uv` system-wide** (recommended):
+```bash
+curl -LsSf https://astral.sh/uv/install.sh | sudo env UV_INSTALL_DIR="/usr/local/bin" sh
+```
+
+**Option 2: Copy your existing user installation**:
+```bash
+sudo cp "$(command -v uv)" /usr/local/bin/uv
+```
+
+**Option 3: Configure your systemd service** to use a custom `PATH` (see systemd documentation).
+
+To verify `uv` is accessible to systemd:
+```bash
+sudo systemd-run --user --wait command -v uv
+```
+This should output `/usr/local/bin/uv`.
