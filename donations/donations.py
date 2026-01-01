@@ -3,13 +3,14 @@
 # /// script
 # requires-python = ">=3.9.2"
 # dependencies = [
-#   "qrcode>=7.4.2",
+#   "qrcode[pil]>=7.4.2",
 #   "flask>=2.3.3",
 #   "pyln-client>=24.11",
 #   "flask-bootstrap>=3.3.7.1",
 #   "flask-wtf>=1.2.1",
 #   "werkzeug>=3.0.6",
 #   "wtforms>=3.1.2",
+#   "waitress>=3.0.2",
 # ]
 # ///
 
@@ -31,8 +32,10 @@ LICENSE: MIT / APACHE
 """
 
 import base64
-import multiprocessing
 import qrcode
+import threading
+import logging
+import sys
 
 
 from flask import Flask, render_template
@@ -43,6 +46,7 @@ from pyln.client import Plugin
 from random import random
 from wtforms import StringField, SubmitField, IntegerField
 from wtforms.validators import DataRequired, NumberRange
+from waitress.server import create_server
 
 
 plugin = Plugin()
@@ -79,7 +83,10 @@ def make_base64_qr_code(bolt11):
 
 def ajax(label):
     global plugin
-    msg = plugin.rpc.listinvoices(label)["invoices"][0]
+    invoices = plugin.rpc.listinvoices(label)["invoices"]
+    if len(invoices) == 0:
+        return "waiting"
+    msg = invoices[0]
     if msg["status"] == "paid":
         return "Your donation has been received and is well appricated."
     return "waiting"
@@ -105,8 +112,8 @@ def donation_form():
         if invoice["label"].startswith("ln-plugin-donations-"):
             # FIXME: change to paid after debugging
             if invoice["status"] == "paid":
-                bolt11 = plugin.rpc.decodepay(invoice["bolt11"])
-                satoshis = int(bolt11["msatoshi"]) // 1000
+                bolt11 = plugin.rpc.decode(invoice["bolt11"])
+                satoshis = int(bolt11["amount_msat"]) // 1000
                 description = bolt11["description"]
                 ts = bolt11["created_at"]
                 donations.append((ts, satoshis, description))
@@ -126,14 +133,25 @@ def donation_form():
         )
 
 
-def worker(port):
+def worker(port, ready_event):
     app = Flask("donations")
     # FIXME: use hexlified hsm secret or something else
     app.config["SECRET_KEY"] = "you-will-never-guess-this"
     app.add_url_rule("/donation", "donation", donation_form, methods=["GET", "POST"])
     app.add_url_rule("/is_invoice_paid/<label>", "ajax", ajax)
     Bootstrap(app)
-    app.run(host="0.0.0.0", port=port)
+
+    server = create_server(app, host="*", port=port)
+
+    app.logger.setLevel(logging.INFO)
+    logging.getLogger("waitress").setLevel(logging.INFO)
+
+    app.logger.info(f"Starting donation server on port {port} on all addresses")
+
+    jobs[port]["server"] = server
+    ready_event.set()
+
+    server.run()
     return
 
 
@@ -144,21 +162,38 @@ def start_server(port):
     if port in jobs:
         return False, "server already running"
 
-    p = multiprocessing.Process(
-        target=worker, args=[port], name="server on port {}".format(port)
+    ready_event = threading.Event()
+    thread = threading.Thread(
+        target=worker,
+        args=[port, ready_event],
+        name=f"server on port {port}",
+        daemon=False,
     )
-    p.daemon = True
 
-    jobs[port] = p
-    p.start()
+    jobs[port] = {"thread": thread, "ready": ready_event}
+    thread.start()
+
+    ready_event.wait(timeout=5.0)
+    if "server" not in jobs[port]:
+        return False, "server failed to start in time"
 
     return True
 
 
+@plugin.subscribe("shutdown")
+def on_rpc_command_callback(plugin, **kwargs):
+    for port in list(jobs.keys()):
+        stop_server(port)
+    sys.exit()
+
+
 def stop_server(port):
     if port in jobs:
-        jobs[port].terminate()
-        jobs[port].join()
+        server = jobs[port]["server"]
+        thread = jobs[port]["thread"]
+        server.close()
+        if thread.is_alive():
+            thread.join(timeout=2.0)
         del jobs[port]
         return True
     else:
