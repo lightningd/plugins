@@ -8,13 +8,14 @@ readme = "README.md"
 requires-python = ">=3.9.2"
 
 dependencies = [
-    "qrcode>=7.4.2",
+    "qrcode[pil]>=7.4.2",
     "flask>=2.3.3",
     "pyln-client>=24.11",
     "flask-bootstrap>=3.3.7.1",
     "flask-wtf>=1.2.1",
     "werkzeug>=3.0.6",
     "wtforms>=3.1.2",
+    "waitress>=3.0.2",
 ]
 
 [dependency-groups]
@@ -25,4 +26,5 @@ dev = [
     "pyln-testing>=24.11",
     "pyln-client>=24.11",
     "pyln-proto>=24.11",
+    "requests>=2.32.5",
 ]
