@@ -30,7 +30,7 @@
 	url = https://github.com/BoltzExchange/hold
 [submodule "smaug"]
 	path = smaug
-	url = https://github.com/chrisguida/smaug
+	url = https://github.com/daywalker90/smaug
 [submodule "clnaddress"]
 	path = clnaddress
 	url = https://github.com/daywalker90/clnaddress.git
