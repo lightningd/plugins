@@ -4,16 +4,16 @@
 # requires-python = ">=3.9.2"
 # dependencies = [
 #   "pyln-client>=24.11",
-#   "requests[socks]>=2.23.0",
 # ]
 # ///
 
-import requests
 import sys
 import time
+import json
 
-from requests.packages.urllib3.util.retry import Retry
-from requests.adapters import HTTPAdapter
+import urllib
+import urllib.request
+import urllib.error
 from art import sauron_eye
 from pyln.client import Plugin
 
@@ -27,25 +27,71 @@ class SauronError(Exception):
     pass
 
 
-def fetch(url):
+def fetch(plugin, url):
     """Fetch this {url}, maybe through a pre-defined proxy."""
     # FIXME: Maybe try to be smart and renew circuit to broadcast different
     # transactions ? Hint: lightningd will agressively send us the same
     # transaction a certain amount of times.
-    session = requests.session()
-    session.proxies = plugin.sauron_socks_proxies
-    retry_strategy = Retry(
-        backoff_factor=1,
-        total=10,
-        status_forcelist=[429, 500, 502, 503, 504],
-        allowed_methods=["HEAD", "GET", "OPTIONS"],
-    )
-    adapter = HTTPAdapter(max_retries=retry_strategy)
-
-    session.mount("https://", adapter)
-    session.mount("http://", adapter)
-
-    return session.get(url)
+    max_retries = 10
+    backoff_factor = 1
+    status_forcelist = [429, 500, 502, 503, 504]
+    
+    class SimpleResponse:
+        def __init__(self, content, status_code, headers):
+            self.content = content
+            self.status_code = status_code
+            self.headers = headers
+            try:
+                self.text = content.decode('utf-8')
+            except:
+                self.text = str(content)
+        
+        def json(self):
+            return json.loads(self.text)
+    
+    for attempt in range(max_retries + 1):
+        try:
+            start = time.time()
+            with urllib.request.urlopen(url, timeout=10) as response:
+                elapsed = time.time() - start
+                plugin.log(f"Request took {elapsed:.3f}s", level="debug")
+                
+                data = response.read()
+                status = response.status
+                headers = dict(response.headers)
+                
+                return SimpleResponse(data, status, headers)
+        
+        except urllib.error.HTTPError as e:
+            # HTTP error responses (4xx, 5xx)
+            plugin.log(f"HTTP {e.code} for {url}", level="debug")
+            data = e.read() if e.fp else b''
+            headers = dict(e.headers) if e.headers else {}
+            
+            # Retry on specific status codes
+            if e.code in status_forcelist and attempt < max_retries:
+                wait_time = backoff_factor * (2 ** attempt)
+                plugin.log(f"Retrying in {wait_time}s (attempt {attempt + 1}/{max_retries})", level="debug")
+                time.sleep(wait_time)
+                continue
+            
+            # Return error response (don't raise)
+            return SimpleResponse(data, e.code, headers)
+        
+        except (urllib.error.URLError, OSError, ConnectionError) as e:
+            # Network errors (DNS, connection refused, timeout, etc.)
+            if attempt < max_retries:
+                wait_time = backoff_factor * (2 ** attempt)
+                plugin.log(f"Network error, retrying in {wait_time}s (attempt {attempt + 1}/{max_retries}): {e}", level="debug")
+                time.sleep(wait_time)
+                continue
+            else:
+                plugin.log(f"Failed after {max_retries} retries: {e}", level="error")
+                raise
+        
+        except Exception as e:
+            plugin.log(f"Failed: {e}", level="error")
+            raise
 
 
 @plugin.init()
@@ -80,7 +126,7 @@ def getchaininfo(plugin, **kwargs):
         "00000008819873e925422c1ff0f99f7cc9bbb232af63a077a480a3633bee1ef6": "signet",
     }
 
-    genesis_req = fetch(blockhash_url)
+    genesis_req = fetch(plugin, blockhash_url)
     if not genesis_req.status_code == 200:
         raise SauronError(
             "Endpoint at {} returned {} ({}) when trying to "
@@ -89,7 +135,7 @@ def getchaininfo(plugin, **kwargs):
             )
         )
 
-    blockcount_req = fetch(blockcount_url)
+    blockcount_req = fetch(plugin, blockcount_url)
     if not blockcount_req.status_code == 200:
         raise SauronError(
             "Endpoint at {} returned {} ({}) when trying to " "get blockcount.".format(
@@ -113,7 +159,7 @@ def getchaininfo(plugin, **kwargs):
 @plugin.method("getrawblockbyheight")
 def getrawblock(plugin, height, **kwargs):
     blockhash_url = "{}/block-height/{}".format(plugin.api_endpoint, height)
-    blockhash_req = fetch(blockhash_url)
+    blockhash_req = fetch(plugin, blockhash_url)
     if blockhash_req.status_code != 200:
         return {
             "blockhash": None,
@@ -122,7 +168,7 @@ def getrawblock(plugin, height, **kwargs):
 
     block_url = "{}/block/{}/raw".format(plugin.api_endpoint, blockhash_req.text)
     while True:
-        block_req = fetch(block_url)
+        block_req = fetch(plugin, block_url)
         if block_req.status_code != 200:
             return {
                 "blockhash": None,
@@ -147,35 +193,41 @@ def getrawblock(plugin, height, **kwargs):
 
 
 @plugin.method("sendrawtransaction")
-def sendrawtx(plugin, tx, **kwargs):
+def sendrawtx(plugin, tx, **kwargs):    
     sendtx_url = "{}/tx".format(plugin.api_endpoint)
 
-    sendtx_req = requests.post(sendtx_url, data=tx)
-    if sendtx_req.status_code != 200:
+    try:
+        req = urllib.request.Request(
+            sendtx_url, 
+            data=tx.encode() if isinstance(tx, str) else tx,
+            method='POST'
+        )
+        
+        with urllib.request.urlopen(req, timeout=10) as _response:
+            return {
+                "success": True,
+                "errmsg": "",
+            }
+        
+    except Exception as e:
         return {
             "success": False,
-            "errmsg": sendtx_req.text,
+            "errmsg": str(e),
         }
-
-    return {
-        "success": True,
-        "errmsg": "",
-    }
-
 
 @plugin.method("getutxout")
 def getutxout(plugin, txid, vout, **kwargs):
     gettx_url = "{}/tx/{}".format(plugin.api_endpoint, txid)
     status_url = "{}/tx/{}/outspend/{}".format(plugin.api_endpoint, txid, vout)
 
-    gettx_req = fetch(gettx_url)
+    gettx_req = fetch(plugin, gettx_url)
     if not gettx_req.status_code == 200:
         raise SauronError(
             "Endpoint at {} returned {} ({}) when trying to " "get transaction.".format(
                 gettx_url, gettx_req.status_code, gettx_req.text
             )
         )
-    status_req = fetch(status_url)
+    status_req = fetch(plugin, status_url)
     if not status_req.status_code == 200:
         raise SauronError(
             "Endpoint at {} returned {} ({}) when trying to " "get utxo status.".format(
@@ -200,7 +252,7 @@ def getutxout(plugin, txid, vout, **kwargs):
 def estimatefees(plugin, **kwargs):
     feerate_url = "{}/fee-estimates".format(plugin.api_endpoint)
 
-    feerate_req = fetch(feerate_url)
+    feerate_req = fetch(plugin, feerate_url)
     assert feerate_req.status_code == 200
     feerates = feerate_req.json()
     if plugin.sauron_network in ["test", "signet"]:
