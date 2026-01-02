@@ -10,10 +10,12 @@
 import sys
 import time
 import json
+import socket
 
 import urllib
 import urllib.request
 import urllib.error
+from contextlib import contextmanager
 from art import sauron_eye
 from pyln.client import Plugin
 
@@ -26,6 +28,18 @@ plugin.sauron_network = "test"
 class SauronError(Exception):
     pass
 
+original_getaddrinfo = socket.getaddrinfo
+
+def ipv4_only_getaddrinfo(host, port, family=0, type=0, proto=0, flags=0):
+    return original_getaddrinfo(host, port, socket.AF_INET, type, proto, flags)
+
+@contextmanager
+def force_ipv4():
+    socket.getaddrinfo = ipv4_only_getaddrinfo
+    try:
+        yield
+    finally:
+        socket.getaddrinfo = original_getaddrinfo
 
 def fetch(plugin, url):
     """Fetch this {url}, maybe through a pre-defined proxy."""
@@ -52,15 +66,23 @@ def fetch(plugin, url):
     for attempt in range(max_retries + 1):
         try:
             start = time.time()
-            with urllib.request.urlopen(url, timeout=10) as response:
-                elapsed = time.time() - start
-                plugin.log(f"Request took {elapsed:.3f}s", level="debug")
+            with force_ipv4():
+                plugin.log(f"Opening URL: {url}")
+                # Resolve the host manually to see what address it's using
+                host = urllib.parse.urlparse(url).hostname
+                port = urllib.parse.urlparse(url).port or 443
+                addr_info = socket.getaddrinfo(host, port)
+                for family, type, proto, canonname, sockaddr in addr_info[:3]:  # Show first few
+                    plugin.log(f"Resolved {host}:{port} -> {sockaddr[0]} (family: {'IPv4' if family == socket.AF_INET else 'IPv6' if family == socket.AF_INET6 else family})")
+                with urllib.request.urlopen(url, timeout=3) as response:
+                    elapsed = time.time() - start
+                    plugin.log(f"Request took {elapsed:.3f}s", level="debug")
 
-                data = response.read()
-                status = response.status
-                headers = dict(response.headers)
+                    data = response.read()
+                    status = response.status
+                    headers = dict(response.headers)
 
-                return SimpleResponse(data, status, headers)
+                    return SimpleResponse(data, status, headers)
 
         except urllib.error.HTTPError as e:
             # HTTP error responses (4xx, 5xx)
