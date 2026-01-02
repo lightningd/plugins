@@ -9,6 +9,7 @@ from util import LightningD
 
 pyln.testing.fixtures.network_daemons["signet"] = utils.BitcoinD
 
+
 class LightningNode(utils.LightningNode):
     def __init__(self, *args, **kwargs):
         pyln.testing.utils.TEST_NETWORK = "signet"
@@ -74,6 +75,7 @@ def test_esplora_signet_getrawblockbyheight(node_factory):
     }
     assert response == expected_response
 
+
 @pytest.mark.skip(reason="testing_theory")
 def test_esplora_signet_sendrawtransaction_invalid(node_factory):
     """
@@ -82,13 +84,15 @@ def test_esplora_signet_sendrawtransaction_invalid(node_factory):
     ln_node = node_factory.get_node()
 
     expected_error_substring = "RPC error"
-    
+
     response = ln_node.rpc.call(
         "sendrawtransaction",
         {"tx": "invalid-raw-tx"},
     )
 
-    assert expected_error_substring in response.get("errmsg", ""), "Expected 'RPC error' in errmsg field"
+    assert expected_error_substring in response.get("errmsg", ""), (
+        "Expected 'RPC error' in errmsg field"
+    )
     assert response.get("success") is False, "Expected success to be False"
 
 

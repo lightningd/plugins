@@ -5,7 +5,7 @@ description = "A Bitcoin backend plugin relying on Esplora"
 readme = "README.md"
 requires-python = ">=3.9.2"
 
-dependencies = ["pyln-client>=24.11", "requests[socks]>=2.23.0"]
+dependencies = ["pyln-client>=24.11"]
 
 [dependency-groups]
 dev = [

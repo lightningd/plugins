@@ -9,6 +9,7 @@ from util import LightningD
 
 pyln.testing.fixtures.network_daemons["bitcoin"] = utils.BitcoinD
 
+
 class LightningNode(utils.LightningNode):
     def __init__(self, *args, **kwargs):
         pyln.testing.utils.TEST_NETWORK = "bitcoin"

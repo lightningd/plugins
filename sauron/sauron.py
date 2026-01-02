@@ -4,16 +4,18 @@
 # requires-python = ">=3.9.2"
 # dependencies = [
 #   "pyln-client>=24.11",
-#   "requests[socks]>=2.23.0",
 # ]
 # ///
 
-import requests
 import sys
 import time
+import json
+import socket
 
-from requests.packages.urllib3.util.retry import Retry
-from requests.adapters import HTTPAdapter
+import urllib
+import urllib.request
+import urllib.error
+from contextlib import contextmanager
 from art import sauron_eye
 from pyln.client import Plugin
 
@@ -26,26 +28,98 @@ plugin.sauron_network = "test"
 class SauronError(Exception):
     pass
 
+original_getaddrinfo = socket.getaddrinfo
 
-def fetch(url):
+def ipv4_only_getaddrinfo(host, port, family=0, type=0, proto=0, flags=0):
+    return original_getaddrinfo(host, port, socket.AF_INET, type, proto, flags)
+
+@contextmanager
+def force_ipv4():
+    socket.getaddrinfo = ipv4_only_getaddrinfo
+    try:
+        yield
+    finally:
+        socket.getaddrinfo = original_getaddrinfo
+
+def fetch(plugin, url):
     """Fetch this {url}, maybe through a pre-defined proxy."""
     # FIXME: Maybe try to be smart and renew circuit to broadcast different
     # transactions ? Hint: lightningd will agressively send us the same
     # transaction a certain amount of times.
-    session = requests.session()
-    session.proxies = plugin.sauron_socks_proxies
-    retry_strategy = Retry(
-        backoff_factor=1,
-        total=10,
-        status_forcelist=[429, 500, 502, 503, 504],
-        allowed_methods=["HEAD", "GET", "OPTIONS"],
-    )
-    adapter = HTTPAdapter(max_retries=retry_strategy)
+    max_retries = 10
+    backoff_factor = 1
+    status_forcelist = [429, 500, 502, 503, 504]
 
-    session.mount("https://", adapter)
-    session.mount("http://", adapter)
+    class SimpleResponse:
+        def __init__(self, content, status_code, headers):
+            self.content = content
+            self.status_code = status_code
+            self.headers = headers
+            try:
+                self.text = content.decode("utf-8")
+            except:
+                self.text = str(content)
 
-    return session.get(url)
+        def json(self):
+            return json.loads(self.text)
+
+    for attempt in range(max_retries + 1):
+        try:
+            start = time.time()
+            with force_ipv4():
+                plugin.log(f"Opening URL: {url}")
+                # Resolve the host manually to see what address it's using
+                host = urllib.parse.urlparse(url).hostname
+                port = urllib.parse.urlparse(url).port or 443
+                addr_info = socket.getaddrinfo(host, port)
+                for family, type, proto, canonname, sockaddr in addr_info[:3]:  # Show first few
+                    plugin.log(f"Resolved {host}:{port} -> {sockaddr[0]} (family: {'IPv4' if family == socket.AF_INET else 'IPv6' if family == socket.AF_INET6 else family})")
+                with urllib.request.urlopen(url, timeout=3) as response:
+                    elapsed = time.time() - start
+                    plugin.log(f"Request took {elapsed:.3f}s", level="debug")
+
+                    data = response.read()
+                    status = response.status
+                    headers = dict(response.headers)
+
+                    return SimpleResponse(data, status, headers)
+
+        except urllib.error.HTTPError as e:
+            # HTTP error responses (4xx, 5xx)
+            plugin.log(f"HTTP {e.code} for {url}", level="debug")
+            data = e.read() if e.fp else b""
+            headers = dict(e.headers) if e.headers else {}
+
+            # Retry on specific status codes
+            if e.code in status_forcelist and attempt < max_retries:
+                wait_time = backoff_factor * (2**attempt)
+                plugin.log(
+                    f"Retrying in {wait_time}s (attempt {attempt + 1}/{max_retries})",
+                    level="debug",
+                )
+                time.sleep(wait_time)
+                continue
+
+            # Return error response (don't raise)
+            return SimpleResponse(data, e.code, headers)
+
+        except (urllib.error.URLError, OSError, ConnectionError) as e:
+            # Network errors (DNS, connection refused, timeout, etc.)
+            if attempt < max_retries:
+                wait_time = backoff_factor * (2**attempt)
+                plugin.log(
+                    f"Network error, retrying in {wait_time}s (attempt {attempt + 1}/{max_retries}): {e}",
+                    level="debug",
+                )
+                time.sleep(wait_time)
+                continue
+            else:
+                plugin.log(f"Failed after {max_retries} retries: {e}", level="error")
+                raise
+
+        except Exception as e:
+            plugin.log(f"Failed: {e}", level="error")
+            raise
 
 
 @plugin.init()
@@ -80,7 +154,7 @@ def getchaininfo(plugin, **kwargs):
         "00000008819873e925422c1ff0f99f7cc9bbb232af63a077a480a3633bee1ef6": "signet",
     }
 
-    genesis_req = fetch(blockhash_url)
+    genesis_req = fetch(plugin, blockhash_url)
     if not genesis_req.status_code == 200:
         raise SauronError(
             "Endpoint at {} returned {} ({}) when trying to "
@@ -89,10 +163,10 @@ def getchaininfo(plugin, **kwargs):
             )
         )
 
-    blockcount_req = fetch(blockcount_url)
+    blockcount_req = fetch(plugin, blockcount_url)
     if not blockcount_req.status_code == 200:
         raise SauronError(
-            "Endpoint at {} returned {} ({}) when trying to " "get blockcount.".format(
+            "Endpoint at {} returned {} ({}) when trying to get blockcount.".format(
                 blockcount_url, blockcount_req.status_code, blockcount_req.text
             )
         )
@@ -113,7 +187,7 @@ def getchaininfo(plugin, **kwargs):
 @plugin.method("getrawblockbyheight")
 def getrawblock(plugin, height, **kwargs):
     blockhash_url = "{}/block-height/{}".format(plugin.api_endpoint, height)
-    blockhash_req = fetch(blockhash_url)
+    blockhash_req = fetch(plugin, blockhash_url)
     if blockhash_req.status_code != 200:
         return {
             "blockhash": None,
@@ -122,7 +196,7 @@ def getrawblock(plugin, height, **kwargs):
 
     block_url = "{}/block/{}/raw".format(plugin.api_endpoint, blockhash_req.text)
     while True:
-        block_req = fetch(block_url)
+        block_req = fetch(plugin, block_url)
         if block_req.status_code != 200:
             return {
                 "blockhash": None,
@@ -150,17 +224,22 @@ def getrawblock(plugin, height, **kwargs):
 def sendrawtx(plugin, tx, **kwargs):
     sendtx_url = "{}/tx".format(plugin.api_endpoint)
 
-    sendtx_req = requests.post(sendtx_url, data=tx)
-    if sendtx_req.status_code != 200:
+    try:
+        req = urllib.request.Request(
+            sendtx_url, data=tx.encode() if isinstance(tx, str) else tx, method="POST"
+        )
+
+        with urllib.request.urlopen(req, timeout=10) as _response:
+            return {
+                "success": True,
+                "errmsg": "",
+            }
+
+    except Exception as e:
         return {
             "success": False,
-            "errmsg": sendtx_req.text,
+            "errmsg": str(e),
         }
-
-    return {
-        "success": True,
-        "errmsg": "",
-    }
 
 
 @plugin.method("getutxout")
@@ -168,17 +247,17 @@ def getutxout(plugin, txid, vout, **kwargs):
     gettx_url = "{}/tx/{}".format(plugin.api_endpoint, txid)
     status_url = "{}/tx/{}/outspend/{}".format(plugin.api_endpoint, txid, vout)
 
-    gettx_req = fetch(gettx_url)
+    gettx_req = fetch(plugin, gettx_url)
     if not gettx_req.status_code == 200:
         raise SauronError(
-            "Endpoint at {} returned {} ({}) when trying to " "get transaction.".format(
+            "Endpoint at {} returned {} ({}) when trying to get transaction.".format(
                 gettx_url, gettx_req.status_code, gettx_req.text
             )
         )
-    status_req = fetch(status_url)
+    status_req = fetch(plugin, status_url)
     if not status_req.status_code == 200:
         raise SauronError(
-            "Endpoint at {} returned {} ({}) when trying to " "get utxo status.".format(
+            "Endpoint at {} returned {} ({}) when trying to get utxo status.".format(
                 status_url, status_req.status_code, status_req.text
             )
         )
@@ -200,7 +279,7 @@ def getutxout(plugin, txid, vout, **kwargs):
 def estimatefees(plugin, **kwargs):
     feerate_url = "{}/fee-estimates".format(plugin.api_endpoint)
 
-    feerate_req = fetch(feerate_url)
+    feerate_req = fetch(plugin, feerate_url)
     assert feerate_req.status_code == 200
     feerates = feerate_req.json()
     if plugin.sauron_network in ["test", "signet"]:
