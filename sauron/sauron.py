@@ -35,60 +35,66 @@ def fetch(plugin, url):
     max_retries = 10
     backoff_factor = 1
     status_forcelist = [429, 500, 502, 503, 504]
-    
+
     class SimpleResponse:
         def __init__(self, content, status_code, headers):
             self.content = content
             self.status_code = status_code
             self.headers = headers
             try:
-                self.text = content.decode('utf-8')
+                self.text = content.decode("utf-8")
             except:
                 self.text = str(content)
-        
+
         def json(self):
             return json.loads(self.text)
-    
+
     for attempt in range(max_retries + 1):
         try:
             start = time.time()
             with urllib.request.urlopen(url, timeout=10) as response:
                 elapsed = time.time() - start
                 plugin.log(f"Request took {elapsed:.3f}s", level="debug")
-                
+
                 data = response.read()
                 status = response.status
                 headers = dict(response.headers)
-                
+
                 return SimpleResponse(data, status, headers)
-        
+
         except urllib.error.HTTPError as e:
             # HTTP error responses (4xx, 5xx)
             plugin.log(f"HTTP {e.code} for {url}", level="debug")
-            data = e.read() if e.fp else b''
+            data = e.read() if e.fp else b""
             headers = dict(e.headers) if e.headers else {}
-            
+
             # Retry on specific status codes
             if e.code in status_forcelist and attempt < max_retries:
-                wait_time = backoff_factor * (2 ** attempt)
-                plugin.log(f"Retrying in {wait_time}s (attempt {attempt + 1}/{max_retries})", level="debug")
+                wait_time = backoff_factor * (2**attempt)
+                plugin.log(
+                    f"Retrying in {wait_time}s (attempt {attempt + 1}/{max_retries})",
+                    level="debug",
+                )
                 time.sleep(wait_time)
                 continue
-            
+
             # Return error response (don't raise)
             return SimpleResponse(data, e.code, headers)
-        
+
         except (urllib.error.URLError, OSError, ConnectionError) as e:
             # Network errors (DNS, connection refused, timeout, etc.)
             if attempt < max_retries:
-                wait_time = backoff_factor * (2 ** attempt)
-                plugin.log(f"Network error, retrying in {wait_time}s (attempt {attempt + 1}/{max_retries}): {e}", level="debug")
+                wait_time = backoff_factor * (2**attempt)
+                plugin.log(
+                    f"Network error, retrying in {wait_time}s (attempt {attempt + 1}/{max_retries}): {e}",
+                    level="debug",
+                )
                 time.sleep(wait_time)
                 continue
             else:
                 plugin.log(f"Failed after {max_retries} retries: {e}", level="error")
                 raise
-        
+
         except Exception as e:
             plugin.log(f"Failed: {e}", level="error")
             raise
@@ -138,7 +144,7 @@ def getchaininfo(plugin, **kwargs):
     blockcount_req = fetch(plugin, blockcount_url)
     if not blockcount_req.status_code == 200:
         raise SauronError(
-            "Endpoint at {} returned {} ({}) when trying to " "get blockcount.".format(
+            "Endpoint at {} returned {} ({}) when trying to get blockcount.".format(
                 blockcount_url, blockcount_req.status_code, blockcount_req.text
             )
         )
@@ -193,27 +199,26 @@ def getrawblock(plugin, height, **kwargs):
 
 
 @plugin.method("sendrawtransaction")
-def sendrawtx(plugin, tx, **kwargs):    
+def sendrawtx(plugin, tx, **kwargs):
     sendtx_url = "{}/tx".format(plugin.api_endpoint)
 
     try:
         req = urllib.request.Request(
-            sendtx_url, 
-            data=tx.encode() if isinstance(tx, str) else tx,
-            method='POST'
+            sendtx_url, data=tx.encode() if isinstance(tx, str) else tx, method="POST"
         )
-        
+
         with urllib.request.urlopen(req, timeout=10) as _response:
             return {
                 "success": True,
                 "errmsg": "",
             }
-        
+
     except Exception as e:
         return {
             "success": False,
             "errmsg": str(e),
         }
+
 
 @plugin.method("getutxout")
 def getutxout(plugin, txid, vout, **kwargs):
@@ -223,14 +228,14 @@ def getutxout(plugin, txid, vout, **kwargs):
     gettx_req = fetch(plugin, gettx_url)
     if not gettx_req.status_code == 200:
         raise SauronError(
-            "Endpoint at {} returned {} ({}) when trying to " "get transaction.".format(
+            "Endpoint at {} returned {} ({}) when trying to get transaction.".format(
                 gettx_url, gettx_req.status_code, gettx_req.text
             )
         )
     status_req = fetch(plugin, status_url)
     if not status_req.status_code == 200:
         raise SauronError(
-            "Endpoint at {} returned {} ({}) when trying to " "get utxo status.".format(
+            "Endpoint at {} returned {} ({}) when trying to get utxo status.".format(
                 status_url, status_req.status_code, status_req.text
             )
         )
