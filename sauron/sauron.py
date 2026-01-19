@@ -4,6 +4,7 @@
 # requires-python = ">=3.9.2"
 # dependencies = [
 #   "pyln-client>=24.11",
+#   "portalocker>=3.2,<4",
 # ]
 # ///
 
@@ -11,13 +12,18 @@ import sys
 import time
 import json
 import socket
+import os
+import base64
 
 import urllib
 import urllib.request
 import urllib.error
-from contextlib import contextmanager
 from art import sauron_eye
 from pyln.client import Plugin
+import portalocker
+
+from ratelimit import GlobalRateLimiter
+from shared_cache import SharedRequestCache
 
 
 plugin = Plugin(dynamic=False)
@@ -28,28 +34,30 @@ plugin.sauron_network = "test"
 class SauronError(Exception):
     pass
 
+
 original_getaddrinfo = socket.getaddrinfo
 
-def ipv4_only_getaddrinfo(host, port, family=0, type=0, proto=0, flags=0):
-    return original_getaddrinfo(host, port, socket.AF_INET, type, proto, flags)
+# def ipv4_only_getaddrinfo(host, port, family=0, type=0, proto=0, flags=0):
+#     return original_getaddrinfo(host, port, socket.AF_INET, type, proto, flags)
 
-@contextmanager
-def force_ipv4():
-    socket.getaddrinfo = ipv4_only_getaddrinfo
-    try:
-        yield
-    finally:
-        socket.getaddrinfo = original_getaddrinfo
+# @contextmanager
+# def force_ipv4():
+#     socket.getaddrinfo = ipv4_only_getaddrinfo
+#     try:
+#         yield
+#     finally:
+#         socket.getaddrinfo = original_getaddrinfo
+
+rate_limiter = GlobalRateLimiter(rate_per_second=1, max_wait_seconds=15)
+cache = SharedRequestCache(ttl_seconds=30)
+
 
 def fetch(plugin, url):
     """Fetch this {url}, maybe through a pre-defined proxy."""
+
     # FIXME: Maybe try to be smart and renew circuit to broadcast different
     # transactions ? Hint: lightningd will agressively send us the same
     # transaction a certain amount of times.
-    max_retries = 10
-    backoff_factor = 1
-    status_forcelist = [429, 500, 502, 503, 504]
-
     class SimpleResponse:
         def __init__(self, content, status_code, headers):
             self.content = content
@@ -63,17 +71,58 @@ def fetch(plugin, url):
         def json(self):
             return json.loads(self.text)
 
+    key = cache.make_key(url, body="fetch")
+    lock_file = f"/tmp/fetch_lock_{key}.lock"
+
+    # Fast path
+    plugin.log(f"Checking cache for {url}", level="debug")
+    cached = cache.get(key)
+    if cached:
+        plugin.log(f"Cache hit for {url}", level="debug")
+        return SimpleResponse(
+            base64.b64decode(cached["content_b64"]), cached["status"], cached["headers"]
+        )
+
+    # Lock per URL
+    os.makedirs("/tmp", exist_ok=True)
+
+    max_retries = 10
+    backoff_factor = 1
+    status_forcelist = [429, 500, 502, 503, 504]
+
     for attempt in range(max_retries + 1):
         try:
-            start = time.time()
-            with force_ipv4():
-                plugin.log(f"Opening URL: {url}")
+            plugin.log(f"Getting fetch lock for {url}", level="debug")
+            with portalocker.Lock(lock_file, timeout=20):
+                # Inside lock, re-check cache
+                plugin.log(f"Re-checking cache for {url}", level="debug")
+                cached = cache.get(key)
+                if cached:
+                    plugin.log(f"Cache hit for {url}", level="debug")
+                    return SimpleResponse(
+                        base64.b64decode(cached["content_b64"]),
+                        cached["status"],
+                        cached["headers"],
+                    )
+
+                plugin.log("Waiting for rate limit", level="debug")
+                rate_limiter.acquire()
+                plugin.log("Rate limit acquired", level="debug")
+
+                start = time.time()
+                plugin.log(f"Opening URL: {url}", level="debug")
+
                 # Resolve the host manually to see what address it's using
-                host = urllib.parse.urlparse(url).hostname
-                port = urllib.parse.urlparse(url).port or 443
-                addr_info = socket.getaddrinfo(host, port)
-                for family, type, proto, canonname, sockaddr in addr_info[:3]:  # Show first few
-                    plugin.log(f"Resolved {host}:{port} -> {sockaddr[0]} (family: {'IPv4' if family == socket.AF_INET else 'IPv6' if family == socket.AF_INET6 else family})")
+                # host = urllib.parse.urlparse(url).hostname
+                # port = urllib.parse.urlparse(url).port or 443
+                # addr_info = socket.getaddrinfo(host, port)
+                # for family, type, proto, canonname, sockaddr in addr_info[
+                #     :3
+                # ]:  # Show first few
+                #     plugin.log(
+                #         f"Resolved {host}:{port} -> {sockaddr[0]} (family: {'IPv4' if family == socket.AF_INET else 'IPv6' if family == socket.AF_INET6 else family})",
+                #         level="debug",
+                #     )
                 with urllib.request.urlopen(url, timeout=3) as response:
                     elapsed = time.time() - start
                     plugin.log(f"Request took {elapsed:.3f}s", level="debug")
@@ -82,7 +131,24 @@ def fetch(plugin, url):
                     status = response.status
                     headers = dict(response.headers)
 
-                    return SimpleResponse(data, status, headers)
+                    result = SimpleResponse(data, status, headers)
+
+                    cache.set(
+                        key,
+                        {
+                            "status": status,
+                            "headers": headers,
+                            "content_b64": base64.b64encode(result.content).decode(
+                                "ascii"
+                            ),
+                        },
+                    )
+                    return result
+
+        except portalocker.exceptions.LockException:
+            plugin.log(f"Timeout waiting for request lock for {url}")
+            time.sleep(0.5)
+            continue
 
         except urllib.error.HTTPError as e:
             # HTTP error responses (4xx, 5xx)
