@@ -5,6 +5,7 @@
 # dependencies = [
 #   "pyln-client>=24.11",
 #   "requests[socks]>=2.23.0",
+#   "portalocker>=3.2,<4",
 # ]
 # ///
 
@@ -12,10 +13,17 @@ import requests
 import sys
 import time
 
-from requests.packages.urllib3.util.retry import Retry
 from requests.adapters import HTTPAdapter
+import os
+import base64
+
 from art import sauron_eye
+from requests.packages.urllib3.util.retry import Retry
 from pyln.client import Plugin
+import portalocker
+
+from ratelimit import GlobalRateLimiter
+from shared_cache import SharedRequestCache
 
 
 plugin = Plugin(dynamic=False)
@@ -27,25 +35,95 @@ class SauronError(Exception):
     pass
 
 
-def fetch(url):
+rate_limiter = GlobalRateLimiter(rate_per_second=1, max_wait_seconds=30)
+cache = SharedRequestCache(ttl_seconds=60)
+
+
+def fetch(plugin, url):
     """Fetch this {url}, maybe through a pre-defined proxy."""
+
     # FIXME: Maybe try to be smart and renew circuit to broadcast different
     # transactions ? Hint: lightningd will agressively send us the same
     # transaction a certain amount of times.
-    session = requests.session()
-    session.proxies = plugin.sauron_socks_proxies
-    retry_strategy = Retry(
-        backoff_factor=1,
-        total=10,
-        status_forcelist=[429, 500, 502, 503, 504],
-        allowed_methods=["HEAD", "GET", "OPTIONS"],
-    )
-    adapter = HTTPAdapter(max_retries=retry_strategy)
+    plugin.log(f"Making cache key for {url}", level="debug")
+    key = cache.make_key(url, body="fetch")
+    lock_file = f"/tmp/fetch_lock_{key}.lock"
 
-    session.mount("https://", adapter)
-    session.mount("http://", adapter)
+    # Fast path
+    plugin.log(f"Checking cache for {url}", level="debug")
+    cached = cache.get(key)
+    if cached:
+        plugin.log(f"Cache hit for {url}", level="debug")
+        resp = requests.Response()
+        resp.status_code = cached["status"]
+        resp._content = base64.b64decode(cached["content_b64"])
+        resp.headers = cached["headers"]
+        return resp
 
-    return session.get(url)
+    # Lock per URL
+    os.makedirs("/tmp", exist_ok=True)
+
+    max_retries = 10
+
+    for attempt in range(max_retries + 1):
+        try:
+            plugin.log(f"Getting fetch lock for {url}", level="debug")
+            with portalocker.Lock(lock_file, timeout=20):
+                # Inside lock, re-check cache
+                plugin.log(f"Re-checking cache for {url}", level="debug")
+                cached = cache.get(key)
+                if cached:
+                    plugin.log(f"Cache hit for {url}", level="debug")
+                    resp = requests.Response()
+                    resp.status_code = cached["status"]
+                    resp._content = base64.b64decode(cached["content_b64"])
+                    resp.headers = cached["headers"]
+                    return resp
+
+                plugin.log("Waiting for rate limit", level="debug")
+                rate_limiter.acquire()
+                plugin.log("Rate limit acquired", level="debug")
+
+                start = time.time()
+                plugin.log(f"Opening URL: {url}", level="debug")
+
+                session = requests.session()
+                session.proxies = plugin.sauron_socks_proxies
+                retry_strategy = Retry(
+                    backoff_factor=1,
+                    total=10,
+                    status_forcelist=[429, 500, 502, 503, 504],
+                    allowed_methods=["HEAD", "GET", "OPTIONS"],
+                )
+                adapter = HTTPAdapter(max_retries=retry_strategy)
+
+                session.mount("https://", adapter)
+                session.mount("http://", adapter)
+
+                resp = session.get(url, timeout=(5, 10))
+
+                elapsed = time.time() - start
+                plugin.log(f"Request took {elapsed:.3f}s", level="debug")
+
+                cache.set(
+                    key,
+                    {
+                        "status": resp.status_code,
+                        "headers": dict(resp.headers),
+                        "content_b64": base64.b64encode(resp.content).decode("ascii"),
+                    },
+                )
+
+                return resp
+
+        except portalocker.exceptions.LockException:
+            plugin.log(f"Timeout waiting for request lock for {url}")
+            time.sleep(0.5)
+            continue
+
+        except Exception as e:
+            plugin.log(f"Failed: {e}", level="error")
+            raise
 
 
 @plugin.init()
@@ -80,7 +158,7 @@ def getchaininfo(plugin, **kwargs):
         "00000008819873e925422c1ff0f99f7cc9bbb232af63a077a480a3633bee1ef6": "signet",
     }
 
-    genesis_req = fetch(blockhash_url)
+    genesis_req = fetch(plugin, blockhash_url)
     if not genesis_req.status_code == 200:
         raise SauronError(
             "Endpoint at {} returned {} ({}) when trying to "
@@ -89,7 +167,7 @@ def getchaininfo(plugin, **kwargs):
             )
         )
 
-    blockcount_req = fetch(blockcount_url)
+    blockcount_req = fetch(plugin, blockcount_url)
     if not blockcount_req.status_code == 200:
         raise SauronError(
             "Endpoint at {} returned {} ({}) when trying to get blockcount.".format(
@@ -113,7 +191,7 @@ def getchaininfo(plugin, **kwargs):
 @plugin.method("getrawblockbyheight")
 def getrawblock(plugin, height, **kwargs):
     blockhash_url = "{}/block-height/{}".format(plugin.api_endpoint, height)
-    blockhash_req = fetch(blockhash_url)
+    blockhash_req = fetch(plugin, blockhash_url)
     if blockhash_req.status_code != 200:
         return {
             "blockhash": None,
@@ -122,7 +200,7 @@ def getrawblock(plugin, height, **kwargs):
 
     block_url = "{}/block/{}/raw".format(plugin.api_endpoint, blockhash_req.text)
     while True:
-        block_req = fetch(block_url)
+        block_req = fetch(plugin, block_url)
         if block_req.status_code != 200:
             return {
                 "blockhash": None,
@@ -168,14 +246,14 @@ def getutxout(plugin, txid, vout, **kwargs):
     gettx_url = "{}/tx/{}".format(plugin.api_endpoint, txid)
     status_url = "{}/tx/{}/outspend/{}".format(plugin.api_endpoint, txid, vout)
 
-    gettx_req = fetch(gettx_url)
+    gettx_req = fetch(plugin, gettx_url)
     if not gettx_req.status_code == 200:
         raise SauronError(
             "Endpoint at {} returned {} ({}) when trying to get transaction.".format(
                 gettx_url, gettx_req.status_code, gettx_req.text
             )
         )
-    status_req = fetch(status_url)
+    status_req = fetch(plugin, status_url)
     if not status_req.status_code == 200:
         raise SauronError(
             "Endpoint at {} returned {} ({}) when trying to get utxo status.".format(
@@ -200,7 +278,7 @@ def getutxout(plugin, txid, vout, **kwargs):
 def estimatefees(plugin, **kwargs):
     feerate_url = "{}/fee-estimates".format(plugin.api_endpoint)
 
-    feerate_req = fetch(feerate_url)
+    feerate_req = fetch(plugin, feerate_url)
     assert feerate_req.status_code == 200
     feerates = feerate_req.json()
     if plugin.sauron_network in ["test", "signet"]:
