@@ -9,6 +9,7 @@ from util import LightningD
 
 pyln.testing.fixtures.network_daemons["signet"] = utils.BitcoinD
 
+
 class LightningNode(utils.LightningNode):
     def __init__(self, *args, **kwargs):
         pyln.testing.utils.TEST_NETWORK = "signet"
@@ -36,6 +37,7 @@ class LightningNode(utils.LightningNode):
     # Monkey patch
     def set_feerates(self, feerates, wait_for_effect=True):
         return None
+
 
 @pytest.fixture
 def node_cls(monkeypatch):
@@ -72,6 +74,7 @@ def test_mempoolspace_signet_getrawblockbyheight(node_factory):
         "blockhash": "00000008819873e925422c1ff0f99f7cc9bbb232af63a077a480a3633bee1ef6",
     }
     assert response == expected_response
+
 
 @pytest.mark.skip(reason="testing_theory")
 def test_mempoolspace_signet_sendrawtransaction_invalid(node_factory):
