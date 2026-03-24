@@ -9,6 +9,7 @@ from util import LightningD
 
 pyln.testing.fixtures.network_daemons["bitcoin"] = utils.BitcoinD
 
+
 class LightningNode(utils.LightningNode):
     def __init__(self, *args, **kwargs):
         pyln.testing.utils.TEST_NETWORK = "bitcoin"
@@ -73,6 +74,7 @@ def test_esplora_bitcoin_getrawblockbyheight(node_factory):
         "blockhash": "000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f",
     }
     assert response == expected_response
+
 
 @pytest.mark.skip(reason="testing_theory")
 def test_esplora_bitcoin_sendrawtransaction_invalid(node_factory):
@@ -140,8 +142,6 @@ def test_esplora_bitcoin_estimatefees(node_factory):
     #     ]
     # }
     response = ln_node.rpc.call("estimatefees")
-
-   
 
     expected_response_keys = [
         "opening",
