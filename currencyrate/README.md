@@ -1,3 +1,5 @@
+# Starting with CLN v26.04 a currencyrate plugin comes with CLN: [currencyconvert](https://docs.corelightning.org/reference/currencyconvert)
+
 # Currencyrate plugin
 
 This plugin provides Bitcoin currency conversion functions using various
