@@ -1,6 +1,6 @@
 import os
 from pyln.testing.fixtures import *  # noqa: F401,F403
-import urllib
+import urllib.request
 
 plugin_path = os.path.join(os.path.dirname(__file__), "prometheus.py")
 
