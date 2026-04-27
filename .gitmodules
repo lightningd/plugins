@@ -46,3 +46,6 @@
 [submodule "bumpit"]
 	path = bumpit
 	url = https://github.com/ca-ruz/bumpit.git
+[submodule "lnradar"]
+	path = lnradar
+	url = https://github.com/Lagrang3/lnradar
