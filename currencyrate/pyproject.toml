@@ -9,7 +9,7 @@ dependencies = [
     "cachetools>=5.3.3",
     "pyln-client>=25.9.3",
     "requests[socks]>=2.32.2",
-    "urllib3>=2.2.2",
+    "urllib3>=2.7.0",
 ]
 
 [dependency-groups]
