@@ -9,7 +9,7 @@ dependencies = ["pyln-client>=25.9.3", "packaging>=24.1"]
 
 [dependency-groups]
 dev = [
-    "pytest>=7.4,<9",
+    "pytest>=9.0.3,<10",
     "pytest-xdist>=3.7,<4",
     "pytest-timeout>=2.4,<3",
     "pyln-testing>=25.9.3",
