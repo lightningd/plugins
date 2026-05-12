@@ -1,11 +1,11 @@
 #!/usr/bin/env -S uv run --script
 
 # /// script
-# requires-python = ">=3.9.2"
+# requires-python = ">=3.10"
 # dependencies = [
 #   "inotify>=0.2.12",
-#   "pika>=1.3.2",
-#   "pyln-client>=24.2",
+#   "pika>=1.4.0",
+#   "pyln-client>=25.9.3",
 #   "python-dotenv>=1.1.0",
 #   "sqlalchemy>=2.0.40",
 # ]
