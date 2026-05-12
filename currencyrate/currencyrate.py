@@ -1,12 +1,12 @@
 #!/usr/bin/env -S uv run --script
 
 # /// script
-# requires-python = ">=3.9.2"
+# requires-python = ">=3.10"
 # dependencies = [
-#   "cachetools>=5.3.3",
+#   "cachetools>=7.1.1",
 #   "pyln-client>=24.11",
-#   "requests[socks]>=2.32.2",
-#   "urllib3>=2.2.2",
+#   "requests[socks]>=2.34.0",
+#   "urllib3>=2.7.0",
 # ]
 # ///
 
