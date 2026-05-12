@@ -5,7 +5,7 @@ description = "Monitors the health of your peers and helps you to decide if you 
 readme = "README.md"
 requires-python = ">=3.10"
 
-dependencies = ["pyln-client>=25.9.3", "packaging>=24.1"]
+dependencies = ["pyln-client>=25.9.3", "packaging>=26.2"]
 
 [dependency-groups]
 dev = [
