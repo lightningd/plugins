@@ -1,11 +1,11 @@
 #!/usr/bin/env -S uv run --script
 
 # /// script
-# requires-python = ">=3.9.2"
+# requires-python = ">=3.10"
 # dependencies = [
 #   "Twisted>=20.3.0",
-#   "txzmq==0.8.2",
-#   "pyln-client>=24.11",
+#   "txzmq==1.0.0",
+#   "pyln-client>=25.9.3",
 # ]
 # ///
 
