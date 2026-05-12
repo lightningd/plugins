@@ -30,6 +30,22 @@ updates:
     allow:
       - dependency-type: "all"
 
+    ignore:
+      - dependency-name: "pyln-client"
+        update-types:
+          - "version-update:semver-minor"
+          - "version-update:semver-major"
+
+      - dependency-name: "pyln-testing"
+        update-types:
+          - "version-update:semver-minor"
+          - "version-update:semver-major"
+
+      - dependency-name: "pyln-proto"
+        update-types:
+          - "version-update:semver-minor"
+          - "version-update:semver-major"
+
   - package-ecosystem: "uv"
     directories:
       - "/clearnet"
@@ -59,6 +75,22 @@ updates:
 
     allow:
       - dependency-type: "all"
+
+    ignore:
+      - dependency-name: "pyln-client"
+        update-types:
+          - "version-update:semver-minor"
+          - "version-update:semver-major"
+
+      - dependency-name: "pyln-testing"
+        update-types:
+          - "version-update:semver-minor"
+          - "version-update:semver-major"
+
+      - dependency-name: "pyln-proto"
+        update-types:
+          - "version-update:semver-minor"
+          - "version-update:semver-major"
   
   - package-ecosystem: "uv"
     directories:
@@ -90,6 +122,22 @@ updates:
     allow:
       - dependency-type: "all"
 
+    ignore:
+      - dependency-name: "pyln-client"
+        update-types:
+          - "version-update:semver-minor"
+          - "version-update:semver-major"
+
+      - dependency-name: "pyln-testing"
+        update-types:
+          - "version-update:semver-minor"
+          - "version-update:semver-major"
+
+      - dependency-name: "pyln-proto"
+        update-types:
+          - "version-update:semver-minor"
+          - "version-update:semver-major"
+
   - package-ecosystem: "uv"
     directories:
       - "/persistent-channels"
@@ -120,6 +168,22 @@ updates:
     allow:
       - dependency-type: "all"
 
+    ignore:
+      - dependency-name: "pyln-client"
+        update-types:
+          - "version-update:semver-minor"
+          - "version-update:semver-major"
+
+      - dependency-name: "pyln-testing"
+        update-types:
+          - "version-update:semver-minor"
+          - "version-update:semver-major"
+
+      - dependency-name: "pyln-proto"
+        update-types:
+          - "version-update:semver-minor"
+          - "version-update:semver-major"
+
   - package-ecosystem: "uv"
     directories:
       - "/sauron"
@@ -148,3 +212,19 @@ updates:
 
     allow:
       - dependency-type: "all"
+
+    ignore:
+      - dependency-name: "pyln-client"
+        update-types:
+          - "version-update:semver-minor"
+          - "version-update:semver-major"
+
+      - dependency-name: "pyln-testing"
+        update-types:
+          - "version-update:semver-minor"
+          - "version-update:semver-major"
+
+      - dependency-name: "pyln-proto"
+        update-types:
+          - "version-update:semver-minor"
+          - "version-update:semver-major"
