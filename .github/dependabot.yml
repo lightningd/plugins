@@ -5,15 +5,123 @@ updates:
       - "/.ci/**/*"
       - "/backup"
       - "/cl-zmq"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+      timezone: "UTC"
+
+    groups:
+      all-dependencies:
+        patterns:
+          - "*"
+
+    cooldown:
+      default-days: 7
+
+    open-pull-requests-limit: 1
+
+    versioning-strategy: "auto"
+
+    labels:
+      - "dependencies"
+      - "python"
+
+    allow:
+      - dependency-type: "all"
+
+  - package-ecosystem: "uv"
+    directories:
       - "/clearnet"
       - "/currencyrate"
       - "/donations"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+      timezone: "UTC"
+
+    groups:
+      all-dependencies:
+        patterns:
+          - "*"
+
+    cooldown:
+      default-days: 7
+
+    open-pull-requests-limit: 1
+
+    versioning-strategy: "auto"
+
+    labels:
+      - "dependencies"
+      - "python"
+
+    allow:
+      - dependency-type: "all"
+  
+  - package-ecosystem: "uv"
+    directories:
       - "/feeadjuster"
       - "/historian"
       - "/monitor"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+      timezone: "UTC"
+
+    groups:
+      all-dependencies:
+        patterns:
+          - "*"
+
+    cooldown:
+      default-days: 7
+
+    open-pull-requests-limit: 1
+
+    versioning-strategy: "auto"
+
+    labels:
+      - "dependencies"
+      - "python"
+
+    allow:
+      - dependency-type: "all"
+
+  - package-ecosystem: "uv"
+    directories:
       - "/persistent-channels"
       - "/prometheus"
       - "/rebalance"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+      timezone: "UTC"
+
+    groups:
+      all-dependencies:
+        patterns:
+          - "*"
+
+    cooldown:
+      default-days: 7
+
+    open-pull-requests-limit: 1
+
+    versioning-strategy: "auto"
+
+    labels:
+      - "dependencies"
+      - "python"
+
+    allow:
+      - dependency-type: "all"
+
+  - package-ecosystem: "uv"
+    directories:
       - "/sauron"
       - "/summary"
     schedule:
