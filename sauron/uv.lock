@@ -680,6 +680,15 @@ wheels = [
 ]
 
 [[package]]
+name = "mnemonic"
+version = "0.21"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/ff/77/e6232ed59fbd7b90208bb8d4f89ed5aabcf30a524bc2fb8f0dafbe8e7df9/mnemonic-0.21.tar.gz", hash = "sha256:1fe496356820984f45559b1540c80ff10de448368929b9c60a2b55744cc88acf", size = 152462, upload-time = "2024-01-05T10:46:14.895Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/57/48/5abb16ce7f9d97b728e6b97c704ceaa614362e0847651f379ed0511942a0/mnemonic-0.21-py3-none-any.whl", hash = "sha256:72dc9de16ec5ef47287237b9b6943da11647a03fe7cf1f139fc3d7c4a7439288", size = 92701, upload-time = "2024-01-05T10:46:12.703Z" },
+]
+
+[[package]]
 name = "more-itertools"
 version = "11.0.2"
 source = { registry = "https://pypi.org/simple" }
@@ -826,20 +835,20 @@ wheels = [
 
 [[package]]
 name = "pyln-client"
-version = "25.9.3"
+version = "26.4.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "pyln-bolt7" },
     { name = "pyln-proto" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/7f/1f/3eb7980e4e79f01091f6f7826987d20e411a7cf51643ace5a7af5f786603/pyln_client-25.9.3.tar.gz", hash = "sha256:bb7ce16e23c4ce28e8853702ba2390a2d4e73bda12d6476e98424f147f9c80df", size = 92045, upload-time = "2025-11-07T01:53:35.928Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/28/fe/e1e19c59dd7520dec2de992f0a3da6292db24162c9830be279616a7b8810/pyln_client-26.4.1.tar.gz", hash = "sha256:26dfb21ac39c61b7ab7a40db18798b002f3f19a179ff2ec40374a9419d032050", size = 92170, upload-time = "2026-04-24T04:53:08.46Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/8b/2d/4c99428c7ff11607c2a62f4f8a0d0ce364fc4eaaab7e70704270cee21fdf/pyln_client-25.9.3-py3-none-any.whl", hash = "sha256:2653f5562d18ab3fadb46ce5a44c3d5d79ea4ff53b70481d90f57e203fa3edab", size = 37545, upload-time = "2025-11-07T01:53:34.643Z" },
+    { url = "https://files.pythonhosted.org/packages/65/90/d3b5e11f85cf076b1011a1ea6031ced3745abf451e47a1697216e1ea7c29/pyln_client-26.4.1-py3-none-any.whl", hash = "sha256:a9afba9b117818023bf4567a94c34633e9f2e89f0e1ca11e433329a2c678a685", size = 37673, upload-time = "2026-04-24T04:53:07.187Z" },
 ]
 
 [[package]]
 name = "pyln-proto"
-version = "25.9.3"
+version = "26.4.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "base58" },
@@ -848,20 +857,21 @@ dependencies = [
     { name = "cryptography" },
     { name = "pysocks" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/31/94/b55d3ad680f947ebc0aebf5bcdc0fee3e619b9b49ad97aa288ed3056feff/pyln_proto-25.9.3.tar.gz", hash = "sha256:beb56848b569e7a2dba15de18650d9909a5198b05c73bc99aed7d04435f3cbc4", size = 44861, upload-time = "2025-11-07T01:53:33.877Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/8c/4b/c8d676ad84d6066553b203668c0e36f45cfae0a4d7140eb88aed6d65b38b/pyln_proto-26.4.1.tar.gz", hash = "sha256:d73f261bacc06a6a613dcece05fc429699b740a4673f24dffb7c41bd3542d589", size = 44864, upload-time = "2026-04-24T04:53:10.196Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/4e/40/02d2ec15ae3c3e7d24eed02e64d8f62f5f1e262d3f67c5c1a49fe1db860f/pyln_proto-25.9.3-py3-none-any.whl", hash = "sha256:c550bc0ae3abed09c1c9a03c2780e151cde9480afa7875da6526ce936ac71876", size = 31829, upload-time = "2025-11-07T01:53:32.961Z" },
+    { url = "https://files.pythonhosted.org/packages/a3/f1/6541b6cd8a017d3505fcb49885d3f01b8e6bb09e40db18e686edb9edeb99/pyln_proto-26.4.1-py3-none-any.whl", hash = "sha256:b5d10d5e69cf3debd9b289e2ffa49713fca6c349a71cb0eaf9e733024f15b3da", size = 31833, upload-time = "2026-04-24T04:53:08.686Z" },
 ]
 
 [[package]]
 name = "pyln-testing"
-version = "25.9.3"
+version = "26.4.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "cheroot" },
     { name = "ephemeral-port-reserve" },
     { name = "flask" },
     { name = "jsonschema" },
+    { name = "mnemonic" },
     { name = "psutil" },
     { name = "psycopg2-binary" },
     { name = "pyln-client" },
@@ -869,9 +879,9 @@ dependencies = [
     { name = "python-bitcoinlib" },
     { name = "requests" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/e4/af/dbad64bc36ae358cddf4cffe16f9281e1a45d6c027f500025fffff9d4687/pyln_testing-25.9.3.tar.gz", hash = "sha256:555c267ed48256db138cc44778f8966bb816ea8224719786d3b3d676597f547f", size = 49956, upload-time = "2025-11-07T01:53:36.752Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/64/73/d969847564591fe16633b11bf8be9f8184ccd885e367acee171e9fd6d2d8/pyln_testing-26.4.1.tar.gz", hash = "sha256:0a40d66ec2f0840df95bdbc4845c214aede01e9d7a89a422f5b6b00a89e63690", size = 52617, upload-time = "2026-04-24T04:53:10.904Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/1d/41/f5fb467ea7076ad7b48215fbf71a73fcfdbc68096192f6e2ca1cd2f4a910/pyln_testing-25.9.3-py3-none-any.whl", hash = "sha256:2cc8b3adf109b036d274cd05b53c9388441ccb554469245c1a77b0d202b1b0a7", size = 51794, upload-time = "2025-11-07T01:53:35.451Z" },
+    { url = "https://files.pythonhosted.org/packages/c6/ad/603ff35f7b60bcc6cf364a101c58a73887132063f0773767108946361ed2/pyln_testing-26.4.1-py3-none-any.whl", hash = "sha256:dd0e9d8a865593ddc9a14ef43e9aaec0fe0d348ce9ec2fcd23807a35c98c9e8c", size = 54381, upload-time = "2026-04-24T04:53:09.599Z" },
 ]
 
 [[package]]
@@ -885,7 +895,7 @@ wheels = [
 
 [[package]]
 name = "pytest"
-version = "8.4.2"
+version = "9.0.3"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "colorama", marker = "sys_platform == 'win32'" },
@@ -896,9 +906,9 @@ dependencies = [
     { name = "pygments" },
     { name = "tomli", marker = "python_full_version < '3.11'" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/a3/5c/00a0e072241553e1a7496d638deababa67c5058571567b92a7eaa258397c/pytest-8.4.2.tar.gz", hash = "sha256:86c0d0b93306b961d58d62a4db4879f27fe25513d4b969df351abdddb3c30e01", size = 1519618, upload-time = "2025-09-04T14:34:22.711Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/7d/0d/549bd94f1a0a402dc8cf64563a117c0f3765662e2e668477624baeec44d5/pytest-9.0.3.tar.gz", hash = "sha256:b86ada508af81d19edeb213c681b1d48246c1a91d304c6c81a427674c17eb91c", size = 1572165, upload-time = "2026-04-07T17:16:18.027Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/a8/a4/20da314d277121d6534b3a980b29035dcd51e6744bd79075a6ce8fa4eb8d/pytest-8.4.2-py3-none-any.whl", hash = "sha256:872f880de3fc3a5bdc88a11b39c9710c3497a547cfa9320bc3c5e62fbf272e79", size = 365750, upload-time = "2025-09-04T14:34:20.226Z" },
+    { url = "https://files.pythonhosted.org/packages/d4/24/a372aaf5c9b7208e7112038812994107bc65a84cd00e0354a88c2c77a617/pytest-9.0.3-py3-none-any.whl", hash = "sha256:2c5efc453d45394fdd706ade797c0a81091eccd1d6e4bccfcd476e2b8e0ab5d9", size = 375249, upload-time = "2026-04-07T17:16:16.13Z" },
 ]
 
 [[package]]
@@ -1112,16 +1122,16 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "pyln-client", specifier = ">=25.9.3" },
-    { name = "requests", extras = ["socks"], specifier = ">=2.23.0" },
+    { name = "pyln-client", specifier = ">=26.4.1" },
+    { name = "requests", extras = ["socks"], specifier = ">=2.33.1" },
 ]
 
 [package.metadata.requires-dev]
 dev = [
-    { name = "pyln-client", specifier = ">=25.9.3" },
-    { name = "pyln-proto", specifier = ">=25.9.3" },
-    { name = "pyln-testing", specifier = ">=25.9.3" },
-    { name = "pytest", specifier = ">=7.4,<9" },
+    { name = "pyln-client", specifier = ">=26.4.1" },
+    { name = "pyln-proto", specifier = ">=26.4.1" },
+    { name = "pyln-testing", specifier = ">=26.4.1" },
+    { name = "pytest", specifier = ">=9.0.3,<10" },
     { name = "pytest-timeout", specifier = ">=2.4,<3" },
     { name = "pytest-xdist", specifier = ">=3.7,<4" },
 ]
