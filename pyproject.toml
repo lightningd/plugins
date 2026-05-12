@@ -1,16 +1,16 @@
-[tool.poetry]
+[project]
 name = "lightningd-plugins"
 version = "0.1.0"
-description = "Plugin test runner"
-authors = ["Christian Decker <decker.christian@gmail.com>"]
-license = "MIT"
+description = "Plugins repo meta dependencies"
+authors = [{ name = "Christian Decker", email = "decker.christian@gmail.com" }]
+license = { text = "MIT" }
+requires-python = ">=3.10"
 
-[tool.poetry.dependencies]
-python = "^3.10"
-virtualenv = "^21."
-ruff = "^0.15"
+[dependency-groups]
+dev = ["ruff>=0.15"]
 
-[tool.poetry.dev-dependencies]
+[tool.uv]
+package = false
 
 [tool.ruff]
 include = [
@@ -29,7 +29,3 @@ include = [
     "zmq/**/*.py",
     "sitecustomize.py",
 ]
-
-[build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"
