@@ -1,7 +1,8 @@
 import click
-from .common import db_session,  split_gossip
+from .common import db_session, split_gossip
 import os
 from pyln.proto.primitives import varint_decode, varint_encode
+
 
 @click.group()
 def backup():
@@ -9,8 +10,8 @@ def backup():
 
 
 @backup.command()
-@click.argument('destination', type=click.File('wb'))
-@click.option('--db', type=str, default=None)
+@click.argument("destination", type=click.File("wb"))
+@click.option("--db", type=str, default=None)
 def create(destination, db):
     with db_session(db) as session:
         rows = session.execute("SELECT raw FROM channel_announcements")
@@ -27,15 +28,18 @@ def create(destination, db):
             varint_encode(len(r[0]), destination)
             destination.write(r[0])
 
-        rows = session.execute("SELECT raw FROM node_announcements ORDER BY timestamp ASC")
+        rows = session.execute(
+            "SELECT raw FROM node_announcements ORDER BY timestamp ASC"
+        )
         for r in rows:
             varint_encode(len(r[0]), destination)
             destination.write(r[0])
 
         destination.close()
 
+
 @backup.command()
-@click.argument("source", type=click.File('rb'))
+@click.argument("source", type=click.File("rb"))
 def read(source):
     """Load gossip messages from the specified source and print it to stdout
 
@@ -46,7 +50,7 @@ def read(source):
         raise ValueError("Could not read header")
 
     tag, version = header[0:3], header[3]
-    if tag != b'GSP':
+    if tag != b"GSP":
         raise ValueError(f"Header mismatch, expected GSP, got {repr(tag)}")
 
     if version != 1:

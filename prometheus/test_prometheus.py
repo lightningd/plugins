@@ -18,23 +18,23 @@ def test_prometheus_starts(node_factory):
 
 
 def test_prometheus_scrape(node_factory):
-    """Test that we can scrape correctly.
-    """
+    """Test that we can scrape correctly."""
     port = node_factory.get_unused_port()
-    l1 = node_factory.get_node(options={'plugin': plugin_path, 'prometheus-listen': f'127.0.0.1:{port}'})
+    l1 = node_factory.get_node(
+        options={"plugin": plugin_path, "prometheus-listen": f"127.0.0.1:{port}"}
+    )
     scrape = urllib.request.urlopen(f"http://localhost:{port}")
-    
-    
-    
+
+
 def test_prometheus_channels(node_factory):
     port = node_factory.get_unused_port()
     l1, l2, l3 = node_factory.line_graph(
         3,
         opts=[
             {},
-            {'plugin': plugin_path, 'prometheus-listen': f'127.0.0.1:{port}'},
-            {}
-        ]
+            {"plugin": plugin_path, "prometheus-listen": f"127.0.0.1:{port}"},
+            {},
+        ],
     )
-    scrape = urllib.request.urlopen(f'http://localhost:{port}')
+    scrape = urllib.request.urlopen(f"http://localhost:{port}")
     print(scrape)

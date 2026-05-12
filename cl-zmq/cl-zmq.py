@@ -226,7 +226,7 @@ for nt in NOTIFICATION_TYPES:
     plugin.add_option(endpoint_opt, None, endpoint_desc, opt_type="string")
     # high water mark option
     hwm_opt = nt.hwm_option()
-    hwm_desc = "Set publish {} info message high water mark " "(default: {})".format(
+    hwm_desc = "Set publish {} info message high water mark (default: {})".format(
         nt, DEFAULT_HIGH_WATER_MARK
     )
     plugin.add_option(hwm_opt, DEFAULT_HIGH_WATER_MARK, hwm_desc, opt_type="int")

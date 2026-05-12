@@ -89,7 +89,7 @@ def check_channels(plugin):
         try:
             maybe_open_channel(c, plugin.rpc)
         except Exception:
-            plugin.log(f'Error attempting to open a channel with {c["node_id"]}.')
+            plugin.log(f"Error attempting to open a channel with {c['node_id']}.")
             traceback.print_exc()
     Timer(30, check_channels, args=[plugin]).start()
 
