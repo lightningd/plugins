@@ -1,10 +1,10 @@
 #!/usr/bin/env -S uv run --script
 
 # /// script
-# requires-python = ">=3.9.2"
+# requires-python = ">=3.10"
 # dependencies = [
-#   "click>=8.0.4",
-#   "requests[socks]>=2.32.4",
+#   "click>=8.3.3",
+#   "requests[socks]>=2.34.0",
 # ]
 # ///
 
