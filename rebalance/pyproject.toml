@@ -5,14 +5,14 @@ description = "Moves liquidity between your channels using circular payments"
 readme = "README.md"
 requires-python = ">=3.10"
 
-dependencies = ["pyln-client>=25.9.3"]
+dependencies = ["pyln-client>=26.4.1"]
 
 [dependency-groups]
 dev = [
-    "pytest>=7.4,<9",
+    "pytest>=9.0.3,<10",
     "pytest-xdist>=3.7,<4",
     "pytest-timeout>=2.4,<3",
-    "pyln-testing>=25.9.3",
-    "pyln-client>=25.9.3",
-    "pyln-proto>=25.9.3",
+    "pyln-testing>=26.4.1",
+    "pyln-client>=26.4.1",
+    "pyln-proto>=26.4.1",
 ]

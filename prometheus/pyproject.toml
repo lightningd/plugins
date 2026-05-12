@@ -7,11 +7,11 @@ authors = [{ name = "Christian Decker", email = "<decker@blockstream.io>" }]
 license = "MIT"
 requires-python = ">=3.10"
 
-dependencies = ["prometheus-client>=0.20.0", "pyln-client>=25.9.3"]
+dependencies = ["prometheus-client>=0.20.0", "pyln-client>=26.4.1"]
 
 [dependency-groups]
 dev = [
-    "pyln-testing>=25.9.3",
+    "pyln-testing>=26.4.1",
     "pytest-rerunfailures>=10.3",
     "pytest-timeout>=2.1.0",
     "pytest-xdist>=3.1.0",
