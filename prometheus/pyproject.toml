@@ -7,7 +7,7 @@ authors = [{ name = "Christian Decker", email = "<decker@blockstream.io>" }]
 license = "MIT"
 requires-python = ">=3.10"
 
-dependencies = ["prometheus-client>=0.20.0", "pyln-client>=25.9.3"]
+dependencies = ["prometheus-client>=0.25.0", "pyln-client>=25.9.3"]
 
 [dependency-groups]
 dev = [
