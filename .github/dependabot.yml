@@ -1,7 +1,21 @@
 version: 2
 updates:
-  - package-ecosystem: "pip"
-    directory: "/"
+  - package-ecosystem: "uv"
+    directories:
+      - "/.ci/**/*"
+      - "/backup"
+      - "/cl-zmq"
+      - "/clearnet"
+      - "/currencyrate"
+      - "/donations"
+      - "/feeadjuster"
+      - "/historian"
+      - "/monitor"
+      - "/persistent-channels"
+      - "/prometheus"
+      - "/rebalance"
+      - "/sauron"
+      - "/summary"
     schedule:
       interval: "weekly"
       day: "monday"
@@ -26,6 +40,3 @@ updates:
 
     allow:
       - dependency-type: "all"
-
-    exclude-paths:
-      - "archived/**"
