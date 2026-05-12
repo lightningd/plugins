@@ -941,9 +941,9 @@ dev = [
 
 [package.metadata.requires-dev]
 dev = [
-    { name = "pyln-client", specifier = ">=26.4.1" },
-    { name = "pyln-proto", specifier = ">=26.4.1" },
-    { name = "pyln-testing", specifier = ">=26.4.1" },
+    { name = "pyln-client", specifier = ">=25.9.3" },
+    { name = "pyln-proto", specifier = ">=25.9.3" },
+    { name = "pyln-testing", specifier = ">=25.9.3" },
     { name = "pytest", specifier = ">=9.0.3,<10" },
     { name = "pytest-timeout", specifier = ">=2.4,<3" },
 ]
