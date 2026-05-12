@@ -760,17 +760,12 @@ def wait_for_htlcs(failed_channels: list, scids: list = None):
                 result = False
                 continue
             if "htlcs" in channel:
-                lam = (
-                    lambda: len(
-                        plugin.rpc.listpeers()["peers"][p]["channels"][c]["htlcs"]
-                    )
-                    == 0
+                lam = lambda: (
+                    len(plugin.rpc.listpeers()["peers"][p]["channels"][c]["htlcs"]) == 0
                 )
                 if plugin.listpeerchannels:
-                    lam = (
-                        lambda: len(
-                            plugin.rpc.listpeerchannels(pid)["channels"][c]["htlcs"]
-                        )
+                    lam = lambda: (
+                        len(plugin.rpc.listpeerchannels(pid)["channels"][c]["htlcs"])
                         == 0
                     )
                 if not wait_for(lam):
@@ -1103,8 +1098,10 @@ def get_avg_forward_fees(intervals):
     res = [0] * len(intervals)
     all_forwards = list(
         filter(
-            lambda fwd: fwd.get("status") == "settled"
-            and fwd.get("resolved_time", 0) + max_interval * 60 * 60 * 24 > now,
+            lambda fwd: (
+                fwd.get("status") == "settled"
+                and fwd.get("resolved_time", 0) + max_interval * 60 * 60 * 24 > now
+            ),
             plugin.rpc.listforwards()["forwards"],
         )
     )

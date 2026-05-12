@@ -92,7 +92,7 @@ def getchaininfo(plugin, **kwargs):
     blockcount_req = fetch(blockcount_url)
     if not blockcount_req.status_code == 200:
         raise SauronError(
-            "Endpoint at {} returned {} ({}) when trying to " "get blockcount.".format(
+            "Endpoint at {} returned {} ({}) when trying to get blockcount.".format(
                 blockcount_url, blockcount_req.status_code, blockcount_req.text
             )
         )
@@ -171,14 +171,14 @@ def getutxout(plugin, txid, vout, **kwargs):
     gettx_req = fetch(gettx_url)
     if not gettx_req.status_code == 200:
         raise SauronError(
-            "Endpoint at {} returned {} ({}) when trying to " "get transaction.".format(
+            "Endpoint at {} returned {} ({}) when trying to get transaction.".format(
                 gettx_url, gettx_req.status_code, gettx_req.text
             )
         )
     status_req = fetch(status_url)
     if not status_req.status_code == 200:
         raise SauronError(
-            "Endpoint at {} returned {} ({}) when trying to " "get utxo status.".format(
+            "Endpoint at {} returned {} ({}) when trying to get utxo status.".format(
                 status_url, status_req.status_code, status_req.text
             )
         )

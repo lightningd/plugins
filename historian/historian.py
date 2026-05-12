@@ -42,15 +42,15 @@ class FsMonitor(Thread):
 
         print("Starting FsMonitor")
         i = Inotify()
-        i.add_watch('gossip_store', mask=watch_mask)
+        i.add_watch("gossip_store", mask=watch_mask)
         for event in i.event_gen(yield_nones=False):
             (e, type_names, path, filename) = event
             if e.mask & constants.IN_DELETE_SELF:
-                i.remove_watch('gossip_store')
-                i.add_watch('gossip_store', mask=watch_mask)
+                i.remove_watch("gossip_store")
+                i.add_watch("gossip_store", mask=watch_mask)
 
 
-class FileTailer():
+class FileTailer:
     def __init__(self, filename):
         self.filename = filename
         self.pos = 1
@@ -58,8 +58,8 @@ class FileTailer():
 
     def resume(self):
         ev_count = 0
-        with open(self.filename, 'rb') as f:
-            self.version, = struct.unpack("!B", f.read(1))
+        with open(self.filename, "rb") as f:
+            (self.version,) = struct.unpack("!B", f.read(1))
             f.seek(self.pos)
             while True:
                 skip = False
@@ -92,7 +92,7 @@ class FileTailer():
                 diff += length
 
                 # Strip eventual wrappers:
-                typ, = struct.unpack("!H", msg[:2])
+                (typ,) = struct.unpack("!H", msg[:2])
                 if self.version <= 3 and typ in [4096, 4097, 4098]:
                     msg = msg[4:]
 
@@ -108,7 +108,8 @@ class FileTailer():
                 if length > MAX_MSG_SIZE:
                     plugin.log(
                         f"Unreasonably large message type {typ} at position {self.pos} ({length} bytes), skipping",
-                        level="warn")
+                        level="warn",
+                    )
                     continue
 
                 ev_count += 1
@@ -122,13 +123,17 @@ class FileTailer():
     def wait_actionable(self, i):
         for event in i.event_gen(yield_nones=False):
             if event[0].mask & constants.IN_DELETE_SELF:
-                return 'swap'
+                return "swap"
             if event[0].mask & constants.IN_MODIFY:
-                return 'append'
+                return "append"
 
     def tail(self):
-        watch_mask = (constants.IN_ALL_EVENTS ^ constants.IN_ACCESS ^
-                      constants.IN_OPEN ^ constants.IN_CLOSE_NOWRITE)
+        watch_mask = (
+            constants.IN_ALL_EVENTS
+            ^ constants.IN_ACCESS
+            ^ constants.IN_OPEN
+            ^ constants.IN_CLOSE_NOWRITE
+        )
         i = Inotify()
         i.add_watch(self.filename, mask=watch_mask)
         while True:
@@ -138,10 +143,10 @@ class FileTailer():
             # Now wait for a change that we can react to
             ev = self.wait_actionable(i)
 
-            if ev == 'append':
+            if ev == "append":
                 continue
 
-            if ev == 'swap':
+            if ev == "swap":
                 # Need to reach around since file-deletion removes C watches,
                 # but not the python one...
                 try:
@@ -178,7 +183,7 @@ def field_prefix(index: int, wire_type: int) -> bytes:
 def length_delimited(data: bytes) -> bytes:
     """The LV part of the TLV for protobuf encoded fields."""
     if not data:
-        return b'\x00'
+        return b"\x00"
     return encode_varint(len(data)) + data
 
 
@@ -204,13 +209,13 @@ def serialize(msg: bytes, node_id: str, network: str) -> bytes:
     else:
         active_network = 2
     output = bytearray()
-    output.extend(field_prefix(1, 2))         # raw message tag
-    output.extend(length_delimited(msg))      # raw msg field
-    output.extend(field_prefix(2, 2))         # node_id tag
-    output.extend(length_delimited(None))     # leave this empty - all public.
-    output.extend(field_prefix(3, 0))         # network in an enum
+    output.extend(field_prefix(1, 2))  # raw message tag
+    output.extend(length_delimited(msg))  # raw msg field
+    output.extend(field_prefix(2, 2))  # node_id tag
+    output.extend(length_delimited(None))  # leave this empty - all public.
+    output.extend(field_prefix(3, 0))  # network in an enum
     output.extend(length_delimited(active_network.to_bytes()))  # network field
-    output.extend(field_prefix(4, 2))         # peer_id tag
+    output.extend(field_prefix(4, 2))  # peer_id tag
     if node_id:
         # Add our node_id if we have it (so we know who to blame.)
         output.extend(length_delimited(node_id.encode("utf-8")))
@@ -242,12 +247,12 @@ class Flusher(Thread):
         params = pika.URLParameters(self.RABBITMQ_URL)
         self.connection = pika.BlockingConnection(params)  # default, localhost
         self.channel = self.connection.channel()
-        self.channel.exchange_declare(exchange='router.gossip', exchange_type='fanout')
+        self.channel.exchange_declare(exchange="router.gossip", exchange_type="fanout")
         plugin.log(f"message queue connected to {params.host}:{params.port}")
 
     def run(self):
         logging.info("Starting flusher")
-        ft = FileTailer('gossip_store')
+        ft = FileTailer("gossip_store")
         last_flush = time.time()
         total = 0
 
@@ -278,9 +283,9 @@ class Flusher(Thread):
 
             elif isinstance(msg, gossipd.NodeAnnouncement):
                 cls = NodeAnnouncement
-                
+
             else:
-                return;
+                return
 
             self.session.merge(cls.from_gossip(msg, raw))
         except Exception as e:
@@ -306,16 +311,19 @@ class Flusher(Thread):
             except:
                 raise Exception("rabbitmq connection closed")
 
-        for msg_type in [gossipd.ChannelUpdate,
-                         gossipd.ChannelAnnouncement,
-                         gossipd.NodeAnnouncement]:
+        for msg_type in [
+            gossipd.ChannelUpdate,
+            gossipd.ChannelAnnouncement,
+            gossipd.NodeAnnouncement,
+        ]:
             if isinstance(msg, msg_type):
                 try:
-                    self.channel.basic_publish(exchange='router.gossip',
-                                               # unused by fanout exchange
-                                               routing_key='',
-                                               body=serialize(raw, self.node_id,
-                                                              self.network))
+                    self.channel.basic_publish(
+                        exchange="router.gossip",
+                        # unused by fanout exchange
+                        routing_key="",
+                        body=serialize(raw, self.node_id, self.network),
+                    )
 
                 except pika.exceptions.StreamLostError:
                     plugin.log("lost connection to rabbitmq, reconnecting")
@@ -323,12 +331,11 @@ class Flusher(Thread):
                 return
 
 
-
 @plugin.init()
 def init(plugin, configuration, options):
     print(options)
     try:
-        engine = create_engine(options['historian-dsn'], echo=False)
+        engine = create_engine(options["historian-dsn"], echo=False)
         Base.metadata.create_all(engine)
         plugin.engine = engine
         Flusher(engine).start()
@@ -336,25 +343,31 @@ def init(plugin, configuration, options):
         engine.dispose()
 
 
-@plugin.method('historian-stats')
+@plugin.method("historian-stats")
 def stats(plugin):
     engine = plugin.engine
     session_maker = sessionmaker(bind=engine)
     session = session_maker()
 
     return {
-        'channel_announcements': session.query(ChannelAnnouncement).count(),
-        'channel_updates': session.query(ChannelUpdate).count(),
-        'node_announcements': session.query(NodeAnnouncement).count(),
-        'latest_node_announcement': session.query(NodeAnnouncement).order_by(desc(NodeAnnouncement.timestamp)).limit(1).first(),
-        'latest_channel_update': session.query(ChannelUpdate).order_by(desc(ChannelUpdate.timestamp)).limit(1).first(),
+        "channel_announcements": session.query(ChannelAnnouncement).count(),
+        "channel_updates": session.query(ChannelUpdate).count(),
+        "node_announcements": session.query(NodeAnnouncement).count(),
+        "latest_node_announcement": session.query(NodeAnnouncement)
+        .order_by(desc(NodeAnnouncement.timestamp))
+        .limit(1)
+        .first(),
+        "latest_channel_update": session.query(ChannelUpdate)
+        .order_by(desc(ChannelUpdate.timestamp))
+        .limit(1)
+        .first(),
     }
 
 
 plugin.add_option(
-    'historian-dsn',
-    'sqlite:///historian.sqlite3',
-    "SQL DSN defining where the gossip data should be stored."
+    "historian-dsn",
+    "sqlite:///historian.sqlite3",
+    "SQL DSN defining where the gossip data should be stored.",
 )
 
 if __name__ == "__main__":

@@ -14,22 +14,20 @@ load_dotenv()
 
 Base = declarative_base()
 default_db = os.environ.get(
-    "HIST_DEFAULT_DSN",
-    "sqlite:///$HOME/.lightning/bitcoin/historian.sqlite3"
+    "HIST_DEFAULT_DSN", "sqlite:///$HOME/.lightning/bitcoin/historian.sqlite3"
 )
 
 
 class ChannelUpdate(Base):
-    __tablename__ = 'channel_updates'
+    __tablename__ = "channel_updates"
     scid = Column(BigInteger, primary_key=True)
     direction = Column(SmallInteger, primary_key=True)
     timestamp = Column(DateTime, primary_key=True)
     raw = Column(LargeBinary)
 
     @classmethod
-    def from_gossip(cls, gcu: gossipd.ChannelUpdate,
-                    raw: bytes) -> 'ChannelUpdate':
-        assert(raw[:2] == b'\x01\x02')
+    def from_gossip(cls, gcu: gossipd.ChannelUpdate, raw: bytes) -> "ChannelUpdate":
+        assert raw[:2] == b"\x01\x02"
         self = ChannelUpdate()
         self.scid = gcu.num_short_channel_id
         self.timestamp = datetime.fromtimestamp(gcu.timestamp)
@@ -39,11 +37,13 @@ class ChannelUpdate(Base):
 
     def to_json(self):
         return {
-            'scid': "{}x{}x{}".format(self.scid >> 40, self.scid >> 16 & 0xFFFFFF, self.scid & 0xFFFF),
-            'nscid': self.scid,
-            'direction': self.direction,
-            'timestamp':  self.timestamp.strftime("%Y/%m/%d, %H:%M:%S"),
-            'raw': hexlify(self.raw).decode('ASCII'),
+            "scid": "{}x{}x{}".format(
+                self.scid >> 40, self.scid >> 16 & 0xFFFFFF, self.scid & 0xFFFF
+            ),
+            "nscid": self.scid,
+            "direction": self.direction,
+            "timestamp": self.timestamp.strftime("%Y/%m/%d, %H:%M:%S"),
+            "raw": hexlify(self.raw).decode("ASCII"),
         }
 
 
@@ -53,9 +53,10 @@ class ChannelAnnouncement(Base):
     raw = Column(LargeBinary)
 
     @classmethod
-    def from_gossip(cls, gca: gossipd.ChannelAnnouncement,
-                    raw: bytes) -> 'ChannelAnnouncement':
-        assert(raw[:2] == b'\x01\x00')
+    def from_gossip(
+        cls, gca: gossipd.ChannelAnnouncement, raw: bytes
+    ) -> "ChannelAnnouncement":
+        assert raw[:2] == b"\x01\x00"
         self = ChannelAnnouncement()
         self.scid = gca.num_short_channel_id
         self.raw = raw
@@ -63,9 +64,11 @@ class ChannelAnnouncement(Base):
 
     def to_json(self):
         return {
-            'scid': "{}x{}x{}".format(self.scid >> 40, self.scid >> 16 & 0xFFFFFF, self.scid & 0xFFFF),
-            'nscid': self.scid,
-            'raw': hexlify(self.raw).decode('ASCII'),
+            "scid": "{}x{}x{}".format(
+                self.scid >> 40, self.scid >> 16 & 0xFFFFFF, self.scid & 0xFFFF
+            ),
+            "nscid": self.scid,
+            "raw": hexlify(self.raw).decode("ASCII"),
         }
 
 
@@ -76,9 +79,10 @@ class NodeAnnouncement(Base):
     raw = Column(LargeBinary)
 
     @classmethod
-    def from_gossip(cls, gna: gossipd.NodeAnnouncement,
-                    raw: bytes) -> 'NodeAnnouncement':
-        assert(raw[:2] == b'\x01\x01')
+    def from_gossip(
+        cls, gna: gossipd.NodeAnnouncement, raw: bytes
+    ) -> "NodeAnnouncement":
+        assert raw[:2] == b"\x01\x01"
         self = NodeAnnouncement()
         self.node_id = gna.node_id
         self.timestamp = datetime.fromtimestamp(gna.timestamp)
@@ -87,9 +91,9 @@ class NodeAnnouncement(Base):
 
     def to_json(self):
         return {
-            'node_id': hexlify(self.node_id).decode('ASCII'),
-            'timestamp': self.timestamp.strftime("%Y/%m/%d, %H:%M:%S"),
-            'raw': hexlify(self.raw).decode('ASCII'),
+            "node_id": hexlify(self.node_id).decode("ASCII"),
+            "timestamp": self.timestamp.strftime("%Y/%m/%d, %H:%M:%S"),
+            "raw": hexlify(self.raw).decode("ASCII"),
         }
 
 
@@ -164,9 +168,7 @@ WHERE
   )
 ORDER BY
   a.scid
-        """.format(
-                since.strftime("%Y-%m-%d %H:%M:%S")
-            )
+        """.format(since.strftime("%Y-%m-%d %H:%M:%S"))
         )
         last_scid = None
         for scid, cann, u1, u2 in rows:
@@ -198,9 +200,7 @@ GROUP BY
 HAVING
   n.timestamp = MAX(n.timestamp)
 ORDER BY timestamp DESC
-        """.format(
-                since.strftime("%Y-%m-%d %H:%M:%S")
-            )
+        """.format(since.strftime("%Y-%m-%d %H:%M:%S"))
         )
         last_nid = None
         for nid, ts, nann in rows:
