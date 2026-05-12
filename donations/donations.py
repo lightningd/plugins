@@ -1,15 +1,15 @@
 #!/usr/bin/env -S uv run --script
 
 # /// script
-# requires-python = ">=3.9.2"
+# requires-python = ">=3.10"
 # dependencies = [
-#   "qrcode[pil]>=7.4.2",
+#   "qrcode[pil]>=8.2",
 #   "flask>=2.3.3",
-#   "pyln-client>=24.11",
+#   "pyln-client>=25.9.3",
 #   "flask-bootstrap>=3.3.7.1",
-#   "flask-wtf>=1.2.1",
+#   "flask-wtf>=1.3.0",
 #   "werkzeug>=3.0.6",
-#   "wtforms>=3.1.2",
+#   "wtforms>=3.2.2",
 #   "waitress>=3.0.2",
 # ]
 # ///
