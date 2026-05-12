@@ -928,7 +928,7 @@ wheels = [
 
 [[package]]
 name = "pytest"
-version = "8.4.2"
+version = "9.0.3"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "colorama", marker = "sys_platform == 'win32'" },
@@ -939,9 +939,9 @@ dependencies = [
     { name = "pygments" },
     { name = "tomli", marker = "python_full_version < '3.11'" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/a3/5c/00a0e072241553e1a7496d638deababa67c5058571567b92a7eaa258397c/pytest-8.4.2.tar.gz", hash = "sha256:86c0d0b93306b961d58d62a4db4879f27fe25513d4b969df351abdddb3c30e01", size = 1519618, upload-time = "2025-09-04T14:34:22.711Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/7d/0d/549bd94f1a0a402dc8cf64563a117c0f3765662e2e668477624baeec44d5/pytest-9.0.3.tar.gz", hash = "sha256:b86ada508af81d19edeb213c681b1d48246c1a91d304c6c81a427674c17eb91c", size = 1572165, upload-time = "2026-04-07T17:16:18.027Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/a8/a4/20da314d277121d6534b3a980b29035dcd51e6744bd79075a6ce8fa4eb8d/pytest-8.4.2-py3-none-any.whl", hash = "sha256:872f880de3fc3a5bdc88a11b39c9710c3497a547cfa9320bc3c5e62fbf272e79", size = 365750, upload-time = "2025-09-04T14:34:20.226Z" },
+    { url = "https://files.pythonhosted.org/packages/d4/24/a372aaf5c9b7208e7112038812994107bc65a84cd00e0354a88c2c77a617/pytest-9.0.3-py3-none-any.whl", hash = "sha256:2c5efc453d45394fdd706ade797c0a81091eccd1d6e4bccfcd476e2b8e0ab5d9", size = 375249, upload-time = "2026-04-07T17:16:16.13Z" },
 ]
 
 [[package]]
@@ -1314,13 +1314,16 @@ wheels = [
 
 [[package]]
 name = "txzmq"
-version = "0.8.2"
+version = "1.0.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "pyzmq" },
     { name = "twisted" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/d9/f5/ebddb81df92e123baf2c55c55c85e3f3d2f4c1e367392c6d60247abb8840/txZMQ-0.8.2.tar.gz", hash = "sha256:07a9a480e58d4d732eef9efd7e264f2348cbf27ee82b338ec818a8504006e1c0", size = 19254, upload-time = "2019-11-14T14:19:55.887Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/4a/40/2e154b744b8bad903552d5072aa9f2749fae69a68e945f96151e4aa8b032/txZMQ-1.0.0.tar.gz", hash = "sha256:8d607d0bf09ca94600b8e42f0721dbe43ee53a0470182344ac7ace7e58dc6177", size = 18881, upload-time = "2021-09-15T13:53:26.134Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/f2/57/9d687e05ed1b8d7f19803bf9191c3a976985c7406b1bd1787fc095e51d56/txZMQ-1.0.0-py3-none-any.whl", hash = "sha256:23dd8554994e99736b20112dce5254c0f45574b250cd428fed8091bccb357870", size = 24060, upload-time = "2021-09-15T13:53:24.156Z" },
+]
 
 [[package]]
 name = "typing-extensions"
@@ -1376,7 +1379,7 @@ dev = [
 requires-dist = [
     { name = "pyln-client", specifier = ">=25.9.3" },
     { name = "twisted", specifier = ">=20.3.0" },
-    { name = "txzmq", specifier = "==0.8.2" },
+    { name = "txzmq", specifier = "==1.0.0" },
 ]
 
 [package.metadata.requires-dev]
@@ -1384,7 +1387,7 @@ dev = [
     { name = "pyln-client", specifier = ">=25.9.3" },
     { name = "pyln-proto", specifier = ">=25.9.3" },
     { name = "pyln-testing", specifier = ">=25.9.3" },
-    { name = "pytest", specifier = ">=7.4,<9" },
+    { name = "pytest", specifier = ">=9.0.3,<10" },
     { name = "pytest-timeout", specifier = ">=2.4,<3" },
     { name = "pytest-xdist", specifier = ">=3.7,<4" },
 ]

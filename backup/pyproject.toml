@@ -7,9 +7,9 @@ requires-python = ">=3.10"
 
 dependencies = [
     "pyln-client>=25.9.3",
-    "click>=8.0.4",
+    "click>=8.3.3",
     "psutil>=5.9.4",
-    "requests[socks]>=2.32.4",
+    "requests[socks]>=2.33.1",
 ]
 
 [dependency-groups]
