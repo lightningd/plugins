@@ -10,14 +10,14 @@ requires-python = ">=3.10"
 dependencies = [
     "inotify>=0.2.12",
     "pika>=1.3.2",
-    "pyln-client>=25.9.3",
+    "pyln-client>=26.4.1",
     "python-dotenv>=1.1.0",
     "sqlalchemy>=2.0.40",
 ]
 
 [dependency-groups]
 dev = [
-    "pyln-testing>=25.9.3",
+    "pyln-testing>=26.4.1",
     "pytest-rerunfailures>=10.3",
     "pytest-timeout>=2.1.0",
     "pytest-xdist>=3.1.0",
