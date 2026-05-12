@@ -26,3 +26,6 @@ updates:
 
     allow:
       - dependency-type: "all"
+
+    exclude-paths:
+      - "archived/**"
