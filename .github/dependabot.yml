@@ -97,6 +97,7 @@ updates:
       - "/feeadjuster"
       - "/historian"
       - "/monitor"
+      - "/summary"
     schedule:
       interval: "weekly"
       day: "monday"
@@ -143,51 +144,6 @@ updates:
       - "/persistent-channels"
       - "/prometheus"
       - "/rebalance"
-    schedule:
-      interval: "weekly"
-      day: "monday"
-      time: "06:00"
-      timezone: "UTC"
-
-    groups:
-      all-dependencies:
-        patterns:
-          - "*"
-
-    cooldown:
-      default-days: 7
-
-    open-pull-requests-limit: 1
-
-    versioning-strategy: "auto"
-
-    labels:
-      - "dependencies"
-      - "python"
-
-    allow:
-      - dependency-type: "all"
-
-    ignore:
-      - dependency-name: "pyln-client"
-        update-types:
-          - "version-update:semver-minor"
-          - "version-update:semver-major"
-
-      - dependency-name: "pyln-testing"
-        update-types:
-          - "version-update:semver-minor"
-          - "version-update:semver-major"
-
-      - dependency-name: "pyln-proto"
-        update-types:
-          - "version-update:semver-minor"
-          - "version-update:semver-major"
-
-  - package-ecosystem: "uv"
-    directories:
-      - "/sauron"
-      - "/summary"
     schedule:
       interval: "weekly"
       day: "monday"
