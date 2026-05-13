@@ -27,7 +27,6 @@ include = [
     "persistent-channels/**/*.py",
     "prometheus/**/*.py",
     "rebalance/**/*.py",
-    "sauron/**/*.py",
     "summary/**/*.py",
     "sitecustomize.py",
 ]

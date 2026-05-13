@@ -34,6 +34,7 @@ If you like a plugin from that list, feel free to update and fix it, so we can u
 | [poncho][poncho]                     | Turns CLN into a [hosted channels][blip12] provider                                         |
 | [probe][probe]                       | Regularly probes the network for stability                                                  |
 | [pruning][c-lightning-pruning-plugin]| This plugin manages pruning of bitcoind such that it can always sync                        |
+| [sauron][sauron]                     | A Bitcoin backend relying on [Esplora][esplora]'s API                                       |
 | [sitzprobe][sitzprobe]               | A Lightning Network payment rehearsal utility                                               |
 | [spark-commando][spark-commando]     | Heavily inspired by Rusty's commando plugin                                                 |
 | [sparko][sparko]                     | RPC over HTTP with fine-grained permissions, SSE and spark-wallet support                   |
@@ -70,6 +71,7 @@ If you like a plugin from that list, feel free to update and fix it, so we can u
 [poncho]: https://github.com/fiatjaf/poncho
 [probe]: https://github.com/lightningd/plugins/tree/master/archived/probe
 [reporter]: https://github.com/LNOpenMetrics/go-lnmetrics.reporter
+[sauron]: https://github.com/lightningd/plugins/tree/master/archived/sauron
 [sitzprobe]: https://github.com/niftynei/sitzprobe
 [spark-commando]: https://github.com/adi2011/plugins/tree/master/spark-commando
 [sparko]: https://github.com/fiatjaf/sparko
