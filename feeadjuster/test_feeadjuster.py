@@ -59,16 +59,10 @@ def wait_for_not_fees(l, scids, fees):
         wait_for(lambda: not get_chan_fees(l, scid) == fees)
 
 
-def pay(l, ll, amount):
+def xpay(l, ll, amount):
     label = "".join(random.choices(string.ascii_letters, k=20))
     invoice = ll.rpc.invoice(amount, label, "desc")
-    route = l.rpc.getroute(ll.info["id"], amount, riskfactor=0, fuzzpercent=0)
-    l.rpc.sendpay(
-        route["route"],
-        invoice["payment_hash"],
-        payment_secret=invoice.get("payment_secret"),
-    )
-    l.rpc.waitsendpay(invoice["payment_hash"])
+    l.rpc.xpay(invoice["bolt11"])
     l.wait_for_htlcs()
 
 
@@ -120,7 +114,7 @@ def test_feeadjuster_adjusts(node_factory):
 
     # The first payment will trigger fee adjustment, no matter its value
     amount = int(chan_total * 0.04)
-    pay(l1, l3, amount)
+    xpay(l1, l3, amount)
     wait_for(
         lambda: all([get_chan_fees(l2, scid) != (base_fee, ppm_fee) for scid in scids])
     )
@@ -128,7 +122,7 @@ def test_feeadjuster_adjusts(node_factory):
 
     # Send most of the balance to the other side..
     amount = int(chan_total * 0.8)
-    pay(l1, l3, amount)
+    xpay(l1, l3, amount)
     l2.daemon.wait_for_logs(
         [
             f"Adjusted fees of {scid_A} with a ratio of 0.2",
@@ -142,7 +136,7 @@ def test_feeadjuster_adjusts(node_factory):
     l2.rpc.connect(l1.info["id"], "localhost", l1.port)
     l2.rpc.connect(l3.info["id"], "localhost", l3.port)
     sync_gossip(nodes, scids)
-    pay(l3, l1, amount)
+    xpay(l3, l1, amount)
     l2.daemon.wait_for_logs(
         [
             f"Adjusted fees of {scid_A} with a ratio of 6.",
@@ -159,7 +153,7 @@ def test_feeadjuster_adjusts(node_factory):
     sync_gossip(nodes, scids)
     fees_before = [get_chan_fees(l2, scid) for scid in [scid_A, scid_B]]
     amount = int(chan_total * 0.03)
-    pay(l1, l3, amount)
+    xpay(l1, l3, amount)
     l2.rpc.disconnect(l1.info["id"], True)
     l2.rpc.disconnect(l3.info["id"], True)
     l2.rpc.connect(l1.info["id"], "localhost", l1.port)
@@ -169,7 +163,7 @@ def test_feeadjuster_adjusts(node_factory):
 
     # But sending another 3%-worth payment does trigger adjustment (total sent
     # since last adjustment is >5%)
-    pay(l1, l3, amount)
+    xpay(l1, l3, amount)
     l2.daemon.wait_for_logs(
         [
             f"Adjusted fees of {scid_A} with a ratio of 4.",
@@ -222,7 +216,7 @@ def test_feeadjuster_imbalance(node_factory):
 
     # First bring channel to somewhat of a balance
     amount = int(chan_total * 0.5)
-    pay(l1, l3, amount)
+    xpay(l1, l3, amount)
     l2.daemon.wait_for_logs(
         [
             f"Set default fees as imbalance is too low for {scid_A}",
@@ -234,16 +228,16 @@ def test_feeadjuster_imbalance(node_factory):
     # Because of the 70/30 imbalance limiter, a 15% payment must not yet trigger
     # 50% + 15% = 65% .. which is < 70%
     amount = int(chan_total * 0.15)
-    pay(l1, l3, amount)
+    xpay(l1, l3, amount)
     assert not l2.daemon.is_in_log("Adjusted fees", log_offset)
 
     # Sending another 20% must now trigger because the imbalance
-    pay(l1, l3, amount)
+    xpay(l1, l3, amount)
     l2.daemon.wait_for_logs([f"Adjusted fees.*{scid_A}", f"Adjusted fees.*{scid_B}"])
     wait_for_not_fees(l2, scids, default_fees[0])
 
     # Bringing it back must cause default fees
-    pay(l3, l1, amount)
+    xpay(l3, l1, amount)
     l2.daemon.wait_for_logs(
         [
             f"Set default fees as imbalance is too low for {scid_A}",
@@ -300,7 +294,7 @@ def test_feeadjuster_big_enough_liquidity(node_factory):
 
     # Bring channels to beyond big enough liquidity with 0.003btc
     amount = 300000000
-    pay(l1, l3, amount)
+    xpay(l1, l3, amount)
     l2.daemon.wait_for_logs(
         [
             f"Adjusted fees of {scid_A} with a ratio of 1.0",
@@ -312,14 +306,14 @@ def test_feeadjuster_big_enough_liquidity(node_factory):
 
     # Let's move another 0.003btc -> the channels will be at 0.006btc
     amount = 300000000
-    pay(l1, l3, amount)
+    xpay(l1, l3, amount)
     wait_for(lambda: l2.daemon.is_in_log("maybe_adjust_fees done", log_offset))
     assert not l2.daemon.is_in_log("Adjusted fees", log_offset)
 
     # Sending another 0.0033btc will result in a channel balance of 0.0093btc
     # It must trigger because the remaining liquidity is not big enough
     amount = 330000000
-    pay(l1, l3, amount)
+    xpay(l1, l3, amount)
     l2.daemon.wait_for_logs([f"Adjusted fees.*{scid_A}", f"Adjusted fees.*{scid_B}"])
     wait_for_not_fees(l2, scids, default_fees[0])
 
@@ -401,7 +395,7 @@ def test_excludelist(node_factory, directory):
     l2.connect(l3)
 
     # Do some payments to have a proper imbalance and check
-    pay(l1, l2, 10**8)
+    xpay(l1, l2, 10**8)
     assert l2.rpc.feeadjust(scid_a) == "0 channel(s) adjusted"
-    pay(l2, l3, 10**8)
+    xpay(l2, l3, 10**8)
     assert l2.rpc.feeadjust(scid_b) == "1 channel(s) adjusted"
