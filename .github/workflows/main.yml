@@ -76,7 +76,7 @@ jobs:
         python-version: ${{ matrix.python-version }}
 
     - name: Install uv
-      uses: astral-sh/setup-uv@v7
+      uses: astral-sh/setup-uv@v8.1.0
       with:
         enable-cache: false
 
@@ -101,7 +101,7 @@ jobs:
     - name: Restore bitcoind cache
       id: cache-bitcoind
       if: ${{ github.event_name == 'push' || steps.set_plugin_dirs.outputs.run_ci == 'true' }}
-      uses: actions/cache@v4
+      uses: actions/cache@v5
       with:
         path: /usr/local/bin/bitcoin*
         key: cache-bitcoind-${{ matrix.bitcoind-version }}-${{ steps.exact_versions.outputs.os_version }}
@@ -116,7 +116,7 @@ jobs:
         rm -rf bitcoin-${BITCOIND_VERSION}-x86_64-linux-gnu.tar.gz bitcoin-${BITCOIND_VERSION}
 
     - name: Save bitcoind cache
-      uses: actions/cache/save@v4
+      uses: actions/cache/save@v5
       if: ${{ always() && (github.event_name == 'push' || steps.set_plugin_dirs.outputs.run_ci == 'true') && steps.cache-bitcoind.outputs.cache-hit != 'true' }}
       with:
           path: /usr/local/bin/bitcoin*
@@ -125,7 +125,7 @@ jobs:
     - name: Restore CLN cache
       id: cache-cln
       if: ${{ github.event_name == 'push' || steps.set_plugin_dirs.outputs.run_ci == 'true' }}
-      uses: actions/cache@v4
+      uses: actions/cache@v5
       with:
         path: |
           /usr/local/bin/lightning*
@@ -144,7 +144,7 @@ jobs:
         sudo tar -xvf ${url##*/} -C /usr/local --strip-components=2
 
     - name: Save CLN cache
-      uses: actions/cache/save@v4
+      uses: actions/cache/save@v5
       if: ${{ always() && (github.event_name == 'push' || steps.set_plugin_dirs.outputs.run_ci == 'true') && steps.cache-cln.outputs.cache-hit != 'true' }}
       with:
           path: |
