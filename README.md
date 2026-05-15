@@ -49,7 +49,7 @@ This is a list of plugin managers that can help you install these plugins:
 
 ## Archived plugins
 
-If you can't find a plugin you're looking for, it may have been [archived](archived.md). Plugins are archived when they start to fail integration testing with the latest CLN release, at which point they will be considered unmaintained.
+If you can't find a plugin you're looking for, it may have been [archived](archived/README.md). Plugins are archived when they start to fail integration testing with the latest CLN release, at which point they will be considered unmaintained.
 
 ## Installation
 
