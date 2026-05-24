@@ -49,3 +49,9 @@
 [submodule "lnradar"]
 	path = lnradar
 	url = https://github.com/Lagrang3/lnradar
+[submodule "cl-mycelium"]
+	path = cl-mycelium
+	url = https://github.com/lightning-goats/cl-mycelium.git
+[submodule "cl-revenue-ops"]
+	path = cl-revenue-ops
+	url = https://github.com/lightning-goats/cl_revenue_ops.git
