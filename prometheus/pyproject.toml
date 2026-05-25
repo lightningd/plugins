@@ -12,7 +12,7 @@ dependencies = ["prometheus-client>=0.25.0", "pyln-client>=25.9.3"]
 [dependency-groups]
 dev = [
     "pyln-testing>=25.9.3",
-    "pytest-rerunfailures>=10.3",
+    "pytest-rerunfailures>=16.2",
     "pytest-timeout>=2.1.0",
     "pytest-xdist>=3.1.0",
 ]
