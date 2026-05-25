@@ -26,5 +26,5 @@ dev = [
     "pyln-testing>=25.9.3",
     "pyln-client>=25.9.3",
     "pyln-proto>=25.9.3",
-    "requests>=2.32.5",
+    "requests>=2.34.2",
 ]
