@@ -7,7 +7,7 @@ requires-python = ">=3.10"
 
 dependencies = [
     "pyln-client>=25.9.3",
-    "requests[socks]>=2.34.0",
+    "requests[socks]>=2.34.2",
     "packaging>=26.2",
 ]
 
