@@ -1,6 +1,3 @@
-[submodule "jwt-factory"]
-	path = jwt-factory
-	url = https://github.com/nettijoe96/jwt-factory.git
 [submodule "trustedcoin"]
 	path = trustedcoin
 	url = https://github.com/fiatjaf/trustedcoin.git

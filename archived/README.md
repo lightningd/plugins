@@ -24,6 +24,7 @@ If you like a plugin from that list, feel free to update and fix it, so we can u
 | [holdinvoice][holdinvoice]           | Holds htlcs for invoices until settle or cancel is called (aka Hodlinvoices) via RPC/GRPC   |
 | [invoice-queue][Lightning-Invoice-Queue]       | Listen to lightning invoices from multiple nodes and send to a redis queue for processing   |
 | [jitrebalance][jitrebalance]         | The JITrebalance plugin                                                                     |
+| [jwt-factory][jwt-factory]           | Json Web Tokens (JWT) to provide auth for c-lightning plugins                               |
 | [lightning-qt][lightning-qt]         | A bitcoin-qt-like GUI for lightningd                                                        |
 | [listmempoolfunds][listmempoolfunds] | Track unconfirmed wallet deposits                                                           |
 | [nloop][NLoop]                       | Generic Lightning Loop for boltz                                                            |
@@ -60,6 +61,7 @@ If you like a plugin from that list, feel free to update and fix it, so we can u
 [historian]: https://github.com/lightningd/plugins/tree/master/archived/historian
 [holdinvoice]: https://github.com/daywalker90/holdinvoice
 [jitrebalance]: https://github.com/lightningd/plugins/tree/master/archived/jitrebalance
+[jwt-factory]: https://github.com/nettijoe96/jwt-factory
 [Lightning-Invoice-Queue]: https://github.com/rbndg/Lightning-Invoice-Queue
 [lightning-qt]: https://github.com/darosior/pylightning-qt
 [listmempoolfunds]: https://github.com/andrewtoth/listmempoolfunds
