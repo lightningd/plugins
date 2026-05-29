@@ -21,6 +21,10 @@ exclude = [
     ".github",
     "archived",
     "lightning",
+    ".venv",
+    ".pytest_cache",
+    ".ruff_cache",
+    "__pycache__",
 ]
 
 
