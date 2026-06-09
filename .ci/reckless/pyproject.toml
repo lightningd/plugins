@@ -13,8 +13,3 @@ dev = [
     "pyln-client>=25.9.3",
     "pyln-proto>=25.9.3",
 ]
-
-[tool.uv.sources]
-pyln-testing = { path = "../../../lightning/contrib/pyln-testing", editable = true }
-pyln-client = { path = "../../../lightning/contrib/pyln-client", editable = true }
-pyln-proto = { path = "../../../lightning/contrib/pyln-proto", editable = true }
