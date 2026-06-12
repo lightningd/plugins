@@ -37,83 +37,159 @@ def get_thread_id_str():
 
 
 # The route msat helpers are needed because older versions of cln
-# had different msat/msatoshi fields with different types Millisatoshi/int
+# have different field names, that were replaced in newer versions
 def route_set_msat(obj, msat):
-    if plugin.rpcversion[0] == 0 and plugin.rpcversion[1] < 12:
-        obj[plugin.msatfield] = msat.millisatoshis
-        obj["amount_msat"] = Millisatoshi(msat)
+    if (
+        plugin.rpcversion[0] > 26
+        or plugin.rpcversion[0] == 26
+        and plugin.rpcversion[1] >= 6
+    ):
+        obj["amount_in_msat"] = Millisatoshi(msat)
     else:
-        obj[plugin.msatfield] = Millisatoshi(msat)
+        obj["amount_msat"] = Millisatoshi(msat)
+
+
+def route_set_out_msat(obj, msat):
+    if (
+        plugin.rpcversion[0] > 26
+        or plugin.rpcversion[0] == 26
+        and plugin.rpcversion[1] >= 6
+    ):
+        obj["amount_out_msat"] = Millisatoshi(msat)
 
 
 def route_get_msat(r):
-    return Millisatoshi(r[plugin.msatfield])
+    if (
+        plugin.rpcversion[0] > 26
+        or plugin.rpcversion[0] == 26
+        and plugin.rpcversion[1] >= 6
+    ):
+        return r["amount_in_msat"]
+    else:
+        return r["amount_msat"]
+
+
+def route_set_delay(obj, delay):
+    if (
+        plugin.rpcversion[0] > 26
+        or plugin.rpcversion[0] == 26
+        and plugin.rpcversion[1] >= 6
+    ):
+        obj["cltv_out"] = delay
+
+
+def route_set_in_delay(obj, delay):
+    if (
+        plugin.rpcversion[0] > 26
+        or plugin.rpcversion[0] == 26
+        and plugin.rpcversion[1] >= 6
+    ):
+        obj["cltv_in"] = delay
+    else:
+        obj["delay"] = delay
+
+
+def route_get_id(r):
+    if (
+        plugin.rpcversion[0] > 26
+        or plugin.rpcversion[0] == 26
+        and plugin.rpcversion[1] >= 6
+    ):
+        return r["node_id_out"]
+    else:
+        return r.get("next_node_id") or r["id"]
+
+
+def route_get_scid(r):
+    if (
+        plugin.rpcversion[0] > 26
+        or plugin.rpcversion[0] == 26
+        and plugin.rpcversion[1] >= 6
+    ):
+        return r["short_channel_id_dir"].split("/")[0]
+    else:
+        scidd = r.get("short_channel_id_dir")
+        if scidd:
+            return scidd.split("/")[0]
+        else:
+            return r["channel"]
+
+
+def getroutes_to_sendpay(route, msat):
+    if (
+        plugin.rpcversion[0] < 26
+        or plugin.rpcversion[0] == 26
+        and plugin.rpcversion[1] < 6
+    ):
+        sendpay_route = []
+        for i, r in enumerate(route):
+            sr = {}
+            sr["id"] = r.get("next_node_id") or r["id"]
+            sr["channel"] = r.get("short_channel_id_dir").split("/")[0] or r["channel"]
+            if i + 1 == len(route):
+                sr["delay"] = plugin.cltv_final
+                sr["amount_msat"] = msat
+            else:
+                sr["delay"] = route[i + 1].get("cltv_out") or route[i + 1].get("delay")
+                sr["amount_msat"] = route[i + 1].get("amount_out_msat") or route[
+                    i + 1
+                ].get("amount_msat")
+            sendpay_route.append(sr)
+        return sendpay_route
+    else:
+        return route
 
 
 def setup_routing_fees(route, msat):
     delay = plugin.cltv_final
-    if plugin.listpeerchannels:
-        loop_first_channel = -2
-        r = route[-1]
-        route_set_msat(r, msat)
-        r["delay"] = delay
-        channels = plugin.rpc.listpeerchannels(route[-2]["id"]).get("channels")
-        ch = next(
-            c["updates"]["remote"]
-            for c in channels
-            if c["short_channel_id"] == r["channel"]
-            or c["alias"].get("remote") == r["channel"]
-        )
-        fee = Millisatoshi(ch["fee_base_msat"])
-        # BOLT #7 requires fee >= fee_base_msat + ( amount_to_forward * fee_proportional_millionths / 1000000 )
-        fee += (
-            msat * ch["fee_proportional_millionths"] + 10**6 - 1
-        ) // 10**6  # integer math trick to round up
-        msat += fee
-        delay += ch["cltv_expiry_delta"]
-    else:
-        loop_first_channel = -1
+    loop_first_channel = -2
+    r = route[-1]
+    route_set_out_msat(r, msat)
+    route_set_delay(r, delay)
+    node_id_out = route_get_id(route[-2])
+    channels = plugin.rpc.listpeerchannels(node_id_out).get("channels")
+    scid = route_get_scid(r)
+    ch = next(
+        c["updates"]["remote"]
+        for c in channels
+        if c["short_channel_id"] == scid or c["alias"].get("remote") == scid
+    )
+    fee = Millisatoshi(ch["fee_base_msat"])
+    # BOLT #7 requires fee >= fee_base_msat + ( amount_to_forward * fee_proportional_millionths / 1000000 )
+    fee += (
+        msat * ch["fee_proportional_millionths"] + 10**6 - 1
+    ) // 10**6  # integer math trick to round up
+    msat += fee
+    route_set_msat(r, msat)
+    delay += ch["cltv_expiry_delta"]
+    route_set_in_delay(r, delay)
 
     for r in route[loop_first_channel:0:-1]:
-        route_set_msat(r, msat)
-        r["delay"] = delay
-        channels = plugin.rpc.listchannels(r["channel"]).get("channels")
-        ch = next(c for c in channels if c["destination"] == r["id"])
+        route_set_out_msat(r, msat)
+        scid = route_get_scid(r)
+        route_set_delay(r, delay)
+        channels = plugin.rpc.listchannels(scid).get("channels")
+        node_id_out = route_get_id(r)
+        ch = next(c for c in channels if c["destination"] == node_id_out)
         fee = Millisatoshi(ch["base_fee_millisatoshi"])
         # BOLT #7 requires fee >= fee_base_msat + ( amount_to_forward * fee_proportional_millionths / 1000000 )
         fee += (
             msat * ch["fee_per_millionth"] + 10**6 - 1
         ) // 10**6  # integer math trick to round up
         msat += fee
+        route_set_msat(r, msat)
         delay += ch["delay"]
+        route_set_in_delay(r, delay)
     r = route[0]
     route_set_msat(r, msat)
-    r["delay"] = delay
+    route_set_out_msat(r, route_get_msat(route[1]))
+    route_set_delay(r, delay)
+    route_set_in_delay(r, delay + 6)
 
 
 def get_channel(payload, peer_id, scid, check_state: bool = False):
-    if plugin.listpeerchannels:
-        channels = plugin.rpc.listpeerchannels(peer_id)["channels"]
-        channel = next(c for c in channels if c.get("short_channel_id") == scid)
-        if check_state:
-            if channel["state"] != "CHANNELD_NORMAL":
-                raise RpcError(
-                    "rebalance",
-                    payload,
-                    {
-                        "message": "Channel %s not in state CHANNELD_NORMAL, but: %s"
-                        % (scid, channel["state"])
-                    },
-                )
-            if not channel["peer_connected"]:
-                raise RpcError(
-                    "rebalance",
-                    payload,
-                    {"message": "Channel %s peer is not connected." % scid},
-                )
-        return channel
-    peer = plugin.rpc.listpeers(peer_id).get("peers")[0]
-    channel = next(c for c in peer["channels"] if c.get("short_channel_id") == scid)
+    channels = plugin.rpc.listpeerchannels(peer_id)["channels"]
+    channel = next(c for c in channels if c.get("short_channel_id") == scid)
     if check_state:
         if channel["state"] != "CHANNELD_NORMAL":
             raise RpcError(
@@ -124,7 +200,7 @@ def get_channel(payload, peer_id, scid, check_state: bool = False):
                     % (scid, channel["state"])
                 },
             )
-        if not peer["connected"]:
+        if not channel["peer_connected"]:
             raise RpcError(
                 "rebalance",
                 payload,
@@ -142,16 +218,10 @@ def amounts_from_scid(scid):
 
 
 def peer_from_scid(short_channel_id, my_node_id, payload):
-    if plugin.listpeerchannels:
-        channels = plugin.rpc.listpeerchannels().get("channels")
-        for ch in channels:
-            if ch["short_channel_id"] == short_channel_id:
-                return ch["peer_id"]
-    else:
-        channels = plugin.rpc.listchannels(short_channel_id).get("channels")
-        for ch in channels:
-            if ch["source"] == my_node_id:
-                return ch["destination"]
+    channels = plugin.rpc.listpeerchannels().get("channels")
+    for ch in channels:
+        if ch["short_channel_id"] == short_channel_id:
+            return ch["peer_id"]
     raise RpcError(
         "rebalance",
         payload,
@@ -167,23 +237,6 @@ def get_node_alias(node_id):
     else:
         s += node_id[0:7]
     return s
-
-
-def find_worst_channel(route):
-    if len(route) < 4:
-        if len(route) == 3:
-            return route[1]
-        else:
-            return None
-    start_idx = 2
-    worst = route[start_idx]
-    worst_val = route_get_msat(route[start_idx - 1]) - route_get_msat(worst)
-    for i in range(start_idx + 1, len(route) - 1):
-        val = route_get_msat(route[i - 1]) - route_get_msat(route[i])
-        if val > worst_val:
-            worst = route[i]
-            worst_val = val
-    return worst
 
 
 def cleanup(label, payload, rpc_result, error=None):
@@ -260,61 +313,47 @@ class NoRouteException(Exception):
     pass
 
 
-def getroute_basic(targetid, fromid, excludes, amount_msat: Millisatoshi):
+def getroutes(
+    targetid, fromid, excludes, amount_msat: Millisatoshi, maxfee_msat: Millisatoshi
+):
+    if fromid == targetid:
+        raise NoRouteException
+    if len(excludes) > 0:
+        layer = str(fromid) + "-" + str(targetid)
+        try:
+            plugin.rpc.call("askrene-remove-layer", [layer])
+        except RpcError:
+            pass
+
+        plugin.rpc.call("askrene-create-layer", [layer])
+
+        for exclude in excludes:
+            if "/" in exclude:
+                plugin.rpc.call("askrene-update-channel", [layer, exclude, False])
+            else:
+                plugin.rpc.call("askrene-disable-node", [layer, exclude])
+
     try:
         """ This does not make special assumptions and tries all routes
             it gets. Uses less CPU and does not filter any routes.
         """
-        return plugin.rpc.getroute(
-            targetid,
-            fromid=fromid,
-            exclude=excludes,
+        layers = ["xpay"]
+        if layer:
+            layers.append(layer)
+        return plugin.rpc.getroutes(
+            source=fromid,
+            destination=targetid,
             amount_msat=amount_msat,
-            maxhops=plugin.maxhops,
-            riskfactor=10,
-            cltv=9,
+            layers=layers,
+            maxfee_msat=maxfee_msat,
+            final_cltv=9,
+            maxparts=1,
         )
     except RpcError as e:
         # could not find route -> change params and restart loop
-        if e.method == "getroute" and e.error.get("code") == 205:
+        if e.method == "getroutes" and e.error.get("code") == 205:
             raise NoRouteException
         raise e
-
-
-def getroute_iterative(targetid, fromid, excludes, amount_msat: Millisatoshi):
-    """This searches for 'shorter and bigger pipes' first in order
-    to increase likelyhood of success on short timeout.
-    Can be useful for manual `rebalance`.
-    """
-    try:
-        return plugin.rpc.getroute(
-            targetid,
-            fromid=fromid,
-            exclude=excludes,
-            amount_msat=amount_msat * plugin.msatfactoridx,
-            maxhops=plugin.maxhopidx,
-            riskfactor=10,
-            cltv=9,
-        )
-    except RpcError as e:
-        # could not find route -> change params and restart loop
-        if e.method == "getroute" and e.error.get("code") == 205:
-            # reduce _msatfactor to look for smaller channels now
-            plugin.msatfactoridx -= 1
-            if plugin.msatfactoridx < 1:
-                # when we reached neutral msat factor:
-                # increase _maxhops and restart with msatfactor
-                plugin.maxhopidx += 1
-                plugin.msatfactoridx = plugin.msatfactor
-            # abort if we reached maxhop limit
-            if plugin.maxhops > 0 and plugin.maxhopidx > plugin.maxhops:
-                raise NoRouteException
-        raise e
-
-
-def getroute_switch(method_name):
-    switch = {"basic": getroute_basic, "iterative": getroute_iterative}
-    return switch.get(method_name, getroute_iterative)
 
 
 def waitsendpay(payment_hash, start_ts, retry_for):
@@ -342,7 +381,6 @@ def rebalance(
     retry_for: int = 60,
     maxfeepercent: float = 0.5,
     exemptfee: Millisatoshi = Millisatoshi(5000),
-    getroute_method=None,
 ):
     """Rebalancing channel liquidity with circular payments.
 
@@ -352,10 +390,6 @@ def rebalance(
         msatoshi = Millisatoshi(msatoshi)
     retry_for = int(retry_for)
     maxfeepercent = float(maxfeepercent)
-    if getroute_method is None:
-        getroute = plugin.getroute
-    else:
-        getroute = getroute_switch(getroute_method)
     exemptfee = Millisatoshi(exemptfee)
     payload = {
         "outgoing_scid": outgoing_scid,
@@ -376,9 +410,8 @@ def rebalance(
         if (out_aliases and out_aliases.get("local"))
         else outgoing_scid
     )
-    in_aliases = get_channel(payload, incoming_node_id, incoming_scid, True).get(
-        "alias"
-    )
+    in_channel = get_channel(payload, incoming_node_id, incoming_scid, True)
+    in_aliases = in_channel.get("alias")
     in_alias = (
         in_aliases.get("remote")
         if (in_aliases and in_aliases.get("remote"))
@@ -396,21 +429,24 @@ def rebalance(
     if msatoshi > out_ours or msatoshi > in_total - in_ours:
         raise RpcError("rebalance", payload, {"message": "Channel capacities too low"})
 
+    maxfee_msat = Millisatoshi(max(int(exemptfee), int(msatoshi) * maxfeepercent / 100))
+    remote_udpates = in_channel.get("updates").get("remote")
+    last_fee_msat = (
+        remote_udpates["fee_base_msat"]
+        + int(msatoshi) * remote_udpates["fee_proportional_millionths"] / 1_000_000
+    )
+
     plugin.log(
         f"starting rebalance out_scid:{outgoing_scid} in_scid:{incoming_scid} amount:{msatoshi}",
         "debug",
     )
 
-    route_out = {
-        "id": outgoing_node_id,
-        "channel": out_alias,
-        "direction": int(not my_node_id < outgoing_node_id),
-    }
-    route_in = {
-        "id": my_node_id,
-        "channel": in_alias,
-        "direction": int(not incoming_node_id < my_node_id),
-    }
+    is_26_06_or_later = (
+        plugin.rpcversion[0] > 26
+        or plugin.rpcversion[0] == 26
+        and plugin.rpcversion[1] >= 6
+    )
+
     start_ts = int(time.time())
     label = "Rebalance-" + str(uuid.uuid4())
     description = "%s to %s" % (outgoing_scid, incoming_scid)
@@ -422,61 +458,68 @@ def rebalance(
     rpc_result = None
     excludes = [my_node_id]  # excude all own channels to prevent shortcuts
     nodes = {}  # here we store erring node counts
-    plugin.maxhopidx = 1  # start with short routes and increase
-    plugin.msatfactoridx = plugin.msatfactor  # start with high capacity factor
-    # and decrease to reduce WIRE_TEMPORARY failures because of imbalances
-
-    # 'disable' maxhops filter if set to <= 0
-    # I know this is ugly, but we don't ruin the rest of the code this way
-    if plugin.maxhops <= 0:
-        plugin.maxhopidx = 20
 
     # trace stats
     count = 0
     count_sendpay = 0
-    time_getroute = 0
+    time_getroutes = 0
     time_sendpay = 0
 
     try:
         while int(time.time()) - start_ts < retry_for and not rebalance_stopping():
+            if is_26_06_or_later:
+                route_out = {
+                    "node_id_out": outgoing_node_id,
+                    "short_channel_id_dir": out_alias
+                    + "/"
+                    + str(int(not my_node_id < outgoing_node_id)),
+                }
+                route_in = {
+                    "node_id_out": my_node_id,
+                    "short_channel_id_dir": in_alias
+                    + "/"
+                    + str(int(not incoming_node_id < my_node_id)),
+                }
+            else:
+                route_out = {
+                    "next_node_id": outgoing_node_id,
+                    "short_channel_id_dir": out_alias
+                    + "/"
+                    + str(int(not my_node_id < outgoing_node_id)),
+                }
+                route_in = {
+                    "next_node_id": my_node_id,
+                    "short_channel_id_dir": in_alias
+                    + "/"
+                    + str(int(not incoming_node_id < my_node_id)),
+                }
             count += 1
             try:
                 time_start = time.time()
-                r = getroute(
+                r = getroutes(
                     targetid=incoming_node_id,
                     fromid=outgoing_node_id,
                     excludes=excludes,
                     amount_msat=msatoshi,
+                    maxfee_msat=maxfee_msat - last_fee_msat,
                 )
-                time_getroute += time.time() - time_start
+                time_getroutes += time.time() - time_start
             except NoRouteException:
-                # no more chance for a successful getroute
+                # no more chance for a successful getroutes
                 rpc_result = {"status": "error", "message": "No suitable routes found"}
                 return cleanup(label, payload, rpc_result)
             except RpcError as e:
-                # getroute can be successful next time with different parameters
-                if e.method == "getroute" and e.error.get("code") == 205:
+                # getroutes can be successful next time with different parameters
+                if e.method == "getroutes" and e.error.get("code") == 205:
                     continue
                 else:
                     raise e
 
-            route_mid = r["route"]
+            route_mid = r["routes"][0]["path"]
             route = [route_out] + route_mid + [route_in]
             setup_routing_fees(route, msatoshi)
+            route = getroutes_to_sendpay(route, msatoshi)
             fees = route_get_msat(route[0]) - msatoshi
-
-            # check fee and exclude worst channel the next time
-            # NOTE: the int(msat) casts are just a workaround for outdated pylightning versions
-            if fees > exemptfee and int(fees) > int(msatoshi) * maxfeepercent / 100:
-                worst_channel = find_worst_channel(route)
-                if worst_channel is None:
-                    raise RpcError(
-                        "rebalance", payload, {"message": "Insufficient fee"}
-                    )
-                excludes.append(
-                    worst_channel["channel"] + "/" + str(worst_channel["direction"])
-                )
-                continue
 
             rpc_result = {
                 "sent": msatoshi + fees,
@@ -491,7 +534,10 @@ def rebalance(
             }
             midroute_str = reduce(
                 lambda x, y: x + " -> " + y,
-                map(lambda r: get_node_alias(r["id"]), route_mid),
+                map(
+                    lambda r: get_node_alias(route_get_id(r)),
+                    route_mid,
+                ),
             )
             full_route_str = "%s -> %s -> %s -> %s" % (
                 get_node_alias(my_node_id),
@@ -503,8 +549,10 @@ def rebalance(
                 f"Thread{get_thread_id_str()} {len(route)} hops and {fees.to_satoshi_str()} fees for {msatoshi.to_satoshi_str()} along route: {full_route_str}"
             )
             for r in route:
+                node_id = route_get_id(r)
+                scid = route_get_scid(r)
                 plugin.log(
-                    "    - %s  %14s  %s" % (r["id"], r["channel"], route_get_msat(r)),
+                    "    - %s  %14s  %s" % (node_id, scid, route_get_msat(r)),
                     "debug",
                 )
 
@@ -516,14 +564,14 @@ def rebalance(
                 time_sendpay += time.time() - time_start
                 if result.get("status") == "complete":
                     rpc_result["stats"] = (
-                        f"running_for:{int(time.time()) - start_ts}  count_getroute:{count}  time_getroute:{time_getroute}  time_getroute_avg:{time_getroute / count}  count_sendpay:{count_sendpay}  time_sendpay:{time_sendpay}  time_sendpay_avg:{time_sendpay / count_sendpay}"
+                        f"running_for:{int(time.time()) - start_ts}  count_getroutes:{count}  time_getroutes:{time_getroutes}  time_getroutes_avg:{time_getroutes / count}  count_sendpay:{count_sendpay}  time_sendpay:{time_sendpay}  time_sendpay_avg:{time_sendpay / count_sendpay}"
                     )
                     return cleanup(label, payload, rpc_result)
 
             except RpcError as e:
                 time_sendpay += time.time() - time_start
                 plugin.log(
-                    f"maxhops:{plugin.maxhopidx}  msatfactor:{plugin.msatfactoridx}  running_for:{int(time.time()) - start_ts}  count_getroute:{count}  time_getroute:{time_getroute}  time_getroute_avg:{time_getroute / count}  count_sendpay:{count_sendpay}  time_sendpay:{time_sendpay}  time_sendpay_avg:{time_sendpay / count_sendpay}",
+                    f"running_for:{int(time.time()) - start_ts}  count_getroutes:{count}  time_getroutes:{time_getroutes}  time_getroutes_avg:{time_getroutes / count}  count_sendpay:{count_sendpay}  time_sendpay:{time_sendpay}  time_sendpay_avg:{time_sendpay / count_sendpay}",
                     "debug",
                 )
                 # plugin.log(f"RpcError: {str(e)}", 'debug')
@@ -544,9 +592,12 @@ def rebalance(
                     raise RpcError(
                         "rebalance", payload, {"message": "Error with outgoing channel"}
                     )
+                plugin.log(f"Other sendpay error: {e}", "debug")
                 # exclude other erroring channels
                 if erring_channel is not None and erring_direction is not None:
-                    excludes.append(erring_channel + "/" + str(erring_direction))
+                    scidd = erring_channel + "/" + str(erring_direction)
+                    err_amount_msat = e.error.get("data", {}).get("amount_msat")
+                    askrene_constraint_xpay(scidd, err_amount_msat)
                 # count and exclude nodes that produce a lot of errors
                 if erring_node and plugin.erringnodes > 0:
                     if nodes.get(erring_node) is None:
@@ -559,6 +610,10 @@ def rebalance(
         return cleanup(label, payload, rpc_result, e)
     rpc_result = {"status": "error", "message": "Timeout reached"}
     return cleanup(label, payload, rpc_result)
+
+
+def askrene_constraint_xpay(scidd, msat):
+    plugin.rpc.call("askrene-inform-channel", ["xpay", scidd, msat, "constrained"])
 
 
 def a_minus_b(a: Millisatoshi, b: Millisatoshi):
@@ -598,16 +653,10 @@ def could_receive(liquidity):
 
 def get_open_channels(plugin: Plugin):
     result = []
-    if plugin.listpeerchannels:
-        channels = plugin.rpc.listpeerchannels()["channels"]
-        for ch in channels:
-            if ch["state"] == "CHANNELD_NORMAL":
-                result.append(ch)
-    else:
-        for peer in plugin.rpc.listpeers()["peers"]:
-            for ch in peer["channels"]:
-                if ch["state"] == "CHANNELD_NORMAL":
-                    result.append(ch)
+    channels = plugin.rpc.listpeerchannels()["channels"]
+    for ch in channels:
+        if ch["state"] == "CHANNELD_NORMAL":
+            result.append(ch)
     return result
 
 
@@ -688,18 +737,10 @@ def get_max_fee(msat: Millisatoshi):
 
 
 def get_chan(scid: str):
-    if plugin.listpeerchannels:
-        channels = plugin.rpc.listpeerchannels()["channels"]
-        for chan in channels:
-            if chan.get("short_channel_id") == scid:
-                return chan
-    else:
-        for peer in plugin.rpc.listpeers()["peers"]:
-            if len(peer["channels"]) == 0:
-                continue
-            for chan in peer["channels"]:
-                if chan.get("short_channel_id") == scid:
-                    return chan
+    channels = plugin.rpc.listpeerchannels()["channels"]
+    for chan in channels:
+        if chan.get("short_channel_id") == scid:
+            return chan
 
 
 def liquidity_info(channel, enough_liquidity: Millisatoshi, ideal_ratio: float):
@@ -760,14 +801,13 @@ def wait_for_htlcs(failed_channels: list, scids: list = None):
                 result = False
                 continue
             if "htlcs" in channel:
-                lam = lambda: (
-                    len(plugin.rpc.listpeers()["peers"][p]["channels"][c]["htlcs"]) == 0
-                )
-                if plugin.listpeerchannels:
-                    lam = lambda: (
+
+                def lam():
+                    return (
                         len(plugin.rpc.listpeerchannels(pid)["channels"][c]["htlcs"])
                         == 0
                     )
+
                 if not wait_for(lam):
                     failed_channels.append(scid)
                     plugin.log(
@@ -1128,9 +1168,6 @@ def rebalancereport(plugin: Plugin, include_avg_fees: bool = True):
     """Show information about rebalance"""
     res = {}
     res["rebalanceall_is_running"] = plugin.mutex.locked()
-    res["getroute_method"] = plugin.getroute.__name__
-    res["maxhops_threshold"] = plugin.maxhops
-    res["msatfactor"] = plugin.msatfactor
     res["erringnodes_threshold"] = plugin.erringnodes
     channels = get_open_channels(plugin)
     health_percent = 0.0
@@ -1157,16 +1194,7 @@ def rebalancereport(plugin: Plugin, include_avg_fees: bool = True):
     total_amount = Millisatoshi(0)
     res["total_successful_rebalances"] = len(rebalances)
 
-    # iterate if cln doesn't already support `status` on listpays since v0.10.2
-    if (
-        plugin.rpcversion[0] == 0
-        and plugin.rpcversion[1] <= 10
-        and plugin.rpcversion[2] < 2
-    ):
-        pays = plugin.rpc.listpays()["pays"]
-        pays = [p for p in pays if p.get("status") == "complete"]
-    else:
-        pays = plugin.rpc.listpays(status="complete")["pays"]
+    pays = plugin.rpc.listpays(status="complete")["pays"]
 
     for r in rebalances:
         try:
@@ -1193,68 +1221,71 @@ def rebalancereport(plugin: Plugin, include_avg_fees: bool = True):
 
 @plugin.init()
 def init(options: dict, configuration: dict, plugin: Plugin, **kwargs):
-    rpchelp = plugin.rpc.help().get("help")
-    # detect if server cli has moved `listpeers.channels[]` to `listpeerchannels`
-    # See https://github.com/ElementsProject/lightning/pull/5825
-    # TODO: replace by rpc version check once v23 is released
-    plugin.listpeerchannels = False
-    if len([c for c in rpchelp if c["command"].startswith("listpeerchannels ")]) != 0:
-        plugin.listpeerchannels = True
-
     # do all the stuff that needs to be done just once ...
     plugin.getinfo = plugin.rpc.getinfo()
     plugin.rpcversion = cln_parse_rpcversion(plugin.getinfo.get("version"))
+
+    if (
+        plugin.rpcversion[0] < 25
+        or plugin.rpcversion[0] == 25
+        and plugin.rpcversion[1] < 9
+    ):
+        return {"disable": "CLN version too old, need at least v25.09"}
+
+    if options.get("rebalance-getroute"):
+        plugin.log(
+            "option `rebalance-getroute` is deprecated, please remove it from your config",
+            "warn",
+        )
+    if options.get("rebalance-maxhops"):
+        plugin.log(
+            "option `rebalance-getroute` is deprecated, please remove it from your config",
+            "warn",
+        )
+    if options.get("rebalance-msatfactor"):
+        plugin.log(
+            "option `rebalance-getroute` is deprecated, please remove it from your config",
+            "warn",
+        )
+
     config = plugin.rpc.listconfigs()["configs"]
     plugin.cltv_final = config["cltv-final"]["value_int"]
     plugin.fee_base = Millisatoshi(config["fee-base"]["value_int"])
     plugin.fee_ppm = config["fee-per-satoshi"]["value_int"]
     plugin.mutex = threading.Lock()
-    plugin.maxhops = int(options.get("rebalance-maxhops"))
-    plugin.msatfactor = float(options.get("rebalance-msatfactor"))
     plugin.erringnodes = int(options.get("rebalance-erringnodes"))
     plugin.threads = int(options.get("rebalance-threads"))
-    plugin.getroute = getroute_switch(options.get("rebalance-getroute"))
     plugin.rebalanceall_msg = None
-
-    # use getroute amount_msat/msatoshi field depending on version
-    plugin.msatfield = "amount_msat"
-    if plugin.rpcversion[0] == 0 and plugin.rpcversion[1] < 12:
-        plugin.msatfield = "msatoshi"
 
     plugin.log(
         f"Plugin rebalance initialized with {plugin.fee_base.to_satoshi_str()} base / {plugin.fee_ppm} ppm fee  "
         f"cltv_final:{plugin.cltv_final}  "
-        f"maxhops:{plugin.maxhops}  "
-        f"msatfactor:{plugin.msatfactor}  "
         f"erringnodes:{plugin.erringnodes}  "
-        f"getroute:{plugin.getroute.__name__}  "
         f"threads:{plugin.threads}  "
     )
 
 
 plugin.add_option(
     "rebalance-getroute",
-    "iterative",
-    "Getroute method for route search can be 'basic' or 'iterative'."
-    "'basic': Tries all routes sequentially. "
-    "'iterative': Tries shorter and bigger routes first.",
+    None,
+    "UNUSED. Kept for backward compatibility only. Please update your configuration to remove this option.",
     "string",
+    True,
 )
 plugin.add_option(
     "rebalance-maxhops",
-    "5",
-    "Maximum number of hops for `getroute` call. Set to 0 to disable. "
-    "Note: Two hops are added for own nodes input and output channel. "
-    "Note: Routes with a 8 or more hops have less than 3% success rate.",
+    None,
+    "UNUSED. Kept for backward compatibility only. Please update your configuration to remove this option.",
     "string",
+    True,
 )
 
 plugin.add_option(
     "rebalance-msatfactor",
-    "4",
-    "Will instruct `getroute` call to use higher requested capacity first. "
-    "Note: This will decrease to 1 when no routes can be found.",
+    None,
+    "UNUSED. Kept for backward compatibility only. Please update your configuration to remove this option.",
     "string",
+    True,
 )
 
 plugin.add_option(

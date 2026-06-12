@@ -79,12 +79,11 @@ This process may take a while. Automatic rebalance can run for hours in the back
 You can use the `lightning-cli` to rebalance channels like this:
 
 ```
-lightning-cli rebalance outgoing_scid incoming_scid [msatoshi] [retry_for] [maxfeepercent] [exemptfee] [getroute_method]
+lightning-cli rebalance outgoing_scid incoming_scid [msatoshi] [retry_for] [maxfeepercent] [exemptfee]
 ```
 def rebalance(plugin, outgoing_scid, incoming_scid, msatoshi: Millisatoshi = None,
               retry_for: int = 60, maxfeepercent: float = 0.5,
-              exemptfee: Millisatoshi = Millisatoshi(5000),
-              getroute_method=None):
+              exemptfee: Millisatoshi = Millisatoshi(5000)):
 If you want to skip/default certain optional parameters but use others, you can
 use always the `lightning-cli -k` (key=value) syntax like this:
 
@@ -108,10 +107,6 @@ lightning-cli rebalance -k outgoing_scid=1514942x51x0 incoming_scid=1515133x10x0
   dominated by the fee leveraged by forwarding nodes. Setting `exemptfee`
   allows the `maxfeepercent` check to be skipped on fees that are smaller than
   exemptfee (default: 5000 millisatoshi).
-- OPTIONAL: The `getroute_method` option can be for route search can be 'basic'
-  or 'iterative'.  
-  'basic': Tries all routes sequentially.  
-  'iterative': Tries shorter and bigger routes first.
 
 
 #### Tips and Tricks for individual rebalance
