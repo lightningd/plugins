@@ -294,3 +294,76 @@ def test_rebalance_all_private(node_factory, bitcoind):
     report = l1.rpc.rebalancereport()
     assert report.get("rebalanceall_is_running") is False
     assert report.get("total_successful_rebalances") == 2
+
+
+def test_rebalance_short(node_factory, bitcoind):
+    l1, l2 = node_factory.line_graph(2, opts=plugin_opt)
+    l1.daemon.logsearch_start = 0
+    l1.daemon.wait_for_log("Plugin rebalance initialized.*")
+    nodes = [l1, l2]
+
+    # form a circle so we can do rebalancing
+    l2.fundchannel(l1)
+
+    # get scids
+    peerchannels = l1.rpc.listpeerchannels(l2.info["id"])["channels"]
+    scid12 = peerchannels[0]["short_channel_id"]
+    scid21 = peerchannels[1]["short_channel_id"]
+    scids = [scid12, scid21]
+
+    # wait for each others gossip
+    bitcoind.generate_block(6)
+    for n in nodes:
+        for scid in scids:
+            n.wait_channel_active(scid)
+
+    # check we can do an auto amount rebalance
+    result = l1.rpc.rebalance(scid12, scid21)
+    print(result)
+    assert result["status"] == "error"
+    assert result["message"] == "No suitable routes found"
+
+
+def test_rebalance_fees_and_delays(node_factory, bitcoind):
+    opts = [
+        {
+            "plugin": plugin_opt["plugin"],
+            "cltv-delta": 10,
+            "fee-base": 10,
+            "fee-per-satoshi": 10,
+        },
+        {"cltv-delta": 20, "fee-base": 100, "fee-per-satoshi": 20},
+        {"cltv-delta": 30, "fee-base": 1000, "fee-per-satoshi": 30},
+        {"cltv-delta": 40, "fee-base": 10000, "fee-per-satoshi": 40},
+    ]
+    l1, l2, l3, l4 = node_factory.line_graph(4, opts=opts)
+    l1.daemon.logsearch_start = 0
+    l1.daemon.wait_for_log("Plugin rebalance initialized.*")
+    nodes = [l1, l2, l3, l4]
+
+    # form a circle so we can do rebalancing
+    l4.connect(l1)
+    l4.fundchannel(l1)
+
+    # get scids
+    scid12 = l1.get_channel_scid(l2)
+    scid23 = l2.get_channel_scid(l3)
+    scid34 = l3.get_channel_scid(l4)
+    scid41 = l4.get_channel_scid(l1)
+    scids = [scid12, scid23, scid34, scid41]
+
+    # wait for each others gossip
+    bitcoind.generate_block(6)
+    for n in nodes:
+        for scid in scids:
+            n.wait_channel_active(scid)
+
+    # check we can do an auto amount rebalance
+    result = l1.rpc.rebalance(scid12, scid41)
+    print(result)
+    assert result["status"] == "complete"
+    assert result["outgoing_scid"] == scid12
+    assert result["incoming_scid"] == scid41
+    assert result["hops"] == 4
+    assert result["received"] == "500000000msat"
+    assert result["sent"] == "500056102msat"
