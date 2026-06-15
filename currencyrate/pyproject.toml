@@ -6,7 +6,7 @@ readme = "README.md"
 requires-python = ">=3.10"
 
 dependencies = [
-    "cachetools>=7.1.2",
+    "cachetools>=7.1.4",
     "pyln-client>=25.9.3",
     "requests[socks]>=2.34.2",
     "urllib3>=2.7.0",
