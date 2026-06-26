@@ -255,11 +255,17 @@ def donationserver(command="start", port=8088):
 
 
 plugin.add_option(
-    "donations-autostart", "true", "Should the donation server start automatically"
+    "donations-autostart",
+    True,
+    "Should the donation server start automatically",
+    "bool",
 )
 
 plugin.add_option(
-    "donations-web-port", "8088", "Which port should the donation server listen to?"
+    "donations-web-port",
+    8088,
+    "Which port should the donation server listen to?",
+    "int",
 )
 
 
@@ -267,7 +273,7 @@ plugin.add_option(
 def init(options, configuration, plugin):
     port = int(options["donations-web-port"])
 
-    if options["donations-autostart"].lower() in ["true", "1"]:
+    if options["donations-autostart"]:
         start_server(port)
 
 
