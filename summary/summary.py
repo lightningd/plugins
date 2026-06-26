@@ -395,6 +395,7 @@ plugin.add_option(
     "summary-availability-window",
     72,
     "How many hours the availability should be averaged over.",
+    "int",
 )
 plugin.add_option(
     "summary-sortkey",
