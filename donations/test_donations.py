@@ -11,13 +11,21 @@ plugin_path = os.path.join(os.path.dirname(__file__), "donations.py")
 def test_donation_starts(node_factory):
     l1 = node_factory.get_node()
     # Test dynamically
-    l1.rpc.plugin_start(plugin_path)
+    l1.rpc.plugin_start(plugin_path, **{"donations-web-port": 8089})
+    l1.daemon.logsearch_start = 0
+    l1.daemon.wait_for_log(
+        "plugin-donations.py:.*Starting donation server on port 8089 on all addresses"
+    )
     l1.rpc.plugin_stop(plugin_path)
     l1.rpc.plugin_start(plugin_path)
     l1.stop()
     # Then statically
     l1.daemon.opts["plugin"] = plugin_path
     l1.start()
+    l1.daemon.logsearch_start = 0
+    l1.daemon.wait_for_log(
+        "plugin-donations.py:.*Starting donation server on port 8088 on all addresses"
+    )
 
 
 def test_donation_server(node_factory):
