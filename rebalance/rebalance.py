@@ -220,7 +220,7 @@ def amounts_from_scid(scid):
 def peer_from_scid(short_channel_id, my_node_id, payload):
     channels = plugin.rpc.listpeerchannels().get("channels")
     for ch in channels:
-        if ch["short_channel_id"] == short_channel_id:
+        if ch.get("short_channel_id") == short_channel_id:
             return ch["peer_id"]
     raise RpcError(
         "rebalance",
