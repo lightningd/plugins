@@ -18,11 +18,22 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["3.10", "3.13"]
         bitcoind-version: ["31.0"]
-        cln-version: ["26.06.1", "26.04", "25.12"]
         experimental: [1]
         deprecated: [0]
+        include:
+          - cln-version: "26.06.1"
+            python-version: "3.10"
+          - cln-version: "26.06.1"
+            python-version: "3.12"
+          - cln-version: "26.04"
+            python-version: "3.10"
+          - cln-version: "26.04"
+            python-version: "3.12"
+          - cln-version: "25.12"
+            python-version: "3.10"
+          - cln-version: "25.12"
+            python-version: "3.12"
 
     steps:
     - uses: actions/checkout@v6
@@ -197,7 +208,13 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        cln-version: ["26.06.1", "26.04", "25.12"]
+        include:
+          - cln-version: "26.06.1"
+            python-versions: "3.10 3.12"
+          - cln-version: "26.04"
+            python-versions: "3.10 3.12"
+          - cln-version: "25.12"
+            python-versions: "3.10 3.12"
     steps:
       - uses: actions/checkout@v6
         with:
@@ -208,7 +225,6 @@ jobs:
           python-version: "3.14"
       - name: Complete
         run: |
-          python_versions='3.10 3.14'
           echo "Updating badges data for ${{ matrix.cln-version }} workflow..."
-          python3 .ci/update_badges.py ${{ matrix.cln-version }} $(echo "$python_versions")
+          python3 .ci/update_badges.py ${{ matrix.cln-version }} ${{ matrix.python-versions }}
           echo "CI completed."
