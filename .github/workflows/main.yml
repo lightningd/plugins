@@ -12,7 +12,7 @@ on:
 
 jobs:
   build-and-test:
-    name: Test CLN=${{ matrix.cln-version }}, PY=${{ matrix.python-version }}, BCD=${{ matrix.bitcoind-version }}, EXP=${{ matrix.experimental }}, DEP=${{ matrix.deprecated }}
+    name: Test CLN=${{ matrix.config.cln-version }}, PY=${{ matrix.config.python-version }}, BCD=${{ matrix.bitcoind-version }}, EXP=${{ matrix.experimental }}, DEP=${{ matrix.deprecated }}
     runs-on: ubuntu-latest
     timeout-minutes: 90
     strategy:
@@ -21,7 +21,7 @@ jobs:
         bitcoind-version: ["31.0"]
         experimental: [1]
         deprecated: [0]
-        include:
+        config:
           - cln-version: "26.06.1"
             python-version: "3.10"
           - cln-version: "26.06.1"
@@ -80,11 +80,11 @@ jobs:
             echo "run_ci=false" >> "$GITHUB_OUTPUT"
           fi
 
-    - name: Set up Python ${{ matrix.python-version }}
+    - name: Set up Python ${{ matrix.config.python-version }}
       if: ${{ github.event_name == 'push' || steps.set_plugin_dirs.outputs.run_ci == 'true' }}
       uses: actions/setup-python@v6
       with:
-        python-version: ${{ matrix.python-version }}
+        python-version: ${{ matrix.config.python-version }}
 
     - name: Install uv
       uses: astral-sh/setup-uv@v8.1.0
@@ -142,13 +142,13 @@ jobs:
           /usr/local/bin/lightning*
           /usr/local/bin/reckless
           /usr/local/libexec/c-lightning
-        key: cache-cln-${{ matrix.cln-version }}-${{ steps.exact_versions.outputs.os_version }}
+        key: cache-cln-${{ matrix.config.cln-version }}-${{ steps.exact_versions.outputs.os_version }}
 
-    - name: Download Core Lightning ${{ matrix.cln-version }} & install binaries
+    - name: Download Core Lightning ${{ matrix.config.cln-version }} & install binaries
       if: ${{ steps.cache-cln.outputs.cache-hit != 'true' && (github.event_name == 'push' || steps.set_plugin_dirs.outputs.run_ci == 'true') }}
       id: cln-install
       run: |
-        url=$(curl -s https://api.github.com/repos/ElementsProject/lightning/releases/tags/v${{ matrix.cln-version }} \
+        url=$(curl -s https://api.github.com/repos/ElementsProject/lightning/releases/tags/v${{ matrix.config.cln-version }} \
           | jq '.assets[] | select(.name | contains("24.04")) | .browser_download_url' \
           | tr -d '\"')
         wget $url
@@ -162,7 +162,7 @@ jobs:
             /usr/local/bin/lightning*
             /usr/local/bin/reckless
             /usr/local/libexec/c-lightning
-          key: cache-cln-${{ matrix.cln-version }}-${{ steps.exact_versions.outputs.os_version }}
+          key: cache-cln-${{ matrix.config.cln-version }}-${{ steps.exact_versions.outputs.os_version }}
 
     - name: Run pytest tests
       id: pytest_tests
@@ -193,9 +193,9 @@ jobs:
 
         if [[ -z "$plugin_dirs" ]]; then
             # Test all plugins if no specific plugins were changed
-            python3 .ci/test.py ${{ matrix.cln-version }} ${{ matrix.python-version }} $update_badges
+            python3 .ci/test.py ${{ matrix.config.cln-version }} ${{ matrix.config.python-version }} $update_badges
         else
-            python3 .ci/test.py ${{ matrix.cln-version }} ${{ matrix.python-version }} $update_badges $(echo "$plugin_dirs")
+            python3 .ci/test.py ${{ matrix.config.cln-version }} ${{ matrix.config.python-version }} $update_badges $(echo "$plugin_dirs")
         fi
 
   gather:
