@@ -36,76 +36,52 @@ def get_thread_id_str():
     return f"{plugin.threadids.get(threading.get_ident(), 0):{'0' + str(max_digits)}}"
 
 
-# The route msat helpers are needed because older versions of cln
-# have different field names, that were replaced in newer versions
+# Older versions of CLN used different getroutes field names. Inspect the
+# response because custom builds need not expose a parseable release version.
+def route_uses_modern_fields(obj):
+    return "node_id_out" in obj
+
+
 def route_set_msat(obj, msat):
-    if (
-        plugin.rpcversion[0] > 26
-        or plugin.rpcversion[0] == 26
-        and plugin.rpcversion[1] >= 6
-    ):
+    if route_uses_modern_fields(obj):
         obj["amount_in_msat"] = Millisatoshi(msat)
     else:
         obj["amount_msat"] = Millisatoshi(msat)
 
 
 def route_set_out_msat(obj, msat):
-    if (
-        plugin.rpcversion[0] > 26
-        or plugin.rpcversion[0] == 26
-        and plugin.rpcversion[1] >= 6
-    ):
+    if route_uses_modern_fields(obj):
         obj["amount_out_msat"] = Millisatoshi(msat)
 
 
 def route_get_msat(r):
-    if (
-        plugin.rpcversion[0] > 26
-        or plugin.rpcversion[0] == 26
-        and plugin.rpcversion[1] >= 6
-    ):
+    if route_uses_modern_fields(r):
         return r["amount_in_msat"]
     else:
         return r["amount_msat"]
 
 
 def route_set_delay(obj, delay):
-    if (
-        plugin.rpcversion[0] > 26
-        or plugin.rpcversion[0] == 26
-        and plugin.rpcversion[1] >= 6
-    ):
+    if route_uses_modern_fields(obj):
         obj["cltv_out"] = delay
 
 
 def route_set_in_delay(obj, delay):
-    if (
-        plugin.rpcversion[0] > 26
-        or plugin.rpcversion[0] == 26
-        and plugin.rpcversion[1] >= 6
-    ):
+    if route_uses_modern_fields(obj):
         obj["cltv_in"] = delay
     else:
         obj["delay"] = delay
 
 
 def route_get_id(r):
-    if (
-        plugin.rpcversion[0] > 26
-        or plugin.rpcversion[0] == 26
-        and plugin.rpcversion[1] >= 6
-    ):
+    if route_uses_modern_fields(r):
         return r["node_id_out"]
     else:
         return r.get("next_node_id") or r["id"]
 
 
 def route_get_scid(r):
-    if (
-        plugin.rpcversion[0] > 26
-        or plugin.rpcversion[0] == 26
-        and plugin.rpcversion[1] >= 6
-    ):
+    if route_uses_modern_fields(r):
         return r["short_channel_id_dir"].split("/")[0]
     else:
         scidd = r.get("short_channel_id_dir")
@@ -116,11 +92,7 @@ def route_get_scid(r):
 
 
 def getroutes_to_sendpay(route, msat):
-    if (
-        plugin.rpcversion[0] < 26
-        or plugin.rpcversion[0] == 26
-        and plugin.rpcversion[1] < 6
-    ):
+    if not route_uses_modern_fields(route[0]):
         sendpay_route = []
         for i, r in enumerate(route):
             sr = {}
@@ -441,12 +413,6 @@ def rebalance(
         "debug",
     )
 
-    is_26_06_or_later = (
-        plugin.rpcversion[0] > 26
-        or plugin.rpcversion[0] == 26
-        and plugin.rpcversion[1] >= 6
-    )
-
     start_ts = int(time.time())
     label = "Rebalance-" + str(uuid.uuid4())
     description = "%s to %s" % (outgoing_scid, incoming_scid)
@@ -467,32 +433,6 @@ def rebalance(
 
     try:
         while int(time.time()) - start_ts < retry_for and not rebalance_stopping():
-            if is_26_06_or_later:
-                route_out = {
-                    "node_id_out": outgoing_node_id,
-                    "short_channel_id_dir": out_alias
-                    + "/"
-                    + str(int(not my_node_id < outgoing_node_id)),
-                }
-                route_in = {
-                    "node_id_out": my_node_id,
-                    "short_channel_id_dir": in_alias
-                    + "/"
-                    + str(int(not incoming_node_id < my_node_id)),
-                }
-            else:
-                route_out = {
-                    "next_node_id": outgoing_node_id,
-                    "short_channel_id_dir": out_alias
-                    + "/"
-                    + str(int(not my_node_id < outgoing_node_id)),
-                }
-                route_in = {
-                    "next_node_id": my_node_id,
-                    "short_channel_id_dir": in_alias
-                    + "/"
-                    + str(int(not incoming_node_id < my_node_id)),
-                }
             count += 1
             try:
                 time_start = time.time()
@@ -516,6 +456,23 @@ def rebalance(
                     raise e
 
             route_mid = r["routes"][0]["path"]
+            id_field = (
+                "node_id_out"
+                if route_uses_modern_fields(route_mid[0])
+                else "next_node_id"
+            )
+            route_out = {
+                id_field: outgoing_node_id,
+                "short_channel_id_dir": out_alias
+                + "/"
+                + str(int(not my_node_id < outgoing_node_id)),
+            }
+            route_in = {
+                id_field: my_node_id,
+                "short_channel_id_dir": in_alias
+                + "/"
+                + str(int(not incoming_node_id < my_node_id)),
+            }
             route = [route_out] + route_mid + [route_in]
             setup_routing_fees(route, msatoshi)
             route = getroutes_to_sendpay(route, msatoshi)
@@ -1225,12 +1182,14 @@ def init(options: dict, configuration: dict, plugin: Plugin, **kwargs):
     plugin.getinfo = plugin.rpc.getinfo()
     plugin.rpcversion = cln_parse_rpcversion(plugin.getinfo.get("version"))
 
-    if (
+    if plugin.rpcversion is not None and (
         plugin.rpcversion[0] < 25
         or plugin.rpcversion[0] == 25
         and plugin.rpcversion[1] < 9
     ):
         return {"disable": "CLN version too old, need at least v25.09"}
+    if plugin.rpcversion is None:
+        plugin.log("Skipping version check for custom CLN build", "warn")
 
     if options.get("rebalance-getroute"):
         plugin.log(

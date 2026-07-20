@@ -9,6 +9,9 @@ def cln_parse_rpcversion(string):
     to ubuntu style with version 22.11  `yy.mm[.patch][-mod]`
     make sure we can read all of them for (the next 80 years).
     """
+    if not isinstance(string, str):
+        return None
+
     rpcversion = string
     if rpcversion.startswith("v"):  # strip leading 'v'
         rpcversion = rpcversion[1:]
@@ -19,5 +22,10 @@ def cln_parse_rpcversion(string):
     if rpcversion.count(".") == 1:  # imply patch version 0 if not given
         rpcversion = rpcversion + ".0"
 
-    # split and convert numeric string parts to actual integers
-    return list(map(int, rpcversion.split(".")))
+    # Custom builds may use a branch or package name instead of a release.
+    try:
+        version = list(map(int, rpcversion.split(".")))
+    except ValueError:
+        return None
+
+    return version if len(version) >= 2 else None
