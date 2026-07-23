@@ -1,0 +1,4 @@
+{
+    "short_description": "Exposes some key metrics from CLN in the prometheus format.",
+    "long_description": "This plugin exposes some key metrics from CLN in the prometheus format so it can be scraped, plotted and alerts can be created on it."
+}

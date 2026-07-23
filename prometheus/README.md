@@ -1,6 +1,6 @@
-# Prometheus plugin for c-lightning
+# Prometheus plugin for CLN
 
-This plugin exposes some key metrics from c-lightning in the prometheus format
+This plugin exposes some key metrics from CLN in the prometheus format
 so it can be scraped, plotted and alerts can be created on it. The plugin adds
 the following command line arguments:
 
