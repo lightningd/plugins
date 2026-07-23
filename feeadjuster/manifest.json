@@ -1,0 +1,4 @@
+{
+    "short_description": "This plugin dynamically adjusts fees according to channel balances.",
+    "long_description": "This plugin dynamically adjusts fees according to channel balances. The default behaviour is to automatically adjust fees at startup and following forwarding events. There is a threshold for balance deltas that must be crossed before an update is triggered.  It can also set the max htlc for channels according to available liquidity. This may reduce transaction failures but it will also reveal information about what the current channel balance is."
+}
