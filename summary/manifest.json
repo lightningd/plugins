@@ -1,0 +1,4 @@
+{
+    "short_description": "Show a summary of your node",
+    "long_description": "Show a summary of your node, including total amounts, channel balances, fees collected, and more."
+}
