@@ -1,0 +1,4 @@
+{
+    "short_description": "This (deprecated with CLN v26.04) plugin provides Bitcoin currency conversion functions",
+    "long_description": "This (deprecated with CLN v26.04) plugin provides Bitcoin currency conversion functions using various different backends and taking the median. It caches results for an hour."
+}
