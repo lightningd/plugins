@@ -1,0 +1,4 @@
+{
+    "short_description": "Start a webserver serving a donations page",
+    "long_description": "This plugin enables CLN nodes to start one or several small webserver via the command line on specified port. The webserver is based on flask and exposes the invoice API call. Therefor people can query for an invoice which they can use to pay."
+}
