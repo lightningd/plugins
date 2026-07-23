@@ -34,7 +34,7 @@ For general plugin installation instructions see the repos main
 
 # Invoice Service (for Donations) plugin
 
-This plugin enables c-lightning nodes to start one or several small webserver
+This plugin enables CLN nodes to start one or several small webserver
 via the command line on specified port. The webserver is based on flask and
 exposes the invoice API call.
 
@@ -74,7 +74,7 @@ This plugin was created and is maintained by Rene Pickhardt. Thus Rene Pickhardt
 is the copyright owner of this plugin. It shall serve as an educational resource
 on his [Youtube channel][rene-youtube].
 
-The plugin is licensed like the rest of c-lightning with BSD-MIT license
+The plugin is licensed like the rest of CLN with BSD-MIT license
 and comes without any warrenty.
 
 If you like my work feel free to support me on [patreon][rene-patreon].
