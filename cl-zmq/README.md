@@ -1,6 +1,6 @@
 # ZeroMQ Publisher Plugin
 
-This module forwards [notifications](https://github.com/ElementsProject/lightning/blob/master/doc/PLUGINS.md#notification-types) to ZeroMQ endpoints depending on configuration.
+This module forwards [notifications](https://docs.corelightning.org/docs/event-notifications) to ZeroMQ endpoints depending on configuration.
 
 The usage and setup mimics [similar functionality in `bitcoind`](https://github.com/bitcoin/bitcoin/blob/master/doc/zmq.md) for opting-in to notifications and selecting [high water mark (ZMQ\_HWM)](http://api.zeromq.org/2-1:zmq-setsockopt) preferences.
 

@@ -1,0 +1,4 @@
+{
+    "short_description": "Forward notifications to ZeroMQ endpoints",
+    "long_description": "This module forwards https://docs.corelightning.org/docs/event-notifications to ZeroMQ endpoints depending on configuration."
+}
