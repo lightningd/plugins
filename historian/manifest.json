@@ -1,0 +1,4 @@
+{
+    "short_description": "Provide tools to archive the Lightning Network gossip messages",
+    "long_description": "The historian plugin aims to provide tools to archive the Lightning Network gossip messages and to work with the archived messages. The plugin tails the ~gossip_store~ file used by ~lightningd~ to persist gossip messages across restarts. The plugin monitors the file for changes and resumes reading messages whenever there is an actionable event (append, move, etc). When a new message is detected it is parsed, extracting the fields necessary to deduplicate them and then stored in the database. The messages themselves are inserted verbatim in order to maintain their integrity and ensure signatures remain valid."
+}
