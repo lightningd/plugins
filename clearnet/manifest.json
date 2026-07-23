@@ -1,0 +1,4 @@
+{
+    "short_description": "Prefer usage over clearnet connections",
+    "long_description": "Clearnet enforcer plugin. This plugin aims to prefer usage over clearnet connections. It does so by disconnecing TOR connections when there are known and usable clearnet addresses."
+}
