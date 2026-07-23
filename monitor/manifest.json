@@ -1,0 +1,4 @@
+{
+    "short_description": "Monitors the health of your peers.",
+    "long_description": "Monitors the health of your peers and helps you to decide if you might want to close a channel."
+}
