@@ -22,17 +22,17 @@ jobs:
         experimental: [1]
         deprecated: [0]
         config:
-          - cln-version: "26.06.1"
+          - cln-version: "26.06.6"
             python-version: "3.10"
-          - cln-version: "26.06.1"
+          - cln-version: "26.06.6"
+            python-version: "3.14"
+          - cln-version: "26.04.1"
+            python-version: "3.10"
+          - cln-version: "26.04.1"
             python-version: "3.12"
-          - cln-version: "26.04"
+          - cln-version: "25.12.1"
             python-version: "3.10"
-          - cln-version: "26.04"
-            python-version: "3.12"
-          - cln-version: "25.12"
-            python-version: "3.10"
-          - cln-version: "25.12"
+          - cln-version: "25.12.1"
             python-version: "3.12"
 
     steps:
@@ -209,11 +209,11 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - cln-version: "26.06.1"
+          - cln-version: "26.06.6"
+            python-versions: "3.10 3.14"
+          - cln-version: "26.04.1"
             python-versions: "3.10 3.12"
-          - cln-version: "26.04"
-            python-versions: "3.10 3.12"
-          - cln-version: "25.12"
+          - cln-version: "25.12.1"
             python-versions: "3.10 3.12"
     steps:
       - uses: actions/checkout@v6
