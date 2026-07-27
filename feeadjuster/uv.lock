@@ -523,7 +523,7 @@ requires-dist = [{ name = "pyln-client", specifier = ">=25.9.3" }]
 [package.metadata.requires-dev]
 dev = [
     { name = "pyln-client", specifier = ">=25.9.3" },
-    { name = "pyln-proto", specifier = ">=25.9.3" },
+    { name = "pyln-proto", specifier = ">=26.4.2" },
     { name = "pyln-testing", specifier = ">=25.9.3" },
     { name = "pytest", specifier = ">=9.0.3,<10" },
     { name = "pytest-timeout", specifier = ">=2.4,<3" },
@@ -879,7 +879,7 @@ wheels = [
 
 [[package]]
 name = "pyln-proto"
-version = "26.4.1"
+version = "26.4.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "base58" },
@@ -888,9 +888,9 @@ dependencies = [
     { name = "cryptography" },
     { name = "pysocks" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/8c/4b/c8d676ad84d6066553b203668c0e36f45cfae0a4d7140eb88aed6d65b38b/pyln_proto-26.4.1.tar.gz", hash = "sha256:d73f261bacc06a6a613dcece05fc429699b740a4673f24dffb7c41bd3542d589", size = 44864, upload-time = "2026-04-24T04:53:10.196Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/59/6f/4b92774cf366c4338a11362a524c0bec31546995c4556e4eca6ea1fc1a9d/pyln_proto-26.4.2.tar.gz", hash = "sha256:98817e0afa5a0c47b1c09528d9195c6f9fc91b2a0b1ca3d77c3e570743792324", size = 44861, upload-time = "2026-06-24T17:13:12.261Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/a3/f1/6541b6cd8a017d3505fcb49885d3f01b8e6bb09e40db18e686edb9edeb99/pyln_proto-26.4.1-py3-none-any.whl", hash = "sha256:b5d10d5e69cf3debd9b289e2ffa49713fca6c349a71cb0eaf9e733024f15b3da", size = 31833, upload-time = "2026-04-24T04:53:08.686Z" },
+    { url = "https://files.pythonhosted.org/packages/5f/95/6eedde8e64c114bac94739e0d2db115fa1e8e32e7c50e67b025f31dcd869/pyln_proto-26.4.2-py3-none-any.whl", hash = "sha256:7d2e86308f3c43bff063562c6b51596a02293550e0abe4476d0cdd68fc167081", size = 31828, upload-time = "2026-06-24T17:13:11.246Z" },
 ]
 
 [[package]]
