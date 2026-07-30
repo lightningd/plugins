@@ -196,7 +196,8 @@ def test_summary_persist(node_factory):
     # then
     avail1 = int(re.search(" ([0-9]*)% ", s1["channels"][2]).group(1))
     avail2 = int(re.search(" ([0-9]*)% ", s2["channels"][2]).group(1))
-    assert avail1 == 100
+    # First tick could hit when the peers are not yet connected
+    assert avail1 >= 80
     assert 0 < avail2 < 100
 
 
