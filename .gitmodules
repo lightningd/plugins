@@ -46,3 +46,6 @@
 [submodule "lnradar"]
 	path = lnradar
 	url = https://github.com/Lagrang3/lnradar
+[submodule "circular"]
+	path = circular
+	url = https://github.com/btweenthebars/CLN-circular.git
