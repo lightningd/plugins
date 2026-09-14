@@ -138,7 +138,7 @@ jobs:
       id: cln-install
       run: |
         url=$(curl -s https://api.github.com/repos/ElementsProject/lightning/releases/tags/v${{ matrix.config.cln-version }} \
-          | jq '.assets[] | select(.name | contains("24.04")) | .browser_download_url' \
+          | jq '.assets[] | select(.name | contains("24.04") and contains("amd64")) | .browser_download_url' \
           | tr -d '\"')
         wget $url
         sudo tar -xvf ${url##*/} -C /usr/local --strip-components=2
