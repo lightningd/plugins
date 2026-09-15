@@ -3,7 +3,6 @@
 | Name                                 | Short description                                                                           | CLN<br>`26.06`/`master` |
 | ------------------------------------ | ------------------------------------------------------------------------------------------- | :----: |
 | [backup][backup]                     | A simple and reliable backup plugin                                                         | ![](https://img.shields.io/endpoint?url=https%3A%2F%2Flightningd.github.io%2Fplugins%2F.badges_reckless%2Fbackup_26.06.7.json) ![](https://img.shields.io/endpoint?url=https%3A%2F%2Flightningd.github.io%2Fplugins%2F.badges_reckless%2Fbackup_nightly.json) |
-| [bumpit][bumpit]   | A plugin to bump an open channel transaction by creating a CPFP, useful when the funding transaction is stuck in the mempool or the fee is too low.         | ![](https://img.shields.io/endpoint?url=https%3A%2F%2Flightningd.github.io%2Fplugins%2F.badges_reckless%2Fbumpit_26.06.7.json) ![](https://img.shields.io/endpoint?url=https%3A%2F%2Flightningd.github.io%2Fplugins%2F.badges_reckless%2Fbumpit_nightly.json) |
 | [circular][circular]                 | Fast, efficient parallel channel rebalancer with bLIP-18 inbound fee support                 | ![](https://img.shields.io/endpoint?url=https%3A%2F%2Flightningd.github.io%2Fplugins%2F.badges_reckless%2Fcircular_26.06.7.json) ![](https://img.shields.io/endpoint?url=https%3A%2F%2Flightningd.github.io%2Fplugins%2F.badges_reckless%2Fcircular_nightly.json) |
 | [clearnet][clearnet]                 | A plugin that can be used to enforce clearnet connections when possible                     | ![](https://img.shields.io/endpoint?url=https%3A%2F%2Flightningd.github.io%2Fplugins%2F.badges_reckless%2Fclearnet_26.06.7.json) ![](https://img.shields.io/endpoint?url=https%3A%2F%2Flightningd.github.io%2Fplugins%2F.badges_reckless%2Fclearnet_nightly.json) |
 | [clnaddress][clnaddress]             | Run a lnurl server to receive via lnurl or ln-addresses with optional Zap support           | ![](https://img.shields.io/endpoint?url=https%3A%2F%2Flightningd.github.io%2Fplugins%2F.badges_reckless%2Fclnaddress_26.06.7.json) ![](https://img.shields.io/endpoint?url=https%3A%2F%2Flightningd.github.io%2Fplugins%2F.badges_reckless%2Fclnaddress_nightly.json) |
@@ -33,7 +32,6 @@
 
 
 [backup]: https://github.com/lightningd/plugins/tree/master/backup
-[bumpit]: https://github.com/ca-ruz/bumpit
 [c-api]: https://github.com/ElementsProject/lightning/blob/master/plugins/libplugin.h
 [circular]: https://github.com/btweenthebars/CLN-circular
 [clearnet]: https://github.com/lightningd/plugins/tree/master/clearnet
