@@ -38,6 +38,7 @@ If you like a plugin from that list, feel free to update and fix it, so we can u
 | [pruning][c-lightning-pruning-plugin]| This plugin manages pruning of bitcoind such that it can always sync                        |
 | [sauron][sauron]                     | A Bitcoin backend relying on [Esplora][esplora]'s API                                       |
 | [sitzprobe][sitzprobe]               | A Lightning Network payment rehearsal utility                                               |
+| [smaug][smaug]                       | Send bkpr-compatible events to bkpr for external on-chain wallet movements                  |
 | [spark-commando][spark-commando]     | Heavily inspired by Rusty's commando plugin                                                 |
 | [sparko][sparko]                     | RPC over HTTP with fine-grained permissions, SSE and spark-wallet support                   |
 | [torq-plugin][torq-plugin]           | Better CLN integration into [Torq](https://github.com/lncapital/torq)                       |
@@ -77,6 +78,7 @@ If you like a plugin from that list, feel free to update and fix it, so we can u
 [reporter]: https://github.com/LNOpenMetrics/go-lnmetrics.reporter
 [sauron]: https://github.com/lightningd/plugins/tree/master/archived/sauron
 [sitzprobe]: https://github.com/niftynei/sitzprobe
+[smaug]: https://github.com/chrisguida/smaug
 [spark-commando]: https://github.com/adi2011/plugins/tree/master/spark-commando
 [sparko]: https://github.com/fiatjaf/sparko
 [torq-plugin]: https://github.com/lncapital/torq-cln-plugin
