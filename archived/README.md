@@ -10,6 +10,7 @@ If you like a plugin from that list, feel free to update and fix it, so we can u
 | [autopilot][autopilot]               | An autopilot that suggests channels that should be established                              |
 | [balance-AMP-pay][bal-amp-pay]       | Computes an optimal split of a payment amount for the use of AMP. Helps keep funds balanced |
 | [btcli4j][btcli4j]                   | A Bitcoin Backend to enable safely the pruning mode, and support also rest APIs.            |
+| [bumpit][bumpit]                     | A plugin to bump an open channel transaction by creating a CPFP, useful when the funding transaction is stuck in the mempool or the fee is too low.         |
 | [circular][circular]                 | A smart rebalancing plugin for Core Lightning routing nodes                                 |
 | [clnrest-rs][clnrest-rs]             | Drop-in rust implementation of CLN's clnrest.py, shipped with CLN since v25.02              |
 | [commando][commando]                 | This plugin allows to send commands between nodes                                           |
@@ -47,6 +48,7 @@ If you like a plugin from that list, feel free to update and fix it, so we can u
 [bal-amp-pay]: https://github.com/renepickhardt/plugins/tree/balanced_pay/balanced_amp_payments
 [blip12]: https://github.com/lightning/blips/blob/42cec1d0f66eb68c840443abb609a5a9acb34f8e/blip-0012.md
 [btcli4j]: https://github.com/clightning4j/btcli4j
+[bumpit]: https://github.com/ca-ruz/bumpit
 [c-lightning-events]: https://github.com/rbndg/c-lightning-events
 [c-lightning-pruning-plugin]: https://github.com/Start9Labs/c-lightning-pruning-plugin
 [circular]: https://github.com/giovannizotta/circular
