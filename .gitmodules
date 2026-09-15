@@ -13,9 +13,6 @@
 [submodule "cln-ntfy"]
 	path = cln-ntfy
 	url = https://github.com/yukibtc/cln-ntfy.git
-[submodule "bolt12-prism"]
-	path = bolt12-prism
-	url = https://github.com/gudnuf/bolt12-prism.git
 [submodule "clnrod"]
 	path = clnrod
 	url = https://github.com/daywalker90/clnrod.git
