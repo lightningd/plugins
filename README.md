@@ -32,7 +32,6 @@ Community curated plugins for Core-Lightning.
 | [prometheus][prometheus]                     | Exposes some key metrics from c-lightning in the prometheus format                  | ![](https://img.shields.io/endpoint?url=https%3A%2F%2Flightningd.github.io%2Fplugins%2F.badges%2Fprometheus_26.06.7.json) ![](https://img.shields.io/endpoint?url=https%3A%2F%2Flightningd.github.io%2Fplugins%2F.badges%2Fprometheus_nightly.json) |
 | [rebalance][rebalance]               | Keeps your channels balanced                                                                | ![](https://img.shields.io/endpoint?url=https%3A%2F%2Flightningd.github.io%2Fplugins%2F.badges%2Frebalance_26.06.7.json) ![](https://img.shields.io/endpoint?url=https%3A%2F%2Flightningd.github.io%2Fplugins%2F.badges%2Frebalance_nightly.json) |
 | [sling][sling]                       | Rebalance your channels with smart rules and built-in background tasks                      | ![](https://img.shields.io/endpoint?url=https%3A%2F%2Flightningd.github.io%2Fplugins%2F.badges%2Fsling_26.06.7.json) ![](https://img.shields.io/endpoint?url=https%3A%2F%2Flightningd.github.io%2Fplugins%2F.badges%2Fsling_nightly.json) |
-| [smaug][smaug]                       | Send bkpr-compatible events to bkpr for external on-chain wallet movements                  | ![](https://img.shields.io/endpoint?url=https%3A%2F%2Flightningd.github.io%2Fplugins%2F.badges%2Fsmaug_26.06.7.json) ![](https://img.shields.io/endpoint?url=https%3A%2F%2Flightningd.github.io%2Fplugins%2F.badges%2Fsmaug_nightly.json) |
 | [summars][summars]                   | Print configurable summary of node, channels and optionally forwards, invoices, payments    | ![](https://img.shields.io/endpoint?url=https%3A%2F%2Flightningd.github.io%2Fplugins%2F.badges%2Fsummars_26.06.7.json) ![](https://img.shields.io/endpoint?url=https%3A%2F%2Flightningd.github.io%2Fplugins%2F.badges%2Fsummars_nightly.json) |
 | [summary][summary]                   | Print a nice summary of the node status                                                     | ![](https://img.shields.io/endpoint?url=https%3A%2F%2Flightningd.github.io%2Fplugins%2F.badges%2Fsummary_26.06.7.json) ![](https://img.shields.io/endpoint?url=https%3A%2F%2Flightningd.github.io%2Fplugins%2F.badges%2Fsummary_nightly.json) |
 | [trustedcoin][trustedcoin]           | Replace your Bitcoin Core with data from public block explorers                             | ![](https://img.shields.io/endpoint?url=https%3A%2F%2Flightningd.github.io%2Fplugins%2F.badges%2Ftrustedcoin_26.06.7.json) ![](https://img.shields.io/endpoint?url=https%3A%2F%2Flightningd.github.io%2Fplugins%2F.badges%2Ftrustedcoin_nightly.json) |
@@ -230,7 +229,6 @@ more detailed description (if any)
 [rebalance]: https://github.com/lightningd/plugins/tree/master/rebalance
 [reckless]: https://docs.corelightning.org/reference/reckless
 [sling]: https://github.com/daywalker90/sling
-[smaug]: https://github.com/chrisguida/smaug
 [summars]: https://github.com/daywalker90/summars
 [summary]: https://github.com/lightningd/plugins/tree/master/summary
 [trustedcoin]: https://github.com/fiatjaf/trustedcoin
