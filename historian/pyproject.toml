@@ -12,13 +12,13 @@ dependencies = [
     "pika>=1.4.4",
     "pyln-client>=25.9.3",
     "python-dotenv>=1.2.3",
-    "sqlalchemy>=2.0.52",
+    "sqlalchemy>=2.0.54",
 ]
 
 [dependency-groups]
 dev = [
     "pyln-testing>=25.9.3",
-    "pytest-rerunfailures>=16.6.1",
+    "pytest-rerunfailures>=16.7",
     "pytest-timeout>=2.1.0",
     "pytest-xdist>=3.1.0",
 ]
