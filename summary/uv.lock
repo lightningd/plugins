@@ -928,20 +928,20 @@ wheels = [
 
 [[package]]
 name = "pyln-client"
-version = "26.6.7"
+version = "26.6.8"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "pyln-bolt7" },
     { name = "pyln-proto" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/32/27/01dae9bb20896a16d3f9a76ca701ac4b45a0c260897822662a9480d91816/pyln_client-26.6.7.tar.gz", hash = "sha256:544c57d50f8fc8576673a890d937e6bee35c1e77037f62c6cb360fda7e74e061", size = 92482, upload-time = "2026-09-11T12:53:18.985Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/dc/d5/2e099134935129d0c4ed1a29e46a2fe737cae395f9795fcc6ae40c8c50d3/pyln_client-26.6.8.tar.gz", hash = "sha256:13b2a936a3e50d7a37c5c2b0291e812d082c55db9143593f01f616e3596f6f97", size = 92483, upload-time = "2026-09-22T13:37:52.747Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/bf/4b/cfa9a2f42d52eaee3e8114701ebb7b328e2a093d726be5ed1bbbaa40d5f6/pyln_client-26.6.7-py3-none-any.whl", hash = "sha256:57e88d5e380986f817a613849089f173ae09f0ffd73bf63d89262e8ca25aeb21", size = 37977, upload-time = "2026-09-11T12:53:14.339Z" },
+    { url = "https://files.pythonhosted.org/packages/d7/cd/53967e05a16aa867f017815223127cc89b1b31198effaadd35d3fc609582/pyln_client-26.6.8-py3-none-any.whl", hash = "sha256:367584a32ccee42db387e7b4dfc899dc8685cac609251e409faa4e3ecba19e6c", size = 37981, upload-time = "2026-09-22T13:37:51.427Z" },
 ]
 
 [[package]]
 name = "pyln-proto"
-version = "26.6.7"
+version = "26.6.8"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "base58" },
@@ -950,14 +950,14 @@ dependencies = [
     { name = "cryptography" },
     { name = "pysocks" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/07/74/7ee0cb5288ab483eadfe9d2f1cacbc1dc376c7126655051ae431b4ef5ef3/pyln_proto-26.6.7.tar.gz", hash = "sha256:538ecb5a466dab4ae2441e711c13b3c79c8038c1fddf8c09cede9444c74061d4", size = 44882, upload-time = "2026-09-11T12:53:16.278Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/18/0a/94d34a5da9e9ce0edbb00f0065d7836935c0f6c889045abf3a9b4fad6a4a/pyln_proto-26.6.8.tar.gz", hash = "sha256:5ebaa985f4ea34dca78e36be5b0b83cd11adb4113905f33f884fa13dc4ac9259", size = 44880, upload-time = "2026-09-22T13:37:54.853Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/ac/81/3a3083d2ea3289e169b42297274c49bb91e6adcc82e2a28213ec5cbb027a/pyln_proto-26.6.7-py3-none-any.whl", hash = "sha256:f92b262b6156256b6aaa1928bc66c49365368c6f93b9bcb10586b8771efcdf2b", size = 31837, upload-time = "2026-09-11T12:53:18.022Z" },
+    { url = "https://files.pythonhosted.org/packages/09/b6/696fcf9b568d8df00bc2d3f7b8de598f3bc2b8368d0bddeb1f076fb90574/pyln_proto-26.6.8-py3-none-any.whl", hash = "sha256:b3ccd3fc16295560c90add46bf6efaebd6bda5831cddc9fc5d4695ba87f6f6a7", size = 31841, upload-time = "2026-09-22T13:37:53.559Z" },
 ]
 
 [[package]]
 name = "pyln-testing"
-version = "26.6.7"
+version = "26.6.8"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "cheroot" },
@@ -972,9 +972,9 @@ dependencies = [
     { name = "python-bitcoinlib" },
     { name = "requests" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/f2/92/56fb2edb5dc5c6d59ea0c83830e79d733eec8878d86d0afe7229ff6ff5e9/pyln_testing-26.6.7.tar.gz", hash = "sha256:50f226155d458467efbc30d5709169fdafd1c81f0c5ac7bc205e6e1b26402a50", size = 53219, upload-time = "2026-09-11T12:53:15.41Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/3f/f9/305746398c5f89f1ad4d415afcf3d1c8e8376afe4b9cac42c6b39fa96152/pyln_testing-26.6.8.tar.gz", hash = "sha256:c4f69f6e6151dd10bb92705d871765edda8b58a3f4109ea6316fee07be627eb7", size = 55091, upload-time = "2026-09-22T13:37:52.59Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/13/97/3754b4403d13929b78ebe80a4309c525a1ef16bef7612cedcb89c105fc33/pyln_testing-26.6.7-py3-none-any.whl", hash = "sha256:767cd7eed787c51ac86acd85c1923aadd1f1f1773a5778fd4c6aae3c4d98334d", size = 54978, upload-time = "2026-09-11T12:53:13.17Z" },
+    { url = "https://files.pythonhosted.org/packages/05/a0/6a4bdcb10557ca810b48c985d14a9866bc265caacf12272fbbad9ce7f1c4/pyln_testing-26.6.8-py3-none-any.whl", hash = "sha256:cd8af47c966f60848b159f3b8c4a876bf1020114bca4743799375a37ec55928f", size = 57078, upload-time = "2026-09-22T13:37:51.385Z" },
 ]
 
 [[package]]
@@ -1347,15 +1347,15 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "packaging", specifier = ">=26.3" },
-    { name = "pyln-client", specifier = ">=26.6.7" },
+    { name = "pyln-client", specifier = ">=26.6.8" },
     { name = "requests", extras = ["socks"], specifier = ">=2.34.2" },
 ]
 
 [package.metadata.requires-dev]
 dev = [
-    { name = "pyln-client", specifier = ">=26.6.7" },
-    { name = "pyln-proto", specifier = ">=26.6.7" },
-    { name = "pyln-testing", specifier = ">=26.6.7" },
+    { name = "pyln-client", specifier = ">=26.6.8" },
+    { name = "pyln-proto", specifier = ">=26.6.8" },
+    { name = "pyln-testing", specifier = ">=26.6.8" },
     { name = "pytest", specifier = ">=9.0.3,<10" },
     { name = "pytest-timeout", specifier = ">=2.4,<3" },
     { name = "pytest-xdist", specifier = ">=3.7,<4" },
@@ -1473,12 +1473,12 @@ wheels = [
 
 [[package]]
 name = "werkzeug"
-version = "3.1.8"
+version = "3.1.9"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "markupsafe" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/dd/b2/381be8cfdee792dd117872481b6e378f85c957dd7c5bca38897b08f765fd/werkzeug-3.1.8.tar.gz", hash = "sha256:9bad61a4268dac112f1c5cd4630a56ede601b6ed420300677a869083d70a4c44", size = 875852, upload-time = "2026-04-02T18:49:14.268Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/a4/34/4dd12fc8bb7d61c91467ec3efe415ffa7d5456f799954b40c5bbaeae470e/werkzeug-3.1.9.tar.gz", hash = "sha256:55ca7c70a75689be937aa27f8ff4b018f06ff4838fc73045560bf0f5a1291060", size = 940188, upload-time = "2026-09-27T18:33:41.637Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/93/8c/2e650f2afeb7ee576912636c23ddb621c91ac6a98e66dc8d29c3c69446e1/werkzeug-3.1.8-py3-none-any.whl", hash = "sha256:63a77fb8892bf28ebc3178683445222aa500e48ebad5ec77b0ad80f8726b1f50", size = 226459, upload-time = "2026-04-02T18:49:12.72Z" },
+    { url = "https://files.pythonhosted.org/packages/a1/38/df03f564f43cec2684823f3cccae1a652ee7face1cbaa76fb223096e64d7/werkzeug-3.1.9-py3-none-any.whl", hash = "sha256:6392e50c78460ba618e5b21f08a71f59c99ce99cdc6cf6e3dd7e6ccca8754fab", size = 228700, upload-time = "2026-09-27T18:33:39.685Z" },
 ]
