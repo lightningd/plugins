@@ -1,11 +1,11 @@
 #!/usr/bin/env -S uv run --script
 
 # /// script
-# requires-python = ">=3.10"
+# requires-python = ">=3.11"
 # dependencies = [
-#   "pyln-client>=25.9.3",
-#   "requests[socks]>=2.34.0",
-#   "packaging>=26.2",
+#   "pyln-client>=26.6.9",
+#   "requests[socks]>=2.34.2",
+#   "packaging>=26.3",
 # ]
 # ///
 
