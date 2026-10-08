@@ -23,7 +23,7 @@ jobs:
         deprecated: [0]
         config:
           - cln-version: "26.06.7"
-            python-version: "3.10"
+            python-version: "3.11"
           - cln-version: "26.06.7"
             python-version: "3.14"
     steps:
@@ -199,7 +199,7 @@ jobs:
       matrix:
         include:
           - cln-version: "26.06.7"
-            python-versions: "3.10 3.14"
+            python-versions: "3.11 3.14"
     steps:
       - uses: actions/checkout@v6
         with:
