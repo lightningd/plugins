@@ -1,11 +1,11 @@
 #!/usr/bin/env -S uv run --script
 
 # /// script
-# requires-python = ">=3.10"
+# requires-python = ">=3.11"
 # dependencies = [
 #   "qrcode[pil]>=8.2",
 #   "flask>=2.3.3",
-#   "pyln-client>=25.9.3",
+#   "pyln-client>=26.6.9",
 #   "flask-bootstrap>=3.3.7.1",
 #   "flask-wtf>=1.3.0",
 #   "werkzeug>=3.0.6",
