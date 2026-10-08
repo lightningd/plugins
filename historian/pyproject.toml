@@ -5,19 +5,19 @@ description = "A plugin to store historical Lightning Network gossip in a databa
 readme = "README.md"
 authors = [{ name = "Christian Decker", email = "<decker@blockstream.io>" }]
 license = "MIT"
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 
 dependencies = [
     "inotify>=0.2.12",
     "pika>=1.4.4",
-    "pyln-client>=25.9.3",
-    "python-dotenv>=1.2.3",
-    "sqlalchemy>=2.0.54",
+    "pyln-client>=26.6.9",
+    "python-dotenv>=1.2.4",
+    "sqlalchemy>=2.1.4",
 ]
 
 [dependency-groups]
 dev = [
-    "pyln-testing>=25.9.3",
+    "pyln-testing>=26.6.9",
     "pytest-rerunfailures>=16.7",
     "pytest-timeout>=2.1.0",
     "pytest-xdist>=3.1.0",
