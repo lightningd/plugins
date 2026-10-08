@@ -3,10 +3,10 @@ name = "cln-backup"
 version = "0.1.0"
 description = "Keep your Core-Lightning node save by backing it up, in real-time (allows recovering without channel closures)."
 authors = [{ name = "Christian Decker", email = "<decker@blockstream.io>" }]
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 
 dependencies = [
-    "pyln-client>=25.9.3",
+    "pyln-client>=26.6.9",
     "click>=8.4.2",
     "psutil>=5.9.4",
     "requests[socks]>=2.34.2",
@@ -14,7 +14,7 @@ dependencies = [
 
 [dependency-groups]
 dev = [
-    "pyln-testing>=25.9.3",
+    "pyln-testing>=26.6.9",
     "pytest-timeout>=2.2.0",
     "pytest-xdist>=3.1.0",
     "pytest-asyncio>=1.4.0,<2",
