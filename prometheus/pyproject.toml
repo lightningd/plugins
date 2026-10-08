@@ -5,13 +5,13 @@ description = "A plugin that reports metrics to be collected by prometheus"
 readme = "README.md"
 authors = [{ name = "Christian Decker", email = "<decker@blockstream.io>" }]
 license = "MIT"
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 
-dependencies = ["prometheus-client>=0.26.0", "pyln-client>=25.9.3"]
+dependencies = ["prometheus-client>=0.26.0", "pyln-client>=26.6.9"]
 
 [dependency-groups]
 dev = [
-    "pyln-testing>=25.9.3",
+    "pyln-testing>=26.6.9",
     "pytest-rerunfailures>=16.7",
     "pytest-timeout>=2.1.0",
     "pytest-xdist>=3.1.0",
