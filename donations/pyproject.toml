@@ -5,12 +5,12 @@ description = "Start one or more webservers for a donation page where visitors c
 authors = [{ name = "Christian Decker", email = "<decker@blockstream.io>" }]
 license = "MIT"
 readme = "README.md"
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 
 dependencies = [
     "qrcode[pil]>=8.2",
     "flask>=2.3.3",
-    "pyln-client>=25.9.3",
+    "pyln-client>=26.6.9",
     "flask-bootstrap>=3.3.7.1",
     "flask-wtf>=1.3.0",
     "werkzeug>=3.0.6",
@@ -23,8 +23,8 @@ dev = [
     "pytest>=9.0.3,<10",
     "pytest-xdist>=3.7,<4",
     "pytest-timeout>=2.4,<3",
-    "pyln-testing>=25.9.3",
-    "pyln-client>=25.9.3",
-    "pyln-proto>=25.9.3",
+    "pyln-testing>=26.6.9",
+    "pyln-client>=26.6.9",
+    "pyln-proto>=26.6.9",
     "requests>=2.34.2",
 ]
