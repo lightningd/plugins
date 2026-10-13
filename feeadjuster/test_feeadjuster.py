@@ -2,6 +2,7 @@ import os
 import random
 import string
 
+from pyln.client import RpcError
 from pyln.testing.fixtures import *  # noqa: F401,F403
 from pyln.testing.utils import wait_for
 
@@ -64,6 +65,26 @@ def xpay(l, ll, amount):
     invoice = ll.rpc.invoice(amount, label, "desc")
     l.rpc.xpay(invoice["bolt11"])
     l.wait_for_htlcs()
+
+
+def connect_peer(l, peer):
+    # A peer with may_reconnect can reconnect on its own at the same time,
+    # which makes a manual connect fail with "disconnected during connection"
+    def try_connect():
+        try:
+            l.rpc.connect(peer.info["id"], "localhost", peer.port)
+            return True
+        except RpcError:
+            return False
+
+    wait_for(try_connect)
+
+
+def reconnect(l, peers):
+    for peer in peers:
+        l.rpc.disconnect(peer.info["id"], True)
+    for peer in peers:
+        connect_peer(l, peer)
 
 
 def sync_gossip(nodes, scids):
@@ -131,10 +152,7 @@ def test_feeadjuster_adjusts(node_factory):
     )
 
     # ..And back, but first reconnect so old cln nodes gossip properly
-    l2.rpc.disconnect(l1.info["id"], True)
-    l2.rpc.disconnect(l3.info["id"], True)
-    l2.rpc.connect(l1.info["id"], "localhost", l1.port)
-    l2.rpc.connect(l3.info["id"], "localhost", l3.port)
+    reconnect(l2, [l1, l3])
     sync_gossip(nodes, scids)
     xpay(l3, l1, amount)
     l2.daemon.wait_for_logs(
@@ -146,18 +164,12 @@ def test_feeadjuster_adjusts(node_factory):
 
     # Sending a payment worth 3% of the channel balance should not trigger
     # fee adjustment
-    l2.rpc.disconnect(l1.info["id"], True)
-    l2.rpc.disconnect(l3.info["id"], True)
-    l2.rpc.connect(l1.info["id"], "localhost", l1.port)
-    l2.rpc.connect(l3.info["id"], "localhost", l3.port)
+    reconnect(l2, [l1, l3])
     sync_gossip(nodes, scids)
     fees_before = [get_chan_fees(l2, scid) for scid in [scid_A, scid_B]]
     amount = int(chan_total * 0.03)
     xpay(l1, l3, amount)
-    l2.rpc.disconnect(l1.info["id"], True)
-    l2.rpc.disconnect(l3.info["id"], True)
-    l2.rpc.connect(l1.info["id"], "localhost", l1.port)
-    l2.rpc.connect(l3.info["id"], "localhost", l3.port)
+    reconnect(l2, [l1, l3])
     sync_gossip(nodes, scids)
     assert fees_before == [get_chan_fees(l2, scid) for scid in scids]
 
