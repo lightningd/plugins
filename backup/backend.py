@@ -4,6 +4,7 @@ import re
 from typing import Iterator
 
 import sqlite3
+import tempfile
 
 # A 'transaction' that was proposed by Core-Lightning and that needs saving to the
 # backup. `version` is the `data_version` of the database **after** `transaction`
@@ -69,9 +70,12 @@ class Backend(object):
         return db
 
     def _restore_snapshot(self, snapshot: bytes, dest: str):
-        if os.path.exists(dest):
-            os.unlink(dest)
-        with open(dest, "wb") as f:
+        # Keep the private staging file and its permissions while replacing
+        # the database image. Close SQLite before writing a raw snapshot.
+        self.db.close()
+        with open(dest, "r+b") as f:
+            f.seek(0)
+            f.truncate()
             f.write(snapshot)
         self.db = self._db_open(dest)
 
@@ -106,17 +110,42 @@ class Backend(object):
         """
         if os.path.isdir(dest):
             dest = os.path.join(dest, "lightningd.sqlite3")
-        if os.path.exists(dest):
-            if not remove_existing:
+        if os.path.lexists(dest) and not remove_existing:
+            raise ValueError(
+                "Destination for backup restore exists: {dest}".format(dest=dest)
+            )
+
+        # Restore beside the target so the final rename stays on one filesystem.
+        # Leave the previous database intact if reading or replaying fails.
+        parent = os.path.dirname(os.path.abspath(dest))
+        fd, staged = tempfile.mkstemp(
+            prefix=".{name}.restore-".format(name=os.path.basename(dest)),
+            dir=parent,
+        )
+        os.close(fd)
+        self.db = None
+        try:
+            self.db = self._db_open(staged)
+            for c in self.stream_changes():
+                if c.snapshot is not None:
+                    self._restore_snapshot(c.snapshot, staged)
+                if c.transaction is not None:
+                    self._restore_transaction(c.transaction)
+            self.db.commit()
+            self.db.close()
+            self.db = None
+            # Flush the complete image before making it the visible destination.
+            with open(staged, "rb") as f:
+                os.fsync(f.fileno())
+            if os.path.lexists(dest) and not remove_existing:
                 raise ValueError(
                     "Destination for backup restore exists: {dest}".format(dest=dest)
                 )
-            os.unlink(dest)
-
-        self.db = self._db_open(dest)
-        for c in self.stream_changes():
-            if c.snapshot is not None:
-                self._restore_snapshot(c.snapshot, dest)
-            if c.transaction is not None:
-                self._restore_transaction(c.transaction)
-        self.db.commit()
+            os.replace(staged, dest)
+            staged = None
+        finally:
+            if self.db is not None:
+                self.db.close()
+                self.db = None
+            if staged is not None and os.path.exists(staged):
+                os.unlink(staged)
