@@ -102,18 +102,37 @@ class Backend(object):
             q = self._rewrite_stmt(q)
             cur.execute(q)
 
-    def restore(self, dest: str, remove_existing: bool = False):
-        """Restore the backup in this backend to its former glory.
-
-        If `dest` is a directory, we assume the default database filename:
-        lightningd.sqlite3
-        """
-        if os.path.isdir(dest):
-            dest = os.path.join(dest, "lightningd.sqlite3")
+    def _check_restore_destination(self, dest: str, remove_existing: bool):
         if os.path.lexists(dest) and not remove_existing:
             raise ValueError(
                 "Destination for backup restore exists: {dest}".format(dest=dest)
             )
+        # SQLite recovery files belong to the old database. Publishing a new
+        # main file beside them can cause SQLite to replay old state over it.
+        sidecars = [
+            dest + suffix
+            for suffix in ("-wal", "-shm", "-journal")
+            if os.path.lexists(dest + suffix)
+        ]
+        if sidecars:
+            raise ValueError(
+                "Destination has SQLite recovery files: {files}. "
+                "Recover or move the complete database set before restoring.".format(
+                    files=", ".join(sidecars)
+                )
+            )
+
+    def restore(self, dest: str, remove_existing: bool = False):
+        """Restore the backup in this backend to its former glory.
+
+        If `dest` is a directory, we assume the default database filename:
+        lightningd.sqlite3. The destination must be offline, with no other
+        writers. Existing SQLite recovery files are preserved and require
+        recovery or relocation as a complete database set before restoring.
+        """
+        if os.path.isdir(dest):
+            dest = os.path.join(dest, "lightningd.sqlite3")
+        self._check_restore_destination(dest, remove_existing)
 
         # Restore beside the target so the final rename stays on one filesystem.
         # Leave the previous database intact if reading or replaying fails.
@@ -137,10 +156,7 @@ class Backend(object):
             # Flush the complete image before making it the visible destination.
             with open(staged, "rb") as f:
                 os.fsync(f.fileno())
-            if os.path.lexists(dest) and not remove_existing:
-                raise ValueError(
-                    "Destination for backup restore exists: {dest}".format(dest=dest)
-                )
+            self._check_restore_destination(dest, remove_existing)
             os.replace(staged, dest)
             staged = None
         finally:
