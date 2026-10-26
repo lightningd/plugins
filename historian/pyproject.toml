@@ -12,7 +12,7 @@ dependencies = [
     "pika>=1.4.4",
     "pyln-client>=26.6.9",
     "python-dotenv>=1.2.4",
-    "sqlalchemy>=2.1.4",
+    "sqlalchemy>=2.1.5",
 ]
 
 [dependency-groups]
