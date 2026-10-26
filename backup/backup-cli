@@ -18,6 +18,7 @@ import json
 import logging
 import sqlite3
 import sys
+import tempfile
 
 root = logging.getLogger()
 root.setLevel(logging.INFO)
@@ -27,6 +28,31 @@ handler.setLevel(logging.DEBUG)
 formatter = logging.Formatter("%(message)s")
 handler.setFormatter(formatter)
 root.addHandler(handler)
+
+
+def consistent_sqlite_snapshot(db_file):
+    """Return the database version and its complete SQLite snapshot.
+
+    A raw main-file read may omit committed transactions in a WAL sidecar.
+    SQLite backup reads the consistent database view including WAL.
+    """
+    with tempfile.TemporaryDirectory() as temp:
+        snapshot_path = os.path.join(temp, "snapshot.sqlite3")
+        source = sqlite3.connect(db_file)
+        target = sqlite3.connect(snapshot_path)
+        try:
+            source.backup(target)
+            row = target.execute(
+                "SELECT intval FROM vars WHERE name = 'data_version'"
+            ).fetchone()
+            if row is None:
+                raise ValueError("SQLite snapshot has no data_version")
+            data_version = row[0]
+        finally:
+            target.close()
+            source.close()
+        with open(snapshot_path, "rb") as f:
+            return data_version, f.read()
 
 
 @click.command()
@@ -45,15 +71,6 @@ def init(lightning_dir, backend_url):
         lock_file = os.path.join(lightning_dir, "backup.lock")
         db_file = os.path.join(lightning_dir, "lightningd.sqlite3")
 
-        with open(lock_file, "w") as f:
-            f.write(
-                json.dumps(
-                    {
-                        "backend_url": destination,
-                    }
-                )
-            )
-
         data_version = 0
         if os.path.exists(db_file):
             print(
@@ -61,17 +78,9 @@ def init(lightning_dir, backend_url):
                     db_file=db_file
                 )
             )
-            # Peek into the DB to see if we have
-            db = sqlite3.connect(db_file)
-            cur = db.cursor()
-            rows = cur.execute("SELECT intval FROM vars WHERE name = 'data_version'")
-            data_version = rows.fetchone()[0]
-
-            snapshot = Change(
-                version=data_version,
-                snapshot=open(db_file, "rb").read(),
-                transaction=None,
-            )
+            # Read the version from the same consistent image we publish.
+            data_version, image = consistent_sqlite_snapshot(db_file)
+            snapshot = Change(version=data_version, snapshot=image, transaction=None)
             if not backend.add_change(snapshot):
                 print("Could not write snapshot to backend")
                 sys.exit(1)
@@ -83,6 +92,10 @@ def init(lightning_dir, backend_url):
                 )
         else:
             print("Database does not exist yet, created an empty backup file")
+
+        # Write the lock only after the initial snapshot was accepted.
+        with open(lock_file, "w") as f:
+            f.write(json.dumps({"backend_url": destination}))
 
     print(
         "Initialized backup backend {destination}, you can now start Core-Lightning".format(
