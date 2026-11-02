@@ -3,7 +3,7 @@ name = "reckless-testing"
 version = "0.1.0"
 description = "A little helper for testing reckless installs of plugins"
 readme = "README.md"
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 
 [dependency-groups]
 dev = [
