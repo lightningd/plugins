@@ -113,6 +113,7 @@ class SocketBackend(Backend):
     def __init__(self, destination: str, create: bool):
         self.version = None
         self.prev_version = None
+        self.create = create
         self.destination = destination
         self.url = parse_socket_url(destination)
         self.connect()
@@ -155,6 +156,16 @@ class SocketBackend(Backend):
         """
         logging.info("Initializing backend")
         self._request_metadata()
+        # backup-cli init must not attach a new node to an existing remote
+        # history. FileBackend(create=True) enforces the same safeguard.
+        if self.create and (
+            self.version != 0 or self.prev_version != 0 or self.version_count != 0
+        ):
+            raise ValueError(
+                "Attempted to initialize a SocketBackend, but the remote backup "
+                "already contains changes. Use the existing backup or choose "
+                "an empty remote destination."
+            )
         logging.info(
             "Initialized SocketBackend: protocol={}, version={}, prev_version={}, version_count={}".format(
                 self.protocol, self.version, self.prev_version, self.version_count
