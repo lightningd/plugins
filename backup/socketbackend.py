@@ -235,8 +235,19 @@ class SocketBackend(Backend):
         version = struct.pack("!I", self.prev_version)
         self._send_packet(PacketType.REWIND, version)
         # Wait for change to be acknowledged before continuing.
-        (typ, _) = self._recv_packet()
+        (typ, payload) = self._recv_packet()
         assert typ == PacketType.ACK
+        (server_version,) = struct.unpack("!I", payload)
+        if server_version != self.prev_version:
+            raise ValueError(
+                "Unexpected backup version {} after rewind (expected {})".format(
+                    server_version, self.prev_version
+                )
+            )
+        # REWIND is complete at the remote backend. The replacement write
+        # must use this committed version as its retry baseline.
+        self.version = server_version
+        self.prev_version = 0
         return True
 
     def stream_changes(self) -> Iterator[Change]:
