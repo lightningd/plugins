@@ -54,6 +54,7 @@ class FileBackend(Backend):
             f.seek(0)
             f.write(blob)
             f.flush()
+            os.fsync(f.fileno())
 
     def read_metadata(self):
         with open(self.url.path, "rb") as f:
@@ -90,12 +91,18 @@ class FileBackend(Backend):
 
         length = struct.pack("!I", len(payload))
         version = struct.pack("!I", entry.version)
-        with open(self.url.path, "ab") as f:
+        # Append mode ignores seek after a rewind. Replace the discarded tail
+        # at the committed offset instead, including when the new entry is shorter.
+        with open(self.url.path, "rb+") as f:
             f.seek(self.offsets[0])
             f.write(length)
             f.write(version)
             f.write(typ)
             f.write(payload)
+            f.truncate()
+            f.flush()
+            # Publish the new metadata only after the entry has reached storage.
+            os.fsync(f.fileno())
             self.prev_version, self.offsets[1] = self.version, self.offsets[0]
             self.version = entry.version
             self.offsets[0] += 9 + len(payload)
@@ -105,7 +112,7 @@ class FileBackend(Backend):
         return True
 
     def rewind(self):
-        # After rewinding we set offsets[0] and prev_version to 0 (best effort
+        # After rewinding we set offsets[1] and prev_version to 0 (best effort
         # result). If either of these are set to 0 we have two consecutive
         # rewinds which cannot be safely done (we'd be rewinding more than the
         # one in-flight transaction).
@@ -115,6 +122,10 @@ class FileBackend(Backend):
 
         self.version, self.offsets[0] = self.prev_version, self.offsets[1]
         self.prev_version, self.offsets[1] = 0, 0
+        self.version_count -= 1
+        # Persist the rewind before acknowledging it or overwriting the tail.
+        # Readers ignore the discarded bytes beyond this committed head.
+        self.write_metadata()
         return True
 
     def stream_changes(self) -> Iterator[Change]:
