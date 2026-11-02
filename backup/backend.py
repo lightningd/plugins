@@ -4,6 +4,7 @@ import re
 from typing import Iterator
 
 import sqlite3
+import tempfile
 
 # A 'transaction' that was proposed by Core-Lightning and that needs saving to the
 # backup. `version` is the `data_version` of the database **after** `transaction`
@@ -69,9 +70,12 @@ class Backend(object):
         return db
 
     def _restore_snapshot(self, snapshot: bytes, dest: str):
-        if os.path.exists(dest):
-            os.unlink(dest)
-        with open(dest, "wb") as f:
+        # Keep the private staging file and its permissions while replacing
+        # the database image. Close SQLite before writing a raw snapshot.
+        self.db.close()
+        with open(dest, "r+b") as f:
+            f.seek(0)
+            f.truncate()
             f.write(snapshot)
         self.db = self._db_open(dest)
 
@@ -98,25 +102,66 @@ class Backend(object):
             q = self._rewrite_stmt(q)
             cur.execute(q)
 
+    def _check_restore_destination(self, dest: str, remove_existing: bool):
+        if os.path.lexists(dest) and not remove_existing:
+            raise ValueError(
+                "Destination for backup restore exists: {dest}".format(dest=dest)
+            )
+        # SQLite recovery files belong to the old database. Publishing a new
+        # main file beside them can cause SQLite to replay old state over it.
+        sidecars = [
+            dest + suffix
+            for suffix in ("-wal", "-shm", "-journal")
+            if os.path.lexists(dest + suffix)
+        ]
+        if sidecars:
+            raise ValueError(
+                "Destination has SQLite recovery files: {files}. "
+                "Recover or move the complete database set before restoring.".format(
+                    files=", ".join(sidecars)
+                )
+            )
+
     def restore(self, dest: str, remove_existing: bool = False):
         """Restore the backup in this backend to its former glory.
 
         If `dest` is a directory, we assume the default database filename:
-        lightningd.sqlite3
+        lightningd.sqlite3. The destination must be offline, with no other
+        writers. Existing SQLite recovery files are preserved and require
+        recovery or relocation as a complete database set before restoring.
         """
         if os.path.isdir(dest):
             dest = os.path.join(dest, "lightningd.sqlite3")
-        if os.path.exists(dest):
-            if not remove_existing:
-                raise ValueError(
-                    "Destination for backup restore exists: {dest}".format(dest=dest)
-                )
-            os.unlink(dest)
+        self._check_restore_destination(dest, remove_existing)
 
-        self.db = self._db_open(dest)
-        for c in self.stream_changes():
-            if c.snapshot is not None:
-                self._restore_snapshot(c.snapshot, dest)
-            if c.transaction is not None:
-                self._restore_transaction(c.transaction)
-        self.db.commit()
+        # Restore beside the target so the final rename stays on one filesystem.
+        # Leave the previous database intact if reading or replaying fails.
+        parent = os.path.dirname(os.path.abspath(dest))
+        fd, staged = tempfile.mkstemp(
+            prefix=".{name}.restore-".format(name=os.path.basename(dest)),
+            dir=parent,
+        )
+        os.close(fd)
+        self.db = None
+        try:
+            self.db = self._db_open(staged)
+            for c in self.stream_changes():
+                if c.snapshot is not None:
+                    self._restore_snapshot(c.snapshot, staged)
+                if c.transaction is not None:
+                    self._restore_transaction(c.transaction)
+            self.db.commit()
+            self.db.close()
+            self.db = None
+            # Flush the complete image before making it the visible destination.
+            with open(staged, "rb") as f:
+                os.fsync(f.fileno())
+            self._check_restore_destination(dest, remove_existing)
+            os.replace(staged, dest)
+            staged = None
+        finally:
+            if self.db is not None:
+                self.db.close()
+                self.db = None
+            if staged is not None and os.path.exists(staged):
+                os.unlink(staged)
