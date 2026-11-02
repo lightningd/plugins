@@ -126,6 +126,12 @@ class FileBackend(Backend):
             while version < self.version:
                 length, version, typ = struct.unpack("!IIb", f.read(9))
                 payload = f.read(length)
+                if len(payload) != length:
+                    raise ValueError(
+                        "Incomplete FileBackend record at version {}: expected {} bytes, got {}".format(
+                            version, length, len(payload)
+                        )
+                    )
                 if typ == 1:
                     yield Change(
                         version=version,
