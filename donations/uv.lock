@@ -486,11 +486,11 @@ wheels = [
 
 [[package]]
 name = "dominate"
-version = "2.9.1"
+version = "3.1.0"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/fb/f3/1c8088ff19a0fcd9c3234802a0ee47006ea64bd8852f1019194f0e3583ff/dominate-2.9.1.tar.gz", hash = "sha256:558284687d9b8aae1904e3d6051ad132dd4a8c0cf551b37ea4e7e42a31d19dc4", size = 37715, upload-time = "2023-12-24T20:45:19.192Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/4b/d4/35f08b4f459a44fff3295a70a46d6f8847b77945f059b0fac8d082efd9a9/dominate-3.1.0.tar.gz", hash = "sha256:926989c819db2fe91e590590a2902183685edd94829c8cfba5fd71af57c1a982", size = 38510, upload-time = "2026-10-30T18:37:48.222Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/58/19/0380af745f151a1648657bbcef0fb49ac28bf09083d94498163ffd9b32dc/dominate-2.9.1-py2.py3-none-any.whl", hash = "sha256:cb7b6b79d33b15ae0a6e87856b984879927c7c2ebb29522df4c75b28ffd9b989", size = 29976, upload-time = "2023-12-24T20:45:17.154Z" },
+    { url = "https://files.pythonhosted.org/packages/5f/fe/136c90734c1fff9af60d9e72b2bb5498f125abbef0b328f4d2c982361933/dominate-3.1.0-py3-none-any.whl", hash = "sha256:a395d37ca3f0e37e96a86a108c6b8951459a019109aa8abae1eab887a18b6f70", size = 27446, upload-time = "2026-10-30T18:37:46.932Z" },
 ]
 
 [[package]]
@@ -1065,7 +1065,7 @@ wheels = [
 
 [[package]]
 name = "pytest"
-version = "9.1.1"
+version = "9.2.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "colorama", marker = "sys_platform == 'win32'" },
@@ -1074,9 +1074,9 @@ dependencies = [
     { name = "pluggy" },
     { name = "pygments" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/e4/47/b9efed96c114afcfa3c9d3fe98a76a1d14c74a9e266d397cf6eb64be5e01/pytest-9.1.1.tar.gz", hash = "sha256:1088fbde8f2b49d95a549a195707afa7a76a3ce9bcadc26b6d71f0ffda5fe313", size = 1636369, upload-time = "2026-06-19T10:58:32.857Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/79/42/bb4641652e58dedeac2ec51abc1f8cae4fee4ec63899a0999016229a0f2a/pytest-9.2.0.tar.gz", hash = "sha256:97c4f3b1f3c7414aa36465e09b8220f1d03627993bd51b1282e193753c80557b", size = 1797555, upload-time = "2026-10-27T21:30:20.728Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/24/25/1de2678b631f5a49215c6c96fff41ba892b0a34df68d6d80292b1b48aa7f/pytest-9.1.1-py3-none-any.whl", hash = "sha256:37a86b45efb9a47a61a36449063e8e18d0cab3161329fc099eb21783169c4f0c", size = 386536, upload-time = "2026-06-19T10:58:31.347Z" },
+    { url = "https://files.pythonhosted.org/packages/51/39/1f5d8c8877a0fa327db959c19341d4be61660de1ab6b7391f9eb805bcd67/pytest-9.2.0-py3-none-any.whl", hash = "sha256:07acdcf88ec174f907dc01af70bf52d49b014bbab03faeeade31c96b18c2e588", size = 411776, upload-time = "2026-10-27T21:30:19.131Z" },
 ]
 
 [[package]]
@@ -1379,12 +1379,12 @@ wheels = [
 
 [[package]]
 name = "wtforms"
-version = "3.3.1"
+version = "3.3.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "markupsafe" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/ef/5b/588dc20774f4cebeac23908a87e493f2f6fb2a4c54756675cd59afb8cc72/wtforms-3.3.1.tar.gz", hash = "sha256:9d10ccb5740290c9ae6673522d87bcae3b669cf0cb4e4584aee229b4694af10c", size = 172349, upload-time = "2026-10-24T07:19:37.624Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/52/3f/742cb21320840bcd80bf9de3d0486126f364664fff12b805086371b1fd1a/wtforms-3.3.2.tar.gz", hash = "sha256:49bb51d10b7832d497e758736da4d56f7d129a015db24756f36f28992f175404", size = 174259, upload-time = "2026-11-01T21:06:22.82Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/a6/67/0f56cd0f8ac699259476fc9a520aa6b09b0e7e4da776f91c48f6965dc486/wtforms-3.3.1-py3-none-any.whl", hash = "sha256:2f4728ef3f67173c22590e60e845937598af7455474330fdb84354a609d67ec1", size = 171964, upload-time = "2026-10-24T07:19:35.892Z" },
+    { url = "https://files.pythonhosted.org/packages/0f/8f/3c9a0d834a308f71316c3518d8059578e185115d763d0fb0e2027184626a/wtforms-3.3.2-py3-none-any.whl", hash = "sha256:2fac992f39102d6268b06e05cdbdf37a7e9b9a4e103916d2dff1d09a080b531d", size = 172021, upload-time = "2026-11-01T21:06:21.136Z" },
 ]
