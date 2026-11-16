@@ -13,16 +13,16 @@ wheels = [
 
 [[package]]
 name = "asysocks"
-version = "0.2.18"
+version = "0.2.19"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "asn1crypto" },
     { name = "cryptography" },
     { name = "h11" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/e3/67/62b03894335465f89bea910e33d15878b3c997bbaafaecf630bcdf8e89de/asysocks-0.2.18.tar.gz", hash = "sha256:cc6196e82c8adc8b3ce2321dddf635500c760316da4b7cca321b532cbb3dfdf5", size = 117822, upload-time = "2025-10-29T08:00:23.186Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/4f/83/5151a060e58582f1d395b84c106f64d61313fa157c224364646c170ad03c/asysocks-0.2.19.tar.gz", hash = "sha256:c8ffa154ad7ca46aaa06c1f86f347bc20f3b8c696186b08fc4193791212b2bec", size = 127145, upload-time = "2026-11-04T21:27:14.011Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/71/b5/abf85f5444b264bf9f943eb1f6f577ebf3af34c8c4f66c1629d1f063eaa0/asysocks-0.2.18-py3-none-any.whl", hash = "sha256:a881536456d922a9fde44031aba262bc34ee39a9d14749ded1e8a4820602a37d", size = 149610, upload-time = "2025-10-29T08:00:21.76Z" },
+    { url = "https://files.pythonhosted.org/packages/53/70/99cd52c7c541d79174ef8b978fb00fe5bb5285ef424f8ee50ec7bc71a189/asysocks-0.2.19-py3-none-any.whl", hash = "sha256:be34dd128287371cad5ff6332314034d54d587ba58a0c7dd8be2787138c29d28", size = 160234, upload-time = "2026-11-04T21:27:12.603Z" },
 ]
 
 [[package]]
@@ -333,11 +333,11 @@ wheels = [
 
 [[package]]
 name = "click"
-version = "8.5.0"
+version = "8.5.1"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/c7/0e/7fa0ef50764b67090eca4114772a2abf8b6148198475e54c660b97caeee6/click-8.5.0.tar.gz", hash = "sha256:ba0d2089de75ea0310e2dde03160e6ca10009947fb95a182f9b54021bb272e34", size = 382235, upload-time = "2026-08-26T13:33:14.56Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/45/37/edbf1b0707709013c0cf2e8317e03d97ed29bf4cac709fe328904ae92a38/click-8.5.1.tar.gz", hash = "sha256:9bbfada76703fd1d784b83eea012e3e8c6a001a876543ef104fa56aaaeb072b4", size = 399151, upload-time = "2026-11-06T17:37:01.021Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/58/50/6c0d534c5f134586a8e1ba4e330569e32f057e33372ae556463212fb4cd3/click-8.5.0-py3-none-any.whl", hash = "sha256:255bc9599cf7748b4b1a446ccc735421bd08a2ae529a8b88597d3de5664ee360", size = 125251, upload-time = "2026-08-26T13:33:12.928Z" },
+    { url = "https://files.pythonhosted.org/packages/31/7d/164b7ffc8624fe9efb4221bf9af485d5c1e41b9ae118045d2b6dc5457d8b/click-8.5.1-py3-none-any.whl", hash = "sha256:8bb5376d2006950386f8c6427613334a2acadc5f559cb80e638d00b4df957e37", size = 126163, upload-time = "2026-11-06T17:36:59.287Z" },
 ]
 
 [[package]]
