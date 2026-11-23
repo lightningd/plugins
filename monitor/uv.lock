@@ -310,11 +310,11 @@ wheels = [
 
 [[package]]
 name = "click"
-version = "8.5.0"
+version = "8.5.1"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/c7/0e/7fa0ef50764b67090eca4114772a2abf8b6148198475e54c660b97caeee6/click-8.5.0.tar.gz", hash = "sha256:ba0d2089de75ea0310e2dde03160e6ca10009947fb95a182f9b54021bb272e34", size = 382235, upload-time = "2026-08-26T13:33:14.56Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/45/37/edbf1b0707709013c0cf2e8317e03d97ed29bf4cac709fe328904ae92a38/click-8.5.1.tar.gz", hash = "sha256:9bbfada76703fd1d784b83eea012e3e8c6a001a876543ef104fa56aaaeb072b4", size = 399151, upload-time = "2026-11-06T17:37:01.021Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/58/50/6c0d534c5f134586a8e1ba4e330569e32f057e33372ae556463212fb4cd3/click-8.5.0-py3-none-any.whl", hash = "sha256:255bc9599cf7748b4b1a446ccc735421bd08a2ae529a8b88597d3de5664ee360", size = 125251, upload-time = "2026-08-26T13:33:12.928Z" },
+    { url = "https://files.pythonhosted.org/packages/31/7d/164b7ffc8624fe9efb4221bf9af485d5c1e41b9ae118045d2b6dc5457d8b/click-8.5.1-py3-none-any.whl", hash = "sha256:8bb5376d2006950386f8c6427613334a2acadc5f559cb80e638d00b4df957e37", size = 126163, upload-time = "2026-11-06T17:36:59.287Z" },
 ]
 
 [[package]]
@@ -713,7 +713,7 @@ requires-dist = [
 [package.metadata.requires-dev]
 dev = [
     { name = "pyln-client", specifier = ">=26.6.9" },
-    { name = "pyln-proto", specifier = ">=26.6.9" },
+    { name = "pyln-proto", specifier = ">=26.6.10" },
     { name = "pyln-testing", specifier = ">=26.6.9" },
     { name = "pytest", specifier = ">=9.2.0,<10" },
     { name = "pytest-timeout", specifier = ">=2.4,<3" },
@@ -880,7 +880,7 @@ wheels = [
 
 [[package]]
 name = "pyln-proto"
-version = "26.6.9"
+version = "26.6.10"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "base58" },
@@ -889,9 +889,9 @@ dependencies = [
     { name = "cryptography" },
     { name = "pysocks" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/b1/81/2ca01b7df412fc8af7c45f54c3c5b2e7f88ad92161acd67b5475ccf832a5/pyln_proto-26.6.9.tar.gz", hash = "sha256:0b4c0c39ce6995877d3a4495f93a73a17d599feb8bec788dd86ac059f34d3db9", size = 44882, upload-time = "2026-10-07T13:48:54.044Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/6e/f0/98ff6645ca2face73e5964bf2f6aebe42d2a1f042cf800bb856757fdfd75/pyln_proto-26.6.10.tar.gz", hash = "sha256:6c53d5e179c5df344be9785ded80411f0f53a0ac0ada3e06db42e5cd25ea560e", size = 44887, upload-time = "2026-11-04T14:06:45.951Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/79/1b/c964d0ca1ba8d62da10da13a3cab3a1fce57acee05c71ce8eb4a362ceb9d/pyln_proto-26.6.9-py3-none-any.whl", hash = "sha256:0beea3e5853462657c0de48bbdfae889062b9a5af06f6418e81f5daef4bebb89", size = 31840, upload-time = "2026-10-07T13:48:53.163Z" },
+    { url = "https://files.pythonhosted.org/packages/91/e4/a3c5030fb6fb3824205cf41b303cb02534088413acec2d8c3193d26ea056/pyln_proto-26.6.10-py3-none-any.whl", hash = "sha256:46585114e35edf3a42a11987698850854b57687819906278aaf6e12c4730148e", size = 31846, upload-time = "2026-11-04T14:06:44.946Z" },
 ]
 
 [[package]]
